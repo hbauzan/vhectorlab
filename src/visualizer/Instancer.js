@@ -96,10 +96,9 @@ export class Instancer {
             compActivations.push(val);
           });
 
-          if (renderMode === "RIBBONS" || renderMode === "MESH") {
-            const compRibbon = MeshFactory.createRibbonMesh(comp3D, compActivations);
-            this.activeGroup.add(compRibbon);
-          }
+          // Create connecting line ribbon for component thread
+          const compRibbon = MeshFactory.createRibbonMesh(comp3D, compActivations);
+          this.activeGroup.add(compRibbon);
         }
       });
     }
@@ -109,11 +108,9 @@ export class Instancer {
     pointsMesh.userData = { pointsData };
     this.activeGroup.add(pointsMesh);
 
-    // Create Ribbon Line Mesh if RIBBONS or MESH mode selected
-    if (renderMode === "RIBBONS" || renderMode === "MESH") {
-      const ribbonMesh = MeshFactory.createRibbonMesh(resRibbonPoints, resActivations);
-      this.activeGroup.add(ribbonMesh);
-    }
+    // Create connecting line ribbon for result thread V_res
+    const ribbonMesh = MeshFactory.createRibbonMesh(resRibbonPoints, resActivations);
+    this.activeGroup.add(ribbonMesh);
   }
 
   getInteractiveObjects() {
