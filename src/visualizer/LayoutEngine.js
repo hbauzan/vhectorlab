@@ -44,9 +44,12 @@ export function updateAllThreadPositions(threads, config, pointSpacing = 0.1) {
     if (thread.pointsMesh) {
       thread.pointsMesh.position.x = offsetX;
       if (thread.pointsMesh.material) {
-        // Scaled point size (8.0 to 50.0 pixels) for crisp visibility
-        thread.pointsMesh.material.size = thickness * 5.0;
-        thread.pointsMesh.material.needsUpdate = true;
+        if (thread.pointsMesh.material.uniforms && thread.pointsMesh.material.uniforms.pointSize) {
+          thread.pointsMesh.material.uniforms.pointSize.value = thickness * 5.0;
+        } else {
+          thread.pointsMesh.material.size = thickness * 5.0;
+          thread.pointsMesh.material.needsUpdate = true;
+        }
       }
     }
 
