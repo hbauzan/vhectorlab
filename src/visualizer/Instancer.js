@@ -32,13 +32,29 @@ export class Instancer {
 
   /**
    * Renders the arithmetic vectors data: inputs A, B, C and result V_res.
+   * @param {Object} arithmeticResponse - API response from /arithmetic
+   * @param {string} renderMode - "POINTS" | "MESH" | "RIBBONS"
+   * @param {Object} [spatialConfig] - Real-time spatial slider configuration { threadSpacing, threadWidth, threadThickness }
    */
-  renderArithmeticData(arithmeticResponse, renderMode = "POINTS") {
+  renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null) {
     this.clear();
     this.renderMode = renderMode;
     this.currentData = arithmeticResponse;
 
+    if (spatialConfig) {
+      if (spatialConfig.threadSpacing !== undefined) {
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+      }
+      if (spatialConfig.threadWidth !== undefined) {
+        this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;
+      }
+    }
+
     if (!arithmeticResponse || !arithmeticResponse.vector_res) return;
+
+    const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
+      ? (spatialConfig.threadThickness / 2.0)
+      : 1.0;
 
     const pointsData = [];
     const ribbonPoints = [];
@@ -52,7 +68,7 @@ export class Instancer {
       pointsData.push({
         position: p,
         activation: val,
-        size: 16.0,
+        size: 16.0 * thicknessFactor,
         color: new THREE.Color(0xffe600), // Incandescent Gold/Yellow
         meta: { type: "res", dim: idx, val: val }
       });
@@ -77,7 +93,7 @@ export class Instancer {
             pointsData.push({
               position: p,
               activation: val,
-              size: 10.0,
+              size: 10.0 * thicknessFactor,
               color: compColors[kIdx],
               meta: { type: key, dim: idx, val: val }
             });

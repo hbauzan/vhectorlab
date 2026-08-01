@@ -10,8 +10,6 @@ import { Navbar } from './ui/Navbar.js';
 import { Sidebar } from './ui/Sidebar.js';
 import { HUD } from './ui/HUD.js';
 import { CustomModal } from './ui/CustomModal.js';
-import { createSyntheticThreads } from './visualizer/ThreadFactory.js';
-import { updateAllThreadPositions } from './visualizer/LayoutEngine.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
 class VectorLabApp {
@@ -39,7 +37,7 @@ class VectorLabApp {
     this.navbar = new Navbar(this.appContainer, (mode) => {
       state.setRenderMode(mode);
       if (state.arithmeticData) {
-        this.instancer.renderArithmeticData(state.arithmeticData, mode);
+        this.instancer.renderArithmeticData(state.arithmeticData, mode, this.sliderConfig);
       }
     });
 
@@ -49,19 +47,12 @@ class VectorLabApp {
       (resultItem, index) => this.handleResultClick(resultItem, index)
     );
 
-    // 4. Thread Geometry & Spatial Sliders 3D Setup (Roadmap Feature)
+    // 4. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
-      threadSpacing: 2.0,
+      threadSpacing: 0.8,
       threadWidth: 1.0,
       threadThickness: 2.0
     };
-
-    this.threads = createSyntheticThreads(5, 100);
-    this.threads.forEach((thread) => {
-      this.sceneSetup.scene.add(thread.lineMesh);
-      this.sceneSetup.scene.add(thread.pointsMesh);
-    });
-    updateAllThreadPositions(this.threads, this.sliderConfig);
 
     this.mountThreadSlidersUI();
 
@@ -83,14 +74,10 @@ class VectorLabApp {
     this.appContainer.appendChild(sliderWrapper.firstElementChild);
 
     const slidersContainer = document.getElementById('thread-sliders-container');
-    wireThreadSliders(slidersContainer, this.threads, this.sliderConfig, (cfg) => {
-      // Synchronize instancer layout scaling when sliders change
-      if (this.instancer && this.instancer.layoutEngine) {
-        this.instancer.layoutEngine.scaleX = cfg.threadSpacing * 0.4;
-        this.instancer.layoutEngine.scaleZ = cfg.threadWidth * 25.0;
-        if (state.arithmeticData) {
-          this.instancer.renderArithmeticData(state.arithmeticData, state.renderMode);
-        }
+    wireThreadSliders(slidersContainer, null, this.sliderConfig, (cfg) => {
+      // Re-render active 3D vector arithmetic in real time with updated spatial configuration
+      if (state.arithmeticData) {
+        this.instancer.renderArithmeticData(state.arithmeticData, state.renderMode, cfg);
       }
     });
   }
@@ -121,8 +108,8 @@ class VectorLabApp {
       const data = await this.provider.computeArithmetic(wordA, wordB, wordC, topK);
       state.setArithmeticData(data);
 
-      // Render 3D Vector Points & Ribbons
-      this.instancer.renderArithmeticData(data, state.renderMode);
+      // Render 3D Vector Points & Ribbons with current spatial layout configuration
+      this.instancer.renderArithmeticData(data, state.renderMode, this.sliderConfig);
 
       // Update Sidebar results list
       this.sidebar.updateResults(data.results);
