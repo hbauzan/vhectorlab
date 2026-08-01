@@ -5,7 +5,14 @@ Handles application lifespan, lazy-loading models, CORS configuration, and route
 
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+# Ensure parent directory is in sys.path so 'backend.*' package imports resolve correctly
+_root_dir = str(Path(__file__).resolve().parent.parent)
+if _root_dir not in sys.path:
+    sys.path.insert(0, _root_dir)
 
 from backend.routers.core import router as core_router
 from backend.state import state
