@@ -22,3 +22,9 @@ All notable changes to VectorLab 3D will be documented in this file.
   - GPU instancing and Mesh factory enforcing `frustumCulled = false` invariant (`src/visualizer/MeshFactory.js` & `Instancer.js`).
   - Corner 3D orientation axis gizmo (`src/visualizer/AxisGizmo.js`).
   - Vitest test suite (`npm test`).
+
+- **Control Panel & Hugging Face Deployment (Phase 4)**:
+  - Interactive CLI control panel (`setup.sh`) supporting dev mode, bare-metal server, heartbeat, vitest, pytest, vocabulary management, and HF Spaces deployment.
+  - Custom vocabulary management allowing custom file loads or generation of N words.
+  - Monolithic production Dockerfile for Hugging Face Spaces serving FastAPI on port `7860`.
+  - Static files serving integration in `backend/server.py` for bundled `dist/` production assets.
