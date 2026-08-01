@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createDivergentMaterial, getDivergentColor } from './DivergentShading.js';
+import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized } from './DivergentShading.js';
 
 /**
  * Factory for creating 3D Vector Point Cloud Geometries and Ribbon Lines using Divergent Activation Shading.
@@ -12,24 +12,18 @@ export class MeshFactory {
   static createPointsMesh(pointsData, options = {}) {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
-    const intensities = [];
-
-    let maxAbs = 0.0001;
-    pointsData.forEach((item) => {
-      const absVal = Math.abs(item.activation !== undefined ? item.activation : 0.0);
-      if (absVal > maxAbs) maxAbs = absVal;
-    });
+    const rawActivations = [];
 
     pointsData.forEach((item) => {
       const pos = item.position;
       positions.push(pos.x, pos.y, pos.z);
-      const rawVal = item.activation !== undefined ? item.activation : 0.0;
-      const normVal = Math.max(-1.0, Math.min(1.0, rawVal / maxAbs));
-      intensities.push(normVal);
+      rawActivations.push(item.activation !== undefined ? item.activation : 0.0);
     });
 
+    const normIntensities = calculateZScoreNormalized(rawActivations, 0.85);
+
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(intensities, 1));
+    geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(normIntensities, 1));
 
     const pointSize = options.pointSize || 14.0;
     const material = createDivergentMaterial(pointSize, 1.0);
@@ -49,15 +43,10 @@ export class MeshFactory {
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
     if (activations && activations.length === points.length) {
-      let maxAbs = 0.0001;
-      activations.forEach((val) => {
-        const absVal = Math.abs(val);
-        if (absVal > maxAbs) maxAbs = absVal;
-      });
-
+      const normActivations = calculateZScoreNormalized(activations, 0.85);
       const colors = new Float32Array(points.length * 3);
-      activations.forEach((val, idx) => {
-        const col = getDivergentColor(val, maxAbs);
+      normActivations.forEach((val, idx) => {
+        const col = getDivergentColor(val, 1.0);
         colors[idx * 3 + 0] = col.r;
         colors[idx * 3 + 1] = col.g;
         colors[idx * 3 + 2] = col.b;
@@ -81,4 +70,5 @@ export class MeshFactory {
     return lineMesh;
   }
 }
+
 
