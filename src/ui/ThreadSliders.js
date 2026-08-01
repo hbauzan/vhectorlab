@@ -50,8 +50,9 @@ export function threadSlidersMarkup(config = {}) {
  * @param {HTMLElement} container - DOM container containing slider elements
  * @param {Array<Object>} threads - Synthetic threads array
  * @param {Object} config - Config object mutated on input
+ * @param {Function} [onChangeCallback] - Optional callback triggered on slider input
  */
-export function wireThreadSliders(container, threads, config) {
+export function wireThreadSliders(container, threads, config, onChangeCallback = null) {
   if (!container) return;
 
   const spacingInput = container.querySelector('#thread-spacing-slider');
@@ -63,12 +64,19 @@ export function wireThreadSliders(container, threads, config) {
   const thicknessInput = container.querySelector('#thread-thickness-slider');
   const thicknessVal = container.querySelector('#thread-thickness-val');
 
+  const triggerChange = () => {
+    updateAllThreadPositions(threads, config);
+    if (typeof onChangeCallback === 'function') {
+      onChangeCallback(config);
+    }
+  };
+
   if (spacingInput) {
     spacingInput.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       config.threadSpacing = val;
       if (spacingVal) spacingVal.textContent = val.toFixed(1);
-      updateAllThreadPositions(threads, config);
+      triggerChange();
     });
   }
 
@@ -77,7 +85,7 @@ export function wireThreadSliders(container, threads, config) {
       const val = parseFloat(e.target.value);
       config.threadWidth = val;
       if (widthVal) widthVal.textContent = val.toFixed(1);
-      updateAllThreadPositions(threads, config);
+      triggerChange();
     });
   }
 
@@ -86,7 +94,7 @@ export function wireThreadSliders(container, threads, config) {
       const val = parseFloat(e.target.value);
       config.threadThickness = val;
       if (thicknessVal) thicknessVal.textContent = val.toFixed(1);
-      updateAllThreadPositions(threads, config);
+      triggerChange();
     });
   }
 }
