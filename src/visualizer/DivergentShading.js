@@ -1,6 +1,36 @@
 import * as THREE from 'three';
 
 /**
+ * Calculates Z-score standardized and Tanh normalized activations across a dataset.
+ * Spreads activation values symmetrically across the full [-1.0, 1.0] gamut using std deviation.
+ *
+ * @param {Array<number>} values - Raw activation values
+ * @param {number} [scaleFactor=1.2] - Sensitivity scale factor for Tanh curve
+ * @returns {Float32Array} Normalized values in [-1.0, 1.0]
+ */
+export function calculateZScoreNormalized(values, scaleFactor = 1.2) {
+  if (!values || !values.length) return new Float32Array(0);
+  const n = values.length;
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += values[i];
+  const mean = sum / n;
+
+  let sumSq = 0;
+  for (let i = 0; i < n; i++) {
+    const diff = values[i] - mean;
+    sumSq += diff * diff;
+  }
+  const std = Math.sqrt(sumSq / n) || 1.0;
+
+  const result = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const z = (values[i] - mean) / (std + 1e-9);
+    result[i] = Math.tanh(scaleFactor * z);
+  }
+  return result;
+}
+
+/**
  * Calculates CPU color and dynamic opacity based on activation value.
  *
  * @param {number} val - Activation value (v)
@@ -36,13 +66,13 @@ void main() {
     vIntensity = intensity;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     float dist = length(mvPosition.xyz);
-    gl_PointSize = clamp(pointSize * (300.0 / max(dist, 0.01)), 2.0, 60.0);
+    gl_PointSize = clamp(pointSize * (300.0 / max(dist, 0.01)), 4.0, 80.0);
     gl_Position = projectionMatrix * mvPosition;
 }
 `;
 
 /**
- * GLSL Fragment Shader for Divergent Activation Points
+ * GLSL Fragment Shader for Divergent Activation Points with Radial Anti-Aliased Core
  */
 export const divergentFragmentShader = `
 varying float vIntensity;
@@ -59,18 +89,18 @@ void main() {
 
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);
-    float dynamicAlpha = clamp(pow(absT, 1.2), 0.2, 1.0) * baseOpacity;
+    float dynamicAlpha = clamp(pow(absT, 1.2), 0.15, 1.0) * baseOpacity;
 
     vec3 color = vec3(0.0);
     if (t >= 0.0) {
-        color = vec3(mix(0.2, 1.0, t), 0.0, 0.0); // Positivo: Rojo Vivo
+        color = vec3(t, 0.0, 0.0); // Positivo: Rojo
     } else {
         float f = -t;
         color = vec3(0.55 * f, 0.0, 0.9 * f); // Negativo: Violeta
     }
 
     vec3 finalColor = color * (core * 1.5 + halo * 0.8);
-    float alpha = clamp(dynamicAlpha * (core + halo * 0.7), 0.2, 1.0);
+    float alpha = clamp(dynamicAlpha * (core + halo * 0.7), 0.15, 1.0);
 
     gl_FragColor = vec4(finalColor, alpha);
 }
