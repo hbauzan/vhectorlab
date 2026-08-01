@@ -1,15 +1,8 @@
 import * as THREE from 'three';
-
-const THREAD_COLORS = [
-  0x6C63FF, // Neon Purple
-  0x00F5FF, // Electric Cyan
-  0xFF007F, // Bright Magenta
-  0x00FF88, // Vivid Mint Green
-  0xFFB800  // Incandescent Gold
-];
+import { createDivergentMaterial, getDivergentColor } from './DivergentShading.js';
 
 /**
- * Creates synthetic 3D vector thread data and WebGL buffer geometries.
+ * Creates synthetic 3D vector thread data and WebGL buffer geometries using Divergent Activation Shading.
  *
  * @param {number} count - Number of synthetic threads to generate (default 5)
  * @param {number} pointsPerThread - Number of vector points per thread (default 100)
@@ -20,11 +13,22 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
 
   for (let i = 0; i < count; i++) {
     const rawValues = new Float32Array(pointsPerThread);
+    const intensities = new Float32Array(pointsPerThread);
+    const lineColors = new Float32Array(pointsPerThread * 3);
+
     const freq = 0.08 + i * 0.03;
     const phase = i * 0.8;
 
     for (let p = 0; p < pointsPerThread; p++) {
-      rawValues[p] = Math.sin(p * freq + phase) * 1.5 + Math.cos(p * 0.12) * 0.8;
+      // Normalized activation values v in [-1.0, 1.0]
+      const v = Math.max(-1.0, Math.min(1.0, Math.sin(p * freq + phase) * 0.8 + Math.cos(p * 0.12) * 0.4));
+      rawValues[p] = v;
+      intensities[p] = v;
+
+      const col = getDivergentColor(v);
+      lineColors[p * 3 + 0] = col.r;
+      lineColors[p * 3 + 1] = col.g;
+      lineColors[p * 3 + 2] = col.b;
     }
 
     const positions = new Float32Array(pointsPerThread * 3);
@@ -36,26 +40,19 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
 
     const lineGeom = new THREE.BufferGeometry();
     lineGeom.setAttribute('position', new THREE.BufferAttribute(positions.slice(), 3));
+    lineGeom.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
 
     const pointsGeom = new THREE.BufferGeometry();
     pointsGeom.setAttribute('position', new THREE.BufferAttribute(positions.slice(), 3));
-
-    const threadColor = THREAD_COLORS[i % THREAD_COLORS.length];
+    pointsGeom.setAttribute('intensity', new THREE.BufferAttribute(intensities, 1));
 
     const lineMat = new THREE.LineBasicMaterial({
-      color: threadColor,
-      linewidth: 2,
+      vertexColors: true,
       transparent: true,
-      opacity: 0.95
+      opacity: 0.85
     });
 
-    const pointsMat = new THREE.PointsMaterial({
-      color: threadColor,
-      size: 10.0,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.95
-    });
+    const pointsMat = createDivergentMaterial(10.0, 1.0);
 
     const lineMesh = new THREE.Line(lineGeom, lineMat);
     const pointsMesh = new THREE.Points(pointsGeom, pointsMat);
@@ -68,7 +65,6 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
       id: i,
       label: `Vector ${i}`,
       rawValues,
-      color: threadColor,
       lineMesh,
       pointsMesh
     });
@@ -76,3 +72,4 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
 
   return threads;
 }
+

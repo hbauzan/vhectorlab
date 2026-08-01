@@ -20,7 +20,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-spacing-slider">Separación (X):</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="3.0" step="0.1" value="${spacing}">
+    <input type="range" id="thread-spacing-slider" min="0.1" max="10.0" step="0.1" value="${spacing}">
   </div>
 
   <!-- Slider 2: Width Z -->
@@ -29,7 +29,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-width-slider">Longitud (Z):</label>
       <span id="thread-width-val" class="slider-val">${width.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.2" max="3.0" step="0.1" value="${width}">
+    <input type="range" id="thread-width-slider" min="0.1" max="5.0" step="0.1" value="${width}">
   </div>
 
   <!-- Slider 3: Thickness -->
@@ -38,11 +38,12 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-thickness-slider">Grosor Puntos:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.5" max="5.0" step="0.5" value="${thickness}">
+    <input type="range" id="thread-thickness-slider" min="1.0" max="10.0" step="0.5" value="${thickness}">
   </div>
 </div>
 `;
 }
+
 
 /**
  * Binds real-time event listeners to sliders for immediate 60fps spatial updates.
