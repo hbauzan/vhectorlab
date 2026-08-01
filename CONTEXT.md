@@ -13,3 +13,10 @@ Initialization pattern deferring heavy model loading (PyTorch / SentenceTransfor
 
 ### Halo Shader
 WebGL fragment shader rendering glowing incandescence for 3D activation points mapped to vector magnitudes.
+
+### Thread Geometry
+3D vector representations constructed using continuous Three.js `Line` and `Points` buffer geometries to display multi-point activation series over space.
+
+### In-situ Buffer Mutation
+Updating existing GPU `Float32Array` attributes directly and setting `needsUpdate = true`, avoiding geometry re-creation and memory leaks during real-time UI interactions.
+
