@@ -1,0 +1,16 @@
+{
+  "project": "vectorlab-3d",
+  "version": "0.1.0",
+  "bootstrap_run": false,
+  "state_schema": {
+    "model_name": "all-mpnet-base-v2",
+    "vocab_path": "public/vocab.txt",
+    "host": "127.0.0.1",
+    "port": 8000
+  },
+  "constraints": {
+    "vector_dim": 768,
+    "cors_allow_origins": ["*"],
+    "cors_allow_credentials": false
+  }
+}
