@@ -2,13 +2,10 @@ import * as THREE from 'three';
 
 const THREAD_COLORS = [
   0x6C63FF, // Neon Purple
-  0x00F5FF, // Cyan
-  0xFF007F, // Pink/Magenta
-  0x00FF88, // Mint Green
-  0xFFB800, // Gold Yellow
-  0xFF5533, // Orange Red
-  0x7000FF, // Deep Violet
-  0x00E5FF  // Electric Blue
+  0x00F5FF, // Electric Cyan
+  0xFF007F, // Bright Magenta
+  0x00FF88, // Vivid Mint Green
+  0xFFB800  // Incandescent Gold
 ];
 
 /**
@@ -23,18 +20,18 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
 
   for (let i = 0; i < count; i++) {
     const rawValues = new Float32Array(pointsPerThread);
-    const freq = 0.05 + i * 0.02;
-    const phase = i * 0.5;
+    const freq = 0.08 + i * 0.03;
+    const phase = i * 0.8;
 
     for (let p = 0; p < pointsPerThread; p++) {
-      rawValues[p] = Math.sin(p * freq + phase) * 1.5 + Math.cos(p * 0.1) * 0.5;
+      rawValues[p] = Math.sin(p * freq + phase) * 1.5 + Math.cos(p * 0.12) * 0.8;
     }
 
     const positions = new Float32Array(pointsPerThread * 3);
     for (let p = 0; p < pointsPerThread; p++) {
       positions[p * 3 + 0] = 0;
-      positions[p * 3 + 1] = rawValues[p];
-      positions[p * 3 + 2] = p * 0.1;
+      positions[p * 3 + 1] = rawValues[p] * 35.0;
+      positions[p * 3 + 2] = (p - pointsPerThread / 2) * 3.0;
     }
 
     const lineGeom = new THREE.BufferGeometry();
@@ -47,16 +44,17 @@ export function createSyntheticThreads(count = 5, pointsPerThread = 100) {
 
     const lineMat = new THREE.LineBasicMaterial({
       color: threadColor,
+      linewidth: 2,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.95
     });
 
     const pointsMat = new THREE.PointsMaterial({
       color: threadColor,
-      size: 0.1,
+      size: 10.0,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.95
     });
 
     const lineMesh = new THREE.Line(lineGeom, lineMat);

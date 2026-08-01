@@ -83,7 +83,16 @@ class VectorLabApp {
     this.appContainer.appendChild(sliderWrapper.firstElementChild);
 
     const slidersContainer = document.getElementById('thread-sliders-container');
-    wireThreadSliders(slidersContainer, this.threads, this.sliderConfig);
+    wireThreadSliders(slidersContainer, this.threads, this.sliderConfig, (cfg) => {
+      // Synchronize instancer layout scaling when sliders change
+      if (this.instancer && this.instancer.layoutEngine) {
+        this.instancer.layoutEngine.scaleX = cfg.threadSpacing * 0.4;
+        this.instancer.layoutEngine.scaleZ = cfg.threadWidth * 25.0;
+        if (state.arithmeticData) {
+          this.instancer.renderArithmeticData(state.arithmeticData, state.renderMode);
+        }
+      }
+    });
   }
 
   async init() {
