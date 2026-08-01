@@ -5,6 +5,12 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [0.1.0] - 2026-08-01
 
 ### Added
+- **Divergent Activation Shading (`roadmap/Shading Divergente por Activación.md`)**:
+  - Custom GLSL ShaderMaterial & CPU helper (`src/visualizer/DivergentShading.js`) mapping activation values $v \in [-1.0, 1.0]$ to Red ($v>0$), Black ($\alpha \approx 0.05$ for $v=0$), and Violet ($v<0$) with dynamic $|v|^{1.2}$ opacity.
+  - Integration with `ThreadFactory.js` buffer attributes (`intensity`, `color`) and `frustumCulled = false` invariant.
+  - Real-time spatial control sliders (`src/ui/ThreadSliders.js`) updated with specified ranges ($X \in [0.1, 10.0]$, $Z \in [0.1, 5.0]$, Thickness $\in [1.0, 10.0]$).
+  - TDD unit test suite (`tests/DivergentShading.test.js`) verifying activation color math.
+
 - **Thread Geometry & Spatial Sliders 3D (`roadmap/sliders.md`)**:
   - Synthetic 3D vector thread data factory (`src/visualizer/ThreadFactory.js`) generating buffer geometries for 3D lines and point nodes.
   - In-situ GPU Float32Array buffer mutator (`updateAllThreadPositions` in `src/visualizer/LayoutEngine.js`) ensuring zero re-creation of geometries and zero memory leaks.
