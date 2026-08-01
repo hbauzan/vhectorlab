@@ -360,3 +360,60 @@ canvas {
   border-radius: 6px;
   cursor: pointer;
 }
+
+/* =============================================================================
+   Thread Geometry Spatial Sliders 3D Styling
+   ============================================================================= */
+#thread-sliders-container {
+  position: absolute;
+  top: 72px;
+  right: 20px;
+  width: 280px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 40;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.sliders-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 8px;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.slider-val {
+  font-family: monospace;
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+
+.slider-group input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
+}
+
