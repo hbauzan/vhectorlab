@@ -140,8 +140,8 @@ void main() {
         }
     }
 
-    vec3 finalColor = color * (core * 1.5 + halo * 0.8);
-    float alpha = clamp(dynamicAlpha * (core + halo * 0.7), 0.05, 1.0);
+    vec3 finalColor = color * (core * 0.7 + halo * 0.35);
+    float alpha = clamp(dynamicAlpha * (core + halo * 0.5), 0.05, 0.85);
 
     gl_FragColor = vec4(finalColor, alpha);
 }
@@ -151,10 +151,10 @@ void main() {
  * Factory function creating a customized THREE.ShaderMaterial for GPU divergent shading.
  *
  * @param {number} [pointSize=10.0] - Base size of points
- * @param {number} [baseOpacity=1.0] - Overall opacity scalar
+ * @param {number} [baseOpacity=0.7] - Overall opacity scalar
  * @returns {THREE.ShaderMaterial}
  */
-export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 1.0) {
+export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7) {
   return new THREE.ShaderMaterial({
     uniforms: {
       pointSize: { value: pointSize },
