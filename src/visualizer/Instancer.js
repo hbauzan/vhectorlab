@@ -57,7 +57,8 @@ export class Instancer {
       : 1.0;
 
     const pointsData = [];
-    const ribbonPoints = [];
+    const resRibbonPoints = [];
+    const resActivations = [];
 
     // 1. Result Vector V_res (Primary focus point cloud)
     const vecRes = arithmeticResponse.vector_res;
@@ -69,47 +70,48 @@ export class Instancer {
         position: p,
         activation: val,
         size: 16.0 * thicknessFactor,
-        color: new THREE.Color(0xffe600), // Incandescent Gold/Yellow
         meta: { type: "res", dim: idx, val: val }
       });
-      ribbonPoints.push(p);
+      resRibbonPoints.push(p);
+      resActivations.push(val);
     });
 
     // 2. Input Component Vectors (A, B, C) if available
     if (arithmeticResponse.components) {
       const compKeys = ["vec_a", "vec_b", "vec_c"];
-      const compColors = [
-        new THREE.Color(0x00ff88), // Green for A (+)
-        new THREE.Color(0xff3366), // Red for B (-)
-        new THREE.Color(0x00ccff)  // Cyan for C (+)
-      ];
 
       compKeys.forEach((key, kIdx) => {
         const compVec = arithmeticResponse.components[key];
         if (compVec && compVec.length) {
           const comp3D = this.layoutEngine.mapVectorTo3DPoints(compVec, (kIdx + 1) * 2);
+          const compActivations = [];
           comp3D.forEach((p, idx) => {
             const val = compVec[idx];
             pointsData.push({
               position: p,
               activation: val,
               size: 10.0 * thicknessFactor,
-              color: compColors[kIdx],
               meta: { type: key, dim: idx, val: val }
             });
+            compActivations.push(val);
           });
+
+          if (renderMode === "RIBBONS" || renderMode === "MESH") {
+            const compRibbon = MeshFactory.createRibbonMesh(comp3D, compActivations);
+            this.activeGroup.add(compRibbon);
+          }
         }
       });
     }
 
-    // Create GPU Points Mesh
-    const pointsMesh = MeshFactory.createPointsMesh(pointsData);
+    // Create GPU Points Mesh using Divergent Activation Shading
+    const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 10.0 * thicknessFactor });
     pointsMesh.userData = { pointsData };
     this.activeGroup.add(pointsMesh);
 
     // Create Ribbon Line Mesh if RIBBONS or MESH mode selected
     if (renderMode === "RIBBONS" || renderMode === "MESH") {
-      const ribbonMesh = MeshFactory.createRibbonMesh(ribbonPoints, 0x00ffaa);
+      const ribbonMesh = MeshFactory.createRibbonMesh(resRibbonPoints, resActivations);
       this.activeGroup.add(ribbonMesh);
     }
   }

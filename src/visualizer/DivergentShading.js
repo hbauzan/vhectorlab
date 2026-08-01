@@ -50,21 +50,29 @@ uniform float baseOpacity;
 
 void main() {
     vec2 coord = gl_PointCoord - vec2(0.5);
-    if (length(coord) > 0.5) discard; // Círculo perfecto
+    float dist = length(coord);
+    if (dist > 0.5) discard; // Círculo perfecto
+
+    // Smooth anti-aliased core circle (0.25) + glowing halo (0.25 to 0.5)
+    float core = 1.0 - smoothstep(0.0, 0.25, dist);
+    float halo = 1.0 - smoothstep(0.2, 0.5, dist);
 
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);
-    float dynamicAlpha = clamp(pow(absT, 1.2), 0.05, 1.0) * baseOpacity;
+    float dynamicAlpha = clamp(pow(absT, 1.2), 0.2, 1.0) * baseOpacity;
 
     vec3 color = vec3(0.0);
     if (t >= 0.0) {
-        color = vec3(t, 0.0, 0.0); // Positivo: Rojo
+        color = vec3(mix(0.2, 1.0, t), 0.0, 0.0); // Positivo: Rojo Vivo
     } else {
         float f = -t;
         color = vec3(0.55 * f, 0.0, 0.9 * f); // Negativo: Violeta
     }
 
-    gl_FragColor = vec4(color, dynamicAlpha);
+    vec3 finalColor = color * (core * 1.5 + halo * 0.8);
+    float alpha = clamp(dynamicAlpha * (core + halo * 0.7), 0.2, 1.0);
+
+    gl_FragColor = vec4(finalColor, alpha);
 }
 `;
 
