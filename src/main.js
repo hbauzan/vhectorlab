@@ -10,6 +10,9 @@ import { Navbar } from './ui/Navbar.js';
 import { Sidebar } from './ui/Sidebar.js';
 import { HUD } from './ui/HUD.js';
 import { CustomModal } from './ui/CustomModal.js';
+import { createSyntheticThreads } from './visualizer/ThreadFactory.js';
+import { updateAllThreadPositions } from './visualizer/LayoutEngine.js';
+import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
 class VectorLabApp {
   constructor() {
@@ -29,7 +32,7 @@ class VectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. UI Components
+    // 3. UI Components (Modal, HUD, Navbar, Sidebar)
     this.modal = new CustomModal();
     this.hud = new HUD(this.appContainer);
 
@@ -46,16 +49,41 @@ class VectorLabApp {
       (resultItem, index) => this.handleResultClick(resultItem, index)
     );
 
-    // 4. Interaction Callbacks
+    // 4. Thread Geometry & Spatial Sliders 3D Setup (Roadmap Feature)
+    this.sliderConfig = {
+      threadSpacing: 2.0,
+      threadWidth: 1.0,
+      threadThickness: 2.0
+    };
+
+    this.threads = createSyntheticThreads(5, 100);
+    this.threads.forEach((thread) => {
+      this.sceneSetup.scene.add(thread.lineMesh);
+      this.sceneSetup.scene.add(thread.pointsMesh);
+    });
+    updateAllThreadPositions(this.threads, this.sliderConfig);
+
+    this.mountThreadSlidersUI();
+
+    // 5. Interaction Callbacks
     this.interaction.onHoverCallback = (hoverData) => {
       this.hud.updateTelemetry(hoverData);
     };
 
-    // 5. Clock for animation loop
+    // 6. Clock for animation loop
     this.clock = new THREE.Clock();
 
     // Initialize Connection & Default Calculation
     this.init();
+  }
+
+  mountThreadSlidersUI() {
+    const sliderWrapper = document.createElement('div');
+    sliderWrapper.innerHTML = threadSlidersMarkup(this.sliderConfig);
+    this.appContainer.appendChild(sliderWrapper.firstElementChild);
+
+    const slidersContainer = document.getElementById('thread-sliders-container');
+    wireThreadSliders(slidersContainer, this.threads, this.sliderConfig);
   }
 
   async init() {

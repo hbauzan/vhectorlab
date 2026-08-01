@@ -5,6 +5,13 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [0.1.0] - 2026-08-01
 
 ### Added
+- **Thread Geometry & Spatial Sliders 3D (`roadmap/sliders.md`)**:
+  - Synthetic 3D vector thread data factory (`src/visualizer/ThreadFactory.js`) generating buffer geometries for 3D lines and point nodes.
+  - In-situ GPU Float32Array buffer mutator (`updateAllThreadPositions` in `src/visualizer/LayoutEngine.js`) ensuring zero re-creation of geometries and zero memory leaks.
+  - Interactive spatial control UI panel (`src/ui/ThreadSliders.js`) with real-time 60fps sliders for lateral separation ($X$), longitudinal scale ($Z$), and node thickness.
+  - Pure layout math functions (`executeLayoutMath`) with Vitest test coverage (`tests/LayoutEngine.test.js`).
+  - WebGL scene manager (`src/engine/Scene.js`) with perspective camera, lights, and reference grid at $Y=0$.
+
 - **Backend Core (Phase 1)**:
   - FastAPI server with lifespan lazy-loading of SentenceTransformer (`all-mpnet-base-v2`).
   - Pre-computed vocabulary embedding matrix in RAM for fast cosine similarity lookup.
