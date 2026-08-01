@@ -6,7 +6,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ### Added
 - **Divergent Activation Shading (`roadmap/Shading Divergente por Activación.md`)**:
-  - 5-Stop Multi-Stop Heatmap Palette (`src/visualizer/DivergentShading.js`) mapping activation values to a rich visual spectrum: Incandescent Yellow Gold ($+1.0$), Crimson Red ($+0.5$), Dark Charcoal ($0$), Deep Violet ($-0.5$), and Electric Cyan Neón ($-1.0$).
+  - 5-Stop Multi-Stop Heatmap Palette (`src/visualizer/DivergentShading.js`) mapping activation values to a rich visual spectrum: Incandescent Yellow Gold ($+1.0$), Crimson Red ($+0.5$), Dark Charcoal ($0$), Deep Violet ($-0.5$), and Electric Cyan Neón ($-1.0$) with tuned moderate point brightness.
   - Full integration in `MeshFactory.js` and `Instancer.js` connecting all 3D thread vector points with continuous ribbon lines.
   - Integration with `ThreadFactory.js` buffer attributes (`intensity`, `color`) and `frustumCulled = false` invariant.
   - Real-time spatial control sliders (`src/ui/ThreadSliders.js`) updated with specified ranges ($X \in [0.1, 10.0]$, $Z \in [0.1, 5.0]$, Thickness $\in [1.0, 10.0]$).
