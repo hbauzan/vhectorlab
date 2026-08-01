@@ -52,6 +52,25 @@ app.add_middleware(
 app.include_router(core_router, prefix="/api")
 app.include_router(core_router)  # Also expose without /api prefix for convenience
 
+# Mount static frontend files if dist/ exists (Docker / Production mode)
+from pathlib import Path
+
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+dist_path = Path(__file__).resolve().parent.parent / "dist"
+if dist_path.exists():
+    logger.info(f"Serving static frontend files from {dist_path}")
+    app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        file_path = dist_path / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(dist_path / "index.html")
+
+
 if __name__ == "__main__":
     import uvicorn
 
