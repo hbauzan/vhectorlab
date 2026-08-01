@@ -21,9 +21,15 @@ class TokenizeRequest(BaseModel):
 
 
 class ArithmeticRequest(BaseModel):
-    word_a: str = Field(..., json_schema_extra={"example": "king"}, description="Positive base word (A)")
-    word_b: str = Field(..., json_schema_extra={"example": "man"}, description="Subtracted word (B)")
-    word_c: str = Field(..., json_schema_extra={"example": "woman"}, description="Added word (C)")
+    word_a: str = Field(
+        ..., json_schema_extra={"example": "king"}, description="Positive base word (A)"
+    )
+    word_b: str = Field(
+        ..., json_schema_extra={"example": "man"}, description="Subtracted word (B)"
+    )
+    word_c: str = Field(
+        ..., json_schema_extra={"example": "woman"}, description="Added word (C)"
+    )
     top_k: int = Field(
         default=10, ge=1, le=100, description="Number of nearest neighbors to return"
     )
