@@ -31,14 +31,11 @@ export function calculateZScoreNormalized(values, scaleFactor = 1.2) {
 }
 
 /**
- * Calculates CPU color and dynamic opacity based on activation value using Multi-Stop Heatmap Palette.
+ * Calculates CPU color and dynamic opacity based on activation value.
  *
- * Palette stops:
- * Extreme Pos (+) -> Incandescent Yellow (#FFE600)
- * Moderate Pos (+) -> Crimson Red (#FF0040)
- * Neutral (0) -> Dark Charcoal / Black (alpha ~ 0.05)
- * Moderate Neg (-) -> Deep Violet (#6C00E6)
- * Extreme Neg (-) -> Electric Cyan (#00F5FF)
+ * Color Ramps:
+ * Positive (0 to +1): Negro (0) -> Rojo (0.33) -> Naranja (0.66) -> Amarillo (+1)
+ * Negative (0 to -1): Negro (0) -> Verde (-0.33) -> Azul (-0.66) -> Violeta (-1)
  *
  * @param {number} val - Activation value (v)
  * @param {number} [absMax=1.0] - Maximum absolute value for normalization
@@ -52,30 +49,42 @@ export function getDivergentColor(val, absMax = 1.0) {
 
   let r = 0.0, g = 0.0, b = 0.0;
 
-  if (t > 0.01) {
-    if (t < 0.5) {
-      const k = t / 0.5;
-      r = 0.2 + 0.8 * k;
+  if (t > 0) {
+    // Positivo (0 a +1): Negro -> Rojo -> Naranja -> Amarillo
+    if (t < 0.33) {
+      const k = t / 0.33;
+      r = k;
       g = 0.0;
-      b = 0.2 * (1.0 - k);
-    } else {
-      const k = (t - 0.5) / 0.5;
+      b = 0.0;
+    } else if (t < 0.66) {
+      const k = (t - 0.33) / 0.33;
       r = 1.0;
-      g = 0.9 * k;
-      b = 0.2 * k;
-    }
-  } else if (t < -0.01) {
-    const f = -t;
-    if (f < 0.5) {
-      const k = f / 0.5;
-      r = 0.15 + 0.4 * k;
-      g = 0.0;
-      b = 0.35 + 0.55 * k;
+      g = 0.5 * k;
+      b = 0.0;
     } else {
-      const k = (f - 0.5) / 0.5;
-      r = 0.55 * (1.0 - k);
-      g = 0.95 * k;
-      b = 0.9 + 0.1 * k;
+      const k = (t - 0.66) / 0.34;
+      r = 1.0;
+      g = 0.5 + 0.45 * k;
+      b = 0.0;
+    }
+  } else if (t < 0) {
+    // Negativo (0 a -1): Negro -> Verde -> Azul -> Violeta
+    const f = -t;
+    if (f < 0.33) {
+      const k = f / 0.33;
+      r = 0.0;
+      g = 0.9 * k;
+      b = 0.1 * k;
+    } else if (f < 0.66) {
+      const k = (f - 0.33) / 0.33;
+      r = 0.0;
+      g = 0.9 * (1.0 - k) + 0.2 * k;
+      b = 0.1 * (1.0 - k) + 1.0 * k;
+    } else {
+      const k = (f - 0.66) / 0.34;
+      r = 0.6 * k;
+      g = 0.2 * (1.0 - k);
+      b = 1.0 * (1.0 - k) + 0.9 * k;
     }
   }
 
@@ -100,7 +109,9 @@ void main() {
 `;
 
 /**
- * GLSL Fragment Shader for 5-Stop Multi-Stop Heatmap Palette
+ * GLSL Fragment Shader for Dual Divergent Multi-Stop Color Ramps:
+ * Positivo (0 a +1): Negro -> Rojo -> Naranja -> Amarillo
+ * Negativo (0 a -1): Negro -> Verde -> Azul -> Violeta
  */
 export const divergentFragmentShader = `
 varying float vIntensity;
@@ -117,30 +128,38 @@ void main() {
 
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);
-    float dynamicAlpha = clamp(pow(absT, 1.1), 0.05, 1.0) * baseOpacity;
+    float dynamicAlpha = clamp(pow(absT, 1.2), 0.05, 1.0) * baseOpacity;
 
-    vec3 color = vec3(0.03);
+    vec3 color = vec3(0.0);
 
-    if (t > 0.01) {
-        if (t < 0.5) {
-            float k = t / 0.5;
-            color = mix(vec3(0.2, 0.0, 0.2), vec3(1.0, 0.0, 0.2), k); // Rojo Crimson
+    if (t > 0.0) {
+        // Positivo (0 a +1): Negro -> Rojo -> Naranja -> Amarillo
+        if (t < 0.33) {
+            float k = t / 0.33;
+            color = mix(vec3(0.0), vec3(1.0, 0.0, 0.0), k);
+        } else if (t < 0.66) {
+            float k = (t - 0.33) / 0.33;
+            color = mix(vec3(1.0, 0.0, 0.0), vec3(1.0, 0.5, 0.0), k);
         } else {
-            float k = (t - 0.5) / 0.5;
-            color = mix(vec3(1.0, 0.0, 0.2), vec3(1.0, 0.9, 0.2), k); // Amarillo Incandescente
+            float k = (t - 0.66) / 0.34;
+            color = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 0.95, 0.0), k);
         }
-    } else if (t < -0.01) {
+    } else if (t < 0.0) {
+        // Negativo (0 a -1): Negro -> Verde -> Azul -> Violeta
         float f = -t;
-        if (f < 0.5) {
-            float k = f / 0.5;
-            color = mix(vec3(0.15, 0.0, 0.35), vec3(0.55, 0.0, 0.9), k); // Violeta Profundo
+        if (f < 0.33) {
+            float k = f / 0.33;
+            color = mix(vec3(0.0), vec3(0.0, 0.9, 0.1), k);
+        } else if (f < 0.66) {
+            float k = (f - 0.33) / 0.33;
+            color = mix(vec3(0.0, 0.9, 0.1), vec3(0.0, 0.2, 1.0), k);
         } else {
-            float k = (f - 0.5) / 0.5;
-            color = mix(vec3(0.55, 0.0, 0.9), vec3(0.0, 0.95, 1.0), k); // Cian Neón
+            float k = (f - 0.66) / 0.34;
+            color = mix(vec3(0.0, 0.2, 1.0), vec3(0.6, 0.0, 0.9), k);
         }
     }
 
-    vec3 finalColor = color * (core * 0.7 + halo * 0.35);
+    vec3 finalColor = color * (core * 0.8 + halo * 0.4);
     float alpha = clamp(dynamicAlpha * (core + halo * 0.5), 0.05, 0.85);
 
     gl_FragColor = vec4(finalColor, alpha);
