@@ -6,8 +6,8 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ### Added
 - **Divergent Activation Shading (`roadmap/Shading Divergente por Activación.md`)**:
-  - Custom GLSL ShaderMaterial & CPU helper (`src/visualizer/DivergentShading.js`) mapping activation values $v \in [-1.0, 1.0]$ to Red ($v>0$), Black ($\alpha \approx 0.05$ for $v=0$), and Violet ($v<0$) with dynamic $|v|^{1.2}$ opacity.
-  - Full integration in `MeshFactory.js` and `Instancer.js` applying divergent shading to all 3D vector arithmetic point clouds and ribbon lines (`V_res`, `A`, `B`, `C`).
+  - Custom GLSL ShaderMaterial & CPU helper (`src/visualizer/DivergentShading.js`) with Z-Score standardization ($z = (v-\mu)/\sigma$) and Tanh scaling mapping activation values to the full $[-1.0, 1.0]$ range.
+  - Full integration in `MeshFactory.js` and `Instancer.js` applying divergent shading across all 3D vector arithmetic point clouds and ribbon lines (`V_res`, `A`, `B`, `C`).
   - Integration with `ThreadFactory.js` buffer attributes (`intensity`, `color`) and `frustumCulled = false` invariant.
   - Real-time spatial control sliders (`src/ui/ThreadSliders.js`) updated with specified ranges ($X \in [0.1, 10.0]$, $Z \in [0.1, 5.0]$, Thickness $\in [1.0, 10.0]$).
   - TDD unit test suite (`tests/DivergentShading.test.js`) verifying activation color math.
