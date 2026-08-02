@@ -8,6 +8,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 | [`PROMPT-english-ui.md`](./PROMPT-english-ui.md) | Prompt para agente que ejecuta el epic EN | **Activo** |
 | [`visualization-sign-filters-colors.md`](./visualization-sign-filters-colors.md) | Filtro All/+/− + anclas de color +1/0/−1 (panel Visualization) | **Activo** |
 | [`PROMPT-visualization-controls.md`](./PROMPT-visualization-controls.md) | Prompt para agente que ejecuta viz filters/colors | **Activo** |
+| [`sae-denoise.md`](./sae-denoise.md) | Clean/Denoise SAE-style (proyección sinusoidal + Top‑K) → v2.0.0 | **Activo** |
+| [`PROMPT-sae-denoise.md`](./PROMPT-sae-denoise.md) | Prompt para agente que ejecuta SAE denoise | **Activo** |
 | [`archivo/`](./archivo/) | Epic A→E mobile/MESH/RIBBONS, specs legacy, release 1.0 | Archivado 2026-08-02 |
 
 Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `main`.
