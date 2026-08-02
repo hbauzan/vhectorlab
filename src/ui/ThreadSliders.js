@@ -64,7 +64,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-thickness-slider">Grosor Puntos:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.01" value="${thickness}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-thickness-slider" min="0.01" max="0.09" step="0.01" value="${thickness}" title="Doble clic: restaurar default">
   </div>
 </div>
 `;
