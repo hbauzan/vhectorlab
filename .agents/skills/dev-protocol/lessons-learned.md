@@ -198,6 +198,11 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Invariante**: Visible UI copy (navbar, panels, sliders, landscape gate, aria/titles/placeholders) is English-only. Internal keys (`data-view="ANALYSIS"`, `threadAmplitudeY`, CSS classes) are not renamed for i18n. No i18n framework — single-language product surface.
 - **Compare 3D labels** remain raw input tokens (§4.6); panel chrome uses EN glossary.
 
+### 4.8. COMPARE groups — parse frontend, flat /compare, badges follow centroids
+- **Decisión (v1.7.0)**: `GROUP_name = tokens` en textarea → `parseCompareInput` concatena grupos; `/compare` sigue flat. Anchor = primer token global (D1a). Sort/reorder cosine **global** puede romper contigüidad (D2a); badges de grupo se re-anclan al centroide de miembros actuales.
+- **Invariante**: groups = metadata UI/layout, no endpoint nuevo; duplicados entre groups permitidos.
+- **Visibilidad**: con groups activos, overlay muestra **solo** badges de grupo (los token cards a N alto los tapaban y el offset grande los metía bajo el dock z-index 40). Lista cosine sigue con todos los tokens. `#thread-labels-container` z-index ≥ docks; offset screen de group badges chico.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
