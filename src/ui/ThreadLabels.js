@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GROUP_LABEL_SCREEN_OFFSET_X } from './parseCompareGroups.js';
 
 /**
  * Manages floating 2D Glassmorphic Thread Label Badges over 3D WebGL origins.
@@ -14,13 +15,13 @@ export class ThreadLabels {
       }
     }
 
-    this.labels = []; // Array of { id, text, type, origin3D, element }
+    this.labels = []; // Array of { id, text, type, origin3D, element, screenOffsetX, groupId, groupLabel }
     this.tempVector = new THREE.Vector3();
   }
 
   /**
    * Sets active thread labels with 3D origins and descriptions.
-   * @param {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} labelItems
+   * @param {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3, groupId?: string, groupLabel?: string }>} labelItems
    */
   setLabels(labelItems) {
     this.clear();
@@ -32,9 +33,14 @@ export class ThreadLabels {
         card = document.createElement('div');
         const isRes = item.type === 'res' || item.type === 'result';
         const isTop1 = item.type === 'top_1' || item.type === 'top1';
-        card.className = `thread-label-card ${isRes ? 'res-label' : ''} ${isTop1 ? 'top1-label' : ''}`.trim();
+        const isGroup = item.type === 'group';
+        card.className = [
+          'thread-label-card',
+          isRes ? 'res-label' : '',
+          isTop1 ? 'top1-label' : '',
+          isGroup ? 'group-label' : '',
+        ].filter(Boolean).join(' ');
 
-        // Single short label (no type badge) — Arithmetic WORD_* / RES / TOP1; Compare keeps full token text
         const labelText = document.createElement('span');
         labelText.className = 'thread-label-text';
         labelText.textContent = item.text;
@@ -50,7 +56,10 @@ export class ThreadLabels {
         text: item.text,
         type: item.type,
         origin3D: item.origin3D.clone(),
-        element: card
+        element: card,
+        screenOffsetX: item.type === 'group' ? GROUP_LABEL_SCREEN_OFFSET_X : 0,
+        groupId: item.groupId,
+        groupLabel: item.groupLabel,
       });
     });
   }
@@ -104,9 +113,9 @@ export class ThreadLabels {
 
       if (item.element) {
         item.element.style.display = 'flex';
-        // Convert NDC (-1 to +1) to screen pixels (0 to width, 0 to height)
-        // Offset slightly to the left of the start point (-15px)
-        const x = ((this.tempVector.x + 1) * width) / 2 - 15;
+        // Convert NDC (-1 to +1) to screen pixels; tokens -15px, groups further left.
+        const extraLeft = item.screenOffsetX || 0;
+        const x = ((this.tempVector.x + 1) * width) / 2 - 15 - extraLeft;
         const y = ((-this.tempVector.y + 1) * height) / 2;
 
         item.element.style.left = `${x}px`;

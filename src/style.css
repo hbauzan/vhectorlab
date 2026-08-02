@@ -763,7 +763,8 @@ canvas {
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 35;
+  /* Above side docks (40) so group badges near the left margin stay visible */
+  z-index: 42;
   overflow: hidden;
 }
 
@@ -796,6 +797,18 @@ canvas {
 .thread-label-card.top1-label {
   border-color: var(--accent-blue);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 204, 255, 0.3);
+}
+
+.thread-label-card.group-label {
+  border-color: rgba(255, 128, 0, 0.7);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(255, 128, 0, 0.35);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  opacity: 1;
+  z-index: 2;
+  background: rgba(20, 14, 8, 0.92);
 }
 
 .thread-label-text {

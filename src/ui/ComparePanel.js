@@ -1,4 +1,5 @@
 import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
+import { parseCompareInput } from './parseCompareGroups.js';
 
 /**
  * Typical auto-manual lexicon in English (parts, fluids, systems).
@@ -46,14 +47,19 @@ export const AUTO_MANUAL_VOCAB_EN = [
 /** Deduplicated English auto-manual lexicon (stable order). */
 export const AUTO_MANUAL_UNIQUE_EN = [...new Set(AUTO_MANUAL_VOCAB_EN)];
 
+/** Demo textarea with two named groups (vehicles vs soft/emotional lexicon). */
+export const COMPARE_GROUPS_DEMO_TEXT = `GROUP_1 = "car, vehicle, automobile, truck, van, engine, piston, cylinder, crankshaft, camshaft, turbo, exhaust, muffler, radiator, transmission, gearbox, clutch, differential, driveshaft, steering, suspension, chassis, brake, brakes, rotor, wheel, wheels, tire, tires, rim, axle, bearing, pedal, accelerator, throttle, injector, manifold, intake, coolant, antifreeze, oil, filter, battery, alternator, starter, coil, fuse, relay, sensor, wiring, shock, spring, hood, trunk, windshield, headlight, bumper, fender, seatbelt, airbag, dashboard, speedometer, fuel, gasoline, diesel"
+GROUP_2 = "sophia, isabella, victoria, florence, beatrice, eleanor, charlotte, gloria, clara, penelope, serenity, compassion, tenderness, nostalgia, melancholy, empathy, affection, gratitude, forgiveness, solitude, devotion, harmony, poetry, symphony, melody, lullaby, romance, intimacy, solace, grace, bliss, euphoria, sweetness, delight, softness, warmth, kindness, hope, peace, innocence, purity, elegance, beauty, passion, desire, yearning, whisper, caress, embrace, soul, spirit, intuition, wisdom, reverie, fantasy, butterfly, blossom, rose, orchid, petal, jasmine, violet, peony, dahlia, magnolia"`;
+
 /**
- * COMPARE presets built from English auto-manual vocabulary.
+ * COMPARE presets — arrays become comma-joined; strings are written as-is (group demos).
  */
 export const COMPARE_AUTO_PRESETS = {
   sample5: ['wheel', 'engine', 'brake', 'steering', 'clutch'],
   default: AUTO_MANUAL_UNIQUE_EN,
   sample20: AUTO_MANUAL_UNIQUE_EN.slice(0, 20),
   sample50: AUTO_MANUAL_UNIQUE_EN.slice(0, 50),
+  groupsDemo: COMPARE_GROUPS_DEMO_TEXT,
 };
 
 /** @deprecated Use COMPARE_AUTO_PRESETS */
@@ -83,14 +89,15 @@ export class ComparePanel {
 
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
-          <label for="compare-tokens">Tokens / Words (separated by comma, space, or newline)</label>
-          <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine, brake, steering, clutch..." required></textarea>
+          <label for="compare-tokens">Tokens / Words, or GROUP_name = tokens (comma, space, or newline)</label>
+          <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine… or GROUP_1 = car, truck&#10;GROUP_2 = grace, hope" required></textarea>
         </div>
 
         <div class="preset-buttons-row">
           <button type="button" class="btn-preset" data-preset="sample5">5 Tokens</button>
           <button type="button" class="btn-preset" data-preset="sample20">20 Tokens</button>
           <button type="button" class="btn-preset" data-preset="sample50">50 Tokens</button>
+          <button type="button" class="btn-preset" data-preset="groupsDemo">2 Groups</button>
         </div>
 
         <button type="submit" id="btn-compare-submit" class="btn-primary">
@@ -137,18 +144,12 @@ export class ComparePanel {
   initEventListeners() {
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const rawText = this.textarea.value;
-      const tokens = rawText
-        .split(/[\s,\n]+/)
-        .map(t => t.trim())
-        .filter(t => t.length > 0)
-        .slice(0, 1024);
-
-      if (tokens.length === 0) return;
+      const parsed = parseCompareInput(this.textarea.value);
+      if (parsed.tokens.length === 0) return;
 
       if (this.onCalculate) {
         this.setLoading(true);
-        this.onCalculate(tokens)
+        this.onCalculate(parsed.tokens, parsed.tokenMeta)
           .finally(() => this.setLoading(false));
       }
     });
@@ -157,7 +158,9 @@ export class ComparePanel {
       btn.addEventListener('click', (e) => {
         const type = e.target.getAttribute('data-preset');
         const preset = COMPARE_AUTO_PRESETS[type];
-        if (preset) {
+        if (typeof preset === 'string') {
+          this.textarea.value = preset;
+        } else if (Array.isArray(preset)) {
           this.textarea.value = preset.join(", ");
         }
       });
