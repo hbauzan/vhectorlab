@@ -30,6 +30,7 @@ Este SKILL.md es el **router liviano**: contiene lo que se necesita siempre (rol
 | [qa-review.md](./qa-review.md) | revisás un diff (dos ejes) o convertís problemas en issues |
 | [git-workflow.md](./git-workflow.md) | vas a commitear, configurar pre-commit o entregar (push/merge) |
 | [documentation.md](./documentation.md) | cambió un contrato/docs → sync **condicional** (manifest/CHANGELOG/spec/README/CONTEXT) |
+| [lessons-learned.md](./lessons-learned.md) | **SIEMPRE**: consultar invariantes técnicas (WebGL, UI, shaders, estandarización Z-score, WASD lerp) y registrar nuevas lecciones aprendidas |
 | [templates/](./templates/) | base copy-to-root: `.pre-commit-config.yaml`, `.env.example` |
 
 > **Cómo instalar/usar esta skill** (Claude Code y otros IDEs/IAs como Cursor, Gemini, OpenCode) → [USAGE.md](./USAGE.md).
@@ -45,12 +46,12 @@ La frase canónica que dispara todo el ciclo desde cero:
 
 Invocada así, el agente corre el **ciclo estándar** end-to-end por su cuenta, parando solo en el gate de aprobación humana (paso 7):
 
-1. **Cargar y orientar**: leé este SKILL.md primero, después el/los módulo(s) relevantes a la tarea.
+1. **Cargar y orientar**: leé este SKILL.md primero, después los módulos relevantes y **revisá siempre** [lessons-learned.md](./lessons-learned.md).
 2. **Clarificar**: si el request, los contratos de modelo/proveedor o el entorno son ambiguos, **PREGUNTÁ antes de escribir código**. Ante la duda, preguntá — nunca adivines.
 3. **Branch**: creá una rama `<type>/<short-name>` desde la base antes de tocar código.
 4. **Implementar**: vertical slices, TDD donde aplique ([code-design.md](./code-design.md)); para bugs, el loop de 6 fases ([debugging.md](./debugging.md)).
 5. **Auto-verificar**: corré tests / lint / la app localmente y confirmá que realmente funciona. Dejalo en verde antes de involucrar al usuario.
-6. **Sync docs**: actualizá los assets de documentación ([documentation.md](./documentation.md)).
+6. **Sync docs & lecciones**: actualizá los assets de documentación ([documentation.md](./documentation.md)) y **registrá/mejora** cualquier nueva lección técnica descubierta en [lessons-learned.md](./lessons-learned.md).
 7. **Hand off — APPROVAL GATE**: reportá qué cambió y cómo se verificó, decile al usuario exactamente cómo probarlo, y **ESPERÁ**. No hagas push ni merge todavía.
 8. **Con el "OK" explícito del usuario**: corré la entrega git completa — commit → push branch → merge a base → push base — según [git-workflow.md](./git-workflow.md) §3.
 9. **Pará y preguntá si se complica**: si algo del paso 8 no es trivial (conflicto de merge, hook/CI rojo, rama divergida o protegida, scope ambiguo), **DETENTE y preguntá** ([git-workflow.md](./git-workflow.md) §3.3).
