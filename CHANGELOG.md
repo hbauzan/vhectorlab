@@ -4,6 +4,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Scene fog too dense for far RIBBONS/MESH** (`fix/soften-scene-fog`): `FogExp2` density `0.008` → `0.0008` so ribbons stay readable at COMPARE-scale camera distance; avoids distance “creeping” darkening. POINTS unaffected (custom shader). Transparency/`depthWrite` on ribbons tracked separately.
+
 ### Changed
 - **Spacing (X) range → `[0.4, 2.0]`** (`feat/spacing-range-center-compare`): same track for all MODE|VIEW|RENDER; COMPARE default `0.7` unchanged. Other combo defaults unchanged (Amp/Thickness ranges untouched).
 - **Length (Z) range → `[0.001, 0.2]`** step `0.001`, label 3 decimals: never reaches 0; COMPARE `0.1` ≈ mid; global/Analysis `0.2` at max.
