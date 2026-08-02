@@ -58,6 +58,14 @@ export class Instancer {
       ? spatialConfig.threadThickness
       : 0.3;
 
+    const spacingY = (spatialConfig && (spatialConfig.threadVectorDistance !== undefined || spatialConfig.threadSpacingY !== undefined))
+      ? (spatialConfig.threadVectorDistance ?? spatialConfig.threadSpacingY)
+      : 46.0;
+
+    const amplitudeY = (spatialConfig && spatialConfig.threadAmplitudeY !== undefined)
+      ? spatialConfig.threadAmplitudeY
+      : 16.0;
+
     const pointsData = [];
     const threadLabelItems = [];
 
@@ -75,7 +83,7 @@ export class Instancer {
         const compVec = arithmeticResponse.components[key];
         if (compVec && compVec.length) {
           const sequenceIdx = viewMode === "ANALYSIS" ? kIdx : (kIdx + 1) * 2;
-          const comp3D = this.layoutEngine.mapVectorTo3DPoints(compVec, sequenceIdx, viewMode, 5);
+          const comp3D = this.layoutEngine.mapVectorTo3DPoints(compVec, sequenceIdx, viewMode, 5, spacingY, amplitudeY);
           const compActivations = [];
 
           comp3D.forEach((p, idx) => {
@@ -109,7 +117,7 @@ export class Instancer {
     // 2. Result Vector V_res
     const vecRes = arithmeticResponse.vector_res;
     const resSequenceIdx = viewMode === "ANALYSIS" ? 3 : 0;
-    const res3DPoints = this.layoutEngine.mapVectorTo3DPoints(vecRes, resSequenceIdx, viewMode, 5);
+    const res3DPoints = this.layoutEngine.mapVectorTo3DPoints(vecRes, resSequenceIdx, viewMode, 5, spacingY, amplitudeY);
     const resRibbonPoints = [];
     const resActivations = [];
 
@@ -143,7 +151,7 @@ export class Instancer {
     const top1Word = arithmeticResponse.top1_word || (arithmeticResponse.results && arithmeticResponse.results[0] ? arithmeticResponse.results[0].word : "queen");
     const top1Vec = (arithmeticResponse.components && arithmeticResponse.components.vec_top1) ? arithmeticResponse.components.vec_top1 : vecRes;
     const top1SequenceIdx = viewMode === "ANALYSIS" ? 4 : 8;
-    const top13DPoints = this.layoutEngine.mapVectorTo3DPoints(top1Vec, top1SequenceIdx, viewMode, 5);
+    const top13DPoints = this.layoutEngine.mapVectorTo3DPoints(top1Vec, top1SequenceIdx, viewMode, 5, spacingY, amplitudeY);
     const top1Activations = [];
 
     top13DPoints.forEach((p, idx) => {

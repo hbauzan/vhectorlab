@@ -7,6 +7,8 @@ import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
  */
 export function threadSlidersMarkup(config = {}) {
   const spacing = config.threadSpacing ?? 0.8;
+  const vectorDist = config.threadVectorDistance ?? config.threadSpacingY ?? 46.0;
+  const amplitudeY = config.threadAmplitudeY ?? 16.0;
   const width = config.threadWidth ?? 0.1;
   const thickness = config.threadThickness ?? 0.10;
 
@@ -23,7 +25,25 @@ export function threadSlidersMarkup(config = {}) {
     <input type="range" id="thread-spacing-slider" min="0.1" max="10.0" step="0.1" value="${spacing}">
   </div>
 
-  <!-- Slider 2: Width Z -->
+  <!-- Slider 2: Vector Distance Y -->
+  <div class="slider-group">
+    <div class="slider-header">
+      <label for="thread-vector-dist-slider">Distancia Vectores (Y):</label>
+      <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
+    </div>
+    <input type="range" id="thread-vector-dist-slider" min="10.0" max="120.0" step="1.0" value="${vectorDist}">
+  </div>
+
+  <!-- Slider 3: Amplitude Y -->
+  <div class="slider-group">
+    <div class="slider-header">
+      <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
+      <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
+    </div>
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="60.0" step="1.0" value="${amplitudeY}">
+  </div>
+
+  <!-- Slider 4: Width Z -->
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-width-slider">Longitud (Z):</label>
@@ -32,7 +52,7 @@ export function threadSlidersMarkup(config = {}) {
     <input type="range" id="thread-width-slider" min="0.1" max="5.0" step="0.1" value="${width}">
   </div>
 
-  <!-- Slider 3: Thickness -->
+  <!-- Slider 5: Thickness -->
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-thickness-slider">Grosor Puntos:</label>
@@ -59,6 +79,12 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
   const spacingInput = container.querySelector('#thread-spacing-slider');
   const spacingVal = container.querySelector('#thread-spacing-val');
 
+  const vectorDistInput = container.querySelector('#thread-vector-dist-slider');
+  const vectorDistVal = container.querySelector('#thread-vector-dist-val');
+
+  const ampYInput = container.querySelector('#thread-amplitude-y-slider');
+  const ampYVal = container.querySelector('#thread-amplitude-y-val');
+
   const widthInput = container.querySelector('#thread-width-slider');
   const widthVal = container.querySelector('#thread-width-val');
 
@@ -79,6 +105,25 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
       const val = parseFloat(e.target.value);
       config.threadSpacing = val;
       if (spacingVal) spacingVal.textContent = val.toFixed(1);
+      triggerChange();
+    });
+  }
+
+  if (vectorDistInput) {
+    vectorDistInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      config.threadVectorDistance = val;
+      config.threadSpacingY = val;
+      if (vectorDistVal) vectorDistVal.textContent = val.toFixed(1);
+      triggerChange();
+    });
+  }
+
+  if (ampYInput) {
+    ampYInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      config.threadAmplitudeY = val;
+      if (ampYVal) ampYVal.textContent = val.toFixed(1);
       triggerChange();
     });
   }

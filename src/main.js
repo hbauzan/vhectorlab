@@ -65,8 +65,10 @@ class VectorLabApp {
     // 5. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
       threadSpacing: 0.8,
-      threadWidth: 1.0,
-      threadThickness: 0.3
+      threadVectorDistance: 46.0,
+      threadAmplitudeY: 16.0,
+      threadWidth: 0.1,
+      threadThickness: 0.10
     };
 
     this.mountThreadSlidersUI();
