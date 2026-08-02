@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { MeshFactory } from '../src/visualizer/MeshFactory.js';
 import { Instancer } from '../src/visualizer/Instancer.js';
 
-describe('MeshFactory wide ribbons + base plane', () => {
+describe('MeshFactory wide ribbons', () => {
   it('createWideRibbonMesh builds a Mesh strip (not Line)', () => {
     const pts = Array.from({ length: 10 }, (_, i) => new THREE.Vector3(i, Math.sin(i), 0));
     const acts = pts.map((_, i) => Math.sin(i));
@@ -16,7 +16,7 @@ describe('MeshFactory wide ribbons + base plane', () => {
     expect(mesh.geometry.getAttribute('position').count).toBe(20);
   });
 
-  it('createBasePlane is a horizontal translucent mesh', () => {
+  it('createBasePlane helper still builds a horizontal mesh (unused by Instancer)', () => {
     const plane = MeshFactory.createBasePlane({ width: 100, depth: 50, y: -20 });
     expect(plane.userData.kind).toBe('basePlane');
     expect(plane.position.y).toBe(-20);
@@ -43,7 +43,7 @@ describe('Instancer RIBBONS mode', () => {
     };
   }
 
-  it('RIBBONS ≠ MESH ≠ POINTS: wide ribbons + base plane, no Points', () => {
+  it('RIBBONS mounts wide ribbons without base plane or Points', () => {
     instancer.renderArithmeticData(arithmeticFixture(), 'RIBBONS', {
       threadThickness: 0.4,
       threadSpacing: 0.4,
@@ -58,7 +58,7 @@ describe('Instancer RIBBONS mode', () => {
     const points = kids.filter((c) => c.isPoints);
 
     expect(wide.length).toBeGreaterThanOrEqual(3);
-    expect(plane.length).toBe(1);
+    expect(plane.length).toBe(0);
     expect(surface.length).toBe(0);
     expect(points.length).toBe(0);
   });

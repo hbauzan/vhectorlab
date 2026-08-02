@@ -163,8 +163,7 @@ export class Instancer {
     }
 
     if (renderMode === "RIBBONS") {
-      const plane = MeshFactory.createBasePlaneForThreads(surfaceRows);
-      if (plane) this.activeGroup.add(plane);
+      // No base plane: translucent dark quad showed through ribbons as a hard dark rectangle.
       const ribbonWidth = Math.max(2.0, 14.0 * (thicknessFactor || 0.3));
       surfaceRows.forEach((row) => {
         const wide = MeshFactory.createWideRibbonMesh(row.points, row.activations, { width: ribbonWidth });
@@ -295,15 +294,11 @@ export class Instancer {
 
     let pointsMesh = null;
     let surfaceMesh = null;
-    let basePlane = null;
     if (renderMode === "MESH") {
       surfaceMesh = MeshFactory.createSurfaceMesh(surfaceRows, {
         singleThreadWidth: Math.max(1.5, 8.0 * thicknessFactor),
       });
       if (surfaceMesh) this.activeGroup.add(surfaceMesh);
-    } else if (renderMode === "RIBBONS") {
-      basePlane = MeshFactory.createBasePlaneForThreads(surfaceRows);
-      if (basePlane) this.activeGroup.add(basePlane);
     } else if (pointsData.length) {
       pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
       pointsMesh.userData = { pointsData };
@@ -317,7 +312,6 @@ export class Instancer {
       amplitudeY,
       pointsMesh,
       surfaceMesh,
-      basePlane,
       baselineMesh,
       threads,
       renderMode,
