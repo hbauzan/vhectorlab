@@ -27,7 +27,7 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Problema**: `FogExp2(0x050505, 0.008)` oscurecía `MeshBasicMaterial` (RIBBONS/MESH, `fog: true` por default) según distancia a cámara — a poses COMPARE (~Z 390) las cintas casi negras y la “sombra trepa” al orbitar. POINTS (shader custom sin fog chunks) no se veían igual.
 - **Solución Obligatoria**: Densidad suave `SCENE_FOG_DENSITY = 0.0008` (`SceneSetup.js`) — atmósfera leve, legible a ~400u (`exp(-d·dist) > 0.5`). No es lighting ni colormap.
 - **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS/MESH, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
-- **Seguimiento**: transparencia / `depthWrite` en wide ribbons → PR dedicado (no mezclar con fog).
+- **Seguimiento**: RIBBONS ya no monta `basePlane` (rectángulo oscuro a través de cintas transparentes). `depthWrite` / opacidad de wide ribbons → si reaparece solapamiento al orbitar.
 ### 1.3. Renderizado de Puntos Sólidos y Definidos (Sin Halos Esfumados)
 - **Problema**: Un gradiente suave amplio de `smoothstep(0.0, 0.5, dist)` genera puntos borrosos, translúcidos y "esfumados".
 - **Solución Obligatoria**: Renderizar discos sólidos con un borde de anti-aliasing ultra-definido de 1 píxel:
@@ -68,7 +68,7 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 ### 2.3. Continuidad de hilo según RENDER mode (mutuamente excluyentes)
 - **POINTS**: puntos + línea fina `createRibbonMesh` (continuidad 1px).
 - **MESH**: la continuidad **es** la superficie de quads (`createSurfaceMesh`); no montar Points.
-- **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`) + plano base; no usar `LineBasicMaterial.linewidth` (§1.4).
+- **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`); sin plano base (el quad oscuro se veía a través de cintas transparentes). No usar `LineBasicMaterial.linewidth` (§1.4).
 - Colormap MESH/RIBBONS: rampa **divergente** VectorLab (opción a del roadmap) para consistencia de marca.
 
 ### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
@@ -171,9 +171,10 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 ### 1.6. MESH surface = grilla threads × dims, no tubo
 - **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
 
-### 1.7. RIBBONS = wide mesh strips + base plane (nunca Line linewidth)
-- **Problema**: `LineBasicMaterial.linewidth` queda capado a 1px en WebGL (§1.4); no sirve para cintas anchas de referencia.
-- **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline) + `createBasePlane` semitransparente. Sin Points. Distincto de MESH (cintas discretas vs superficie continua).
+### 1.7. RIBBONS = wide mesh strips (nunca Line linewidth; sin base plane)
+- **Problema**: `LineBasicMaterial.linewidth` queda capado a 1px en WebGL (§1.4); no sirve para cintas anchas de referencia. Un `createBasePlane` semitransparente bajo las cintas se veía como rectángulo oscuro a lo lejos (bordes rectos).
+- **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline). Sin Points. Sin montar plano base en Instancer. Distincto de MESH (cintas discretas vs superficie continua).
+- **Invariante**: RIBBONS ≠ MESH ≠ POINTS; no reintroducir base plane bajo ribbons sin opacificar/`depthWrite` conscientes.
 
 ### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
 - **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.
