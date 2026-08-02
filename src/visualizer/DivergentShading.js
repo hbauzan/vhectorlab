@@ -109,7 +109,7 @@ void main() {
 `;
 
 /**
- * GLSL Fragment Shader for Dual Divergent Multi-Stop Color Ramps:
+ * GLSL Fragment Shader for Dual Divergent Multi-Stop Color Ramps (Solid Circular Points):
  * Positivo (0 a +1): Negro -> Rojo -> Naranja -> Amarillo
  * Negativo (0 a -1): Negro -> Verde -> Azul -> Violeta
  */
@@ -122,13 +122,12 @@ void main() {
     float dist = length(coord);
     if (dist > 0.5) discard; // Círculo perfecto
 
-    // Smooth anti-aliased core circle (0.25) + glowing halo (0.25 to 0.5)
-    float core = 1.0 - smoothstep(0.0, 0.25, dist);
-    float halo = 1.0 - smoothstep(0.2, 0.5, dist);
+    // Sharp solid circle with crisp anti-aliased edge
+    float solidEdge = 1.0 - smoothstep(0.44, 0.49, dist);
 
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);
-    float dynamicAlpha = clamp(pow(absT, 1.2), 0.05, 1.0) * baseOpacity;
+    float dynamicAlpha = clamp(pow(absT, 1.1), 0.15, 1.0) * baseOpacity;
 
     vec3 color = vec3(0.0);
 
@@ -159,8 +158,8 @@ void main() {
         }
     }
 
-    vec3 finalColor = color * (core * 0.8 + halo * 0.4);
-    float alpha = clamp(dynamicAlpha * (core + halo * 0.5), 0.05, 0.85);
+    vec3 finalColor = color * solidEdge;
+    float alpha = dynamicAlpha * solidEdge;
 
     gl_FragColor = vec4(finalColor, alpha);
 }
