@@ -29,3 +29,8 @@ The token currently at position #1 in a Compare Sequence. Cosine similarity for 
 ### Cosine-vs-First Score
 Dot product between an item’s L2-normalized embedding and the Anchor Token embedding; the anchor row is always `1.0000` (REF).
 
+### Collapsible Dock
+Edge-hosted UI host that slides off-screen via CSS `transform` while keeping children mounted; left dock hosts Arithmetic or Compare, right dock hosts spatial sliders and AxisGizmo. The bottom telemetry HUD is not a dock.
+
+_Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounting panel DOM to “hide” it.
+

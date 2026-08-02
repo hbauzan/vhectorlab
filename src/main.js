@@ -14,6 +14,7 @@ import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
+import { CollapsibleDock } from './ui/CollapsibleDock.js';
 
 class VectorLabApp {
   constructor() {
@@ -23,7 +24,6 @@ class VectorLabApp {
     this.sceneSetup = new SceneSetup(this.appContainer);
     this.navigation = new Navigation(this.sceneSetup.camera, this.sceneSetup.renderer.domElement);
     this.instancer = new Instancer(this.sceneSetup.scene);
-    this.axisGizmo = new AxisGizmo(this.sceneSetup.camera);
     this.interaction = new Interaction(
       this.sceneSetup.camera,
       this.sceneSetup.scene,
@@ -37,6 +37,7 @@ class VectorLabApp {
     this.viewMode = 'NAVIGATION';
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
+    // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
     this.modal = new CustomModal();
     this.hud = new HUD(this.appContainer, {
       showCamPose: import.meta.env.VITE_SHOW_CAM_POSE === 'true'
@@ -63,16 +64,36 @@ class VectorLabApp {
       }
     );
 
+    // Left dock hosts Arithmetic OR Compare (shared collapsed state across MODE).
+    this.leftDock = new CollapsibleDock({
+      parent: this.appContainer,
+      side: 'left',
+      id: 'left-dock',
+      storageKey: 'vl3d.dock.left.collapsed',
+      defaultCollapsed: false,
+    });
+
     this.sidebar = new Sidebar(
-      this.appContainer,
+      this.leftDock.body,
       async (wordA, wordB, wordC, topK) => this.handleCalculateArithmetic(wordA, wordB, wordC, topK)
     );
 
     this.comparePanel = new ComparePanel(
-      this.appContainer,
+      this.leftDock.body,
       async (tokens) => this.handleCalculateCompare(tokens),
       async (payload) => this.handleCompareReorder(payload)
     );
+
+    // Right dock: spatial sliders + AxisGizmo (roadmap D1).
+    this.rightDock = new CollapsibleDock({
+      parent: this.appContainer,
+      side: 'right',
+      id: 'right-dock',
+      storageKey: 'vl3d.dock.right.collapsed',
+      defaultCollapsed: false,
+    });
+
+    this.axisGizmo = new AxisGizmo(this.sceneSetup.camera, this.rightDock.body);
 
     // 5. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
@@ -100,10 +121,11 @@ class VectorLabApp {
   mountThreadSlidersUI() {
     const sliderWrapper = document.createElement('div');
     sliderWrapper.innerHTML = threadSlidersMarkup(this.sliderConfig);
-    this.appContainer.appendChild(sliderWrapper.firstElementChild);
+    const slidersEl = sliderWrapper.firstElementChild;
+    // Insert sliders above the gizmo inside the right dock body.
+    this.rightDock.body.insertBefore(slidersEl, this.axisGizmo.container);
 
-    const slidersContainer = document.getElementById('thread-sliders-container');
-    wireThreadSliders(slidersContainer, null, this.sliderConfig, (cfg) => {
+    wireThreadSliders(slidersEl, null, this.sliderConfig, () => {
       this.refreshRender();
     });
   }
