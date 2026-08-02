@@ -160,10 +160,12 @@ En phone (`≤768px` **y** no-tablet):
 - API/backend solo si hace falta agregar datos de grilla; preferir construir surface desde embeddings ya presentes.
 
 ### D.3 Criterios de aceptación
-- [ ] MESH ≠ POINTS a simple vista (superficie quad).
-- [ ] Sliders de layout afectan la surface.
-- [ ] Arithmetic y Compare soportados (N hilos → N surfaces o una grilla documentada).
-- [ ] Tests de creación de geometría + mode switch.
+- [x] MESH ≠ POINTS a simple vista (superficie quad).
+- [x] Sliders de layout afectan la surface.
+- [x] Arithmetic y Compare soportados (N hilos → **una grilla** threads×dims; 1 hilo → strip).
+- [x] Tests de creación de geometría + mode switch.
+
+**Colormap:** rampa divergente VectorLab (opción a).
 
 ### D.4 Rama
 `feat/render-mode-mesh`

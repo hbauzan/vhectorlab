@@ -60,8 +60,11 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Rango Positivo ($0 \rightarrow +1$)**: Negro ($0.0$) $\rightarrow$ Naranja ($+0.50$, `#FF8000`) $\rightarrow$ Amarillo Incandescente ($+1.00$, `#FFE600`).
 - **Rango Negativo ($0 \rightarrow -1$)**: Negro ($0.0$) $\rightarrow$ Azul Eléctrico ($-0.50$, `#0040FF`) $\rightarrow$ Violeta Neón ($-1.00$, `#9900E6`).
 
-### 2.3. Conexión Incondicional de Hilos
-- Los puntos de cada hilo vectorial deben estar siempre conectados incondicionalmente por líneas de cinta (`RibbonMesh`), independientemente del modo de renderizado (`POINTS`, `MESH`, `RIBBONS`), para preservar la estructura visual del hilo.
+### 2.3. Continuidad de hilo según RENDER mode (mutuamente excluyentes)
+- **POINTS**: puntos + línea fina `createRibbonMesh` (continuidad 1px).
+- **MESH**: la continuidad **es** la superficie de quads (`createSurfaceMesh`); no montar Points.
+- **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`) + plano base; no usar `LineBasicMaterial.linewidth` (§1.4).
+- Colormap MESH/RIBBONS: rampa **divergente** VectorLab (opción a del roadmap) para consistencia de marca.
 
 ### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
 - **Patrón**: Evitar cálculos de interpolación `mix()` en fragmentos con intensidad casi nula.
@@ -142,6 +145,9 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   - Desktop: persistir collapsed en `localStorage`. Mobile (`max-width: 768px`): default collapsed y no persistir (hook Etapa B).
   - El dock host mantiene `overflow: hidden` / `fit-content` — no reintroducir scrollbar externa (§4.1 / §4.2).
 - **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
+
+### 1.6. MESH surface = grilla threads × dims, no tubo
+- **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
 
 ### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
 - **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.

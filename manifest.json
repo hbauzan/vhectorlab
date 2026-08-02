@@ -1,6 +1,6 @@
 {
   "project": "vectorlab-3d",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "bootstrap_run": false,
   "state_schema": {
     "model_name": "all-mpnet-base-v2",
