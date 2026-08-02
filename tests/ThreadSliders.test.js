@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { threadSlidersMarkup } from '../src/ui/ThreadSliders.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import { threadSlidersMarkup, wireThreadSliders } from '../src/ui/ThreadSliders.js';
+import {
+  GLOBAL_SPATIAL_DEFAULTS,
+  SPATIAL_DEFAULT_OVERRIDES,
+} from '../src/ui/spatialSliderDefaults.js';
 
 /** Parse <input id="..." min max step value> attrs from markup. */
 function parseRangeInput(html, id) {
@@ -29,6 +33,23 @@ const SPATIAL_SLIDER_SPECS = [
   { id: 'thread-width-slider', mid: 0.2, min: 0.1, max: 0.3, step: 0.01, decimals: 2 },
   { id: 'thread-thickness-slider', mid: 0.1, min: 0.05, max: 0.15, step: 0.01, decimals: 2 },
 ];
+
+function createMockEl(id = '') {
+  const listeners = {};
+  const el = {
+    id,
+    value: '',
+    textContent: '',
+    addEventListener: (type, fn) => {
+      if (!listeners[type]) listeners[type] = [];
+      listeners[type].push(fn);
+    },
+    dispatch: (type, event = {}) => {
+      for (const fn of listeners[type] || []) fn(event);
+    },
+  };
+  return el;
+}
 
 describe('threadSlidersMarkup — ranges centered on defaults', () => {
   it('emits min/max/step/value so each default is the linear midpoint', () => {
@@ -77,5 +98,102 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
     expect(labelFor('thread-amplitude-y-val')).toBe('7.0');
     expect(labelFor('thread-width-val')).toBe('0.20');
     expect(labelFor('thread-thickness-val')).toBe('0.10');
+  });
+});
+
+describe('wireThreadSliders — dblclick reset', () => {
+  const overrideKeys = [];
+
+  afterEach(() => {
+    for (const key of overrideKeys.splice(0)) {
+      delete SPATIAL_DEFAULT_OVERRIDES[key];
+    }
+  });
+
+  it('restores only the double-clicked slider to the resolved default', () => {
+    const ampInput = createMockEl('thread-amplitude-y-slider');
+    const ampLabel = createMockEl('thread-amplitude-y-val');
+
+    const byId = {
+      'thread-amplitude-y-slider': ampInput,
+      'thread-amplitude-y-val': ampLabel,
+      'thread-spacing-slider': createMockEl(),
+      'thread-spacing-val': createMockEl(),
+      'thread-vector-dist-slider': createMockEl(),
+      'thread-vector-dist-val': createMockEl(),
+      'thread-width-slider': createMockEl(),
+      'thread-width-val': createMockEl(),
+      'thread-thickness-slider': createMockEl(),
+      'thread-thickness-val': createMockEl(),
+    };
+
+    const container = {
+      querySelector: (sel) => byId[sel.replace('#', '')] || null,
+    };
+
+    const config = {
+      threadSpacing: 0.55,
+      threadVectorDistance: 14.0,
+      threadSpacingY: 14.0,
+      threadAmplitudeY: 11.0,
+      threadWidth: 0.28,
+      threadThickness: 0.14,
+    };
+
+    let changeCount = 0;
+    wireThreadSliders(container, null, config, () => { changeCount += 1; }, {
+      getContext: () => ({
+        workspaceMode: 'ARITHMETIC',
+        viewMode: 'NAVIGATION',
+        renderMode: 'POINTS',
+      }),
+    });
+
+    ampInput.dispatch('dblclick', { preventDefault() {} });
+
+    expect(config.threadAmplitudeY).toBe(GLOBAL_SPATIAL_DEFAULTS.threadAmplitudeY);
+    expect(ampInput.value).toBe(String(GLOBAL_SPATIAL_DEFAULTS.threadAmplitudeY));
+    expect(ampLabel.textContent).toBe('7.0');
+    expect(config.threadSpacing).toBe(0.55);
+    expect(config.threadVectorDistance).toBe(14.0);
+    expect(config.threadWidth).toBe(0.28);
+    expect(config.threadThickness).toBe(0.14);
+    expect(changeCount).toBe(1);
+  });
+
+  it('uses context override when defined for current MODE/VISTA/RENDER', () => {
+    SPATIAL_DEFAULT_OVERRIDES['COMPARE|ANALYSIS|MESH'] = { threadSpacing: 0.6 };
+    overrideKeys.push('COMPARE|ANALYSIS|MESH');
+
+    const spacingInput = createMockEl('thread-spacing-slider');
+    const spacingLabel = createMockEl('thread-spacing-val');
+    const byId = {
+      'thread-spacing-slider': spacingInput,
+      'thread-spacing-val': spacingLabel,
+      'thread-vector-dist-slider': createMockEl(),
+      'thread-vector-dist-val': createMockEl(),
+      'thread-amplitude-y-slider': createMockEl(),
+      'thread-amplitude-y-val': createMockEl(),
+      'thread-width-slider': createMockEl(),
+      'thread-width-val': createMockEl(),
+      'thread-thickness-slider': createMockEl(),
+      'thread-thickness-val': createMockEl(),
+    };
+    const container = {
+      querySelector: (sel) => byId[sel.replace('#', '')] || null,
+    };
+    const config = { threadSpacing: 0.2 };
+
+    wireThreadSliders(container, null, config, null, {
+      getContext: () => ({
+        workspaceMode: 'COMPARE',
+        viewMode: 'ANALYSIS',
+        renderMode: 'MESH',
+      }),
+    });
+
+    spacingInput.dispatch('dblclick', { preventDefault() {} });
+    expect(config.threadSpacing).toBe(0.6);
+    expect(spacingLabel.textContent).toBe('0.60');
   });
 });

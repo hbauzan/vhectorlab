@@ -12,6 +12,7 @@ import { HUD } from './ui/HUD.js';
 import { CustomModal } from './ui/CustomModal.js';
 import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
+import { resolveSpatialDefaults } from './ui/spatialSliderDefaults.js';
 
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock } from './ui/CollapsibleDock.js';
@@ -107,14 +108,12 @@ class VectorLabApp {
 
     this.axisGizmo = new AxisGizmo(this.sceneSetup.camera, this.rightDock.body);
 
-    // 5. Spatial Control Sliders 3D Setup
-    this.sliderConfig = {
-      threadSpacing: 0.4,
-      threadVectorDistance: 10.0,
-      threadAmplitudeY: 7.0,
-      threadWidth: 0.2,
-      threadThickness: 0.10
-    };
+    // 5. Spatial Control Sliders 3D Setup (defaults from resolveSpatialDefaults)
+    this.sliderConfig = resolveSpatialDefaults({
+      workspaceMode: state.workspaceMode,
+      viewMode: this.viewMode,
+      renderMode: state.renderMode,
+    });
 
     this.mountThreadSlidersUI();
 
@@ -139,6 +138,12 @@ class VectorLabApp {
 
     wireThreadSliders(slidersEl, null, this.sliderConfig, () => {
       this.refreshRender();
+    }, {
+      getContext: () => ({
+        workspaceMode: state.workspaceMode,
+        viewMode: this.viewMode,
+        renderMode: state.renderMode,
+      }),
     });
   }
 

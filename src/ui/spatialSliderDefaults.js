@@ -1,0 +1,97 @@
+/**
+ * Spatial slider defaults for Control Espacial 3D.
+ *
+ * Today every MODE / VISTA / RENDER shares GLOBAL_SPATIAL_DEFAULTS.
+ * Fill SPATIAL_DEFAULT_OVERRIDES as you define per-context presets;
+ * resolveSpatialDefaults merges GLOBAL → workspace → view → render
+ * (more specific keys win).
+ *
+ * Override key forms:
+ *   "ARITHMETIC"
+ *   "ARITHMETIC|NAVIGATION"
+ *   "ARITHMETIC|NAVIGATION|POINTS"
+ *   "COMPARE|ANALYSIS|MESH"
+ */
+
+/** @typedef {{ threadSpacing: number, threadVectorDistance: number, threadAmplitudeY: number, threadWidth: number, threadThickness: number }} SpatialSliderValues */
+
+/** @type {SpatialSliderValues} */
+export const GLOBAL_SPATIAL_DEFAULTS = Object.freeze({
+  threadSpacing: 0.4,
+  threadVectorDistance: 10.0,
+  threadAmplitudeY: 7.0,
+  threadWidth: 0.2,
+  threadThickness: 0.10,
+});
+
+/**
+ * Partial overrides keyed by workspaceMode [|viewMode [|renderMode]].
+ * Leave empty until per-view / per-mode defaults are defined.
+ * @type {Record<string, Partial<SpatialSliderValues>>}
+ */
+export const SPATIAL_DEFAULT_OVERRIDES = {
+  // e.g. 'COMPARE|ANALYSIS': { threadAmplitudeY: 5.0 },
+};
+
+/**
+ * @param {{ workspaceMode?: string, viewMode?: string, renderMode?: string }} [ctx]
+ * @returns {SpatialSliderValues}
+ */
+export function resolveSpatialDefaults(ctx = {}) {
+  const workspaceMode = ctx.workspaceMode || 'ARITHMETIC';
+  const viewMode = ctx.viewMode || 'NAVIGATION';
+  const renderMode = ctx.renderMode || 'POINTS';
+
+  const layers = [
+    workspaceMode,
+    `${workspaceMode}|${viewMode}`,
+    `${workspaceMode}|${viewMode}|${renderMode}`,
+  ];
+
+  /** @type {SpatialSliderValues} */
+  let out = { ...GLOBAL_SPATIAL_DEFAULTS };
+  for (const key of layers) {
+    const partial = SPATIAL_DEFAULT_OVERRIDES[key];
+    if (partial && typeof partial === 'object') {
+      out = { ...out, ...partial };
+    }
+  }
+  // Keep legacy alias in sync for LayoutEngine callers.
+  out.threadSpacingY = out.threadVectorDistance;
+  return out;
+}
+
+/** Slider DOM id → config field + label decimals (for dblclick reset). */
+export const SPATIAL_SLIDER_BINDINGS = Object.freeze([
+  {
+    inputId: 'thread-spacing-slider',
+    labelId: 'thread-spacing-val',
+    configKey: 'threadSpacing',
+    decimals: 2,
+  },
+  {
+    inputId: 'thread-vector-dist-slider',
+    labelId: 'thread-vector-dist-val',
+    configKey: 'threadVectorDistance',
+    decimals: 1,
+    aliasKeys: ['threadSpacingY'],
+  },
+  {
+    inputId: 'thread-amplitude-y-slider',
+    labelId: 'thread-amplitude-y-val',
+    configKey: 'threadAmplitudeY',
+    decimals: 1,
+  },
+  {
+    inputId: 'thread-width-slider',
+    labelId: 'thread-width-val',
+    configKey: 'threadWidth',
+    decimals: 2,
+  },
+  {
+    inputId: 'thread-thickness-slider',
+    labelId: 'thread-thickness-val',
+    configKey: 'threadThickness',
+    decimals: 2,
+  },
+]);
