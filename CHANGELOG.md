@@ -2,6 +2,14 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.2.0] - 2026-08-01
+
+### Added
+- **Responsive phone layout + landscape-first gate (Etapa B)**:
+  - Soft portrait overlay (`LandscapeGate`) with dismiss → `sessionStorage`; tablet/desktop unaffected; render loop never pauses.
+  - `@media (max-width: 768px)`: compact navbar, ≥44px targets, ≥16px inputs, safe-area insets, docks as overlay drawers.
+  - Vitest coverage in `tests/LandscapeGate.test.js`.
+
 ## [1.1.0] - 2026-08-01
 
 ### Added

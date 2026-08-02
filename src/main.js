@@ -15,6 +15,7 @@ import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock } from './ui/CollapsibleDock.js';
+import { LandscapeGate } from './ui/LandscapeGate.js';
 
 class VectorLabApp {
   constructor() {
@@ -43,6 +44,9 @@ class VectorLabApp {
       showCamPose: import.meta.env.VITE_SHOW_CAM_POSE === 'true'
     });
     this.threadLabels = new ThreadLabels(this.appContainer);
+
+    // Soft portrait overlay (Etapa B / D13) — never pauses the render loop.
+    this.landscapeGate = new LandscapeGate({ parent: this.appContainer });
 
     this.navbar = new Navbar(
       this.appContainer,
