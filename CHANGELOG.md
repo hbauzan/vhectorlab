@@ -2,10 +2,17 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
-## [Unreleased]
+## [1.8.0] - 2026-08-02
 
-### Fixed
-- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
+### Added
+- **Visualization Controls** (`feat/visualization-sign-color-controls`): right-dock panel under 3D Spatial Controls.
+  - Sign filter: `All | + Only | − Only` on **normalized** activations (ε=0.01); hides opposite sign and near-zero for ± only.
+  - Applies to POINTS (shader discard) and RIBBONS / continuity lines (index omission) in ARITHMETIC + COMPARE.
+  - Three hex color anchors (+1 / 0 / −1) replace the fixed mid-stop divergent ramp; defaults `#FFE600` / `#000000` / `#9900E6`.
+  - POINTS shader uniforms `uColorPos` / `uColorNeg` / `uColorZero`; live update + `localStorage` (`vl3d.viz.*`) + Reset.
+  - Edge collapse tab (dock-tab affordance) slides the Visualization card to a thin strip; persists `vl3d.viz.panelCollapsed`.
+
+## [Unreleased]
 
 ### Changed
 - **Defaults COMPARE|ANALYSIS|POINTS** (`feat/compare-analysis-points-defaults`):
@@ -61,6 +68,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ### Added
 - **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids. Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity). When groups are active, overlay shows group badges only (token cards hidden — still listed in cosine panel); label layer z-index above docks so badges stay visible.
+
+### Fixed
+- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
 
 ## [1.6.0] - 2026-08-02
 

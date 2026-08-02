@@ -41,5 +41,14 @@ _Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounti
 Soft, dismissible portrait-phone overlay that suggests rotating to landscape without locking orientation or pausing the 3D render loop.
 
 ### Wide Ribbon
-Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS` together with a translucent Base Plane. Distinct from 1px WebGL lines.
+Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS`. Distinct from 1px WebGL lines.
+
+### Visualization Controls
+Right-dock glass panel for global sign filter and divergent color anchors (below 3D Spatial Controls).
+
+### Sign Filter
+Global show mode `all | positive | negative` over **normalized** activations (post z-score/tanh); near-zero `|t| < 0.01` is treated as neutral and hidden by +/− only.
+
+### Color Anchor
+User-editable hex for normalized activations at +1, 0, and −1; replaces the former fixed dual mid-stop ramp via linear RGB lerp.
 

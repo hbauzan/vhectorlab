@@ -66,15 +66,18 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
   }
   ```
 
-### 2.2. Rampas Cromáticas Divergentes Simplificadas (Dual Color Ramps)
-Para lecturas de alta visibilidad y ligera carga computacional, implementar la paleta divergente simplificada (sin transiciones intermedias a rojo o verde):
-- **Rango Positivo ($0 \rightarrow +1$)**: Negro ($0.0$) $\rightarrow$ Naranja ($+0.50$, `#FF8000`) $\rightarrow$ Amarillo Incandescente ($+1.00$, `#FFE600`).
-- **Rango Negativo ($0 \rightarrow -1$)**: Negro ($0.0$) $\rightarrow$ Azul Eléctrico ($-0.50$, `#0040FF`) $\rightarrow$ Violeta Neón ($-1.00$, `#9900E6`).
+### 2.2. Rampas Cromáticas Divergentes (Color Anchors)
+User-editable hex anchors replace the former fixed dual ramp (no product mid-stops at ±0.5 orange/blue):
+- **+1** default `#FFE600`, **0** `#000000`, **−1** `#9900E6`.
+- Interpolation: lerp(`zero`, `positive`, t) for t≥0; lerp(`zero`, `negative`, −t) for t<0.
+- POINTS shader: uniforms `uColorPos` / `uColorNeg` / `uColorZero` (never hardcode ramp in GLSL).
+- Sign filter + colors are **global** (`vl3d.viz.*` in localStorage); filter runs on **normalized t** (ε=0.01), not raw dims.
+- Continuity lines use `LineSegments` + index pairs; wide ribbons omit quad indices for filtered pairs (keeps full vertex buffers for compare reorder).
 
 ### 2.3. Continuidad de hilo según RENDER mode (mutuamente excluyentes)
 - **POINTS**: puntos + línea fina `createRibbonMesh` (continuidad 1px).
 - **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`); sin plano base (el quad oscuro se veía a través de cintas transparentes). No usar `LineBasicMaterial.linewidth` (§1.4).
-- Colormap RIBBONS: rampa **divergente** VectorLab para consistencia de marca.
+- Colormap RIBBONS: rampa **divergente** VectorLab (anchors) para consistencia de marca.
 - **Retired**: `RENDER: MESH` (surface heightfield) removed in v1.6.0 — `normalizeRenderMode('MESH')` → POINTS. Do not reintroduce without an explicit product decision.
 
 ### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
