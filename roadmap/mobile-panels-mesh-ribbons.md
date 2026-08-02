@@ -132,9 +132,11 @@ En phone (`≤768px` **y** no-tablet):
 - Desktop path intacto.
 
 ### C.2 Criterios de aceptación
-- [ ] Landscape phone: mover + mirar sin teclado.
-- [ ] Scroll en drawer Compare no mueve cámara.
-- [ ] Sin regresión WASDQE desktop.
+- [x] Landscape phone: mover + mirar sin teclado.
+- [x] Scroll en drawer Compare no mueve cámara.
+- [x] Sin regresión WASDQE desktop.
+
+**D6 resuelto:** joystick + look + botones ▲/▼ (Q/E) visibles en mobile.
 
 ### C.3 Rama
 `feat/mobile-touch-navigation`
