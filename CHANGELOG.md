@@ -2,7 +2,7 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
-## [1.7.0] - 2026-08-02
+## [1.8.0] - 2026-08-02
 
 ### Added
 - **Visualization Controls** (`feat/visualization-sign-color-controls`): right-dock panel under 3D Spatial Controls.
@@ -12,9 +12,6 @@ All notable changes to VectorLab 3D will be documented in this file.
   - POINTS shader uniforms `uColorPos` / `uColorNeg` / `uColorZero`; live update + `localStorage` (`vl3d.viz.*`) + Reset.
 
 ## [Unreleased]
-
-### Fixed
-- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
 
 ### Changed
 - **Defaults COMPARE|ANALYSIS|POINTS** (`feat/compare-analysis-points-defaults`):
@@ -70,6 +67,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ### Added
 - **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids. Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity). When groups are active, overlay shows group badges only (token cards hidden — still listed in cosine panel); label layer z-index above docks so badges stay visible.
+
+### Fixed
+- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
 
 ## [1.6.0] - 2026-08-02
 
