@@ -7,8 +7,8 @@ import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
  */
 export function threadSlidersMarkup(config = {}) {
   const spacing = config.threadSpacing ?? 0.8;
-  const width = config.threadWidth ?? 1.0;
-  const thickness = config.threadThickness ?? 0.3;
+  const width = config.threadWidth ?? 0.1;
+  const thickness = config.threadThickness ?? 0.10;
 
   return `
 <div id="thread-sliders-container" class="section-card">

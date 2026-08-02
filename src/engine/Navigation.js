@@ -127,4 +127,20 @@ export class Navigation {
     this.camera.lookAt(targetPosition);
     this.euler.setFromQuaternion(this.camera.quaternion);
   }
+
+  setAnalysisView() {
+    // Position camera straight on facing XY plane, centered on vertically stacked threads
+    this.camera.position.set(0, 0, 360);
+    this.camera.lookAt(0, 0, 0);
+    this.euler.set(0, 0, 0, 'YXZ');
+    this.velocity.set(0, 0, 0);
+  }
+
+  setNavigationView() {
+    // Position camera angled in 3D space for free flight navigation
+    this.camera.position.set(0, 150, 400);
+    this.camera.lookAt(0, 0, 0);
+    this.euler.setFromQuaternion(this.camera.quaternion);
+    this.velocity.set(0, 0, 0);
+  }
 }

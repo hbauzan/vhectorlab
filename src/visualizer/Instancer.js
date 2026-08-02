@@ -35,8 +35,10 @@ export class Instancer {
    * @param {Object} arithmeticResponse - API response from /arithmetic
    * @param {string} renderMode - "POINTS" | "MESH" | "RIBBONS"
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration { threadSpacing, threadWidth, threadThickness }
+   * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
+   * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata for origins
    */
-  renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null) {
+  renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
     this.clear();
     this.renderMode = renderMode;
     this.currentData = arithmeticResponse;
@@ -50,41 +52,32 @@ export class Instancer {
       }
     }
 
-    if (!arithmeticResponse || !arithmeticResponse.vector_res) return;
+    if (!arithmeticResponse || !arithmeticResponse.vector_res) return [];
 
     const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
       ? spatialConfig.threadThickness
       : 0.3;
 
     const pointsData = [];
-    const resRibbonPoints = [];
-    const resActivations = [];
+    const threadLabelItems = [];
 
-    // 1. Result Vector V_res (Primary focus point cloud)
-    const vecRes = arithmeticResponse.vector_res;
-    const res3DPoints = this.layoutEngine.mapVectorTo3DPoints(vecRes, 0);
+    // Component vector keys and sequence slots
+    const compKeys = ["vec_a", "vec_b", "vec_c"];
+    const compLabels = [
+      arithmeticResponse.word_a || "VECTOR A",
+      arithmeticResponse.word_b || "VECTOR B",
+      arithmeticResponse.word_c || "VECTOR C"
+    ];
 
-    res3DPoints.forEach((p, idx) => {
-      const val = vecRes[idx];
-      pointsData.push({
-        position: p,
-        activation: val,
-        size: 10.0 * thicknessFactor,
-        meta: { type: "res", dim: idx, val: val }
-      });
-      resRibbonPoints.push(p);
-      resActivations.push(val);
-    });
-
-    // 2. Input Component Vectors (A, B, C) if available
+    // 1. Input Component Vectors (A, B, C) if available
     if (arithmeticResponse.components) {
-      const compKeys = ["vec_a", "vec_b", "vec_c"];
-
       compKeys.forEach((key, kIdx) => {
         const compVec = arithmeticResponse.components[key];
         if (compVec && compVec.length) {
-          const comp3D = this.layoutEngine.mapVectorTo3DPoints(compVec, (kIdx + 1) * 2);
+          const sequenceIdx = viewMode === "ANALYSIS" ? kIdx : (kIdx + 1) * 2;
+          const comp3D = this.layoutEngine.mapVectorTo3DPoints(compVec, sequenceIdx, viewMode, 5);
           const compActivations = [];
+
           comp3D.forEach((p, idx) => {
             const val = compVec[idx];
             pointsData.push({
@@ -99,7 +92,82 @@ export class Instancer {
           // Create connecting line ribbon for component thread
           const compRibbon = MeshFactory.createRibbonMesh(comp3D, compActivations);
           this.activeGroup.add(compRibbon);
+
+          // Save start origin (X=0) for thread label
+          if (comp3D.length > 0) {
+            threadLabelItems.push({
+              id: key,
+              text: compLabels[kIdx],
+              type: `word_${String.fromCharCode(97 + kIdx)}`,
+              origin3D: comp3D[0]
+            });
+          }
         }
+      });
+    }
+
+    // 2. Result Vector V_res
+    const vecRes = arithmeticResponse.vector_res;
+    const resSequenceIdx = viewMode === "ANALYSIS" ? 3 : 0;
+    const res3DPoints = this.layoutEngine.mapVectorTo3DPoints(vecRes, resSequenceIdx, viewMode, 5);
+    const resRibbonPoints = [];
+    const resActivations = [];
+
+    res3DPoints.forEach((p, idx) => {
+      const val = vecRes[idx];
+      pointsData.push({
+        position: p,
+        activation: val,
+        size: 10.0 * thicknessFactor,
+        meta: { type: "res", dim: idx, val: val }
+      });
+      resRibbonPoints.push(p);
+      resActivations.push(val);
+    });
+
+    // Create connecting line ribbon for result thread V_res
+    const ribbonMesh = MeshFactory.createRibbonMesh(resRibbonPoints, resActivations);
+    this.activeGroup.add(ribbonMesh);
+
+    // Save result thread start origin for thread label
+    if (res3DPoints.length > 0) {
+      threadLabelItems.push({
+        id: "res",
+        text: "RESULT VECTOR",
+        type: "res",
+        origin3D: res3DPoints[0]
+      });
+    }
+
+    // 3. Top-1 Cosine Vector (#1 COS VECTOR) below RESULT VECTOR
+    const top1Word = arithmeticResponse.top1_word || (arithmeticResponse.results && arithmeticResponse.results[0] ? arithmeticResponse.results[0].word : "queen");
+    const top1Vec = (arithmeticResponse.components && arithmeticResponse.components.vec_top1) ? arithmeticResponse.components.vec_top1 : vecRes;
+    const top1SequenceIdx = viewMode === "ANALYSIS" ? 4 : 8;
+    const top13DPoints = this.layoutEngine.mapVectorTo3DPoints(top1Vec, top1SequenceIdx, viewMode, 5);
+    const top1Activations = [];
+
+    top13DPoints.forEach((p, idx) => {
+      const val = top1Vec[idx];
+      pointsData.push({
+        position: p,
+        activation: val,
+        size: 10.0 * thicknessFactor,
+        meta: { type: "top1", dim: idx, val: val }
+      });
+      top1Activations.push(val);
+    });
+
+    // Create connecting line ribbon for Top-1 Cosine thread
+    const top1Ribbon = MeshFactory.createRibbonMesh(top13DPoints, top1Activations);
+    this.activeGroup.add(top1Ribbon);
+
+    // Save Top-1 thread start origin for thread label
+    if (top13DPoints.length > 0) {
+      threadLabelItems.push({
+        id: "top1",
+        text: `#1 COS VECTOR (${top1Word})`,
+        type: "top_1",
+        origin3D: top13DPoints[0]
       });
     }
 
@@ -108,9 +176,7 @@ export class Instancer {
     pointsMesh.userData = { pointsData };
     this.activeGroup.add(pointsMesh);
 
-    // Create connecting line ribbon for result thread V_res
-    const ribbonMesh = MeshFactory.createRibbonMesh(resRibbonPoints, resActivations);
-    this.activeGroup.add(ribbonMesh);
+    return threadLabelItems;
   }
 
   getInteractiveObjects() {

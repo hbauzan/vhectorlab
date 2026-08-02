@@ -93,6 +93,10 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   ```
 
+### 3.3. Vista de Análisis de Frente y Proyección de Etiquetas Flotantes
+- **Patrón**: Proyectar los orígenes 3D ($X=0$) de los hilos vectoriales a coordenadas 2D de pantalla (`vector.project(camera)`) para renderizar cartelitos Glassmorphic anclados al inicio de cada hilo.
+- **Invariante**: En el modo **Análisis**, los hilos se apilan verticalmente a lo largo de $Y$ con encuadre frontal directo (`Z=360`), permitiendo visualizar todos los componentes y el resultado inmediatamente sin desplazamientos manuales.
+
 ---
 
 ## 4. Protocolo de Mantenimiento de Lecciones Aprendidas
