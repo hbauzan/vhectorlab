@@ -164,10 +164,10 @@ export class Navigation {
   }
 
   setAnalysisView() {
-    // Position camera straight on facing XY plane, centered on vertically stacked threads
-    this.camera.position.set(0, 0, 360);
-    this.camera.lookAt(0, 0, 0);
+    // Captured ARITHMETIC + ANÁLISIS + POINTS framing (POS / ROT from CAM POSE overlay)
+    this.camera.position.set(-75.2, -0.8, 62.5);
     this.euler.set(0, 0, 0, 'YXZ');
+    this.camera.quaternion.setFromEuler(this.euler);
     this.velocity.set(0, 0, 0);
   }
 
