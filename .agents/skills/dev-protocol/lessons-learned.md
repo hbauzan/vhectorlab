@@ -36,6 +36,10 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Problema**: La especificación WebGL sobre ANGLE/macOS/Windows limita `LineBasicMaterial.linewidth` a máximo 1px.
 - **Solución Obligatoria**: Escalar el grosor visual mediante el tamaño de los puntos (`pointSize` en `ShaderMaterial`), los cuales sí escalan correctamente en GPU con `sizeAttenuation: true`.
 
+### 1.5. Renderizado de Puntos Cuadrados/Cúbicos GLSL y Línea Base de Origen
+- **Invariante**: Para renderizar puntos cuadrados/cúbicos nítidos en GPU, se calcula la distancia Chebyshev `max(abs(coord.x), abs(coord.y))` y se aplica suavizado de borde de 1 píxel `smoothstep(0.44, 0.49, maxDist)`.
+- **Línea Base en Análisis**: En el modo **Análisis**, se renderiza una malla de línea vertical (`THREE.Line`) con opacidad de cristal (`opacity: 0.6`, `transparent: true`, `frustumCulled = false`) anclando el inicio ($X = \text{startX}$) de todos los hilos vectoriales apilados.
+
 ---
 
 ## 2. Visualización y Normalización de Embeddings LLM

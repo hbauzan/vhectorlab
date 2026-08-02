@@ -13,6 +13,8 @@ import { CustomModal } from './ui/CustomModal.js';
 import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
+import { ComparePanel } from './ui/ComparePanel.js';
+
 class VectorLabApp {
   constructor() {
     this.appContainer = document.getElementById('app');
@@ -34,7 +36,7 @@ class VectorLabApp {
     // 3. View Mode State ("ANALYSIS" by default | "NAVIGATION")
     this.viewMode = 'ANALYSIS';
 
-    // 4. UI Components (Modal, HUD, Navbar, Sidebar, ThreadLabels)
+    // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     this.modal = new CustomModal();
     this.hud = new HUD(this.appContainer);
     this.threadLabels = new ThreadLabels(this.appContainer);
@@ -53,6 +55,9 @@ class VectorLabApp {
           this.navigation.setNavigationView();
         }
         this.refreshRender();
+      },
+      (workspaceMode) => {
+        this.handleWorkspaceModeChange(workspaceMode);
       }
     );
 
@@ -60,6 +65,11 @@ class VectorLabApp {
       this.appContainer,
       async (wordA, wordB, wordC, topK) => this.handleCalculateArithmetic(wordA, wordB, wordC, topK),
       (resultItem, index) => this.handleResultClick(resultItem, index)
+    );
+
+    this.comparePanel = new ComparePanel(
+      this.appContainer,
+      async (tokens) => this.handleCalculateCompare(tokens)
     );
 
     // 5. Spatial Control Sliders 3D Setup
@@ -96,15 +106,45 @@ class VectorLabApp {
     });
   }
 
+  handleWorkspaceModeChange(mode) {
+    state.setWorkspaceMode(mode);
+    if (mode === 'COMPARE') {
+      this.sidebar.element.classList.add('hidden');
+      this.comparePanel.show();
+      if (!state.compareData) {
+        // Run initial default comparison sequence
+        this.handleCalculateCompare(["king", "queen", "man", "woman", "prince", "princess"]);
+      } else {
+        this.refreshRender();
+      }
+    } else {
+      this.comparePanel.hide();
+      this.sidebar.element.classList.remove('hidden');
+      this.refreshRender();
+    }
+  }
+
   refreshRender() {
-    if (state.arithmeticData) {
-      const labels = this.instancer.renderArithmeticData(
-        state.arithmeticData,
-        state.renderMode,
-        this.sliderConfig,
-        this.viewMode
-      );
-      this.threadLabels.setLabels(labels);
+    if (state.workspaceMode === 'COMPARE') {
+      if (state.compareData) {
+        const labels = this.instancer.renderCompareData(
+          state.compareData,
+          state.renderMode,
+          this.sliderConfig,
+          this.viewMode
+        );
+        this.threadLabels.setLabels(labels);
+      }
+    } else {
+      if (state.arithmeticData) {
+        const labels = this.instancer.renderArithmeticData(
+          state.arithmeticData,
+          state.renderMode,
+          this.sliderConfig,
+          this.viewMode
+        );
+        this.threadLabels.setLabels(labels);
+      }
     }
   }
 
@@ -150,6 +190,24 @@ class VectorLabApp {
       this.sidebar.updateResults(data.results);
     } catch (e) {
       this.modal.show("ARITHMETIC ERROR", e.message || "Could not compute vector arithmetic.");
+    }
+  }
+
+  async handleCalculateCompare(tokens) {
+    try {
+      const data = await this.provider.computeCompare(tokens);
+      state.setCompareData(data);
+
+      const labels = this.instancer.renderCompareData(
+        data,
+        state.renderMode,
+        this.sliderConfig,
+        this.viewMode
+      );
+      this.threadLabels.setLabels(labels);
+      this.comparePanel.updateMetrics(data.count);
+    } catch (e) {
+      this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
     }
   }
 

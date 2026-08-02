@@ -8,9 +8,11 @@ export class AppState {
     this.wordC = "woman";
     this.topK = 10;
     this.renderMode = "POINTS"; // "POINTS" | "MESH" | "RIBBONS"
+    this.workspaceMode = "ARITHMETIC"; // "ARITHMETIC" | "COMPARE"
 
     this.backendConnected = false;
     this.arithmeticData = null;
+    this.compareData = null;
     this.hoveredTelemetry = null;
 
     this.listeners = [];
@@ -29,6 +31,16 @@ export class AppState {
 
   setArithmeticData(data) {
     this.arithmeticData = data;
+    this.notify();
+  }
+
+  setCompareData(data) {
+    this.compareData = data;
+    this.notify();
+  }
+
+  setWorkspaceMode(mode) {
+    this.workspaceMode = mode;
     this.notify();
   }
 

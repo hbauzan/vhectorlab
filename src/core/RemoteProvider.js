@@ -51,4 +51,24 @@ export class RemoteProvider {
     if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
     return await res.json();
   }
+
+  async computeCompare(texts) {
+    try {
+      const res = await fetch(`${this.baseUrl}/compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts })
+      });
+
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        throw new Error(errorJson.detail || `HTTP Error ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (e) {
+      console.error("RemoteProvider compare error:", e);
+      throw e;
+    }
+  }
 }

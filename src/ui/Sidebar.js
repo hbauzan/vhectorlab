@@ -32,25 +32,13 @@ export class Sidebar {
           <input type="text" id="word-c" value="woman" required autocomplete="off" />
         </div>
 
-        <div class="input-row">
-          <div class="input-group">
-            <label for="top-k">Top-K Results</label>
-            <select id="top-k">
-              <option value="5">5</option>
-              <option value="10" selected>10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
-          </div>
-        </div>
-
         <button type="submit" id="btn-calculate" class="btn-primary">
           ⚡ CALCULAR VECTOR
         </button>
       </form>
 
       <div class="results-container">
-        <h3>NEAREST COSINE RESULTS</h3>
+        <h3>NEAREST COSINE RESULTS (TOP-10)</h3>
         <ul id="results-list" class="results-list">
           <li class="empty-state">Run calculation to explore 3D semantic neighbors...</li>
         </ul>
@@ -72,7 +60,7 @@ export class Sidebar {
       const wordA = this.element.querySelector('#word-a').value.trim();
       const wordB = this.element.querySelector('#word-b').value.trim();
       const wordC = this.element.querySelector('#word-c').value.trim();
-      const topK = parseInt(this.element.querySelector('#top-k').value, 10);
+      const topK = 10;
 
       if (this.onCalculate) {
         this.setLoading(true);
