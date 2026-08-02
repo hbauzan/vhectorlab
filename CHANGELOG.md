@@ -5,6 +5,10 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Defaults ARITHMETIC|ANALYSIS|POINTS** (`feat/arithmetic-analysis-points-defaults`):
+  - Sliders: Separación `0.4`, Distancia Y `10`, Amplitud Y `40`, Longitud Z `0.2`, Grosor `0.05` (override en `spatialSliderDefaults.js`).
+  - Cámara Análisis: `POS (-75.2, -0.8, 62.5)` / `ROT (0, 0, 0)`.
+  - Al cambiar MODE/VISTA/RENDER se reaplica el preset resuelto + sync de sliders.
 - **Grosor Puntos mid → 0.05** (`feat/thickness-mid-0.05`):
   - Default/mid `0.05` ∈ `[0.01, 0.09]` step `0.01` (simétrico lineal).
 - **Amplitud (Y) max → 40** (`feat/amplitude-y-max-40`):
