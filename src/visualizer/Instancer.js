@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
-import { arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
+import { arithmeticSequenceIndex, arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
 import { normalizeRenderMode } from '../core/State.js';
 
 /**
@@ -114,31 +114,36 @@ export class Instancer {
     };
 
     const compKeys = ["vec_a", "vec_b", "vec_c"];
+    const compSlots = /** @type {const} */ (['A', 'B', 'C']);
     const compLabels = [
       arithmeticThreadLabel('A'),
       arithmeticThreadLabel('B'),
       arithmeticThreadLabel('C'),
     ];
 
+    // Order: WORD_A → WORD_B → WORD_C → RES → TOP1 (both ANALYSIS + NAVIGATION)
     if (arithmeticResponse.components) {
       compKeys.forEach((key, kIdx) => {
         const compVec = arithmeticResponse.components[key];
         if (compVec && compVec.length) {
-          const sequenceIdx = viewMode === "ANALYSIS" ? kIdx : (kIdx + 1) * 2;
-          pushThread(key, compLabels[kIdx], `word_${String.fromCharCode(97 + kIdx)}`, compVec, sequenceIdx);
+          pushThread(
+            key,
+            compLabels[kIdx],
+            `word_${String.fromCharCode(97 + kIdx)}`,
+            compVec,
+            arithmeticSequenceIndex(compSlots[kIdx])
+          );
         }
       });
     }
 
     const vecRes = arithmeticResponse.vector_res;
-    const resSequenceIdx = viewMode === "ANALYSIS" ? 3 : 0;
-    pushThread("res", arithmeticThreadLabel('RES'), "res", vecRes, resSequenceIdx);
+    pushThread("res", arithmeticThreadLabel('RES'), "res", vecRes, arithmeticSequenceIndex('RES'));
 
     const top1Vec = (arithmeticResponse.components && arithmeticResponse.components.vec_top1)
       ? arithmeticResponse.components.vec_top1
       : vecRes;
-    const top1SequenceIdx = viewMode === "ANALYSIS" ? 4 : 8;
-    pushThread("top1", arithmeticThreadLabel('TOP1'), "top_1", top1Vec, top1SequenceIdx);
+    pushThread("top1", arithmeticThreadLabel('TOP1'), "top_1", top1Vec, arithmeticSequenceIndex('TOP1'));
 
     if (viewMode === "ANALYSIS" && threadLabelItems.length >= 2) {
       const baselineMesh = MeshFactory.createBaselineMesh(
