@@ -61,17 +61,12 @@ class VectorLabApp {
       this.appContainer,
       (renderMode) => {
         state.setRenderMode(renderMode);
-        this.applyContextSpatialDefaults();
+        this.applyContextViewDefaults();
         this.refreshRender();
       },
       (viewMode) => {
         this.viewMode = viewMode;
-        if (viewMode === 'ANALYSIS') {
-          this.navigation.setAnalysisView();
-        } else {
-          this.navigation.setNavigationView();
-        }
-        this.applyContextSpatialDefaults();
+        this.applyContextViewDefaults();
         this.refreshRender();
       },
       (workspaceMode) => {
@@ -151,8 +146,21 @@ class VectorLabApp {
   }
 
   /**
-   * Apply resolved spatial defaults for current MODE/VIEW/RENDER and sync slider UI.
+   * Apply camera + spatial defaults for current MODE/VIEW/RENDER and sync slider UI.
    * Called when context changes so each combo can keep its own sweet spot.
+   */
+  applyContextViewDefaults() {
+    const ctx = {
+      workspaceMode: state.workspaceMode,
+      viewMode: this.viewMode,
+      renderMode: state.renderMode,
+    };
+    this.navigation.setContextView(ctx);
+    this.applyContextSpatialDefaults();
+  }
+
+  /**
+   * Apply resolved spatial defaults for current MODE/VIEW/RENDER and sync slider UI.
    */
   applyContextSpatialDefaults() {
     const defaults = resolveSpatialDefaults({
@@ -168,13 +176,13 @@ class VectorLabApp {
 
   handleWorkspaceModeChange(mode) {
     state.setWorkspaceMode(mode);
-    this.applyContextSpatialDefaults();
+    this.applyContextViewDefaults();
     if (mode === 'COMPARE') {
       this.sidebar.element.classList.add('hidden');
       this.comparePanel.show();
       if (!state.compareData) {
-        // Run initial default comparison sequence
-        this.handleCalculateCompare(COMPARE_AUTO_PRESETS.sample5);
+        // Full EN auto-manual lexicon (matches textarea + COMPARE|NAVIGATION|POINTS framing)
+        this.handleCalculateCompare(COMPARE_AUTO_PRESETS.default);
       } else {
         this.comparePanel.updateCompareResults(state.compareData);
         this.refreshRender();
@@ -211,8 +219,12 @@ class VectorLabApp {
   }
 
   async init() {
-    // Set initial camera view for NAVIGATION mode
-    this.navigation.setNavigationView();
+    // Initial camera for startup ARITHMETIC|NAVIGATION|POINTS (corridor fallback)
+    this.navigation.setContextView({
+      workspaceMode: state.workspaceMode,
+      viewMode: this.viewMode,
+      renderMode: state.renderMode,
+    });
 
     // Check backend health status
     const health = await this.provider.checkHealth();
