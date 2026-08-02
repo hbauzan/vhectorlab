@@ -18,6 +18,10 @@ import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
 import { TouchControls } from './ui/TouchControls.js';
+import {
+  attachCompareGroupMeta,
+  mergeCompareOverlayLabels,
+} from './ui/parseCompareGroups.js';
 
 class VectorLabApp {
   constructor() {
@@ -90,7 +94,7 @@ class VectorLabApp {
 
     this.comparePanel = new ComparePanel(
       this.leftDock.body,
-      async (tokens) => this.handleCalculateCompare(tokens),
+      async (tokens, tokenMeta) => this.handleCalculateCompare(tokens, tokenMeta),
       async (payload) => this.handleCompareReorder(payload)
     );
 
@@ -204,7 +208,7 @@ class VectorLabApp {
           this.sliderConfig,
           this.viewMode
         );
-        this.threadLabels.setLabels(labels);
+        this.setCompareOverlayLabels(labels);
       }
     } else {
       if (state.arithmeticData) {
@@ -217,6 +221,22 @@ class VectorLabApp {
         this.threadLabels.setLabels(labels);
       }
     }
+  }
+
+  /**
+   * Token labels + optional GROUP_* floating badges (centroid, screen-offset left).
+   * @param {Array} tokenLabels
+   */
+  setCompareOverlayLabels(tokenLabels) {
+    this.threadLabels.setLabels(mergeCompareOverlayLabels(tokenLabels));
+  }
+
+  /**
+   * During reorder tween: refresh token origins and recompute group centroids.
+   * @param {Array} tokenLabels
+   */
+  updateCompareOverlayOrigins(tokenLabels) {
+    this.threadLabels.updateOrigins(mergeCompareOverlayLabels(tokenLabels));
   }
 
   async init() {
@@ -268,19 +288,20 @@ class VectorLabApp {
     }
   }
 
-  async handleCalculateCompare(tokens) {
+  async handleCalculateCompare(tokens, tokenMeta = null) {
     try {
       const data = await this.provider.computeCompare(tokens);
-      state.setCompareData(data);
+      const withMeta = attachCompareGroupMeta(data, tokenMeta);
+      state.setCompareData(withMeta);
 
       const labels = this.instancer.renderCompareData(
-        data,
+        withMeta,
         state.renderMode,
         this.sliderConfig,
         this.viewMode
       );
-      this.threadLabels.setLabels(labels);
-      this.comparePanel.updateCompareResults(data);
+      this.setCompareOverlayLabels(labels);
+      this.comparePanel.updateCompareResults(withMeta);
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
     }
@@ -289,6 +310,7 @@ class VectorLabApp {
   /**
    * In-memory COMPARE reorder: refresh list scores already done by panel;
    * animate 3D thread slots to the new sequence order (no backend re-call).
+   * Global sort/reorder may break group contiguity (D2a) — group badges follow centroids.
    */
   async handleCompareReorder(payload) {
     if (!payload || !payload.items) return;
@@ -304,10 +326,10 @@ class VectorLabApp {
     try {
       const labels = await this.instancer.animateCompareReorder(orderedIds, {
         duration: 320,
-        onFrame: (frameLabels) => this.threadLabels.updateOrigins(frameLabels),
+        onFrame: (frameLabels) => this.updateCompareOverlayOrigins(frameLabels),
       });
       if (labels && labels.length) {
-        this.threadLabels.updateOrigins(labels);
+        this.updateCompareOverlayOrigins(labels);
       }
     } catch (_) {
       // Fallback: hard re-layout without flicker-prone double clear if tween busy/unavailable

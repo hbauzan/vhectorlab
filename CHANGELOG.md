@@ -4,6 +4,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
+
 ### Changed
 - **Defaults COMPARE|ANALYSIS|POINTS** (`feat/compare-analysis-points-defaults`):
   - Sliders: Spacing `1.45`, Dist Y `1.0`, Amp `1.0`, Length `0.2`, Thickness `0.01`.
@@ -53,6 +56,11 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Vite `allowedHosts` + `/api` proxy to `127.0.0.1:8000` (prefix proxy — not per-route).
   - `VITE_API_BASE_URL=/api` enabled in `.env` / `.env.example`; `RemoteProvider` honors it.
   - Lesson §6.1: new backend routes under `/api` need no Vite remap.
+
+## [1.7.0] - 2026-08-02
+
+### Added
+- **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids. Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity). When groups are active, overlay shows group badges only (token cards hidden — still listed in cosine panel); label layer z-index above docks so badges stay visible.
 
 ## [1.6.0] - 2026-08-02
 
