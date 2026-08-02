@@ -40,7 +40,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="60.0" step="1.0" value="${amplitudeY}">
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="240.0" step="1.0" value="${amplitudeY}">
   </div>
 
   <!-- Slider 4: Width Z -->
