@@ -46,12 +46,12 @@ Already closed in roadmap. If audit finds NEW user-facing terms not in §0.1, li
 5. Vitest green + smoke; approval gate → merge.
 
 ## Criterios de aceptación
-- [ ] No Spanish visible in UI (Arithmetic, Compare, VISTA, sliders, landscape gate, modals).
-- [ ] Compare 3D labels remain raw tokens (§4.6).
-- [ ] Internal `data-view` / mode keys unchanged.
-- [ ] Tests green; titles EN; comments ES→EN in scope.
-- [ ] Historical CHANGELOG still Spanish; new notes EN.
-- [ ] Residual grep of UI Spanish in `src/` clean (or documented false positives).
+- [x] No Spanish visible in UI (Arithmetic, Compare, VIEW, sliders, landscape gate, modals).
+- [x] Compare 3D labels remain raw tokens (§4.6).
+- [x] Internal `data-view` / mode keys unchanged.
+- [x] Tests green; titles EN; comments ES→EN in scope.
+- [x] Historical CHANGELOG still Spanish; new notes EN.
+- [x] Residual grep of UI Spanish in `src/` clean (or documented false positives).
 
 ## Cómo probar
 1. `npm run dev` (+ backend).
