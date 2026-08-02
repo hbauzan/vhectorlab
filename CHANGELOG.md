@@ -9,7 +9,7 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Vista por defecto al iniciar la app con cámara frontal (`Z=360`) encuadrando todos los hilos vectoriales de frente sin necesidad de desplazarse.
   - Selector en la Navbar superior: `VISTA: [ ANÁLISIS | NAVEGACIÓN ]` junto al selector de RENDER.
   - Apilamiento vertical en el eje $Y$ con separación constante para los hilos `word_a`, `word_b`, `word_c` y `res`, manteniendo activaciones $+1$ (hacia arriba) y $-1$ (hacia abajo).
-  - Sliders de control espacial 3D ampliados (`src/ui/ThreadSliders.js`): **Distancia Vectores (Y)** (distancia entre baselines de los 5 hilos) y **Amplitud (Y)** (escalado de la altura de los picos $+1$ y valles $-1$ de los puntos de cada hilo).
+  - Sliders de control espacial 3D ampliados (`src/ui/ThreadSliders.js`): **Distancia Vectores (Y)** (distancia entre baselines de los 5 hilos) y **Amplitud (Y)** (escalado de la altura de picos $+1$ y valles $-1$ con rango ampliado de $1.0$ a $240.0$).
   - Inclusión del 5.º hilo `#1 COS VECTOR` posicionado debajo de RESULT VECTOR.
   - Cartelitos flotantes Glassmorphic vinculados en tiempo real a la proyección 3D del inicio de cada hilo.
   - Tests unitarios en `tests/ThreadLabels.test.js` y `tests/LayoutEngine.test.js`.
