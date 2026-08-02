@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { threadSlidersMarkup, wireThreadSliders } from '../src/ui/ThreadSliders.js';
+import { threadSlidersMarkup, wireThreadSliders, syncThreadSlidersFromConfig } from '../src/ui/ThreadSliders.js';
 import {
   GLOBAL_SPATIAL_DEFAULTS,
   SPATIAL_DEFAULT_OVERRIDES,
@@ -203,5 +203,31 @@ describe('wireThreadSliders — dblclick reset', () => {
     spacingInput.dispatch('dblclick', { preventDefault() {} });
     expect(config.threadSpacing).toBe(0.6);
     expect(spacingLabel.textContent).toBe('0.60');
+  });
+});
+
+describe('syncThreadSlidersFromConfig', () => {
+  it('writes config into inputs and labels', () => {
+    const ampInput = createMockEl('thread-amplitude-y-slider');
+    const ampLabel = createMockEl('thread-amplitude-y-val');
+    const byId = {
+      'thread-amplitude-y-slider': ampInput,
+      'thread-amplitude-y-val': ampLabel,
+      'thread-spacing-slider': createMockEl(),
+      'thread-spacing-val': createMockEl(),
+      'thread-vector-dist-slider': createMockEl(),
+      'thread-vector-dist-val': createMockEl(),
+      'thread-width-slider': createMockEl(),
+      'thread-width-val': createMockEl(),
+      'thread-thickness-slider': createMockEl(),
+      'thread-thickness-val': createMockEl(),
+    };
+    const container = {
+      querySelector: (sel) => byId[sel.replace('#', '')] || null,
+    };
+
+    syncThreadSlidersFromConfig(container, { threadAmplitudeY: 40.0 });
+    expect(ampInput.value).toBe('40');
+    expect(ampLabel.textContent).toBe('40.0');
   });
 });

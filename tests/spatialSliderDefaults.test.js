@@ -59,4 +59,18 @@ describe('resolveSpatialDefaults', () => {
     });
     expect(d.threadWidth).toBe(GLOBAL_SPATIAL_DEFAULTS.threadWidth);
   });
+
+  it('applies captured ARITHMETIC|ANALYSIS|POINTS preset (Amplitud 40)', () => {
+    // Production override lives in SPATIAL_DEFAULT_OVERRIDES — assert the seam.
+    const d = resolveSpatialDefaults({
+      workspaceMode: 'ARITHMETIC',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    });
+    expect(d.threadSpacing).toBe(0.4);
+    expect(d.threadVectorDistance).toBe(10.0);
+    expect(d.threadAmplitudeY).toBe(40.0);
+    expect(d.threadWidth).toBe(0.2);
+    expect(d.threadThickness).toBe(0.05);
+  });
 });

@@ -111,8 +111,9 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 
 ### 3.4. Default Navigation Corridor Pose
 - **Invariante**: La vista inicial de **Navegación** usa la pose capturada `POS (-178.3, 13.5, 52.2)` + euler YXZ `ROT (-5.4°, -51.5°, 0°)` con sliders espaciales por defecto Separación $X=0.4$, Amplitud $Y=7.0$, Longitud $Z=0.2$.
-- **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`). Sirve para releer POS/ROT desde una captura y actualizar `setNavigationView()`.
-- **Workflow de captura**: Para fijar una nueva vista default, activar el overlay, navegar a la pose deseada, screenshotear `POS`/`ROT` legibles, y actualizar `Navigation.setNavigationView()` + defaults de sliders espaciales si cambian.
+- **Análisis (ARITHMETIC + POINTS)**: pose capturada `POS (-75.2, -0.8, 62.5)` + `ROT (0°, 0°, 0°)`; sliders vía override `ARITHMETIC|ANALYSIS|POINTS` (Amplitud $Y=40$, Grosor $0.05$, resto = global). Al cambiar MODE/VISTA/RENDER se reaplica `resolveSpatialDefaults` + sync UI.
+- **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`). Sirve para releer POS/ROT desde una captura y actualizar `setNavigationView()` / `setAnalysisView()`.
+- **Workflow de captura**: Para fijar una nueva vista default, activar el overlay, navegar a la pose deseada, screenshotear `POS`/`ROT` legibles, y actualizar Navigation + `SPATIAL_DEFAULT_OVERRIDES` si cambian.
 
 ---
 

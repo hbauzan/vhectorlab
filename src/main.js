@@ -11,7 +11,7 @@ import { Sidebar } from './ui/Sidebar.js';
 import { HUD } from './ui/HUD.js';
 import { CustomModal } from './ui/CustomModal.js';
 import { ThreadLabels } from './ui/ThreadLabels.js';
-import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
+import { threadSlidersMarkup, wireThreadSliders, syncThreadSlidersFromConfig } from './ui/ThreadSliders.js';
 import { resolveSpatialDefaults } from './ui/spatialSliderDefaults.js';
 
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
@@ -61,6 +61,7 @@ class VectorLabApp {
       this.appContainer,
       (renderMode) => {
         state.setRenderMode(renderMode);
+        this.applyContextSpatialDefaults();
         this.refreshRender();
       },
       (viewMode) => {
@@ -70,6 +71,7 @@ class VectorLabApp {
         } else {
           this.navigation.setNavigationView();
         }
+        this.applyContextSpatialDefaults();
         this.refreshRender();
       },
       (workspaceMode) => {
@@ -133,6 +135,7 @@ class VectorLabApp {
     const sliderWrapper = document.createElement('div');
     sliderWrapper.innerHTML = threadSlidersMarkup(this.sliderConfig);
     const slidersEl = sliderWrapper.firstElementChild;
+    this.slidersEl = slidersEl;
     // Insert sliders above the gizmo inside the right dock body.
     this.rightDock.body.insertBefore(slidersEl, this.axisGizmo.container);
 
@@ -147,8 +150,25 @@ class VectorLabApp {
     });
   }
 
+  /**
+   * Apply resolved spatial defaults for current MODE/VISTA/RENDER and sync slider UI.
+   * Called when context changes so each combo can keep its own dulce point.
+   */
+  applyContextSpatialDefaults() {
+    const defaults = resolveSpatialDefaults({
+      workspaceMode: state.workspaceMode,
+      viewMode: this.viewMode,
+      renderMode: state.renderMode,
+    });
+    Object.assign(this.sliderConfig, defaults);
+    if (this.slidersEl) {
+      syncThreadSlidersFromConfig(this.slidersEl, this.sliderConfig);
+    }
+  }
+
   handleWorkspaceModeChange(mode) {
     state.setWorkspaceMode(mode);
+    this.applyContextSpatialDefaults();
     if (mode === 'COMPARE') {
       this.sidebar.element.classList.add('hidden');
       this.comparePanel.show();
