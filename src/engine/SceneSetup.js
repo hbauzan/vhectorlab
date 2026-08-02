@@ -15,7 +15,7 @@ export class SceneSetup {
     // 2. Camera setup
     const aspect = window.innerWidth / window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 2000);
-    this.camera.position.set(0, 150, 400);
+    this.camera.position.set(-178.3, 13.5, 52.2);
 
     // 3. WebGL Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });

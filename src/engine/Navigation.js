@@ -137,10 +137,11 @@ export class Navigation {
   }
 
   setNavigationView() {
-    // Position camera angled in 3D space for free flight navigation
-    this.camera.position.set(0, 150, 400);
-    this.camera.lookAt(0, 0, 0);
-    this.euler.setFromQuaternion(this.camera.quaternion);
+    // Captured default corridor view (king-man+woman @ Separación 0.4 / Amplitud 7)
+    this.camera.position.set(-178.3, 13.5, 52.2);
+    const deg2rad = Math.PI / 180;
+    this.euler.set(-5.4 * deg2rad, -51.5 * deg2rad, 0, 'YXZ');
+    this.camera.quaternion.setFromEuler(this.euler);
     this.velocity.set(0, 0, 0);
   }
 }
