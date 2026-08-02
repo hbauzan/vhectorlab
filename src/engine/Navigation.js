@@ -6,7 +6,7 @@ import * as THREE from 'three';
 export class Navigation {
   constructor(camera, domElement) {
     this.camera = camera;
-    this.domElement = domElement || document.body;
+    this.domElement = domElement || (typeof document !== 'undefined' ? document.body : null);
 
     this.keys = {
       KeyW: false,
@@ -20,9 +20,9 @@ export class Navigation {
     };
 
     this.velocity = new THREE.Vector3();
-    this.moveSpeed = 75.0; // Half base speed units/sec for smooth control
-    this.turboMultiplier = 2.5;
-    this.damping = 0.88;
+    this.moveSpeed = 40.0; // Base speed units/sec for smooth control
+    this.turboMultiplier = 2.0;
+    this.damping = 0.85;
 
     // Mouse drag state
     this.isDragging = false;
@@ -33,7 +33,14 @@ export class Navigation {
   }
 
   initEventListeners() {
+    if (typeof window === 'undefined') return;
+
     window.addEventListener('keydown', (e) => {
+      // Ignore key events when user is typing in UI inputs
+      const tag = document.activeElement ? document.activeElement.tagName : '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        return;
+      }
       if (this.keys.hasOwnProperty(e.code)) {
         this.keys[e.code] = true;
       }
@@ -45,13 +52,21 @@ export class Navigation {
       }
     });
 
-    this.domElement.addEventListener('mousedown', (e) => {
-      // Only drag with left mouse button when not clicking UI inputs
-      if (e.button === 0 && e.target.tagName === 'CANVAS') {
-        this.isDragging = true;
-        this.previousMousePosition = { x: e.clientX, y: e.clientY };
-      }
+    window.addEventListener('blur', () => {
+      // Clear key state when window loses focus
+      Object.keys(this.keys).forEach((k) => (this.keys[k] = false));
+      this.velocity.set(0, 0, 0);
     });
+
+    if (this.domElement) {
+      this.domElement.addEventListener('mousedown', (e) => {
+        // Only drag with left mouse button when clicking CANVAS
+        if (e.button === 0 && e.target.tagName === 'CANVAS') {
+          this.isDragging = true;
+          this.previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+      });
+    }
 
     window.addEventListener('mousemove', (e) => {
       if (!this.isDragging) return;
@@ -78,7 +93,7 @@ export class Navigation {
 
   update(deltaTime) {
     const dt = Math.min(deltaTime, 0.1);
-    const speed = (this.keys.ShiftLeft || this.keys.ShiftRight ? this.moveSpeed * this.turboMultiplier : this.moveSpeed) * dt;
+    const targetSpeed = (this.keys.ShiftLeft || this.keys.ShiftRight ? this.moveSpeed * this.turboMultiplier : this.moveSpeed) * dt;
 
     const moveVector = new THREE.Vector3();
 
@@ -89,22 +104,25 @@ export class Navigation {
     if (this.keys.KeyQ) moveVector.y -= 1;
     if (this.keys.KeyE) moveVector.y += 1;
 
-    moveVector.normalize();
-    moveVector.applyQuaternion(this.camera.quaternion);
-    moveVector.multiplyScalar(speed);
+    if (moveVector.lengthSq() > 0) {
+      moveVector.normalize();
+      moveVector.applyQuaternion(this.camera.quaternion);
+      moveVector.multiplyScalar(targetSpeed);
+      // Smoothly interpolate velocity toward targetSpeed (prevents infinite speed accumulation)
+      this.velocity.lerp(moveVector, 0.25);
+    } else {
+      // Smooth deceleration down to 0
+      this.velocity.multiplyScalar(this.damping);
+    }
 
-    this.velocity.add(moveVector);
     this.camera.position.add(this.velocity);
-
-    // Apply smooth inertial damping
-    this.velocity.multiplyScalar(this.damping);
   }
 
   focusPosition(targetPosition, duration = 1.0) {
     // Smooth camera transition to target 3D vector point
     const offset = new THREE.Vector3(0, 30, 80);
     const targetCamPos = new THREE.Vector3().copy(targetPosition).add(offset);
-    
+
     this.camera.position.copy(targetCamPos);
     this.camera.lookAt(targetPosition);
     this.euler.setFromQuaternion(this.camera.quaternion);
