@@ -4,6 +4,14 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [0.2.0] - 2026-08-02
 
+### Added
+- **Vista de "Análisis" 3D con Encuadre Frontal y Cartelitos (`src/ui/ThreadLabels.js` & `src/visualizer/LayoutEngine.js`)**:
+  - Vista por defecto al iniciar la app con cámara frontal (`Z=360`) encuadrando todos los hilos vectoriales de frente sin necesidad de desplazarse.
+  - Selector en la Navbar superior: `VISTA: [ ANÁLISIS | NAVEGACIÓN ]` junto al selector de RENDER.
+  - Apilamiento vertical en el eje $Y$ con separación constante para los hilos `word_a`, `word_b`, `word_c` y `res`, manteniendo activaciones $+1$ (hacia arriba) y $-1$ (hacia abajo).
+  - Cartelitos flotantes Glassmorphic vinculados en tiempo real a la proyección 3D del inicio de cada hilo.
+  - Tests unitarios en `tests/ThreadLabels.test.js` y `tests/LayoutEngine.test.js`.
+
 ### Changed
 - **Simplificación de Rampas Cromáticas Divergentes por Activación 3D (`src/visualizer/DivergentShading.js`)**:
   - Eliminación de pasos intermedios de colores Rojo (rango positivo) y Verde (rango negativo) para transicionar directamente desde Negro/Transparente.

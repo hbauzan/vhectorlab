@@ -88,7 +88,13 @@ canvas {
   border-radius: 4px;
 }
 
-.render-mode-tabs {
+.navbar-center-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.view-mode-tabs, .render-mode-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -105,7 +111,7 @@ canvas {
   font-weight: 600;
 }
 
-.mode-tab {
+.mode-tab, .view-tab {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -117,11 +123,11 @@ canvas {
   transition: all 0.2s ease;
 }
 
-.mode-tab:hover {
+.mode-tab:hover, .view-tab:hover {
   color: var(--text-main);
 }
 
-.mode-tab.active {
+.mode-tab.active, .view-tab.active {
   background: var(--accent-cyan);
   color: #050505;
   box-shadow: 0 0 12px rgba(0, 255, 170, 0.4);
@@ -415,5 +421,74 @@ canvas {
   width: 100%;
   accent-color: var(--accent-cyan);
   cursor: pointer;
+}
+
+/* =============================================================================
+   Floating Thread Labels Overlay (Glassmorphic Badges)
+   ============================================================================= */
+#thread-labels-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 35;
+  overflow: hidden;
+}
+
+.thread-label-card {
+  position: absolute;
+  transform: translate(-100%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(12, 16, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 170, 0.4);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 255, 170, 0.2);
+  transition: opacity 0.2s ease, transform 0.1s linear;
+}
+
+.thread-label-card.res-label {
+  border-color: var(--accent-gold);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 230, 0, 0.3);
+}
+
+.thread-label-card.top1-label {
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 204, 255, 0.3);
+}
+
+.thread-label-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 255, 170, 0.2);
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+}
+
+.thread-label-card.res-label .thread-label-badge {
+  background: rgba(255, 230, 0, 0.2);
+  color: var(--accent-gold);
+}
+
+.thread-label-card.top1-label .thread-label-badge {
+  background: rgba(0, 204, 255, 0.2);
+  color: var(--accent-blue);
+}
+
+.thread-label-text {
+  color: var(--text-main);
+  white-space: nowrap;
 }
 

@@ -130,6 +130,13 @@ class AppState:
             if len(results) >= top_k:
                 break
 
+        top1_vec = None
+        top1_word = ""
+        if results and self.vocab_embeddings is not None:
+            top1_idx = results[0]["token_id"]
+            top1_word = results[0]["word"]
+            top1_vec = self.vocab_embeddings[top1_idx].tolist()
+
         return {
             "inputs": {
                 "word_a": word_a,
@@ -141,7 +148,9 @@ class AppState:
                 "vec_a": vec_a.tolist(),
                 "vec_b": vec_b.tolist(),
                 "vec_c": vec_c.tolist(),
+                "vec_top1": top1_vec if top1_vec is not None else normalized_res.tolist(),
             },
+            "top1_word": top1_word if top1_word else (results[0]["word"] if results else ""),
             "results": results,
         }
 

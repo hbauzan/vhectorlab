@@ -21,4 +21,17 @@ describe('LayoutEngine Math Tests', () => {
     const engine = new LayoutEngine();
     expect(engine).toBeDefined();
   });
+
+  it('debe mapear puntos 3D en modo ANÁLISIS alineados en Z=0 con apilamiento vertical Y', () => {
+    const engine = new LayoutEngine({ scaleX: 1.0 });
+    const vector = [1.0, -1.0, 0.0];
+    // sequenceIndex = 0 (Thread 1) vs sequenceIndex = 1 (Thread 2)
+    const pointsSlot0 = engine.mapVectorTo3DPoints(vector, 0, 'ANALYSIS', 5);
+    const pointsSlot1 = engine.mapVectorTo3DPoints(vector, 1, 'ANALYSIS', 5);
+
+    expect(pointsSlot0[0].z).toBe(0);
+    expect(pointsSlot1[0].z).toBe(0);
+    // Slot 0 should be vertically higher than Slot 1
+    expect(pointsSlot0[0].y).toBeGreaterThan(pointsSlot1[0].y);
+  });
 });
