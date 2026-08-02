@@ -689,7 +689,8 @@ canvas {
 /* =============================================================================
    Thread Geometry Spatial Sliders 3D Styling (inside #right-dock)
    ============================================================================= */
-#thread-sliders-container {
+#thread-sliders-container,
+#visualization-controls-container {
   position: relative;
   top: auto;
   right: auto;
@@ -706,6 +707,68 @@ canvas {
   z-index: 40;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
+}
+
+/* Visualization: edge collapse tab (dock-tab affordance) */
+#visualization-controls-container.viz-panel {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: width 250ms ease, min-width 250ms ease, padding 250ms ease;
+  width: auto;
+  max-width: 280px;
+}
+
+#visualization-controls-container .viz-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  width: 280px;
+  box-sizing: border-box;
+  transition: opacity 200ms ease, transform 250ms ease;
+}
+
+#visualization-controls-container .viz-panel-tab {
+  flex: 0 0 var(--dock-tab-size, 28px);
+  width: var(--dock-tab-size, 28px);
+  min-height: 72px;
+  margin: 8px 0 8px 0;
+  align-self: flex-start;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  order: -1;
+}
+
+#visualization-controls-container.is-collapsed {
+  width: var(--dock-tab-size, 28px);
+  min-width: var(--dock-tab-size, 28px);
+  max-width: var(--dock-tab-size, 28px);
+  border-radius: 8px 0 0 8px;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+#visualization-controls-container.is-collapsed .viz-panel-body {
+  position: absolute;
+  right: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(12px);
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#visualization-controls-container.is-collapsed .viz-panel-tab {
+  margin: 0;
+  border-radius: 8px 0 0 8px;
+  border: 1px solid var(--panel-border);
+  border-right: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 #axis-gizmo-container {
@@ -751,6 +814,131 @@ canvas {
   width: 100%;
   accent-color: var(--accent-cyan);
   cursor: pointer;
+}
+
+/* Visualization Controls (sign filter + color anchors) */
+.viz-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viz-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.viz-segmented {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.viz-seg-option {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  cursor: pointer;
+  margin: 0;
+}
+
+.viz-seg-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.viz-seg-option span {
+  display: block;
+  padding: 6px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border-right: 1px solid var(--panel-border);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.viz-seg-option:last-child span {
+  border-right: none;
+}
+
+.viz-seg-option input:checked + span {
+  background: rgba(0, 229, 255, 0.18);
+  color: var(--accent-cyan);
+}
+
+.viz-seg-option:hover span {
+  color: var(--text-main, #e8eef7);
+}
+
+.viz-colors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viz-colors-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.viz-color-row {
+  display: grid;
+  grid-template-columns: 28px 36px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-color-row label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: monospace;
+}
+
+.viz-color-swatch {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.viz-color-hex {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.viz-reset-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.viz-reset-btn:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
 }
 
 /* =============================================================================
@@ -1088,7 +1276,8 @@ canvas {
     padding: 8px 6px;
   }
 
-  #thread-sliders-container {
+  #thread-sliders-container,
+  #visualization-controls-container {
     width: min(260px, calc(100vw - 64px));
     padding: 12px;
     gap: 10px;
