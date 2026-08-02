@@ -2,6 +2,19 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [2.1.0] - 2026-08-02
+
+### Added
+- **COMPARE group contrast visibility** (`feat/compare-group-contrast-viz`):
+  - Amplitude default **16** for `COMPARE|ANALYSIS|POINTS` and RIBBONS twin (was floor `1.0`).
+  - SAE ON auto-sets Visualization filter to **+ Only**; SAE OFF restores the previous filter.
+  - Soft Y gap (+1× Dist Y) between contiguous `GROUP_*` blocks in ANALYSIS.
+  - Toggle **Sort dims by group contrast** (session-only, OFF default; visible when ≥2 groups) — permutes X by max pairwise `|Δmean|`.
+  - Cosine ▲/▼ disabled while groups are active (preserves block layout).
+
+### Changed
+- Roadmap decisions D1–D12 closed (pack 1: L1+L2; L3 deferred; SemVer MINOR).
+
 ## [2.0.0] - 2026-08-02
 
 ### Added

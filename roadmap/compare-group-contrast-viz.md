@@ -1,6 +1,7 @@
 # Roadmap — COMPARE group contrast visibility (RAW vs SAE)
 
-**Status:** Planned (diagnosis complete; product decisions open)  
+**Status:** Implemented (awaiting APPROVAL GATE / merge) — D* pack 1; L1+L2; v2.1.0  
+
 **Date:** 2026-08-02  
 **Product:** VectorLab 3D (`lsv2`)  
 **Prompt companion:** [`PROMPT-compare-group-contrast-viz.md`](./PROMPT-compare-group-contrast-viz.md)  
@@ -119,18 +120,18 @@ Do **not** invent answers. Ask the human, record answers in this doc §3.1, then
 
 | ID | Answer | Date |
 | :--- | :--- | :--- |
-| D1 | _pending_ | |
-| D2 | _pending_ | |
-| D3 | _pending_ | |
-| D4 | _pending_ | |
-| D5 | _pending_ | |
-| D6 | _pending_ | |
-| D7 | _pending_ | |
-| D8 | _pending_ | |
-| D9 | _pending_ | |
-| D10 | _pending_ | |
-| D11 | _pending_ | |
-| D12 | _pending_ | |
+| D1 | **L1+L2** (pack 1 B) — L3 out | 2026-08-02 |
+| D2 | Amplitude **16** for `COMPARE\|ANALYSIS\|POINTS` **and** RIBBONS twin | 2026-08-02 |
+| D3 | **A** auto-set filter to `+ Only` (`positive`) on SAE encode success | 2026-08-02 |
+| D4 | **A** restore previous filter when SAE OFF | 2026-08-02 |
+| D5 | **B** soft Y gap: **+1×** `threadVectorDistance` between group blocks | 2026-08-02 |
+| D6 | **A** `\|mean_G1 − mean_G2\|` (for >2 groups: max pairwise \|Δmean\|) | 2026-08-02 |
+| D7 | **A** dim-sort toggle only when ≥2 distinct `groupId` | 2026-08-02 |
+| D8 | **A** session only, **OFF** by default (no localStorage) | 2026-08-02 |
+| D9 | **B** disable cosine ▲/▼ while groups active (reason in title) | 2026-08-02 |
+| D10 | **A** defer — keep global z-score; L1 `+ Only` mitigates dust | 2026-08-02 |
+| D11 | **A** out of v1 | 2026-08-02 |
+| D12 | **MINOR `2.1.0`** | 2026-08-02 |
 
 ---
 

@@ -95,8 +95,17 @@ export class LayoutEngine {
    * @param {number} [totalThreads=5] - Total number of threads for centering in ANALYSIS mode
    * @param {number} [spacingY=46.0] - Vertical Y separation between threads
    * @param {number} [amplitudeY=16.0] - Height scale factor for activation points (+1 / -1)
+   * @param {{ ySlot?: number, ySlotSpan?: number }} [layoutOpts] - Optional ANALYSIS slot override (group gaps)
    */
-  mapVectorTo3DPoints(vector, sequenceIndex = 0, viewMode = 'NAVIGATION', totalThreads = 5, spacingY = 46.0, amplitudeY = 16.0) {
+  mapVectorTo3DPoints(
+    vector,
+    sequenceIndex = 0,
+    viewMode = 'NAVIGATION',
+    totalThreads = 5,
+    spacingY = 46.0,
+    amplitudeY = 16.0,
+    layoutOpts = {}
+  ) {
     if (!vector || !vector.length) return [];
     const count = vector.length;
     const offsetCenterX = (count * this.scaleX) / 2.0;
@@ -104,7 +113,11 @@ export class LayoutEngine {
     if (viewMode === 'ANALYSIS') {
       // Stack threads vertically along Y axis with customizable separation (spacingY)
       const verticalSpacing = spacingY ?? 46.0;
-      const centeredYSlot = (totalThreads - 1) / 2.0 - sequenceIndex;
+      const ySlot = layoutOpts.ySlot !== undefined ? layoutOpts.ySlot : sequenceIndex;
+      const ySlotSpan = layoutOpts.ySlotSpan !== undefined
+        ? layoutOpts.ySlotSpan
+        : Math.max(0, totalThreads - 1);
+      const centeredYSlot = ySlotSpan / 2.0 - ySlot;
       const offsetY = centeredYSlot * verticalSpacing;
       const ampY = amplitudeY ?? 16.0; // Scaled activation amplitude for point Y peaks (+1 / -1)
 
