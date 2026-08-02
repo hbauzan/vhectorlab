@@ -4,6 +4,11 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Defaults COMPARE|ANALYSIS|POINTS** (`feat/compare-analysis-points-defaults`):
+  - Sliders: Spacing `1.45`, Dist Y `1.0`, Amp `1.0`, Length `0.2`, Thickness `0.01`.
+  - Camera: `POS (-150.3, 0.7, 276.6)` / `ROT (-0.5, 0.9, 0)`.
+
 ### Fixed
 - **Defaults COMPARE|NAVIGATION|RIBBONS + fog off for RIBBONS** (`feat/compare-nav-ribbons-defaults-no-fog`):
   - Sliders: Spacing `1.55`, Dist Y `10`, Amp `7`, Length `0.057`, Thickness `0.05`.

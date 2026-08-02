@@ -88,6 +88,20 @@ describe('resolveCameraPose', () => {
     expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
   });
 
+  it('applies captured COMPARE|ANALYSIS|POINTS pose', () => {
+    const pose = resolveCameraPose({
+      workspaceMode: 'COMPARE',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    });
+    expect(pose.position[0]).toBeCloseTo(-150.3, 5);
+    expect(pose.position[1]).toBeCloseTo(0.7, 5);
+    expect(pose.position[2]).toBeCloseTo(276.6, 5);
+    expect(pose.rotationDeg[0]).toBeCloseTo(-0.5, 5);
+    expect(pose.rotationDeg[1]).toBeCloseTo(0.9, 5);
+    expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
+  });
+
   it('applies captured COMPARE|NAVIGATION|RIBBONS pose', () => {
     const pose = resolveCameraPose({
       workspaceMode: 'COMPARE',

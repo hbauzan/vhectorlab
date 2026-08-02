@@ -87,6 +87,19 @@ describe('resolveSpatialDefaults', () => {
     expect(d.threadThickness).toBe(0.01);
   });
 
+  it('applies captured COMPARE|ANALYSIS|POINTS preset', () => {
+    const d = resolveSpatialDefaults({
+      workspaceMode: 'COMPARE',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    });
+    expect(d.threadSpacing).toBe(1.45);
+    expect(d.threadVectorDistance).toBe(1.0);
+    expect(d.threadAmplitudeY).toBe(1.0);
+    expect(d.threadWidth).toBe(0.2);
+    expect(d.threadThickness).toBe(0.01);
+  });
+
   it('applies captured COMPARE|NAVIGATION|RIBBONS preset', () => {
     const d = resolveSpatialDefaults({
       workspaceMode: 'COMPARE',
