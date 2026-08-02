@@ -689,7 +689,8 @@ canvas {
 /* =============================================================================
    Thread Geometry Spatial Sliders 3D Styling (inside #right-dock)
    ============================================================================= */
-#thread-sliders-container {
+#thread-sliders-container,
+#visualization-controls-container {
   position: relative;
   top: auto;
   right: auto;
@@ -751,6 +752,131 @@ canvas {
   width: 100%;
   accent-color: var(--accent-cyan);
   cursor: pointer;
+}
+
+/* Visualization Controls (sign filter + color anchors) */
+.viz-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viz-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.viz-segmented {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.viz-seg-option {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  cursor: pointer;
+  margin: 0;
+}
+
+.viz-seg-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.viz-seg-option span {
+  display: block;
+  padding: 6px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border-right: 1px solid var(--panel-border);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.viz-seg-option:last-child span {
+  border-right: none;
+}
+
+.viz-seg-option input:checked + span {
+  background: rgba(0, 229, 255, 0.18);
+  color: var(--accent-cyan);
+}
+
+.viz-seg-option:hover span {
+  color: var(--text-main, #e8eef7);
+}
+
+.viz-colors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.viz-colors-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.viz-color-row {
+  display: grid;
+  grid-template-columns: 28px 36px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-color-row label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: monospace;
+}
+
+.viz-color-swatch {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.viz-color-hex {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.viz-reset-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.viz-reset-btn:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
 }
 
 /* =============================================================================
@@ -1075,7 +1201,8 @@ canvas {
     padding: 8px 6px;
   }
 
-  #thread-sliders-container {
+  #thread-sliders-container,
+  #visualization-controls-container {
     width: min(260px, calc(100vw - 64px));
     padding: 12px;
     gap: 10px;

@@ -13,6 +13,11 @@ import { CustomModal } from './ui/CustomModal.js';
 import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders, syncThreadSlidersFromConfig } from './ui/ThreadSliders.js';
 import { resolveSpatialDefaults } from './ui/spatialSliderDefaults.js';
+import {
+  visualizationControlsMarkup,
+  wireVisualizationControls,
+} from './ui/VisualizationControls.js';
+import { loadVisualizationSettings } from './ui/visualizationControlsDefaults.js';
 
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock } from './ui/CollapsibleDock.js';
@@ -113,6 +118,7 @@ class VectorLabApp {
     });
 
     this.mountThreadSlidersUI();
+    this.mountVisualizationControlsUI();
 
     // 6. Interaction Callbacks
     this.interaction.onHoverCallback = (hoverData) => {
@@ -142,6 +148,23 @@ class VectorLabApp {
         viewMode: this.viewMode,
         renderMode: state.renderMode,
       }),
+    });
+  }
+
+  /**
+   * Visualization panel (sign filter + color anchors) below Spatial Controls.
+   */
+  mountVisualizationControlsUI() {
+    this.vizConfig = loadVisualizationSettings();
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = visualizationControlsMarkup(this.vizConfig);
+    const vizEl = wrapper.firstElementChild;
+    this.vizEl = vizEl;
+    // Below sliders, above AxisGizmo (V1).
+    this.rightDock.body.insertBefore(vizEl, this.axisGizmo.container);
+
+    wireVisualizationControls(vizEl, this.vizConfig, () => {
+      this.refreshRender();
     });
   }
 
@@ -202,7 +225,8 @@ class VectorLabApp {
           state.compareData,
           state.renderMode,
           this.sliderConfig,
-          this.viewMode
+          this.viewMode,
+          this.vizConfig
         );
         this.threadLabels.setLabels(labels);
       }
@@ -212,7 +236,8 @@ class VectorLabApp {
           state.arithmeticData,
           state.renderMode,
           this.sliderConfig,
-          this.viewMode
+          this.viewMode,
+          this.vizConfig
         );
         this.threadLabels.setLabels(labels);
       }
@@ -257,7 +282,8 @@ class VectorLabApp {
         data,
         state.renderMode,
         this.sliderConfig,
-        this.viewMode
+        this.viewMode,
+        this.vizConfig
       );
       this.threadLabels.setLabels(labels);
 
@@ -277,7 +303,8 @@ class VectorLabApp {
         data,
         state.renderMode,
         this.sliderConfig,
-        this.viewMode
+        this.viewMode,
+        this.vizConfig
       );
       this.threadLabels.setLabels(labels);
       this.comparePanel.updateCompareResults(data);

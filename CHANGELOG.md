@@ -2,6 +2,15 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.7.0] - 2026-08-02
+
+### Added
+- **Visualization Controls** (`feat/visualization-sign-color-controls`): right-dock panel under 3D Spatial Controls.
+  - Sign filter: `All | + Only | − Only` on **normalized** activations (ε=0.01); hides opposite sign and near-zero for ± only.
+  - Applies to POINTS (shader discard) and RIBBONS / continuity lines (index omission) in ARITHMETIC + COMPARE.
+  - Three hex color anchors (+1 / 0 / −1) replace the fixed mid-stop divergent ramp; defaults `#FFE600` / `#000000` / `#9900E6`.
+  - POINTS shader uniforms `uColorPos` / `uColorNeg` / `uColorZero`; live update + `localStorage` (`vl3d.viz.*`) + Reset.
+
 ## [Unreleased]
 
 ### Changed
