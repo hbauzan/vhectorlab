@@ -202,6 +202,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Decisión (v1.7.0)**: `GROUP_name = tokens` en textarea → `parseCompareInput` concatena grupos; `/compare` sigue flat. Anchor = primer token global (D1a). Sort/reorder cosine **global** puede romper contigüidad (D2a); badges de grupo se re-anclan al centroide de miembros actuales.
 - **Invariante**: groups = metadata UI/layout, no endpoint nuevo; duplicados entre groups permitidos.
 - **Visibilidad**: con groups activos, overlay muestra **solo** badges de grupo (los token cards a N alto los tapaban y el offset grande los metía bajo el dock z-index 40). Lista cosine sigue con todos los tokens. `#thread-labels-container` z-index ≥ docks; offset screen de group badges chico.
+- **Bootstrap**: textarea default **y** auto-Visualize al entrar a COMPARE deben salir de `getCompareBootstrap()` (groupsDemo + `tokenMeta`). Autoload de `COMPARE_AUTO_PRESETS.default` (136 flat, sin meta) mientras el textarea muestra `GROUP_*` → etiquetas de token forever. Preset buttons deben Visualize, no solo rellenar texto.
 - **SAE + groups**: `applySaeToCompare` y encode path deben re-afirmar `groupId`/`groupLabel` desde RAW cache (no `groupName`). `ThreadLabels.updateOrigins` rebuilds DOM si el set de ids cambia (tokens → group badges).
 
 ### 4.9. Visualization Controls — sign filter + color anchors + zero coverage (v1.8.x)
