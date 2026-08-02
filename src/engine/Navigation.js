@@ -20,7 +20,7 @@ export class Navigation {
     };
 
     this.velocity = new THREE.Vector3();
-    this.moveSpeed = 40.0; // Base speed units/sec for smooth control
+    this.moveSpeed = 75.0; // Bounded speed units/sec for responsive control
     this.turboMultiplier = 2.0;
     this.damping = 0.85;
 
