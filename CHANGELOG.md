@@ -6,6 +6,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ### Added
 - **Divergent Activation Shading (`roadmap/Shading Divergente por Activación.md`)**:
+  - Solid Circular Point GLSL Shader (`src/visualizer/DivergentShading.js`) rendering crisp, solid circular points with 1-pixel anti-aliasing edges instead of blurred halos.
   - Dual Multi-Stop Color Ramps (`src/visualizer/DivergentShading.js`): Positive range ($0 \rightarrow +1$) transitions Negro $\rightarrow$ Rojo $\rightarrow$ Naranja $\rightarrow$ Amarillo. Negative range ($0 \rightarrow -1$) transitions Negro $\rightarrow$ Verde $\rightarrow$ Azul $\rightarrow$ Violeta.
   - Full integration in `MeshFactory.js` and `Instancer.js` connecting all 3D thread vector points with continuous ribbon lines.
   - Integration with `ThreadFactory.js` buffer attributes (`intensity`, `color`) and `frustumCulled = false` invariant.
