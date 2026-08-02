@@ -1,3 +1,14 @@
+> **ARCHIVO HISTÓRICO** — archivado 2026-08-02.
+> **Estado al archivar:** shading divergente + z-score + rampas simplificadas en `main`.
+> **Ramas implementadas (relacionadas):**
+> - `feat/shading-divergente`
+> - `feat/zscore-divergent-shading`
+> - `feat/dual-color-ramps`
+> - `feat/simplified-divergent-ramps`
+> - `fix/arithmetic-divergent-shading` / `fix/solid-circular-points` / `fix/reduce-point-brightness`
+>
+> Spec de planificación de colormap; la implementación vive en `src/visualizer/DivergentShading.js`.
+
 
 # 🗺️ Roadmap de Desarrollo: Thread Geometry, Spatial Sliders & Divergent Shading 3D
 

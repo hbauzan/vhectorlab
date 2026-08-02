@@ -1,3 +1,13 @@
+> **ARCHIVO HISTÓRICO** — archivado 2026-08-02.
+> **Estado al archivar:** visión inicial del producto; fases 1–4 y siguientes ya absorbidas en `main`.
+> **Ramas fundacionales (selección):**
+> - `feat/phase1-backend`
+> - `feat/phase2-webgl`
+> - `feat/phase3-ui-hud`
+> - `feat/phase4-setup-docker`
+>
+> Big-picture de arranque; no actualizar — usar `CHANGELOG.md` / `CONTEXT.md` / código.
+
 # 🗺️ Roadmap de Desarrollo: VectorLab 3D 
 > **Objetivo del Agente:** Construir una herramienta liviana derivada de *LLM Semantic Visualizer*, enfocada **única y exclusivamente** en la ejecución de **Operaciones Vectoriales ($A - B + C$)**, búsqueda de vecinos cercanos por similitud coseno y su visualización/navegación tridimensional (Puntos/Hilos WebGL).
 

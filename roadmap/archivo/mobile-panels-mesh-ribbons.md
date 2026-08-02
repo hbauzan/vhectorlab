@@ -1,3 +1,15 @@
+> **ARCHIVO HISTÓRICO** — archivado 2026-08-02.
+> **Estado al archivar:** epic A→E + ngrok dev access implementados en `main` (v1.1.0–v1.5.0 + proxy).
+> **Ramas implementadas:**
+> - `feat/collapsible-side-panels` (A — docks)
+> - `feat/responsive-mobile-layout` (B — phone + landscape gate)
+> - `feat/mobile-touch-navigation` (C — joystick / look / Q/E)
+> - `feat/render-mode-mesh` (D — MESH surface)
+> - `feat/render-mode-ribbons` (E — wide RIBBONS + base plane)
+> - `feat/ngrok-dev-access` (dev — Vite `/api` proxy + `VITE_API_BASE_URL`)
+>
+> Documento de planificación; no es fuente de verdad del código actual.
+
 # Roadmap: Paneles colapsables · Mobile · Mesh · Ribbons
 
 > **Estado:** epic A→E implementado en `main` (2026-08-01).  

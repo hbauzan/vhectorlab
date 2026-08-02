@@ -1,3 +1,13 @@
+> **ARCHIVO HISTÓRICO** — archivado 2026-08-02.
+> **Estado al archivar:** sliders espaciales 3D en `main`.
+> **Ramas implementadas (relacionadas):**
+> - `feat/thread-geometry-sliders`
+> - `feat/vertical-spacing-slider`
+> - `feat/increase-amplitude-y-max`
+> - `fix/point-thickness-range`
+>
+> Spec de sliders; UI en `src/ui/ThreadSliders.js` + layout en `LayoutEngine.js`.
+
 # 🗺️ Roadmap de Desarrollo: Thread Geometry & Spatial Sliders 3D
 
 > **Instrucciones para el Agente de IA:**
