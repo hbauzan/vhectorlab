@@ -35,6 +35,13 @@ class ArithmeticRequest(BaseModel):
     )
 
 
+class CompareRequest(BaseModel):
+    texts: list[str] = Field(
+        ...,
+        description="List of texts/tokens to compute batch embeddings for (1 to 1024 items)",
+    )
+
+
 @router.get("/health")
 def health_check() -> dict[str, Any]:
     return {
@@ -94,3 +101,18 @@ def perform_arithmetic(req: ArithmeticRequest) -> dict[str, Any]:
         return res
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/compare")
+def perform_compare(req: CompareRequest) -> dict[str, Any]:
+    if not state.is_loaded or state.model is None:
+        raise HTTPException(status_code=503, detail="Backend model is not loaded yet")
+
+    if not req.texts:
+        raise HTTPException(status_code=400, detail="Texts list cannot be empty")
+
+    try:
+        return state.perform_compare(req.texts)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -179,7 +179,102 @@ export class Instancer {
       });
     }
 
+    // Render vertical baseline reference line connecting thread origins in ANALYSIS mode
+    if (viewMode === "ANALYSIS" && threadLabelItems.length >= 2) {
+      const originPoints = threadLabelItems.map(item => item.origin3D);
+      const baselineMesh = MeshFactory.createBaselineMesh(originPoints, 0x00e5ff);
+      if (baselineMesh) {
+        this.activeGroup.add(baselineMesh);
+      }
+    }
+
     // Create GPU Points Mesh using Divergent Activation Shading
+    const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
+    pointsMesh.userData = { pointsData };
+    this.activeGroup.add(pointsMesh);
+
+    return threadLabelItems;
+  }
+
+  /**
+   * Renders token/text sequence comparison data (1 to 1024 tokens).
+   * @param {Object} compareResponse - API response from /compare
+   * @param {string} renderMode - "POINTS" | "MESH" | "RIBBONS"
+   * @param {Object} [spatialConfig] - Real-time spatial slider configuration
+   * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
+   * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
+   */
+  renderCompareData(compareResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
+    this.clear();
+    this.renderMode = renderMode;
+    this.currentData = compareResponse;
+
+    if (spatialConfig) {
+      if (spatialConfig.threadSpacing !== undefined) {
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+      }
+      if (spatialConfig.threadWidth !== undefined) {
+        this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;
+      }
+    }
+
+    if (!compareResponse || !compareResponse.items || compareResponse.items.length === 0) return [];
+
+    const totalThreads = compareResponse.items.length;
+    const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
+      ? spatialConfig.threadThickness
+      : 0.3;
+
+    const spacingY = (spatialConfig && (spatialConfig.threadVectorDistance !== undefined || spatialConfig.threadSpacingY !== undefined))
+      ? (spatialConfig.threadVectorDistance ?? spatialConfig.threadSpacingY)
+      : 46.0;
+
+    const amplitudeY = (spatialConfig && spatialConfig.threadAmplitudeY !== undefined)
+      ? spatialConfig.threadAmplitudeY
+      : 16.0;
+
+    const pointsData = [];
+    const threadLabelItems = [];
+
+    compareResponse.items.forEach((item, idx) => {
+      const vec = item.embedding;
+      if (!vec || !vec.length) return;
+
+      const vec3D = this.layoutEngine.mapVectorTo3DPoints(vec, idx, viewMode, totalThreads, spacingY, amplitudeY);
+      const activations = [];
+
+      vec3D.forEach((p, dimIdx) => {
+        const val = vec[dimIdx];
+        pointsData.push({
+          position: p,
+          activation: val,
+          size: 10.0 * thicknessFactor,
+          meta: { type: "compare", token: item.text, dim: dimIdx, val: val }
+        });
+        activations.push(val);
+      });
+
+      const ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations);
+      this.activeGroup.add(ribbonMesh);
+
+      if (vec3D.length > 0) {
+        threadLabelItems.push({
+          id: item.id || `tok_${idx}`,
+          text: item.text,
+          type: "compare",
+          origin3D: vec3D[0]
+        });
+      }
+    });
+
+    if (viewMode === "ANALYSIS" && threadLabelItems.length >= 2) {
+      const originPoints = threadLabelItems.map(item => item.origin3D);
+      const baselineMesh = MeshFactory.createBaselineMesh(originPoints, 0x00e5ff);
+      if (baselineMesh) {
+        this.activeGroup.add(baselineMesh);
+      }
+    }
+
     const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
     pointsMesh.userData = { pointsData };
     this.activeGroup.add(pointsMesh);

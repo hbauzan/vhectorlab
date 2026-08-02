@@ -2,6 +2,31 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.0.0] - 2026-08-02
+
+### Added
+- **Square / Cube Point GLSL Shader (`src/visualizer/DivergentShading.js`)**:
+  - Replaced circular disc discard in `divergentFragmentShader` with axis-aligned square box distance calculation (`max(coord.x, coord.y)`).
+  - Crisp 1-pixel anti-aliased square bounding edge using `smoothstep(0.44, 0.49, maxDist)` for sharp 3D point cloud rendering.
+- **Vertical Origin Baseline in Analysis Mode (`src/visualizer/Instancer.js` & `MeshFactory.js`)**:
+  - Vertical reference baseline mesh connecting thread origins at $X = \text{startX}$ in Analysis mode.
+  - Rendered with subtle cyan/gold glass opacity (`opacity: 0.6`, `transparent: true`, `frustumCulled: false`).
+- **Dual Workspace Mode Selector (`MODE: [ ARITHMETIC | COMPARE ]`)**:
+  - Navbar top selector buttons `MODE: [ ARITHMETIC | COMPARE ]`.
+  - `ComparePanel` sidebar component (`src/ui/ComparePanel.js`) supporting sequence inputs of **1 to 1024 tokens**.
+  - Fast-loading preset buttons (5, 20, 50 tokens).
+  - Multi-sequence 3D WebGL layout engine in `Instancer.js` (`renderCompareData`).
+- **Backend Batch Compare Endpoint (`/compare`)**:
+  - Pydantic `CompareRequest` accepting 1 to 1024 text/token items.
+  - Fast batch encoding and L2 normalization in `AppState.perform_compare`.
+  - Full Pytest coverage in `backend/tests/test_backend.py`.
+
+### Changed
+- **Top-10 UI Space Optimization (`src/ui/Sidebar.js` & `src/style.css`)**:
+  - Removed Top-K dropdown selector from sidebar.
+  - Locked `top_k` parameter to `10` across form inputs and API calls.
+  - Expanded `.results-list` container height to maximize vertical space for nearest cosine neighbor results.
+
 ## [0.2.0] - 2026-08-02
 
 ### Added

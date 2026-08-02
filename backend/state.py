@@ -154,6 +154,41 @@ class AppState:
             "results": results,
         }
 
+    def perform_compare(self, texts: list[str]) -> dict[str, Any]:
+        """
+        Computes L2-normalized embeddings for a sequence of 1 to 1024 token/text items.
+        """
+        if self.model is None:
+            raise RuntimeError("AppState not initialized with model.")
+
+        cleaned = [t.strip() for t in texts if t.strip()][:1024]
+        if not cleaned:
+            return {"count": 0, "items": []}
+
+        raw_embeddings = self.model.encode(
+            cleaned, show_progress_bar=False, convert_to_numpy=True
+        )
+        if raw_embeddings.ndim == 1:
+            raw_embeddings = raw_embeddings.reshape(1, -1)
+
+        norms = np.linalg.norm(raw_embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1e-9
+        normalized = raw_embeddings / norms
+
+        items = []
+        for idx, text in enumerate(cleaned):
+            items.append({
+                "id": f"tok_{idx}",
+                "index": idx,
+                "text": text,
+                "embedding": normalized[idx].tolist(),
+            })
+
+        return {
+            "count": len(items),
+            "items": items,
+        }
+
 
 # Global single state instance (lazy loaded)
 state = AppState()
