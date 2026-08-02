@@ -44,13 +44,6 @@ export class SceneSetup {
     pointLight.position.set(0, 100, 0);
     this.scene.add(pointLight);
 
-    // 5. Spatial Reference Grid
-    const gridHelper = new THREE.GridHelper(800, 80, 0x00ffaa, 0x1a2838);
-    gridHelper.position.y = -50;
-    gridHelper.material.opacity = 0.4;
-    gridHelper.material.transparent = true;
-    this.scene.add(gridHelper);
-
     // Resize handling
     window.addEventListener('resize', () => this.onWindowResize());
   }
