@@ -9,14 +9,23 @@ describe('resolveApiBaseUrl', () => {
     })).toBe('https://api-xyz.ngrok-free.dev');
   });
 
-  it('uses localhost backend on desktop local', () => {
+  it('honors VITE_API_BASE_URL=/api even on localhost (enabled default)', () => {
+    // When env is set (as in .env / .env.example), it wins over hostname heuristics.
+    expect(resolveApiBaseUrl({
+      envBase: '/api',
+      hostname: 'localhost',
+    })).toBe('/api');
+  });
+
+  it('uses localhost backend when env is explicitly empty', () => {
+    // Empty string = no override → hostname fallback (desktop direct to :8000).
     expect(resolveApiBaseUrl({ envBase: '', hostname: 'localhost' }))
       .toBe('http://127.0.0.1:8000');
-    expect(resolveApiBaseUrl({ envBase: undefined, hostname: '127.0.0.1' }))
+    expect(resolveApiBaseUrl({ envBase: '', hostname: '127.0.0.1' }))
       .toBe('http://127.0.0.1:8000');
   });
 
-  it('uses same-origin /api behind ngrok (Vite proxy)', () => {
+  it('uses same-origin /api behind ngrok when env is empty', () => {
     expect(resolveApiBaseUrl({
       envBase: '',
       hostname: 'obsessed-landfall-irritable.ngrok-free.dev',
