@@ -10,6 +10,7 @@ import { Navbar } from './ui/Navbar.js';
 import { Sidebar } from './ui/Sidebar.js';
 import { HUD } from './ui/HUD.js';
 import { CustomModal } from './ui/CustomModal.js';
+import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
 class VectorLabApp {
@@ -30,16 +31,30 @@ class VectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. UI Components (Modal, HUD, Navbar, Sidebar)
+    // 3. View Mode State ("ANALYSIS" by default | "NAVIGATION")
+    this.viewMode = 'ANALYSIS';
+
+    // 4. UI Components (Modal, HUD, Navbar, Sidebar, ThreadLabels)
     this.modal = new CustomModal();
     this.hud = new HUD(this.appContainer);
+    this.threadLabels = new ThreadLabels(this.appContainer);
 
-    this.navbar = new Navbar(this.appContainer, (mode) => {
-      state.setRenderMode(mode);
-      if (state.arithmeticData) {
-        this.instancer.renderArithmeticData(state.arithmeticData, mode, this.sliderConfig);
+    this.navbar = new Navbar(
+      this.appContainer,
+      (renderMode) => {
+        state.setRenderMode(renderMode);
+        this.refreshRender();
+      },
+      (viewMode) => {
+        this.viewMode = viewMode;
+        if (viewMode === 'ANALYSIS') {
+          this.navigation.setAnalysisView();
+        } else {
+          this.navigation.setNavigationView();
+        }
+        this.refreshRender();
       }
-    });
+    );
 
     this.sidebar = new Sidebar(
       this.appContainer,
@@ -47,7 +62,7 @@ class VectorLabApp {
       (resultItem, index) => this.handleResultClick(resultItem, index)
     );
 
-    // 4. Spatial Control Sliders 3D Setup
+    // 5. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
       threadSpacing: 0.8,
       threadWidth: 1.0,
@@ -56,12 +71,12 @@ class VectorLabApp {
 
     this.mountThreadSlidersUI();
 
-    // 5. Interaction Callbacks
+    // 6. Interaction Callbacks
     this.interaction.onHoverCallback = (hoverData) => {
       this.hud.updateTelemetry(hoverData);
     };
 
-    // 6. Clock for animation loop
+    // 7. Clock for animation loop
     this.clock = new THREE.Clock();
 
     // Initialize Connection & Default Calculation
@@ -75,14 +90,26 @@ class VectorLabApp {
 
     const slidersContainer = document.getElementById('thread-sliders-container');
     wireThreadSliders(slidersContainer, null, this.sliderConfig, (cfg) => {
-      // Re-render active 3D vector arithmetic in real time with updated spatial configuration
-      if (state.arithmeticData) {
-        this.instancer.renderArithmeticData(state.arithmeticData, state.renderMode, cfg);
-      }
+      this.refreshRender();
     });
   }
 
+  refreshRender() {
+    if (state.arithmeticData) {
+      const labels = this.instancer.renderArithmeticData(
+        state.arithmeticData,
+        state.renderMode,
+        this.sliderConfig,
+        this.viewMode
+      );
+      this.threadLabels.setLabels(labels);
+    }
+  }
+
   async init() {
+    // Set initial front camera view for ANALYSIS mode
+    this.navigation.setAnalysisView();
+
     // Check backend health status
     const health = await this.provider.checkHealth();
     if (health.ok) {
@@ -108,8 +135,14 @@ class VectorLabApp {
       const data = await this.provider.computeArithmetic(wordA, wordB, wordC, topK);
       state.setArithmeticData(data);
 
-      // Render 3D Vector Points & Ribbons with current spatial layout configuration
-      this.instancer.renderArithmeticData(data, state.renderMode, this.sliderConfig);
+      // Render 3D Vector Points & Ribbons and update Thread Labels
+      const labels = this.instancer.renderArithmeticData(
+        data,
+        state.renderMode,
+        this.sliderConfig,
+        this.viewMode
+      );
+      this.threadLabels.setLabels(labels);
 
       // Update Sidebar results list
       this.sidebar.updateResults(data.results);
@@ -122,7 +155,7 @@ class VectorLabApp {
     // Move 3D camera to focus on result vector
     const resVec = state.arithmeticData?.vector_res;
     if (resVec && resVec.length) {
-      const targetPoint = this.instancer.layoutEngine.mapVectorTo3DPoints(resVec, 0)[0];
+      const targetPoint = this.instancer.layoutEngine.mapVectorTo3DPoints(resVec, 0, this.viewMode)[0];
       if (targetPoint) {
         this.navigation.focusPosition(targetPoint);
       }
@@ -143,6 +176,9 @@ class VectorLabApp {
 
     // Update corner axis gizmo
     this.axisGizmo.update();
+
+    // Update floating Glassmorphic thread labels position
+    this.threadLabels.update(this.sceneSetup.camera, window.innerWidth, window.innerHeight);
 
     // Render 3D Scene
     this.sceneSetup.render();
