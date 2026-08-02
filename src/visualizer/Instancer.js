@@ -53,8 +53,8 @@ export class Instancer {
     if (!arithmeticResponse || !arithmeticResponse.vector_res) return;
 
     const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
-      ? (spatialConfig.threadThickness / 2.0)
-      : 1.0;
+      ? spatialConfig.threadThickness
+      : 0.3;
 
     const pointsData = [];
     const resRibbonPoints = [];
@@ -69,7 +69,7 @@ export class Instancer {
       pointsData.push({
         position: p,
         activation: val,
-        size: 16.0 * thicknessFactor,
+        size: 10.0 * thicknessFactor,
         meta: { type: "res", dim: idx, val: val }
       });
       resRibbonPoints.push(p);
@@ -104,7 +104,7 @@ export class Instancer {
     }
 
     // Create GPU Points Mesh using Divergent Activation Shading
-    const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 10.0 * thicknessFactor });
+    const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
     pointsMesh.userData = { pointsData };
     this.activeGroup.add(pointsMesh);
 

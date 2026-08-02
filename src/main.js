@@ -51,7 +51,7 @@ class VectorLabApp {
     this.sliderConfig = {
       threadSpacing: 0.8,
       threadWidth: 1.0,
-      threadThickness: 2.0
+      threadThickness: 0.3
     };
 
     this.mountThreadSlidersUI();

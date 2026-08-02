@@ -8,7 +8,7 @@ import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
 export function threadSlidersMarkup(config = {}) {
   const spacing = config.threadSpacing ?? 0.8;
   const width = config.threadWidth ?? 1.0;
-  const thickness = config.threadThickness ?? 2.0;
+  const thickness = config.threadThickness ?? 0.3;
 
   return `
 <div id="thread-sliders-container" class="section-card">
@@ -36,9 +36,9 @@ export function threadSlidersMarkup(config = {}) {
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-thickness-slider">Grosor Puntos:</label>
-      <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(1)}</span>
+      <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="1.0" max="10.0" step="0.5" value="${thickness}">
+    <input type="range" id="thread-thickness-slider" min="0.1" max="1.0" step="0.05" value="${thickness}">
   </div>
 </div>
 `;
@@ -96,7 +96,7 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
     thicknessInput.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       config.threadThickness = val;
-      if (thicknessVal) thicknessVal.textContent = val.toFixed(1);
+      if (thicknessVal) thicknessVal.textContent = val.toFixed(2);
       triggerChange();
     });
   }
