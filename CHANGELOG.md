@@ -5,6 +5,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [1.0.0] - 2026-08-02
 
 ### Added
+- **Camera Pose Overlay (`VITE_SHOW_CAM_POSE`)**: Optional live `POS`/`ROT` HUD for capturing default navigation views. Gated by Vite env var; default `false` (see `.env.example`).
 - **Square / Cube Point GLSL Shader (`src/visualizer/DivergentShading.js`)**:
   - Replaced circular disc discard in `divergentFragmentShader` with axis-aligned square box distance calculation (`max(coord.x, coord.y)`).
   - Crisp 1-pixel anti-aliased square bounding edge using `smoothstep(0.44, 0.49, maxDist)` for sharp 3D point cloud rendering.
@@ -22,6 +23,7 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Full Pytest coverage in `backend/tests/test_backend.py`.
 
 ### Changed
+- **Default Navigation Camera Pose (`src/engine/Navigation.js`)**: Startup `NAVEGACIÓN` view locked to captured corridor pose `POS (-178.3, 13.5, 52.2)` / `ROT (-5.4°, -51.5°, 0°)` with matching spatial slider defaults (Separación `0.4`, Amplitud `7.0`).
 - **Top-10 UI Space Optimization (`src/ui/Sidebar.js` & `src/style.css`)**:
   - Removed Top-K dropdown selector from sidebar.
   - Locked `top_k` parameter to `10` across form inputs and API calls.

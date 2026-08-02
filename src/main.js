@@ -38,7 +38,9 @@ class VectorLabApp {
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     this.modal = new CustomModal();
-    this.hud = new HUD(this.appContainer);
+    this.hud = new HUD(this.appContainer, {
+      showCamPose: import.meta.env.VITE_SHOW_CAM_POSE === 'true'
+    });
     this.threadLabels = new ThreadLabels(this.appContainer);
 
     this.navbar = new Navbar(
@@ -74,9 +76,9 @@ class VectorLabApp {
 
     // 5. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
-      threadSpacing: 1.5,
+      threadSpacing: 0.4,
       threadVectorDistance: 10.0,
-      threadAmplitudeY: 12.0,
+      threadAmplitudeY: 7.0,
       threadWidth: 0.2,
       threadThickness: 0.10
     };
@@ -229,6 +231,11 @@ class VectorLabApp {
 
     // Update navigation velocity
     this.navigation.update(deltaTime);
+
+    if (this.hud.showCamPose) {
+      this.navigation.euler.setFromQuaternion(this.sceneSetup.camera.quaternion);
+      this.hud.updateCameraPose(this.sceneSetup.camera, this.navigation.euler);
+    }
 
     // Raycast hover check
     const interactiveObjects = this.instancer.getInteractiveObjects();
