@@ -146,6 +146,11 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   - El dock host mantiene `overflow: hidden` / `fit-content` — no reintroducir scrollbar externa (§4.1 / §4.2).
 - **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
 
+### 4.5. Control Espacial 3D — defaults = mid del rango
+- **Problema**: Rangos históricos asimétricos (Distancia Y / Grosor con default = min; Amplitud hasta 240) dejan el thumb pegado a un extremo al load — solo se puede agrandar, no afinar alrededor del punto dulce.
+- **Solución Obligatoria**: Un solo set global de min/max simétrico lineal (`mid === (min+max)/2` dentro del `step`) con defaults fijos: Separación $X=0.4$ ∈ $[0.1,0.7]$, Distancia $Y=10$ ∈ $[1,19]$, Amplitud $Y=7$ ∈ $[1,13]$, Longitud $Z=0.2$ ∈ $[0.1,0.3]$, Grosor $=0.10$ ∈ $[0.05,0.15]$. Mismos rangos en todos los MODE/VISTA/RENDER (sin presets por modo todavía).
+- **Invariante**: al load, cada thumb del dock derecho arranca en el centro del track; se puede disminuir y aumentar.
+
 ### 1.6. MESH surface = grilla threads × dims, no tubo
 - **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
 
