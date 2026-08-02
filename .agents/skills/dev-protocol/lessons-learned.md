@@ -160,6 +160,13 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 
 ---
 
+## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
+
+1. **Consulta Obligatoria**: El agente **DEBE** leer este archivo al iniciar cualquier tarea de implementación, diseño de shaders, navegación o refactorización.
+2. **Actualización Continua**: Al descubrir una nueva invariante técnica, bug de renderizado o patrón de rendimiento, el agente **DEBE** agregarla a este archivo antes de finalizar la tarea.
+
+---
+
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
 ### 6.1. Proxy `/api` en Vite: prefijo general, no ruta-a-ruta
@@ -171,10 +178,3 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **¿Hay que mapear endpoint por endpoint?** **No**, si todo el API vive bajo el mismo prefijo (`/api/health`, `/api/arithmetic`, `/api/compare`, …). Un solo `proxy['/api']` cubre rutas nuevas automáticamente.
 - **Cuándo sí ruta-a-ruta**: solo si exponés paths **fuera** de `/api` (p.ej. `/health` bare sin prefijo) y querés proxearlos — ahí cada path top-level necesita su propia entrada en `server.proxy`, o movés el contrato a `/api/*`.
 - **Invariante**: nuevas rutas backend bajo `/api` → cero cambio en Vite; si alguien agrega un mount root-level, o lo mete bajo `/api` o agrega proxy explícito + lesson.
-
----
-
-## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
-
-1. **Consulta Obligatoria**: El agente **DEBE** leer este archivo al iniciar cualquier tarea de implementación, diseño de shaders, navegación o refactorización.
-2. **Actualización Continua**: Al descubrir una nueva invariante técnica, bug de renderizado o patrón de rendimiento, el agente **DEBE** agregarla a este archivo antes de finalizar la tarea.
