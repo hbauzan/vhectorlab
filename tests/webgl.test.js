@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { LayoutEngine } from '../src/visualizer/LayoutEngine.js';
 import { PointShader } from '../src/engine/Shaders.js';
 import { MeshFactory } from '../src/visualizer/MeshFactory.js';
+import { Navigation } from '../src/engine/Navigation.js';
 
 describe('WebGL 3D Engine & Spatial Math', () => {
   it('LayoutEngine maps 1D embedding vector into 3D space correctly', () => {
@@ -33,5 +34,20 @@ describe('WebGL 3D Engine & Spatial Math', () => {
     
     expect(pointsMesh).toBeInstanceOf(THREE.Points);
     expect(pointsMesh.frustumCulled).toBe(false);
+  });
+
+  it('Navigation bounds movement velocity smoothly without exponential buildup', () => {
+    const camera = new THREE.PerspectiveCamera();
+    camera.position.set(0, 0, 0);
+    const nav = new Navigation(camera);
+    nav.keys.KeyW = true;
+
+    // Simulate 60 frames holding W
+    for (let i = 0; i < 60; i++) {
+      nav.update(0.016);
+    }
+
+    // Velocity should be smoothly bounded around target speed per frame (~0.64), not 8x buildup
+    expect(nav.velocity.length()).toBeLessThan(2.0);
   });
 });
