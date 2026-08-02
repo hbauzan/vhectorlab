@@ -2,9 +2,9 @@
  * HTTP Remote Provider Client for VectorLab 3D FastAPI Backend.
  *
  * Base URL resolution:
- * - `VITE_API_BASE_URL` if set (e.g. second ngrok URL for the API)
- * - localhost / 127.0.0.1 → direct `http://127.0.0.1:8000`
- * - public host (ngrok, LAN IP, etc.) → same-origin `/api` (Vite proxy)
+ * - `VITE_API_BASE_URL` if set (preferred; `.env` enables `/api` for Vite proxy / ngrok)
+ * - else localhost / 127.0.0.1 → direct `http://127.0.0.1:8000`
+ * - else public host → same-origin `/api` (Vite proxy)
  */
 
 /**
