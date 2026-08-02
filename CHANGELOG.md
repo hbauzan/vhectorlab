@@ -4,6 +4,11 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Control Espacial 3D — ranges re-centrados** (`feat/recenter-spatial-slider-ranges`):
+  - Defaults (punto dulce) son el mid lineal de cada slider: Separación X `0.4` ∈ `[0.1, 0.7]`, Distancia Y `10` ∈ `[1, 19]`, Amplitud Y `7` ∈ `[1, 13]`, Longitud Z `0.2` ∈ `[0.1, 0.3]`, Grosor `0.10` ∈ `[0.05, 0.15]`.
+  - Corrige Distancia Y y Grosor pegados al mínimo al load.
+
 ### Added
 - **Ngrok / phone dev access** (`feat/ngrok-dev-access`):
   - Vite `allowedHosts` + `/api` proxy to `127.0.0.1:8000` (prefix proxy — not per-route).
