@@ -224,6 +224,28 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - Encode already had bucketing + inference_mode + autocast; MPS autocast attempted with FP32 fallback.
 - **Encode I/O bottleneck**: GPU matmul ~20ms; dense `.tolist()` of `[N, 8192]` JSON was the freeze. Fix: `encode_vectors_sparse` → `{format:topk_sparse, indices[N,K], values[N,K]}` + router `ORJSONResponse`; `RemoteProvider.saeEncode` densifies via `densifyTopKActivations`. `load_model()` is singleton (`model is not None` short-circuit) — do not `torch.load` per request.
 - **Train UI hang**: UI could sit on `Starting SAE training… · working Ns` while backend was already `success`. Causes: (1) poll started only after `POST /train` returned — large embeddings JSON could stall the POST; (2) `refreshSaeStatusUi` nulled status on fetch error → fallback label "Starting…"; (3) async `setInterval` overlap. Fix: poll immediately on busy; keep last status on error; fetch timeouts; ignore pre-POST `idle`; clear poll in `_stopSaeTrainBusy`.
+
+### 4.11. COMPARE group contrast visibility (v2.1.0)
+- **SAE + global z-score**: Top‑K densified matrix (~5% nonzero) → exact zeros normalize to \(t \approx -0.24\) (false negative “dust”). Mitigation in v1: auto **+ Only** on SAE encode success; restore previous filter on SAE OFF (`saeFilterBridge`). Do not change global z-score contract without an explicit D10.
+- **Amplitude floor**: `COMPARE|ANALYSIS|POINTS` at Amp `1.0` collapses relief even when math has signal — default Amp **16** (RIBBONS twin too).
+- **Dim sort**: optional client permutation by max pairwise `|mean_Gi − mean_Gj|`; session-only, OFF default; only when ≥2 `groupId`. Does not mutate backend payload.
+- **Cosine ▲/▼ vs groups**: disable while groups active — global cosine sort breaks GROUP_* contiguity and soft Y gaps.
+- Soft ANALYSIS Y gap: +1 empty slot between consecutive different `groupId` blocks (`groupStackLayout`).
+
+#### Handoff for predecessor / sister apps (architect brief)
+Portable findings from VectorLab 3D `v2.1.0` — apply if the older app shares ANALYSIS matrix paint + groups + SAE Top‑K:
+
+| Finding | Detail | Recommended fix |
+| :--- | :--- | :--- |
+| Sparse SAE + **global** z-score+tanh | Exact zeros → \(t\approx-0.24\) (painted as negative “dust”); nonzeros saturate near +1 | Prefer **+ Only** when SAE ON; optionally restore prior filter on SAE OFF. Avoid changing global norm unless product accepts colormap shift |
+| Flat relief | Amplitude default at slider floor (~1) hides real peaks (RAW peak \|a\|~0.22 → Y tiny) | Raise ANALYSIS Amplitude default (VL3D used **16**; ARITH often **40**) |
+| Unsorted X | Dim index order hides domain bands even when between-group signal exists | Client **dim permutation** by `max_{i,j} \|mean_Gi − mean_Gj\|`; toggle OFF = raw order |
+| Cosine list sort vs groups | Global cosine reorder breaks group contiguity on Y | Disable cosine ▲/▼ while ≥2 groups, or regroup after sort |
+| Expectation vs math | RAW G1↔G2 centroid cosine ~0.55 (not antipodal); SAE can improve (~0.22) but paint still hides it | Fix paint/order first; wider SAE train is L3, not required for readability |
+| Layout axes (ANALYSIS) | X=dim, Y=thread stack + val×amp, Z=0 | Soft Y gap between `GROUP_*` blocks (+1× spacing) aids domain reading |
+
+**Modules shipped (reference):** `saeFilterBridge.js`, `groupStackLayout.js`, `dimContrastSort.js`; wiring in Compare panel + Instancer layout. Diagnosis: `scripts/diagnose_group_separation.py`. Roadmap: `roadmap/compare-group-contrast-viz.md`.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

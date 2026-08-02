@@ -210,6 +210,33 @@ canvas {
   text-transform: none;
 }
 
+.compare-dim-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 6px 2px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(230, 235, 245, 0.88);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.compare-dim-sort[hidden] {
+  display: none !important;
+}
+
+.compare-dim-sort input {
+  accent-color: var(--accent-gold, #e8b84a);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+
 /* COMPARE: cosine-vs-anchor list — scroll only inside the list (§4.1 panel invariant) */
 #compare-panel .compare-results {
   flex: 1 1 auto;

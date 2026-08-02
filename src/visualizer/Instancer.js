@@ -3,6 +3,12 @@ import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
 import { arithmeticSequenceIndex, arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
 import { normalizeRenderMode } from '../core/State.js';
+import { computeGroupAwareYSlots } from './groupStackLayout.js';
+import {
+  applyDimPermutation,
+  computeDimContrastPermutation,
+  hasEnoughGroupsForDimSort,
+} from './dimContrastSort.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -222,9 +228,17 @@ export class Instancer {
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
    * @param {Object} [vizConfig] - Global sign filter + color anchors
+   * @param {{ dimSortByContrast?: boolean }} [options]
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
    */
-  renderCompareData(compareResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION", vizConfig = null) {
+  renderCompareData(
+    compareResponse,
+    renderMode = "POINTS",
+    spatialConfig = null,
+    viewMode = "NAVIGATION",
+    vizConfig = null,
+    options = {}
+  ) {
     this.clear();
     renderMode = normalizeRenderMode(renderMode);
     this.renderMode = renderMode;
@@ -242,7 +256,8 @@ export class Instancer {
 
     if (!compareResponse || !compareResponse.items || compareResponse.items.length === 0) return [];
 
-    const totalThreads = compareResponse.items.length;
+    const items = compareResponse.items;
+    const totalThreads = items.length;
     const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
       ? spatialConfig.threadThickness
       : 0.3;
@@ -255,6 +270,10 @@ export class Instancer {
       ? spatialConfig.threadAmplitudeY
       : 16.0;
 
+    const { slots: ySlots, span: ySlotSpan } = computeGroupAwareYSlots(items, { gapSlots: 1 });
+    const dimSortOn = options.dimSortByContrast === true && hasEnoughGroupsForDimSort(items);
+    const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
+
     const pointsData = [];
     const threadLabelItems = [];
     const threads = [];
@@ -262,21 +281,32 @@ export class Instancer {
     const surfaceRows = [];
     let pointOffset = 0;
 
-    compareResponse.items.forEach((item, idx) => {
-      const vec = item.embedding;
-      if (!vec || !vec.length) return;
+    items.forEach((item, idx) => {
+      const rawVec = item.embedding;
+      if (!rawVec || !rawVec.length) return;
 
+      const vec = dimPerm ? applyDimPermutation(rawVec, dimPerm) : rawVec;
       const threadId = item.id || `tok_${idx}`;
-      const vec3D = this.layoutEngine.mapVectorTo3DPoints(vec, idx, viewMode, totalThreads, spacingY, amplitudeY);
+      const layoutOpts = { ySlot: ySlots[idx] ?? idx, ySlotSpan };
+      const vec3D = this.layoutEngine.mapVectorTo3DPoints(
+        vec,
+        idx,
+        viewMode,
+        totalThreads,
+        spacingY,
+        amplitudeY,
+        layoutOpts
+      );
       const activations = [];
 
       vec3D.forEach((p, dimIdx) => {
         const val = vec[dimIdx];
+        const sourceDim = dimPerm ? dimPerm[dimIdx] : dimIdx;
         pointsData.push({
           position: p,
           activation: val,
           size: 10.0 * thicknessFactor,
-          meta: { type: "compare", token: item.text, dim: dimIdx, val }
+          meta: { type: "compare", token: item.text, dim: sourceDim, val }
         });
         activations.push(val);
       });
@@ -307,6 +337,8 @@ export class Instancer {
         pointOffset,
         dimCount: vec.length,
         sequenceIndex: idx,
+        ySlot: layoutOpts.ySlot,
+        ySlotSpan,
         _layoutPoints: vec3D,
         groupId: item.groupId,
         groupLabel: item.groupLabel,
@@ -350,6 +382,7 @@ export class Instancer {
       totalThreads,
       spacingY,
       amplitudeY,
+      ySlotSpan,
       pointsMesh,
       baselineMesh,
       threads,
@@ -364,13 +397,31 @@ export class Instancer {
    * @returns {THREE.Vector3|null} origin for floating labels
    */
   _applyCompareThreadLayout(thread, sequenceIndex, runtime, { updateBounds = false } = {}) {
+    // Settled layout uses stored group-gap slots; fractional tween uses sequenceIndex as Y.
+    const settled = Number.isInteger(sequenceIndex)
+      && sequenceIndex === thread.sequenceIndex
+      && thread.ySlot !== undefined;
+    const layoutOpts = settled
+      ? {
+          ySlot: thread.ySlot,
+          ySlotSpan: thread.ySlotSpan !== undefined
+            ? thread.ySlotSpan
+            : (runtime.ySlotSpan !== undefined
+              ? runtime.ySlotSpan
+              : Math.max(0, runtime.totalThreads - 1)),
+        }
+      : {
+          ySlot: sequenceIndex,
+          ySlotSpan: Math.max(0, runtime.totalThreads - 1),
+        };
     const vec3D = this.layoutEngine.mapVectorTo3DPoints(
       thread.embedding,
       sequenceIndex,
       runtime.viewMode,
       runtime.totalThreads,
       runtime.spacingY,
-      runtime.amplitudeY
+      runtime.amplitudeY,
+      layoutOpts
     );
     if (!vec3D.length) return null;
 
@@ -493,6 +544,34 @@ export class Instancer {
               thread.sequenceIndex = toIdx[i];
             }
           });
+
+          if (t >= 1) {
+            const ordered = [...runtime.threads].sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+            const { slots, span } = computeGroupAwareYSlots(ordered, { gapSlots: 1 });
+            runtime.ySlotSpan = span;
+            ordered.forEach((th, i) => {
+              th.ySlot = slots[i];
+              th.ySlotSpan = span;
+            });
+            origins.length = 0;
+            labels.length = 0;
+            runtime.threads.forEach((thread) => {
+              const origin = this._applyCompareThreadLayout(thread, thread.sequenceIndex, runtime, {
+                updateBounds: true,
+              });
+              if (origin) {
+                origins.push(origin);
+                labels.push({
+                  id: thread.id,
+                  text: thread.text,
+                  type: "compare",
+                  origin3D: origin,
+                  groupId: thread.groupId,
+                  groupLabel: thread.groupLabel,
+                });
+              }
+            });
+          }
 
           this._syncCompareBaseline(origins);
 
