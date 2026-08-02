@@ -1,5 +1,6 @@
 import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
 import { parseCompareInput } from './parseCompareGroups.js';
+import { saeControlsMarkup, wireSaeControls } from './SaeControls.js';
 
 /**
  * Typical auto-manual lexicon in English (parts, fluids, systems).
@@ -69,10 +70,22 @@ export const COMPARE_WHEEL_PRESETS = COMPARE_AUTO_PRESETS;
  * Left Sidebar Control Panel component for COMPARE Mode token sequences (1 to 1024 tokens).
  */
 export class ComparePanel {
-  constructor(containerElement, onCalculateCallback, onReorderCallback = null) {
+  /**
+   * @param {HTMLElement} containerElement
+   * @param {Function} onCalculateCallback
+   * @param {Function|null} [onReorderCallback]
+   * @param {{
+   *   onSaeToggle?: (enabled: boolean) => void|Promise<void>,
+   *   onSaeTrain?: (settings: object) => void|Promise<void>,
+   *   getSaeSettings?: () => object,
+   *   setSaeSettings?: (s: object) => void,
+   * }} [saeHooks]
+   */
+  constructor(containerElement, onCalculateCallback, onReorderCallback = null, saeHooks = {}) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
     this.onReorder = onReorderCallback;
+    this.saeHooks = saeHooks;
 
     /** @type {Array|null} */
     this.items = null;
@@ -100,9 +113,7 @@ export class ComparePanel {
           <button type="button" class="btn-preset" data-preset="groupsDemo">2 Groups</button>
         </div>
 
-        <button type="submit" id="btn-compare-submit" class="btn-primary">
-          🔍 VISUALIZE SEQUENCE (3D)
-        </button>
+        ${saeControlsMarkup('cmp')}
       </form>
 
       <div class="results-container compare-results">
@@ -128,12 +139,21 @@ export class ComparePanel {
 
     this.form = this.element.querySelector('#compare-form');
     this.textarea = this.element.querySelector('#compare-tokens');
-    this.btnSubmit = this.element.querySelector('#btn-compare-submit');
     this.tokenCountVal = this.element.querySelector('#token-count-val');
     this.cosineSubtitle = this.element.querySelector('#compare-cosine-subtitle');
     this.cosineList = this.element.querySelector('#compare-cosine-list');
     this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
     this.btnSortAsc = this.element.querySelector('#btn-sort-asc');
+
+    this.saeUi = wireSaeControls(this.element, 'cmp', {
+      primaryLabel: '🔍 VISUALIZE SEQUENCE (3D)',
+      primaryLoadingLabel: '⏳ COMPUTING SEQUENCE EMBEDDINGS...',
+      onToggle: saeHooks.onSaeToggle,
+      onTrain: saeHooks.onSaeTrain,
+      getSettings: saeHooks.getSaeSettings,
+      setSettings: saeHooks.setSaeSettings,
+    });
+    this.btnSubmit = this.saeUi.btnPrimary;
 
     // Default: full English auto-manual parts lexicon
     this.textarea.value = COMPARE_AUTO_PRESETS.default.join(", ");
@@ -231,13 +251,7 @@ export class ComparePanel {
   }
 
   setLoading(loading) {
-    if (loading) {
-      this.btnSubmit.disabled = true;
-      this.btnSubmit.textContent = '⏳ COMPUTING SEQUENCE EMBEDDINGS...';
-    } else {
-      this.btnSubmit.disabled = false;
-      this.btnSubmit.textContent = '🔍 VISUALIZE SEQUENCE (3D)';
-    }
+    this.saeUi.setPrimaryLoading(loading);
   }
 
   updateMetrics(count) {

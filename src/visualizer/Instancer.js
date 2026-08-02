@@ -18,11 +18,34 @@ export class Instancer {
 
     this.renderMode = "POINTS"; // "POINTS" | "RIBBONS"
     this.currentData = null;
+    /** Multiplier on dim-axis pitch (scaleX) so SAE sparse dims keep RAW visual span. */
+    this.dimSpanScale = 1.0;
 
     /** @type {null|{ viewMode: string, totalThreads: number, spacingY: number, amplitudeY: number, pointsMesh: THREE.Points|null, baselineMesh: THREE.Line|null, threads: Array, renderMode: string }} */
     this.compareRuntime = null;
     this._reorderRaf = null;
     this._reorderBusy = false;
+  }
+
+  /**
+   * @param {number} scale  rawDim/saeDim when SAE ON; 1 when RAW
+   */
+  setDimSpanScale(scale) {
+    const n = Number(scale);
+    this.dimSpanScale = Number.isFinite(n) && n > 0 ? n : 1.0;
+  }
+
+  /**
+   * World-space AABB of currently mounted vector geometry (empty box if none).
+   * @returns {THREE.Box3}
+   */
+  getContentBoundingBox() {
+    const box = new THREE.Box3();
+    if (!this.activeGroup || this.activeGroup.children.length === 0) {
+      return box;
+    }
+    box.setFromObject(this.activeGroup);
+    return box;
   }
 
   clear() {
@@ -67,7 +90,8 @@ export class Instancer {
 
     if (spatialConfig) {
       if (spatialConfig.threadSpacing !== undefined) {
-        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+        // Dim axis pitch (ANALYSIS wall width + NAVIGATION thread length along X)
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing * (this.dimSpanScale || 1);
       }
       if (spatialConfig.threadWidth !== undefined) {
         this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;
@@ -208,7 +232,8 @@ export class Instancer {
 
     if (spatialConfig) {
       if (spatialConfig.threadSpacing !== undefined) {
-        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+        // Dim axis pitch (ANALYSIS wall width + NAVIGATION thread length along X)
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing * (this.dimSpanScale || 1);
       }
       if (spatialConfig.threadWidth !== undefined) {
         this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;

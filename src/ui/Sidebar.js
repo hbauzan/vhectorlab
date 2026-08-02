@@ -2,6 +2,10 @@
  * Left Sidebar Control Panel component for A - B + C Vector Arithmetic operations.
  */
 export class Sidebar {
+  /**
+   * @param {HTMLElement} containerElement
+   * @param {(wordA: string, wordB: string, wordC: string, topK: number) => Promise<void>} onCalculateCallback
+   */
   constructor(containerElement, onCalculateCallback) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
@@ -47,8 +51,8 @@ export class Sidebar {
     this.container.appendChild(this.element);
 
     this.form = this.element.querySelector('#arithmetic-form');
-    this.resultsList = this.element.querySelector('#results-list');
     this.btnCalculate = this.element.querySelector('#btn-calculate');
+    this.resultsList = this.element.querySelector('#results-list');
 
     this.initEventListeners();
   }
@@ -70,13 +74,10 @@ export class Sidebar {
   }
 
   setLoading(loading) {
-    if (loading) {
-      this.btnCalculate.disabled = true;
-      this.btnCalculate.textContent = '⏳ COMPUTING EMBEDDINGS...';
-    } else {
-      this.btnCalculate.disabled = false;
-      this.btnCalculate.textContent = '⚡ CALCULATE VECTOR';
-    }
+    this.btnCalculate.disabled = loading;
+    this.btnCalculate.textContent = loading
+      ? '⏳ COMPUTING EMBEDDINGS...'
+      : '⚡ CALCULATE VECTOR';
   }
 
   updateResults(results) {
