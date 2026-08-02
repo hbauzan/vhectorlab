@@ -5,6 +5,8 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Amplitud (Y) max → 20** (`feat/amplitude-y-max-20`):
+  - Rango `[1.0, 20.0]` step `0.1`; default sigue en `7.0` (asimétrico a propósito — sin regresión del punto dulce al load).
 - **Control Espacial 3D — dblclick reset** (`feat/spatial-slider-dblclick-reset`):
   - Doble clic en un slider restaura solo ese valor al default del contexto MODE/VISTA/RENDER (hoy = global mid; overrides listos en `spatialSliderDefaults.js`).
 - **Control Espacial 3D — finer steps** (`feat/finer-spatial-slider-steps`):
