@@ -4,31 +4,26 @@
 > **Base:** `main` + lecciones `.agents/skills/dev-protocol/lessons-learned.md`.  
 > **Entrega:** por etapas (A→D), rama `feat/…` + approval gate por etapa.  
 > **Idioma objetivo:** **English** en todo lo que ve el usuario y en strings/tests del producto.  
-> **Fuera de alcance explícito:** `roadmap/**`, `.agents/**`, skills, módulos del protocolo, handoffs de agentes.
+> **Fuera de alcance explícito:** `roadmap/archivo/**`, `.agents/**` skills (salvo lesson i18n nueva), handoffs de agentes. Este roadmap + audit + prompt **sí** se actualizan.
 
 ---
 
-## 0. Decisiones cerradas / abiertas
+## 0. Decisiones cerradas
 
 | # | Tema | Decisión |
 |---|---|---|
 | D1 | **Idioma UI** | Inglés únicamente (navbar, paneles, sliders, modals, landscape gate, aria/titles, placeholders). |
 | D2 | **Identifiers internos** | Keys JS (`ANALYSIS`, `NAVIGATION`, `threadAmplitudeY`, CSS classes) **no** se renombran salvo que el string visible lo exija. |
-| D3 | **Exclusiones** | No tocar: `roadmap/`, `.agents/`, `dev-protocol` skills/lessons (salvo lesson **nueva** de i18n si el agente descubre invariante), archivos de archivo histórico. |
+| D3 | **Exclusiones** | No tocar: `roadmap/**` salvo este epic / audit, `.agents/**` skills (salvo lesson **nueva** de i18n si aparece invariante), archivos en `roadmap/archivo/**`. |
 | D4 | **Backend API errors** | Ya en inglés en su mayoría — auditar y alinear si queda ES. |
 | D5 | **Shipping** | Etapas A→D; no un mega-PR opaco. |
-| D6 | **Compare vocab presets** | ❓ **ABIERTA** — ver §0.1 |
-| D7 | **Tests / comments ES** | ❓ **ABIERTA** — ver §0.1 |
-| D8 | **Docs de producto** | ❓ **ABIERTA** — `README.md` / `CHANGELOG` histórico / `CONTEXT.md` |
+| D6 | **Compare vocab presets** | **EN** — reemplazar `AUTO_MANUAL_VOCAB_ES` por lexicon EN de auto parts (`wheel`, `engine`, `brake`, …). Renombrar símbolos (`AUTO_MANUAL_VOCAB_EN` / dropear `_ES`). Placeholder del textarea en EN. |
+| D7 | **Tests + comments ES** | **Sí** — renombrar `it('debe…')` → EN; traducir comments ES en `src/` y `backend/` a EN en Etapa D (o junto con C si conviene). |
+| D8 | **Docs de producto** | **CHANGELOG histórico: dejar en español** (que se note el pasado). Solo entradas **nuevas / Unreleased** en EN. `README.md` / `CONTEXT.md` ya EN o alinear sin reescribir historia del CHANGELOG. |
 
-### 0.1 Preguntas de traducción (GATE — no codear Etapa C hasta OK humano)
+### 0.1 Glosario UI cerrado (2026-08-02)
 
-Contestar antes de Etapa C:
-
-1. **Compare auto-manual lexicon** (`AUTO_MANUAL_VOCAB_ES` en `ComparePanel.js`): ¿reemplazar por vocabulario EN de auto parts (`wheel`, `engine`, `brake`, …) o dejar tokens ES como *dataset de demo* (UI en EN, palabras ES a propósito)?
-2. **Glosario UI (propuesta — confirmar o corregir):**
-
-| ES (hoy) | EN propuesto |
+| ES (antes) | EN (aplicar) |
 |---|---|
 | ANÁLISIS | ANALYSIS |
 | NAVEGACIÓN | NAVIGATION |
@@ -43,15 +38,11 @@ Contestar antes de Etapa C:
 | VISUALIZAR SECUENCIA (3D) | VISUALIZE SEQUENCE (3D) |
 | SIMILITUD COSENO vs — | COSINE SIMILARITY vs — |
 | Visualizá una secuencia… | Visualize a sequence to see similarity vs the anchor… |
-| Mayor → menor / Ordenar… | Highest → lowest / Sort descending|ascending |
+| Mayor → menor / Ordenar… | Highest → lowest / Sort descending \| ascending |
 | Girá el teléfono… | Rotate your phone for a better experience. You can stay in portrait if you prefer. |
-| VECTOR ARITHMETIC (ya EN) | keep |
-| MODE / RENDER / POINTS… | keep (already EN) |
-| WORD_A / RES / TOP1 | keep |
+| VECTOR ARITHMETIC / MODE / RENDER / POINTS / WORD_A / RES / TOP1 | keep (already EN) |
 
-3. **Tests** (`debe …` en `tests/*.test.js`): ¿renombrar títulos a inglés en la misma pasada, o dejar nombres ES (solo fallan si asertan copy UI)?
-4. **Comments JS/Python en español**: ¿traducir en scope, o solo strings runtime?
-5. **CHANGELOG histórico / README**: ¿solo entradas nuevas en EN + Unreleased, o reescribir historial?
+> **GATE B:** glosario y D6–D8 **cerrados**. El agente puede pasar A → C/D sin re-preguntar salvo términos nuevos del audit.
 
 ---
 
@@ -106,18 +97,13 @@ Contestar antes de Etapa C:
 
 ---
 
-## Etapa B — Glosario + OK humano (GATE)
+## Etapa B — Glosario (CERRADO 2026-08-02)
 
-**Objetivo:** cerrar §0.1 y congelar el glossary table.
+Humano confirmó D6–D8 + tabla §0.1. **No re-preguntar** salvo strings nuevos del audit A.
 
-### B.1
-- Publicar glosario final (tabla ES→EN).
-- Resolver D6–D8.
-- Si el humano no responde un ítem, **parar** (no adivinar copy de marca).
-
-### B.2 Criterios
-- [ ] Checklist §0.1 respondido en el hilo / anexo al roadmap.
-- [ ] Agente listo para Etapa C.
+### B.1 Criterios
+- [x] Checklist §0.1 respondido.
+- [x] Agente listo para Etapa C (+ D en la misma o siguiente rama).
 
 ---
 
@@ -140,20 +126,20 @@ Contestar antes de Etapa C:
 
 ---
 
-## Etapa D — Developer-facing hygiene (opcional según D7/D8)
+## Etapa D — Developer-facing hygiene (D7 + D8)
 
-**Objetivo:** alinear tests titles / comments / docs de producto si el humano lo pidió en B.
+**Objetivo:** tests titles + comments EN; **no** reescribir CHANGELOG histórico.
 
 ### D.1
-- Renombrar `it('debe…')` → EN si D7 = sí.
-- Comments ES→EN en `src/` / `backend/` si D7 = sí.
-- README / Unreleased-only vs full CHANGELOG según D8.
+- Renombrar `it('debe…')` → EN (D7).
+- Comments ES→EN en `src/` / `backend/` (D7).
+- CHANGELOG: solo **Unreleased / entradas nuevas** en EN; dejar secciones históricas en español (D8).
 
 ### D.2 Criterios
-- [ ] Scope D7/D8 cumplido; sin tocar exclusiones D3.
+- [ ] D7/D8 cumplidos; exclusiones D3 intactas.
 - [ ] Suite verde; approval gate → merge.
 
-**Rama:** `feat/english-dev-strings` (o merge en C si el humano pidió “todo junto” en B).
+**Rama:** puede ir en `feat/english-user-facing-copy` si el agente hace C+D juntos, o `feat/english-dev-strings`.
 
 ---
 

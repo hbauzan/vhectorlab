@@ -5,6 +5,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Docs: English-only UI roadmap** — glossary + D6–D8 closed (EN Compare vocab; EN test titles/comments; keep historical CHANGELOG in Spanish). See `roadmap/english-ui-i18n.md` + `roadmap/PROMPT-english-ui.md`.
 - **ThreadLabels cortas** (`feat/short-thread-labels` + `fix/compare-labels-full-tokens`):
   - Arithmetic 3D: `WORD_A` / `WORD_B` / `WORD_C` / `RES` / `TOP1` (sin badge de tipo).
   - Compare 3D: token completo ingresado (sin `TOPn` / sin truncar) — todos los items de la secuencia.
