@@ -63,3 +63,24 @@ export function reorderCompareItems(items, fromIndex, delta) {
   next.splice(toIndex, 0, moved);
   return recomputeCompareAnchorScores(next);
 }
+
+/**
+ * Sort non-anchor rows by cosine_vs_first. Anchor (#1 REF) stays fixed at index 0.
+ * @param {Array} items
+ * @param {'asc'|'desc'} direction
+ * @returns {{ count: number, anchor: object|null, items: Array }|null}
+ */
+export function sortCompareItemsByCosine(items, direction = 'desc') {
+  if (!items || !items.length) return null;
+  if (direction !== 'asc' && direction !== 'desc') return null;
+
+  const [anchor, ...rest] = items;
+  const sortedRest = rest.slice().sort((a, b) => {
+    const sa = typeof a.cosine_vs_first === 'number' ? a.cosine_vs_first : 0;
+    const sb = typeof b.cosine_vs_first === 'number' ? b.cosine_vs_first : 0;
+    return direction === 'asc' ? sa - sb : sb - sa;
+  });
+
+  // Same anchor → scores unchanged; reindex only
+  return recomputeCompareAnchorScores([anchor, ...sortedRest]);
+}

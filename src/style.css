@@ -182,10 +182,49 @@ canvas {
   gap: 6px;
 }
 
-#compare-panel .compare-cosine-subtitle {
+#compare-panel .compare-cosine-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   flex-shrink: 0;
   margin-top: 4px;
-  margin-bottom: 0;
+}
+
+#compare-panel .compare-cosine-subtitle {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#compare-panel .compare-sort-btns {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+#compare-panel .btn-sort-cosine {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 3px;
+}
+
+#compare-panel .btn-sort-cosine:hover:not(:disabled) {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+#compare-panel .btn-sort-cosine:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 #compare-panel .compare-cosine-list {
