@@ -4,6 +4,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **COMPARE group badges never appeared** (`feat/compare-group-labels`): `ComparePanel` → `handleCalculateCompare` callback dropped `tokenMeta`, so `groupId` never reached Instancer/ThreadLabels (token stack stayed, no `GROUP_*`).
+
 ### Changed
 - **Defaults COMPARE|ANALYSIS|POINTS** (`feat/compare-analysis-points-defaults`):
   - Sliders: Spacing `1.45`, Dist Y `1.0`, Amp `1.0`, Length `0.2`, Thickness `0.01`.

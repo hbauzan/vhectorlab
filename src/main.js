@@ -94,7 +94,7 @@ class VectorLabApp {
 
     this.comparePanel = new ComparePanel(
       this.leftDock.body,
-      async (tokens) => this.handleCalculateCompare(tokens),
+      async (tokens, tokenMeta) => this.handleCalculateCompare(tokens, tokenMeta),
       async (payload) => this.handleCompareReorder(payload)
     );
 
