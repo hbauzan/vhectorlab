@@ -21,7 +21,7 @@ export const GLOBAL_SPATIAL_DEFAULTS = Object.freeze({
   threadVectorDistance: 10.0,
   threadAmplitudeY: 7.0,
   threadWidth: 0.2,
-  threadThickness: 0.10,
+  threadThickness: 0.05,
 });
 
 /**
