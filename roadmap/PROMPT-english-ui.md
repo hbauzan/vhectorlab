@@ -1,11 +1,11 @@
 # Prompt — agente English-only UI (VectorLab 3D)
 
-Copiá y pegá el bloque siguiente en una sesión nueva **después** de que el humano responda las dudas §0.1 del roadmap (o pedile esas respuestas en Etapa B antes de codear C).
+Copiá y pegá el bloque siguiente en una sesión nueva. **Glosario y D6–D8 ya están cerrados** en `roadmap/english-ui-i18n.md` (2026-08-02).
 
 ---
 
 ```text
-Usando dev-protocol, ejecutá el roadmap de English-only product surface.
+Usando dev-protocol, ejecutá el roadmap English-only product surface.
 
 ## Contexto
 Repo: VectorLab 3D (Python/uv + Vite/Three.js).
@@ -14,58 +14,57 @@ Roadmap canónico (leelo completo ANTES de codear):
   `roadmap/english-ui-i18n.md`
 Lecciones: `.agents/skills/dev-protocol/lessons-learned.md` (§4 paneles, §4.5 sliders, §4.6 labels).
 
-## Objetivo de producto
-Pasar a **inglés** todo lo user-facing (y lo que el roadmap marque en D7/D8). Identifiers internos (`ANALYSIS`, keys JS, CSS) NO renombrar salvo necesidad.
+## Decisiones YA CERRADAS (no re-preguntar)
+- D6: Compare auto-vocab → **English** auto-parts lexicon (rename off `_ES`).
+- D7: Rename Spanish test titles (`debe…`) to EN; translate ES comments in `src/` + `backend/` to EN.
+- D8: **Do NOT rewrite historical CHANGELOG** (leave past entries in Spanish). New/Unreleased entries in EN only.
+- Glossary table in roadmap §0.1 is authoritative (ANALYSIS, NAVIGATION, 3D Spatial Controls, Spacing, Vector Distance, Amplitude, Length, Point Thickness, CALCULATE VECTOR, VISUALIZE SEQUENCE, etc.).
 
-## Fuera de alcance (NO tocar)
-- `roadmap/**` salvo actualizar el propio audit/glosario si el roadmap lo pide
-- `.agents/**` / skills / módulos del protocolo (podés AÑADIR una lesson corta de i18n si aparece invariante nueva)
-- No i18n framework, no multi-idioma — solo English
+## Objetivo
+Product copy + in-scope strings → English. Internal identifiers (`ANALYSIS`, JS keys, CSS) stay unless a visible label requires change. No i18n framework.
 
-## Flujo obligatorio
-### Etapa A — Auditoría exhaustiva (primero)
-1. Branch `docs/english-ui-audit` (o `feat/english-ui-audit`).
-2. Inventario completo en scope: `src/**`, `index.html`, `tests/**`, `backend/**` user/API messages.
-3. Excluir roadmap/skills/node_modules.
-4. Smoke UI + ripgrep; entregar tabla `file:line | current | suggested EN | class` (user-facing | test-title | comment | demo-vocab).
-5. Commit docs (`roadmap/english-ui-audit.md` append o sección en el roadmap). Approval gate; merge docs OK.
+## Fuera de alcance
+- `roadmap/archivo/**`, `.agents/**` / skills (except optional short new i18n lesson)
+- Rewriting old CHANGELOG sections
+- Multi-language / i18n libraries
 
-### Etapa B — GATE glosario (OBLIGATORIO)
-1. Listá las preguntas §0.1 del roadmap + cualquier término nuevo del audit.
-2. Proponé EN para cada string user-facing.
-3. **ESPERÁ respuestas del humano.** No inventes copy de marca ni decidas D6–D8 solo.
+## Flujo
+### Etapa A — Auditoría exhaustiva
+1. Branch `docs/english-ui-audit`.
+2. Inventory ES/mixed strings in `src/**`, `index.html`, `tests/**`, `backend/**` (user/API msgs).
+3. Deliver `roadmap/english-ui-audit.md` table: `file:line | current | suggested EN | class`.
+4. Smoke UI notes. Approval gate → merge docs.
 
-### Etapa C — User-facing (tras OK de B)
+### Etapa B — SKIP
+Already closed in roadmap. If audit finds NEW user-facing terms not in §0.1, list them once and ask; otherwise proceed.
+
+### Etapa C + D — Apply (can be one branch if clean)
 1. Branch `feat/english-user-facing-copy`.
-2. Aplicá glosario cerrado a Navbar / Sidebar / ComparePanel / ThreadSliders / LandscapeGate / aria / titles / empty states / placeholders.
-3. Compare vocab según decisión D6.
-4. Actualizá tests que aserten copy.
-5. CHANGELOG Unreleased corto; lesson solo si hay invariante nueva.
-6. Vitest verde + smoke; approval gate → merge.
+2. Apply glossary to Navbar, Sidebar, ComparePanel, ThreadSliders, LandscapeGate, aria/titles/empty states/placeholders; EN auto vocab.
+3. Update UI-copy asserts; rename `debe…` tests to EN; translate ES comments in src/backend.
+4. CHANGELOG Unreleased in EN only — leave historical Spanish entries untouched.
+5. Vitest green + smoke; approval gate → merge.
 
-### Etapa D — solo si B lo pidió (D7/D8)
-Tests titles / comments / docs según lo acordado. Rama separada o misma si el humano dijo “todo junto”.
-
-## Criterios de aceptación (C)
-- [ ] Ningún string ES visible en UI (Arithmetic, Compare, VISTA, sliders, landscape gate, modals).
-- [ ] `data-view` / mode keys internos intactos.
-- [ ] Compare labels 3D siguen siendo el token crudo (§4.6).
-- [ ] Tests verdes; asserts de copy actualizados.
-- [ ] Grep residual de UI-ES en `src/` limpio (o solo comentarios si D7=no).
+## Criterios de aceptación
+- [ ] No Spanish visible in UI (Arithmetic, Compare, VISTA, sliders, landscape gate, modals).
+- [ ] Compare 3D labels remain raw tokens (§4.6).
+- [ ] Internal `data-view` / mode keys unchanged.
+- [ ] Tests green; titles EN; comments ES→EN in scope.
+- [ ] Historical CHANGELOG still Spanish; new notes EN.
+- [ ] Residual grep of UI Spanish in `src/` clean (or documented false positives).
 
 ## Cómo probar
 1. `npm run dev` (+ backend).
-2. Recorrer MODE / VISTA / RENDER; sliders titles; Compare empty + sort tooltips; landscape gate en phone portrait o DevTools.
-3. Confirmar presets Compare según D6.
+2. Walk MODE / VISTA / RENDER; slider titles; Compare empty + sort tooltips; landscape gate; presets show English tokens.
+3. Spot-check a few `it('…')` names are English.
 
 ## Estilo
-No-fluff; TDD donde haya harness; no ampliar a i18n libraries.
+No-fluff; TDD where harness exists; don’t expand scope.
 ```
 
 ---
 
 ## Notas para el humano
 
-1. **Antes de pegar el prompt**, respondé §0.1 del roadmap (`english-ui-i18n.md`) — o dejá que el agente pregunte en Etapa B y contestá ahí.
-2. Orden recomendado: A (audit merge) → B (tus OKs) → C (UI) → D opcional.
-3. Si querés un solo agente end-to-end, pegá el prompt completo; el gate B lo obliga a frenar.
+- Glosario ya OK — podés pegar el prompt directo.
+- Orden: A (audit) → C+D (apply) con approval gates.
