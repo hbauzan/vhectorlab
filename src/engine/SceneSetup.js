@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 
+/** Exponential fog density — soft atmosphere without blacking out far RIBBONS/MESH. */
+export const SCENE_FOG_DENSITY = 0.0008;
+export const SCENE_FOG_COLOR = 0x050505;
+
 /**
  * Initializes and manages the Three.js 3D WebGL scene setup.
  */
@@ -9,8 +13,10 @@ export class SceneSetup {
 
     // 1. Scene setup with dark background #050505
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x050505);
-    this.scene.fog = new THREE.FogExp2(0x050505, 0.008);
+    this.scene.background = new THREE.Color(SCENE_FOG_COLOR);
+    // Soft FogExp2: MeshBasicMaterial (RIBBONS/MESH) respects fog; density must stay
+    // readable at COMPARE camera distances (~300–400). POINTS shaders omit fog.
+    this.scene.fog = new THREE.FogExp2(SCENE_FOG_COLOR, SCENE_FOG_DENSITY);
 
     // 2. Camera setup
     const aspect = window.innerWidth / window.innerHeight;
