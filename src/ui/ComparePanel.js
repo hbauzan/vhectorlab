@@ -1,10 +1,17 @@
+import { reorderCompareItems } from './compareCosine.js';
+
 /**
  * Left Sidebar Control Panel component for COMPARE Mode token sequences (1 to 1024 tokens).
  */
 export class ComparePanel {
-  constructor(containerElement, onCalculateCallback) {
+  constructor(containerElement, onCalculateCallback, onReorderCallback = null) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
+    this.onReorder = onReorderCallback;
+
+    /** @type {Array|null} */
+    this.items = null;
+    this.reorderLocked = false;
 
     this.element = document.createElement('div');
     this.element.id = 'compare-panel';
@@ -32,11 +39,16 @@ export class ComparePanel {
         </button>
       </form>
 
-      <div class="results-container">
+      <div class="results-container compare-results">
         <h3>ACTIVE SEQUENCE METRICS</h3>
         <div id="compare-metrics" class="compare-metrics-box">
           <span class="metric-item">Loaded Tokens: <strong id="token-count-val">0</strong></span>
         </div>
+
+        <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">SIMILITUD COSENO vs — (1.er token)</h3>
+        <ul id="compare-cosine-list" class="compare-cosine-list">
+          <li class="empty-state">Visualizá una secuencia para ver similitud vs el 1.er token...</li>
+        </ul>
       </div>
     `;
 
@@ -46,6 +58,8 @@ export class ComparePanel {
     this.textarea = this.element.querySelector('#compare-tokens');
     this.btnSubmit = this.element.querySelector('#btn-compare-submit');
     this.tokenCountVal = this.element.querySelector('#token-count-val');
+    this.cosineSubtitle = this.element.querySelector('#compare-cosine-subtitle');
+    this.cosineList = this.element.querySelector('#compare-cosine-list');
 
     // Default sample values
     this.textarea.value = "king, queen, man, woman, prince, princess, emperor, empress, royalty, monarch";
@@ -89,6 +103,48 @@ export class ComparePanel {
         }
       });
     });
+
+    // Arrow reorder only — rows themselves do not focus the 3D camera
+    this.cosineList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-reorder');
+      if (!btn || this.reorderLocked) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const index = Number(btn.getAttribute('data-index'));
+      const delta = btn.getAttribute('data-dir') === 'up' ? -1 : 1;
+      this.handleReorder(index, delta);
+    });
+  }
+
+  handleReorder(fromIndex, delta) {
+    if (!this.items || this.reorderLocked) return;
+    const result = reorderCompareItems(this.items, fromIndex, delta);
+    if (!result) return;
+
+    this.items = result.items;
+    this.renderCosineList(result.anchor, result.items);
+
+    if (this.onReorder) {
+      this.setReorderLocked(true);
+      Promise.resolve(this.onReorder(result))
+        .catch(() => {})
+        .finally(() => this.setReorderLocked(false));
+    }
+  }
+
+  setReorderLocked(locked) {
+    this.reorderLocked = locked;
+    this.cosineList.querySelectorAll('.btn-reorder').forEach((btn) => {
+      if (locked) {
+        btn.disabled = true;
+      } else {
+        const index = Number(btn.getAttribute('data-index'));
+        const dir = btn.getAttribute('data-dir');
+        const n = this.items ? this.items.length : 0;
+        btn.disabled = (dir === 'up' && index === 0) || (dir === 'down' && index === n - 1);
+      }
+    });
   }
 
   setLoading(loading) {
@@ -105,6 +161,59 @@ export class ComparePanel {
     if (this.tokenCountVal) {
       this.tokenCountVal.textContent = count;
     }
+  }
+
+  /**
+   * Populate metrics + cosine-vs-anchor list from /compare response (or reordered payload).
+   * @param {{ count: number, anchor?: { text: string }, items: Array }} data
+   */
+  updateCompareResults(data) {
+    if (!data || !data.items) {
+      this.items = null;
+      this.updateMetrics(0);
+      this.cosineSubtitle.textContent = 'SIMILITUD COSENO vs — (1.er token)';
+      this.cosineList.innerHTML = '<li class="empty-state">Visualizá una secuencia para ver similitud vs el 1.er token...</li>';
+      return;
+    }
+
+    this.items = data.items.slice();
+    this.updateMetrics(data.count);
+    const anchor = data.anchor || (data.items[0] ? { index: 0, text: data.items[0].text } : null);
+    this.renderCosineList(anchor, data.items);
+  }
+
+  renderCosineList(anchor, items) {
+    const anchorWord = anchor?.text ?? items[0]?.text ?? '—';
+    this.cosineSubtitle.textContent = `SIMILITUD COSENO vs «${anchorWord}» (1.er token)`;
+
+    this.cosineList.innerHTML = '';
+    if (!items || items.length === 0) {
+      this.cosineList.innerHTML = '<li class="empty-state">No tokens loaded</li>';
+      return;
+    }
+
+    items.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.className = 'compare-cosine-item';
+      li.setAttribute('data-id', item.id || `tok_${index}`);
+
+      const score = index === 0
+        ? 1
+        : (typeof item.cosine_vs_first === 'number' ? item.cosine_vs_first : 0);
+
+      const refBadge = index === 0 ? '<span class="badge-ref">REF</span>' : '';
+      li.innerHTML = `
+        <span class="rank">#${index + 1}</span>
+        <span class="word">${item.text}</span>
+        ${refBadge}
+        <span class="score">${score.toFixed(4)}</span>
+        <span class="reorder-btns">
+          <button type="button" class="btn-reorder" data-dir="up" data-index="${index}" ${index === 0 || this.reorderLocked ? 'disabled' : ''} aria-label="Move up">▲</button>
+          <button type="button" class="btn-reorder" data-dir="down" data-index="${index}" ${index === items.length - 1 || this.reorderLocked ? 'disabled' : ''} aria-label="Move down">▼</button>
+        </span>
+      `;
+      this.cosineList.appendChild(li);
+    });
   }
 
   show() {

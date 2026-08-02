@@ -118,6 +118,15 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   - Items del Top-10 **solo lectura**: sin `click`, sin hover interactivo, `pointer-events: none`, `cursor: default`. No re-enfocar la cámara al clicar un vecino.
 - **Invariante**: El Top-10 es métrica visible, no control de navegación 3D.
 
+### 4.2. COMPARE Cosine-vs-Anchor: scroll interno + reorder 3D con tween in-situ
+- **Problema**: Listas largas (20/50/1024) en Compare rompen el invariante §4.1 si el scroll vive en el panel; un reorder con `clear()` + rebuild provoca flicker y desync lista↔3D.
+- **Solución Obligatoria**:
+  - Scroll **solo** en `#compare-panel .compare-cosine-list` (`overflow-y: auto` + `max-height`); el panel permanece `overflow: hidden` / `fit-content`.
+  - Filas de similitud: `pointer-events: none` en la fila; solo ▲/▼ con `pointer-events: auto` (métrica + reorder, sin focus de cámara).
+  - Reorder: recalcular `cosine_vs_first` en memoria (`compareCosine.js`); animar slots con `Instancer.animateCompareReorder` (lerp de `sequenceIndex` fraccionario ~200–400ms, reuse de ribbon/points meshes, `ThreadLabels.updateOrigins` por frame).
+  - Bloquear spamming de flechas mientras `_reorderBusy` (un tween a la vez).
+- **Invariante**: lista COMPARE ↔ orden de hilos 3D siempre sincronizados; #1 es ancla REF con score `1.0000`.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

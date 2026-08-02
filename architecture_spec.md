@@ -16,8 +16,11 @@ VectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 - `POST /embed`: Computes embedding vector for input text.
 - `POST /tokenize`: Returns tokenization details.
 - `POST /arithmetic`: Computes $V_{res} = V_A - V_B + V_C$ and returns top-$K$ nearest vocabulary words and component vectors.
+- `POST /compare`: Batch-encodes 1–1024 texts, L2-normalizes embeddings, and returns per-item cosine vs the first token (anchor).
 
 ### Data Contracts
+
+#### Arithmetic
 ```json
 {
   "word_a": "king",
@@ -37,3 +40,25 @@ Returns:
   ]
 }
 ```
+
+#### Compare
+```json
+{ "texts": ["king", "queen", "man"] }
+```
+Returns:
+```json
+{
+  "count": 3,
+  "anchor": { "index": 0, "text": "king" },
+  "items": [
+    {
+      "id": "tok_0",
+      "index": 0,
+      "text": "king",
+      "embedding": [0.01, "..."],
+      "cosine_vs_first": 1.0
+    }
+  ]
+}
+```
+`cosine_vs_first` is $\text{dot}(\hat{e}_i, \hat{e}_0)$ on L2-normalized embeddings. Frontend reorders may recompute scores in memory without re-calling `/compare`.

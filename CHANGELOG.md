@@ -5,6 +5,11 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [1.0.0] - 2026-08-02
 
 ### Added
+- **COMPARE Cosine-vs-Anchor List + 3D Reorder Tween**:
+  - `/compare` response enriched with `anchor` and per-item `cosine_vs_first` (dot product vs L2-normalized first token).
+  - `ComparePanel` scrollable similarity list under ACTIVE SEQUENCE METRICS (`SIMILITUD COSENO vs «…» (1.er token)`), REF badge on #1, ▲/▼ reorder without camera focus.
+  - In-memory score recompute on reorder (no backend re-call); `Instancer.animateCompareReorder` lerps thread layout slots (~320ms ease-out) while reusing ribbon/points meshes; `ThreadLabels.updateOrigins` follows during the tween.
+  - Panel scrollbar invariant preserved: scroll only inside `.compare-cosine-list`.
 - **Camera Pose Overlay (`VITE_SHOW_CAM_POSE`)**: Optional live `POS`/`ROT` HUD for capturing default navigation views. Gated by Vite env var; default `false` (see `.env.example`).
 - **Square / Cube Point GLSL Shader (`src/visualizer/DivergentShading.js`)**:
   - Replaced circular disc discard in `divergentFragmentShader` with axis-aligned square box distance calculation (`max(coord.x, coord.y)`).
