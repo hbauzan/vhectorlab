@@ -151,8 +151,8 @@ class VectorLabApp {
   }
 
   /**
-   * Apply resolved spatial defaults for current MODE/VISTA/RENDER and sync slider UI.
-   * Called when context changes so each combo can keep its own dulce point.
+   * Apply resolved spatial defaults for current MODE/VIEW/RENDER and sync slider UI.
+   * Called when context changes so each combo can keep its own sweet spot.
    */
   applyContextSpatialDefaults() {
     const defaults = resolveSpatialDefaults({

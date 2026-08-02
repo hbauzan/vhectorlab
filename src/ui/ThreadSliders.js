@@ -20,51 +20,51 @@ export function threadSlidersMarkup(config = {}) {
 
   return `
 <div id="thread-sliders-container" class="section-card">
-  <h3 class="sliders-title">📐 Control Espacial 3D</h3>
+  <h3 class="sliders-title">📐 3D Spatial Controls</h3>
 
   <!-- Slider 1: Spacing X -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-spacing-slider">Separación (X):</label>
+      <label for="thread-spacing-slider">Spacing (X):</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 2: Vector Distance Y -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-vector-dist-slider">Distancia Vectores (Y):</label>
+      <label for="thread-vector-dist-slider">Vector Distance (Y):</label>
       <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 3: Amplitude Y -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
+      <label for="thread-amplitude-y-slider">Amplitude (Y):</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="40.0" step="0.1" value="${amplitudeY}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="40.0" step="0.1" value="${amplitudeY}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 4: Width Z -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-width-slider">Longitud (Z):</label>
+      <label for="thread-width-slider">Length (Z):</label>
       <span id="thread-width-val" class="slider-val">${width.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 5: Thickness -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-thickness-slider">Grosor Puntos:</label>
+      <label for="thread-thickness-slider">Point Thickness:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.01" max="0.09" step="0.01" value="${thickness}" title="Doble clic: restaurar default">
+    <input type="range" id="thread-thickness-slider" min="0.01" max="0.09" step="0.01" value="${thickness}" title="Double-click: restore default">
   </div>
 </div>
 `;
@@ -91,7 +91,7 @@ export function syncThreadSlidersFromConfig(container, config) {
 /**
  * Binds real-time event listeners to sliders for immediate 60fps spatial updates.
  * Double-click on a range input restores that slider's default for the current
- * MODE/VISTA/RENDER context (via resolveSpatialDefaults).
+ * MODE/VIEW/RENDER context (via resolveSpatialDefaults).
  *
  * @param {HTMLElement} container - DOM container containing slider elements
  * @param {Array<Object>|null} threads - Synthetic threads array (optional)

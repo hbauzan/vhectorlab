@@ -1,5 +1,5 @@
 /**
- * Top Navbar component with title, status indicator, View Mode tabs (ANÁLISIS | NAVEGACIÓN), and Render Mode selector tabs (POINTS | MESH | RIBBONS).
+ * Top Navbar component with title, status indicator, View Mode tabs (ANALYSIS | NAVIGATION), and Render Mode selector tabs (POINTS | MESH | RIBBONS).
  */
 export class Navbar {
   constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
@@ -28,9 +28,9 @@ export class Navbar {
         </div>
 
         <div class="view-mode-tabs">
-          <span class="tab-label">VISTA:</span>
-          <button data-view="ANALYSIS" class="view-tab">ANÁLISIS</button>
-          <button data-view="NAVIGATION" class="view-tab active">NAVEGACIÓN</button>
+          <span class="tab-label">VIEW:</span>
+          <button data-view="ANALYSIS" class="view-tab">ANALYSIS</button>
+          <button data-view="NAVIGATION" class="view-tab active">NAVIGATION</button>
         </div>
 
         <div class="render-mode-tabs">

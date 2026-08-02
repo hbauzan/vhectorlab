@@ -1,7 +1,7 @@
 /**
- * Spatial slider defaults for Control Espacial 3D.
+ * Spatial slider defaults for 3D Spatial Controls.
  *
- * Today every MODE / VISTA / RENDER shares GLOBAL_SPATIAL_DEFAULTS.
+ * Today every MODE / VIEW / RENDER shares GLOBAL_SPATIAL_DEFAULTS.
  * Fill SPATIAL_DEFAULT_OVERRIDES as you define per-context presets;
  * resolveSpatialDefaults merges GLOBAL → workspace → view → render
  * (more specific keys win).
@@ -30,7 +30,7 @@ export const GLOBAL_SPATIAL_DEFAULTS = Object.freeze({
  * @type {Record<string, Partial<SpatialSliderValues>>}
  */
 export const SPATIAL_DEFAULT_OVERRIDES = {
-  // Captured ARITHMETIC + ANÁLISIS + POINTS (Control Espacial + framing dulce)
+  // Captured ARITHMETIC + ANALYSIS + POINTS (Spatial Controls + sweet-spot framing)
   'ARITHMETIC|ANALYSIS|POINTS': {
     threadSpacing: 0.4,
     threadVectorDistance: 10.0,
