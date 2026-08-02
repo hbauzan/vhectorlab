@@ -44,4 +44,18 @@ describe('LayoutEngine Math Tests', () => {
     // Slot 0 (centeredYSlot = 2.0) with spacing 80 should have double the vertical Y offset of spacing 40
     expect(pointsExpandedY[0].y).toBeCloseTo(pointsDefaultY[0].y * 2, 5);
   });
+
+  it('honors optional ySlot / ySlotSpan for group soft gaps', () => {
+    const engine = new LayoutEngine({ scaleX: 1.0 });
+    const vector = [0.0];
+    const noGap = engine.mapVectorTo3DPoints(vector, 2, 'ANALYSIS', 4, 10.0, 16.0);
+    const withGap = engine.mapVectorTo3DPoints(vector, 2, 'ANALYSIS', 4, 10.0, 16.0, {
+      ySlot: 3,
+      ySlotSpan: 4,
+    });
+    // slot 3 of span 4 → centered = 2-3 = -1 → y = -10
+    // slot 2 of span 3 → centered = 1.5-2 = -0.5 → y = -5
+    expect(noGap[0].y).toBeCloseTo(-5, 5);
+    expect(withGap[0].y).toBeCloseTo(-10, 5);
+  });
 });

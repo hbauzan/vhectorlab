@@ -6,23 +6,33 @@ import {
 } from '../src/ui/spatialSliderDefaults.js';
 
 describe('resolveSpatialDefaults', () => {
+  /** @type {Array<{ key: string, previous: object|undefined }>} */
   const savedKeys = [];
 
   afterEach(() => {
-    for (const key of savedKeys.splice(0)) {
-      delete SPATIAL_DEFAULT_OVERRIDES[key];
+    for (const { key, previous } of savedKeys.splice(0)) {
+      if (previous === undefined) {
+        delete SPATIAL_DEFAULT_OVERRIDES[key];
+      } else {
+        SPATIAL_DEFAULT_OVERRIDES[key] = previous;
+      }
     }
   });
 
   function setOverride(key, partial) {
+    savedKeys.push({
+      key,
+      previous: SPATIAL_DEFAULT_OVERRIDES[key]
+        ? { ...SPATIAL_DEFAULT_OVERRIDES[key] }
+        : undefined,
+    });
     SPATIAL_DEFAULT_OVERRIDES[key] = partial;
-    savedKeys.push(key);
   }
 
   it('returns global mid defaults when no overrides exist', () => {
     const d = resolveSpatialDefaults({
-      workspaceMode: 'COMPARE',
-      viewMode: 'ANALYSIS',
+      workspaceMode: 'ARITHMETIC',
+      viewMode: 'NAVIGATION',
       renderMode: 'RIBBONS',
     });
     expect(d.threadSpacing).toBe(GLOBAL_SPATIAL_DEFAULTS.threadSpacing);
@@ -50,7 +60,7 @@ describe('resolveSpatialDefaults', () => {
   });
 
   it('does not leak overrides from a different context', () => {
-    setOverride('COMPARE|ANALYSIS|RIBBONS', { threadWidth: 0.25 });
+    setOverride('COMPARE|ANALYSIS|POINTS', { threadWidth: 0.25 });
 
     const d = resolveSpatialDefaults({
       workspaceMode: 'ARITHMETIC',
@@ -87,7 +97,7 @@ describe('resolveSpatialDefaults', () => {
     expect(d.threadThickness).toBe(0.01);
   });
 
-  it('applies captured COMPARE|ANALYSIS|POINTS preset', () => {
+  it('applies COMPARE|ANALYSIS|POINTS preset with Amplitude 16', () => {
     const d = resolveSpatialDefaults({
       workspaceMode: 'COMPARE',
       viewMode: 'ANALYSIS',
@@ -95,9 +105,20 @@ describe('resolveSpatialDefaults', () => {
     });
     expect(d.threadSpacing).toBe(1.45);
     expect(d.threadVectorDistance).toBe(1.0);
-    expect(d.threadAmplitudeY).toBe(1.0);
+    expect(d.threadAmplitudeY).toBe(16.0);
     expect(d.threadWidth).toBe(0.2);
     expect(d.threadThickness).toBe(0.01);
+  });
+
+  it('applies COMPARE|ANALYSIS|RIBBONS twin with Amplitude 16', () => {
+    const d = resolveSpatialDefaults({
+      workspaceMode: 'COMPARE',
+      viewMode: 'ANALYSIS',
+      renderMode: 'RIBBONS',
+    });
+    expect(d.threadAmplitudeY).toBe(16.0);
+    expect(d.threadSpacing).toBe(1.45);
+    expect(d.threadVectorDistance).toBe(1.0);
   });
 
   it('applies captured COMPARE|NAVIGATION|RIBBONS preset', () => {

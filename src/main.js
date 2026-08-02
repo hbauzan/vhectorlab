@@ -27,9 +27,18 @@ import { resolveSpatialDefaults } from './ui/spatialSliderDefaults.js';
 import {
   visualizationControlsMarkup,
   wireVisualizationControls,
+  syncVisualizationControlsFromConfig,
   readVisualizationPanelCollapsed,
 } from './ui/VisualizationControls.js';
-import { loadVisualizationSettings } from './ui/visualizationControlsDefaults.js';
+import {
+  loadVisualizationSettings,
+  saveVisualizationSettings,
+} from './ui/visualizationControlsDefaults.js';
+import {
+  snapshotFilterForSae,
+  filterModeForSaeOn,
+  restoreFilterAfterSae,
+} from './ui/saeFilterBridge.js';
 import {
   loadSaeSettings,
   saveSaeSettings,
@@ -120,6 +129,10 @@ class VectorLabApp {
     this._saeTrainPollInFlight = false;
     this._saeTrainSeenRunning = false;
     this._saeTrainPostDone = false;
+    /** @type {{ previousMode: string }|null} */
+    this._saeFilterSnapshot = null;
+    /** Session-only dim contrast sort (Compare groups). */
+    this.dimSortByContrast = false;
 
     const saeHooks = {
       onSaeToggle: (enabled) => this.handleSaeToggle(enabled),
@@ -128,6 +141,10 @@ class VectorLabApp {
       setSaeSettings: (s) => {
         this.saeSettings = s;
         saveSaeSettings(s);
+      },
+      onDimSortChange: (enabled) => {
+        this.dimSortByContrast = !!enabled;
+        this.refreshRender();
       },
     };
 
@@ -301,7 +318,8 @@ class VectorLabApp {
           state.renderMode,
           this.sliderConfig,
           this.viewMode,
-          this.vizConfig
+          this.vizConfig,
+          { dimSortByContrast: this.dimSortByContrast }
         );
         this.setCompareOverlayLabels(labels);
         this.comparePanel.updateGroupLegend(data.items);
@@ -733,6 +751,40 @@ class VectorLabApp {
     }
   }
 
+  /**
+   * Apply Visualization filter mode and sync right-dock radios + localStorage.
+   * @param {string} mode
+   */
+  applyVizFilterMode(mode) {
+    if (!this.vizConfig) return;
+    this.vizConfig.vizFilterMode = mode;
+    saveVisualizationSettings(this.vizConfig);
+    if (this.vizEl) {
+      syncVisualizationControlsFromConfig(this.vizEl, this.vizConfig);
+    }
+  }
+
+  /**
+   * D3: on SAE encode success, force + Only (snapshot once per SAE ON session).
+   */
+  applySaeOnFilterOverride() {
+    if (!this._saeFilterSnapshot) {
+      this._saeFilterSnapshot = snapshotFilterForSae(this.vizConfig?.vizFilterMode);
+    }
+    this.applyVizFilterMode(filterModeForSaeOn());
+  }
+
+  /**
+   * D4: restore pre-SAE filter when leaving SAE.
+   */
+  restoreSaeFilterOverride() {
+    const restored = restoreFilterAfterSae(this._saeFilterSnapshot);
+    this._saeFilterSnapshot = null;
+    if (restored != null) {
+      this.applyVizFilterMode(restored);
+    }
+  }
+
   clearSaeFraming() {
     this.instancer.setDimSpanScale(1);
     if (this._preSaeThreadWidth != null) {
@@ -746,6 +798,7 @@ class VectorLabApp {
 
   restoreRawWorkspace({ reframe = false } = {}) {
     this.clearSaeFraming();
+    this.restoreSaeFilterOverride();
     if (this.rawCompareData) {
       state.setCompareData(cloneCompareRaw(this.rawCompareData));
       this.comparePanel.updateCompareResults(state.compareData);
@@ -800,6 +853,7 @@ class VectorLabApp {
       }
       state.setCompareData(saeData);
       this.comparePanel.updateCompareResults(saeData);
+      this.applySaeOnFilterOverride();
 
       if (reframe) {
         await this.frameAfterSaeEncode(saeData, this.rawCompareData);
@@ -861,7 +915,8 @@ class VectorLabApp {
         state.renderMode,
         this.sliderConfig,
         this.viewMode,
-        this.vizConfig
+        this.vizConfig,
+        { dimSortByContrast: this.dimSortByContrast }
       );
       this.setCompareOverlayLabels(labels);
       this.comparePanel.updateCompareResults(withMeta);

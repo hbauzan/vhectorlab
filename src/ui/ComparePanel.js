@@ -96,6 +96,7 @@ export class ComparePanel {
    *   onSaeTrain?: (settings: object) => void|Promise<void>,
    *   getSaeSettings?: () => object,
    *   setSaeSettings?: (s: object) => void,
+   *   onDimSortChange?: (enabled: boolean) => void,
    * }} [saeHooks]
    */
   constructor(containerElement, onCalculateCallback, onReorderCallback = null, saeHooks = {}) {
@@ -107,6 +108,10 @@ export class ComparePanel {
     /** @type {Array|null} */
     this.items = null;
     this.reorderLocked = false;
+    /** Session-only dim contrast sort (D8 OFF default). */
+    this.dimSortByContrast = false;
+    /** Cosine ▲/▼ blocked while ≥2 groups (D9). */
+    this.cosineSortBlockedByGroups = false;
 
     this.element = document.createElement('div');
     this.element.id = 'compare-panel';
@@ -139,6 +144,10 @@ export class ComparePanel {
           <span class="metric-item">Loaded Tokens: <strong id="token-count-val">0</strong></span>
         </div>
         <div id="compare-groups-legend" class="compare-groups-legend" hidden></div>
+        <label id="compare-dim-sort-row" class="compare-dim-sort" hidden>
+          <input type="checkbox" id="compare-dim-sort-toggle">
+          <span>Sort dims by group contrast</span>
+        </label>
 
         <div class="compare-cosine-header">
           <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">COSINE SIMILARITY vs —</h3>
@@ -159,6 +168,8 @@ export class ComparePanel {
     this.textarea = this.element.querySelector('#compare-tokens');
     this.tokenCountVal = this.element.querySelector('#token-count-val');
     this.groupsLegend = this.element.querySelector('#compare-groups-legend');
+    this.dimSortRow = this.element.querySelector('#compare-dim-sort-row');
+    this.dimSortToggle = this.element.querySelector('#compare-dim-sort-toggle');
     this.cosineSubtitle = this.element.querySelector('#compare-cosine-subtitle');
     this.cosineList = this.element.querySelector('#compare-cosine-list');
     this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
@@ -228,11 +239,20 @@ export class ComparePanel {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (this.reorderLocked) return;
+        if (this.reorderLocked || this.cosineSortBlockedByGroups) return;
         const direction = btn.getAttribute('data-sort');
         this.handleSort(direction);
       });
     });
+
+    if (this.dimSortToggle) {
+      this.dimSortToggle.addEventListener('change', () => {
+        this.dimSortByContrast = !!this.dimSortToggle.checked;
+        if (typeof this.saeHooks.onDimSortChange === 'function') {
+          this.saeHooks.onDimSortChange(this.dimSortByContrast);
+        }
+      });
+    }
   }
 
   applyReorderResult(result) {
@@ -254,15 +274,13 @@ export class ComparePanel {
   }
 
   handleSort(direction) {
-    if (!this.items || this.reorderLocked) return;
+    if (!this.items || this.reorderLocked || this.cosineSortBlockedByGroups) return;
     this.applyReorderResult(sortCompareItemsByCosine(this.items, direction));
   }
 
   setReorderLocked(locked) {
     this.reorderLocked = locked;
-    const hasItems = !!(this.items && this.items.length > 1);
-    if (this.btnSortDesc) this.btnSortDesc.disabled = locked || !hasItems;
-    if (this.btnSortAsc) this.btnSortAsc.disabled = locked || !hasItems;
+    this.syncCosineSortButtons();
 
     this.cosineList.querySelectorAll('.btn-reorder').forEach((btn) => {
       if (locked) {
@@ -274,6 +292,60 @@ export class ComparePanel {
         btn.disabled = (dir === 'up' && index === 0) || (dir === 'down' && index === n - 1);
       }
     });
+  }
+
+  /**
+   * Enable/disable cosine ▲/▼; when groups active, force off with reason title (D9).
+   */
+  syncCosineSortButtons() {
+    const hasItems = !!(this.items && this.items.length > 1);
+    const blocked = this.cosineSortBlockedByGroups;
+    const disabled = this.reorderLocked || !hasItems || blocked;
+    const title = blocked
+      ? 'Disabled while groups are active (preserves group blocks)'
+      : null;
+    if (this.btnSortDesc) {
+      this.btnSortDesc.disabled = disabled;
+      this.btnSortDesc.title = title || 'Highest → lowest';
+    }
+    if (this.btnSortAsc) {
+      this.btnSortAsc.disabled = disabled;
+      this.btnSortAsc.title = title || 'Lowest → highest';
+    }
+  }
+
+  /**
+   * Show dim-sort toggle only when ≥2 groups; sync cosine block (D7/D9).
+   * @param {Array<{ groupId?: string, groupLabel?: string }>|null|undefined} items
+   */
+  syncGroupLayoutControls(items) {
+    /** @type {Set<string>} */
+    const ids = new Set();
+    for (const it of items || []) {
+      if (it?.groupId) ids.add(it.groupId);
+    }
+    const multiGroup = ids.size >= 2;
+    this.cosineSortBlockedByGroups = multiGroup;
+    this.syncCosineSortButtons();
+
+    if (this.dimSortRow) {
+      if (multiGroup) {
+        this.dimSortRow.removeAttribute('hidden');
+      } else {
+        this.dimSortRow.setAttribute('hidden', '');
+        if (this.dimSortByContrast) {
+          this.dimSortByContrast = false;
+          if (this.dimSortToggle) this.dimSortToggle.checked = false;
+          if (typeof this.saeHooks.onDimSortChange === 'function') {
+            this.saeHooks.onDimSortChange(false);
+          }
+        }
+      }
+    }
+    if (this.dimSortToggle) {
+      this.dimSortToggle.checked = this.dimSortByContrast;
+      this.dimSortToggle.disabled = !multiGroup;
+    }
   }
 
   setLoading(loading) {
@@ -304,15 +376,16 @@ export class ComparePanel {
     if (!counts.size) {
       this.groupsLegend.setAttribute('hidden', '');
       this.groupsLegend.innerHTML = '';
-      return;
+    } else {
+      this.groupsLegend.removeAttribute('hidden');
+      this.groupsLegend.innerHTML = [...counts.values()]
+        .map(
+          (g) =>
+            `<span class="compare-group-chip" title="${g.count} tokens">${g.label}<em>${g.count}</em></span>`
+        )
+        .join('');
     }
-    this.groupsLegend.removeAttribute('hidden');
-    this.groupsLegend.innerHTML = [...counts.values()]
-      .map(
-        (g) =>
-          `<span class="compare-group-chip" title="${g.count} tokens">${g.label}<em>${g.count}</em></span>`
-      )
-      .join('');
+    this.syncGroupLayoutControls(items);
   }
 
   /**
