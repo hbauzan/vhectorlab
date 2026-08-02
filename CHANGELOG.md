@@ -27,7 +27,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 - **Top-10 UI Space Optimization (`src/ui/Sidebar.js` & `src/style.css`)**:
   - Removed Top-K dropdown selector from sidebar.
   - Locked `top_k` parameter to `10` across form inputs and API calls.
-  - Expanded `.results-list` container height to maximize vertical space for nearest cosine neighbor results.
+  - Compact Top-10 rows (tighter padding/gap) so the Vector Arithmetic panel fits without a scrollbar; panel uses `height: fit-content` + `overflow: hidden`.
 
 ## [0.2.0] - 2026-08-02
 

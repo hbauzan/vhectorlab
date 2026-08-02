@@ -2,10 +2,9 @@
  * Left Sidebar Control Panel component for A - B + C Vector Arithmetic operations.
  */
 export class Sidebar {
-  constructor(containerElement, onCalculateCallback, onResultClickCallback) {
+  constructor(containerElement, onCalculateCallback) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
-    this.onResultClick = onResultClickCallback;
 
     this.element = document.createElement('div');
     this.element.id = 'sidebar-panel';
@@ -96,13 +95,6 @@ export class Sidebar {
         <span class="word">${item.word}</span>
         <span class="score">${item.score.toFixed(4)}</span>
       `;
-
-      li.addEventListener('click', () => {
-        if (this.onResultClick) {
-          this.onResultClick(item, index);
-        }
-      });
-
       this.resultsList.appendChild(li);
     });
   }
