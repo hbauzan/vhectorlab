@@ -278,6 +278,8 @@ export class Instancer {
         dimCount: vec.length,
         sequenceIndex: idx,
         _layoutPoints: vec3D,
+        groupId: item.groupId,
+        groupLabel: item.groupLabel,
       });
       pointOffset += vec.length;
 
@@ -286,7 +288,9 @@ export class Instancer {
           id: threadId,
           text: item.text,
           type: "compare",
-          origin3D: vec3D[0]
+          origin3D: vec3D[0],
+          groupId: item.groupId,
+          groupLabel: item.groupLabel,
         });
       }
     });
@@ -451,6 +455,8 @@ export class Instancer {
                 text: thread.text,
                 type: "compare",
                 origin3D: origin,
+                groupId: thread.groupId,
+                groupLabel: thread.groupLabel,
               });
             }
             if (t >= 1) {

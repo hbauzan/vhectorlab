@@ -23,6 +23,9 @@ Updating existing GPU `Float32Array` attributes directly and setting `needsUpdat
 ### Compare Sequence
 Ordered list of 1–1024 token/text items visualized as parallel 3D threads; list order equals layout `sequenceIndex`.
 
+### Compare Group
+Named block in Compare input (`GROUP_name = tokens…`) that concatenates members into the sequence and renders a floating group badge at the member-origin centroid (screen-offset left of token labels). Global cosine sort may interleave groups.
+
 ### Anchor Token
 The token currently at position #1 in a Compare Sequence. Cosine similarity for every row is computed against this embedding (`cosine_vs_first`).
 
