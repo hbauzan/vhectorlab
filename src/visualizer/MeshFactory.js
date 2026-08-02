@@ -1,5 +1,22 @@
 import * as THREE from 'three';
 import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized } from './DivergentShading.js';
+import { anchorsFromSettings, resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
+import { lineSegmentIndices, wideRibbonQuadIndices } from './activationFilter.js';
+
+/**
+ * Resolve optional vizConfig from MeshFactory options into filter mode + RGB anchors.
+ * @param {object} [options]
+ */
+function resolveVizOptions(options = {}) {
+  const viz = options.vizConfig
+    ? resolveVisualizationSettings(options.vizConfig)
+    : resolveVisualizationSettings(null);
+  return {
+    filterMode: viz.vizFilterMode,
+    anchors: anchorsFromSettings(viz),
+    viz,
+  };
+}
 
 /**
  * Factory for creating 3D Vector Point Cloud Geometries and Ribbon Lines using Divergent Activation Shading.
@@ -7,12 +24,14 @@ import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized }
 export class MeshFactory {
   /**
    * Creates a Points Cloud Mesh with GPU Divergent Activation GLSL Shader.
+   * Sign filter is applied in the fragment shader (keeps full buffers for compare reorder).
    * Enforces frustumCulled = false.
    */
   static createPointsMesh(pointsData, options = {}) {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const rawActivations = [];
+    const { filterMode, anchors } = resolveVizOptions(options);
 
     pointsData.forEach((item) => {
       const pos = item.position;
@@ -26,7 +45,10 @@ export class MeshFactory {
     geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(normIntensities, 1));
 
     const pointSize = options.pointSize || 14.0;
-    const material = createDivergentMaterial(pointSize, 1.0);
+    const material = createDivergentMaterial(pointSize, 1.0, {
+      anchors,
+      filterMode,
+    });
 
     const pointsMesh = new THREE.Points(geometry, material);
 
@@ -37,21 +59,35 @@ export class MeshFactory {
   }
 
   /**
-   * Creates a Ribbon Line connecting a sequence of 3D vector points with vertex activation colors.
+   * Continuity line for POINTS mode.
+   * Uses LineSegments + index pairs so filtered signs break continuity (F4).
+   * Full vertex buffer retained for in-situ compare reorder position updates.
    */
-  static createRibbonMesh(points, activations = null) {
+  static createRibbonMesh(points, activations = null, options = {}) {
+    const { filterMode, anchors } = resolveVizOptions(options);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
+    let normActivations = null;
     if (activations && activations.length === points.length) {
-      const normActivations = calculateZScoreNormalized(activations, 0.85);
+      normActivations = calculateZScoreNormalized(activations, 0.85);
       const colors = new Float32Array(points.length * 3);
-      normActivations.forEach((val, idx) => {
-        const col = getDivergentColor(val, 1.0);
+      for (let idx = 0; idx < normActivations.length; idx++) {
+        const col = getDivergentColor(normActivations[idx], 1.0, anchors);
         colors[idx * 3 + 0] = col.r;
         colors[idx * 3 + 1] = col.g;
         colors[idx * 3 + 2] = col.b;
-      });
+      }
       geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    }
+
+    if (normActivations) {
+      const indices = lineSegmentIndices(normActivations, filterMode);
+      if (indices.length) {
+        geometry.setIndex(indices);
+      } else {
+        // No visible segments — empty draw (keep vertices for reorder).
+        geometry.setIndex([]);
+      }
     }
 
     const material = new THREE.LineBasicMaterial({
@@ -62,10 +98,12 @@ export class MeshFactory {
       opacity: 0.85
     });
 
-    const lineMesh = new THREE.Line(geometry, material);
-
-    // CRITICAL INVARIANT: frustumCulled = false
+    const lineMesh = new THREE.LineSegments(geometry, material);
     lineMesh.frustumCulled = false;
+    lineMesh.userData = {
+      kind: 'continuityLine',
+      pointCount: points.length,
+    };
 
     return lineMesh;
   }
@@ -96,14 +134,16 @@ export class MeshFactory {
   }
 
   /**
-   * Wide ribbon strip mesh (Etapa E / RIBBONS) — real width via quads, not Line linewidth.
+   * Wide ribbon strip mesh (RIBBONS) — real width via quads, not Line linewidth.
+   * Quad indices omit strips whose endpoints fail the sign filter (F4).
    * @param {THREE.Vector3[]} points
    * @param {number[]|null} activations
-   * @param {{ width?: number }} [options]
+   * @param {{ width?: number, vizConfig?: object }} [options]
    * @returns {THREE.Mesh|null}
    */
   static createWideRibbonMesh(points, activations = null, options = {}) {
     if (!points || points.length < 2) return null;
+    const { filterMode, anchors } = resolveVizOptions(options);
     const width = options.width ?? 3.0;
     const half = width * 0.5;
     const n = points.length;
@@ -139,7 +179,7 @@ export class MeshFactory {
       positions[iR * 3 + 1] = p.y + side.y;
       positions[iR * 3 + 2] = p.z + side.z;
 
-      const col = getDivergentColor(norm[i], 1.0);
+      const col = getDivergentColor(norm[i], 1.0, anchors);
       for (const vi of [iL, iR]) {
         colors[vi * 3] = col.r;
         colors[vi * 3 + 1] = col.g;
@@ -147,15 +187,7 @@ export class MeshFactory {
       }
     }
 
-    const indices = [];
-    for (let i = 0; i < n - 1; i++) {
-      const a = i * 2;
-      const b = a + 1;
-      const c = a + 2;
-      const d = a + 3;
-      indices.push(a, c, b);
-      indices.push(b, c, d);
-    }
+    const indices = wideRibbonQuadIndices(norm, filterMode);
 
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -215,7 +247,7 @@ export class MeshFactory {
   }
 
   /**
-   * Semi-transparent ground plane under ribbons (Etapa E).
+   * Semi-transparent ground plane under ribbons (legacy helper; Instancer does not mount it).
    * @param {{ width?: number, depth?: number, y?: number, color?: number, opacity?: number }} [options]
    * @returns {THREE.Mesh}
    */
@@ -264,7 +296,4 @@ export class MeshFactory {
     plane.position.z = center.z;
     return plane;
   }
-
 }
-
-

@@ -56,9 +56,10 @@ export class Instancer {
    * @param {string} renderMode - "POINTS" | "RIBBONS" (unknown/retired modes → POINTS)
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration { threadSpacing, threadWidth, threadThickness }
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
+   * @param {Object} [vizConfig] - Global sign filter + color anchors
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata for origins
    */
-  renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
+  renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION", vizConfig = null) {
     this.clear();
     renderMode = normalizeRenderMode(renderMode);
     this.renderMode = renderMode;
@@ -147,7 +148,7 @@ export class Instancer {
       if (baselineMesh) this.activeGroup.add(baselineMesh);
     }
 
-    this._mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor);
+    this._mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor, vizConfig);
     return threadLabelItems;
   }
 
@@ -155,12 +156,16 @@ export class Instancer {
    * Mount POINTS | RIBBONS geometry (mutually exclusive).
    * @private
    */
-  _mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor) {
+  _mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor, vizConfig = null) {
+    const vizOpts = vizConfig ? { vizConfig } : {};
     if (renderMode === "RIBBONS") {
       // No base plane: translucent dark quad showed through ribbons as a hard dark rectangle.
       const ribbonWidth = Math.max(2.0, 14.0 * (thicknessFactor || 0.3));
       surfaceRows.forEach((row) => {
-        const wide = MeshFactory.createWideRibbonMesh(row.points, row.activations, { width: ribbonWidth });
+        const wide = MeshFactory.createWideRibbonMesh(row.points, row.activations, {
+          width: ribbonWidth,
+          ...vizOpts,
+        });
         if (wide) this.activeGroup.add(wide);
       });
       return;
@@ -168,11 +173,14 @@ export class Instancer {
 
     // POINTS: thin continuity lines + point cloud
     surfaceRows.forEach((row) => {
-      const ribbon = MeshFactory.createRibbonMesh(row.points, row.activations);
+      const ribbon = MeshFactory.createRibbonMesh(row.points, row.activations, vizOpts);
       this.activeGroup.add(ribbon);
     });
     if (pointsData.length) {
-      const pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
+      const pointsMesh = MeshFactory.createPointsMesh(pointsData, {
+        pointSize: 15.0 * thicknessFactor,
+        ...vizOpts,
+      });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);
     }
@@ -184,9 +192,10 @@ export class Instancer {
    * @param {string} renderMode - "POINTS" | "RIBBONS" (unknown/retired modes → POINTS)
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
+   * @param {Object} [vizConfig] - Global sign filter + color anchors
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
    */
-  renderCompareData(compareResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
+  renderCompareData(compareResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION", vizConfig = null) {
     this.clear();
     renderMode = normalizeRenderMode(renderMode);
     this.renderMode = renderMode;
@@ -244,12 +253,16 @@ export class Instancer {
 
       surfaceRows.push({ points: vec3D, activations });
 
+      const vizOpts = vizConfig ? { vizConfig } : {};
       let ribbonMesh = null;
       if (renderMode === "RIBBONS") {
         const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
-        ribbonMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, { width: ribbonWidth });
+        ribbonMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, {
+          width: ribbonWidth,
+          ...vizOpts,
+        });
       } else {
-        ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations);
+        ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations, vizOpts);
       }
       if (ribbonMesh) {
         ribbonMesh.userData.threadId = threadId;
@@ -290,7 +303,10 @@ export class Instancer {
     let pointsMesh = null;
     if (renderMode === "POINTS" && pointsData.length) {
       // RIBBONS must not mount the POINTS cloud (square Chebyshev dots on top of strips).
-      pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
+      pointsMesh = MeshFactory.createPointsMesh(pointsData, {
+        pointSize: 15.0 * thicknessFactor,
+        ...(vizConfig ? { vizConfig } : {}),
+      });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);
     }
