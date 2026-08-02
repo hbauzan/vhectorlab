@@ -155,6 +155,7 @@ class VectorLabApp {
       viewMode: this.viewMode,
       renderMode: state.renderMode,
     };
+    this.sceneSetup.setFogForRenderMode(state.renderMode);
     this.navigation.setContextView(ctx);
     this.applyContextSpatialDefaults();
   }
