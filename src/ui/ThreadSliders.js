@@ -6,10 +6,10 @@ import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
  * @returns {string} HTML string
  */
 export function threadSlidersMarkup(config = {}) {
-  const spacing = config.threadSpacing ?? 0.8;
-  const vectorDist = config.threadVectorDistance ?? config.threadSpacingY ?? 46.0;
-  const amplitudeY = config.threadAmplitudeY ?? 16.0;
-  const width = config.threadWidth ?? 0.1;
+  const spacing = config.threadSpacing ?? 1.5;
+  const vectorDist = config.threadVectorDistance ?? config.threadSpacingY ?? 10.0;
+  const amplitudeY = config.threadAmplitudeY ?? 12.0;
+  const width = config.threadWidth ?? 0.2;
   const thickness = config.threadThickness ?? 0.10;
 
   return `
