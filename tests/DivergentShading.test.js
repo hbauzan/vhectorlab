@@ -62,4 +62,13 @@ describe('Divergent Shading CPU Algorithm (anchor lerp)', () => {
     const neg = getDivergentColor(-1, 1, custom);
     expect(neg.b).toBeCloseTo(1, 5);
   });
+
+  it('zero coverage expands zero band on both signs', () => {
+    const at04 = getDivergentColor(0.4, 1.0, null, 50);
+    expect(at04.r).toBeCloseTo(A.zero.r, 5);
+    expect(at04.g).toBeCloseTo(A.zero.g, 5);
+    const neg04 = getDivergentColor(-0.4, 1.0, null, 50);
+    expect(neg04.r).toBeCloseTo(A.zero.r, 5);
+    expect(neg04.b).toBeCloseTo(A.zero.b, 5);
+  });
 });

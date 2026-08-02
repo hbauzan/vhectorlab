@@ -52,3 +52,18 @@ Global show mode `all | positive | negative` over **normalized** activations (po
 ### Color Anchor
 User-editable hex for normalized activations at +1, 0, and −1; replaces the former fixed dual mid-stop ramp via linear RGB lerp.
 
+### Zero Coverage
+Percent of the |t| range held at the zero color (default black) before blending toward ±1 anchors; capped at 90%.
+
+### Top‑K SAE
+Trained sparse autoencoder with exactly K active latents per input (ReLU + Top‑K, no L1 shrinkage). Trained on the **current workspace scope** (Compare/Arithmetic batch); ephemeral in-RAM session model. Default caps 768 → 8192 with K=32 (auto-scaled for small N).
+
+### Clean/Denoise (SAE)
+Compare-only toggle that replaces raw 768D embeddings with SAE sparse activations for 3D threads and cosine while ON. Requires Train SAE on current Visualize data; scope changes clear the session model. Not available in Arithmetic.
+
+### SAE Feature Space
+Expanded latent dimension (default cap 8192, auto-scaled for small N) used for visualization and metrics while Clean/Denoise is enabled.
+
+### Dead Features
+Latents that never activated on the training set; reported in SAE train metrics.
+

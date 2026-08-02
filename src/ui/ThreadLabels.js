@@ -7,6 +7,7 @@ import { GROUP_LABEL_SCREEN_OFFSET_X } from './parseCompareGroups.js';
 export class ThreadLabels {
   constructor(containerElement) {
     this.container = containerElement || (typeof document !== 'undefined' ? document.body : null);
+    this.visible = true;
     if (typeof document !== 'undefined') {
       this.overlay = document.createElement('div');
       this.overlay.id = 'thread-labels-container';
@@ -17,6 +18,29 @@ export class ThreadLabels {
 
     this.labels = []; // Array of { id, text, type, origin3D, element, screenOffsetX, groupId, groupLabel }
     this.tempVector = new THREE.Vector3();
+  }
+
+  /**
+   * Show or hide the floating labels overlay (DOM stays mounted).
+   * @param {boolean} visible
+   */
+  setVisible(visible) {
+    this.visible = visible !== false;
+    if (!this.overlay) return;
+    if (this.visible) {
+      this.overlay.classList.remove('is-hidden');
+      this.overlay.removeAttribute('aria-hidden');
+    } else {
+      this.overlay.classList.add('is-hidden');
+      this.overlay.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  isVisible() {
+    return this.visible !== false;
   }
 
   /**
@@ -99,7 +123,7 @@ export class ThreadLabels {
    * @param {number} height - Canvas height
    */
   update(camera, width, height) {
-    if (!this.labels.length || !camera) return;
+    if (!this.visible || !this.labels.length || !camera) return;
 
     this.labels.forEach((item) => {
       this.tempVector.copy(item.origin3D);

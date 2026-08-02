@@ -12,6 +12,8 @@ import {
   saveVisualizationSettings,
   resetVisualizationSettings,
   anchorsFromSettings,
+  remapAbsTWithZeroCoverage,
+  normalizeZeroCoverage,
 } from '../src/ui/visualizationControlsDefaults.js';
 import {
   visualizationControlsMarkup,
@@ -47,6 +49,8 @@ describe('visualizationControlsDefaults', () => {
       colorPositive: '#FFE600',
       colorZero: '#000000',
       colorNegative: '#9900E6',
+      zeroCoverage: 0,
+      labelsVisible: true,
     });
   });
 
@@ -122,6 +126,10 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('viz-panel-tab');
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('▶');
+    expect(html).toContain('viz-zero-coverage-slider');
+    expect(html).toContain('Zero coverage');
+    expect(html).toContain('viz-labels-toggle');
+    expect(html).toContain('Hide labels');
   });
 
   it('collapsed markup starts with expand glyph', () => {
@@ -239,5 +247,34 @@ describe('getDivergentColor with color anchors', () => {
     expect(c.r).toBeCloseTo((anchors.zero.r + anchors.positive.r) / 2, 5);
     expect(c.g).toBeCloseTo((anchors.zero.g + anchors.positive.g) / 2, 5);
     expect(c.b).toBeCloseTo((anchors.zero.b + anchors.positive.b) / 2, 5);
+  });
+
+  it('zero coverage 50% keeps mid activations at zero color', () => {
+    const c = getDivergentColor(0.4, 1, anchors, 50);
+    expect(c.r).toBeCloseTo(anchors.zero.r, 5);
+    expect(c.g).toBeCloseTo(anchors.zero.g, 5);
+    expect(c.b).toBeCloseTo(anchors.zero.b, 5);
+    const midPos = getDivergentColor(0.75, 1, anchors, 50);
+    // remapped k = (0.75-0.5)/(1-0.5) = 0.5 → midpoint
+    expect(midPos.r).toBeCloseTo((anchors.zero.r + anchors.positive.r) / 2, 5);
+  });
+});
+
+describe('remapAbsTWithZeroCoverage', () => {
+  it('identity at 0 coverage', () => {
+    expect(remapAbsTWithZeroCoverage(0.4, 0)).toBeCloseTo(0.4, 5);
+  });
+
+  it('holds zero then stretches', () => {
+    expect(remapAbsTWithZeroCoverage(0.3, 0.5)).toBe(0);
+    expect(remapAbsTWithZeroCoverage(0.5, 0.5)).toBe(0);
+    expect(remapAbsTWithZeroCoverage(0.75, 0.5)).toBeCloseTo(0.5, 5);
+    expect(remapAbsTWithZeroCoverage(1, 0.5)).toBeCloseTo(1, 5);
+  });
+
+  it('normalizeZeroCoverage clamps', () => {
+    expect(normalizeZeroCoverage(150)).toBe(90);
+    expect(normalizeZeroCoverage(-3)).toBe(0);
+    expect(normalizeZeroCoverage('40')).toBe(40);
   });
 });

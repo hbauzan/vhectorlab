@@ -203,19 +203,24 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Invariante**: groups = metadata UI/layout, no endpoint nuevo; duplicados entre groups permitidos.
 - **Visibilidad**: con groups activos, overlay muestra **solo** badges de grupo (los token cards a N alto los tapaban y el offset grande los metía bajo el dock z-index 40). Lista cosine sigue con todos los tokens. `#thread-labels-container` z-index ≥ docks; offset screen de group badges chico.
 
-### 4.9. Visualization Controls — sign filter + color anchors (v1.8.0)
+### 4.9. Visualization Controls — sign filter + color anchors + zero coverage (v1.8.x)
 - **Panel**: glass card under 3D Spatial Controls in the **right dock**; EN copy; global (not per MODE|VIEW|RENDER).
 - **Sign filter**: `all | positive | negative` on **normalized t** (post z-score/tanh), ε=`0.01` aligned with shader short-circuit. +/− only hide the opposite sign **and** near-zero. Applies to POINTS (fragment `discard`) **and** continuity `LineSegments` / wide-ribbon **index omission** (F4) — keep full vertex buffers so COMPARE reorder in-situ still works.
 - **Color anchors**: user hex +1 / 0 / −1 replace fixed mid-stop ramps; lerp `0↔+1` and `0↔−1`. POINTS shader uses uniforms `uColorPos` / `uColorNeg` / `uColorZero` (never hardcode ramp in GLSL).
+- **Zero coverage %**: slider **below Colors, above Reset**. Remaps `|t|` so zero color occupies `coverage` of the ± range before lerp (`remapAbsTWithZeroCoverage`); CPU + `uZeroCoverage` share math. Cap 90% so ±1 remains reachable. Persist `vl3d.viz.*` including `zeroCoverage`.
 - **Collapse tab**: Visualization card has its own edge tab (dock-tab affordance) independent of the right-dock host; key `vl3d.viz.panelCollapsed`.
 - **SemVer**: if `main` already shipped a MINOR (e.g. groups `1.7.0`), the next capability must take the **next** MINOR (`1.8.0`) — never reuse a version number already on `main`.
 - **Invariante**: filter-on-normalized-t; F4 = geometry not points-only; anchors always drive ramp in v1; no backend for viz controls.
 
-### 4.10. Top‑K SAE Clean/Denoise (planned v2.0.0) — pointer
+### 4.10. Top‑K SAE Clean/Denoise (v2.0.0)
 - Roadmap: `roadmap/sae-denoise.md`. **Trained** Top‑K Sparse Autoencoder (PyTorch), ported from the predecessor tool — **not** sinusoidal fake projection.
-- Defaults: 768 → 8192 latents, K=32; encode activations drive 3D when toggle ON; train on vocab embeddings; `/api/sae/status|train|encode`.
+- **Train scope = current workspace batch** (Compare items / Arithmetic vectors), **not** the full vocabulary. Model is **ephemeral** (RAM session); `POST /api/sae/clear` on Visualize/Calculate.
+- Defaults caps: 768 → 8192 latents, K=32; `suggest_sae_dims(n)` auto-scales down for small N. Encode activations drive 3D when toggle ON; `/api/sae/status|train|encode|clear`.
+- UI: Compare-only 50/50 CTA `Clean/Denoise (SAE)`; replace Compare vectors while ON; raw 768 cache restore on OFF; `vl3d.sae.*` localStorage; train progress via status poll. **Arithmetic has no SAE.**
 - Archived “NO SAE” in `roadmap/archivo/big-picture.md` is **superseded**.
-
+- **Train fast-path**: `from_numpy` + full-batch when N small; MPS/CUDA via `SAE_DEVICE=AUTO`; CUDA AMP; `inference_mode` for final metrics; `suggest_train_schedule` caps epochs (≤12 if hidden≤128). Defaults UI epochs=20.
+- Encode already had bucketing + inference_mode + autocast; MPS autocast attempted with FP32 fallback.
+- **Encode I/O bottleneck**: GPU matmul ~20ms; dense `.tolist()` of `[N, 8192]` JSON was the freeze. Fix: `encode_vectors_sparse` → `{format:topk_sparse, indices[N,K], values[N,K]}` + router `ORJSONResponse`; `RemoteProvider.saeEncode` densifies via `densifyTopKActivations`. `load_model()` is singleton (`model is not None` short-circuit) — do not `torch.load` per request.
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

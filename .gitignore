@@ -17,11 +17,18 @@ env/
 node_modules/
 dist/
 .vite/
+.pnpm-store/
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # Pytest / Coverage
 .pytest_cache/
 .coverage
 htmlcov/
+
+# SAE / model weight binaries
+*.pt
+!backend/artifacts/.gitkeep
 
 # Logs & temp
 *.log

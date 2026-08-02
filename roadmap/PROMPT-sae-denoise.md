@@ -18,9 +18,9 @@ Lecciones: `.agents/skills/dev-protocol/lessons-learned.md`
 
 ## Decisiones YA CERRADAS (no re-preguntar)
 - U1–U5: CTA 50/50 `Clean/Denoise (SAE)` toggle; localStorage; params/train UI; progress.
-- M1–M2: Replace all Arithmetic+Compare vectors when SAE ON; cache raw 768.
+- M1–M2: Replace Compare vectors when SAE ON; cache raw 768. **No SAE in Arithmetic.**
 - A1–A7: Real Top‑K SAE (grandmother port): 768→8192, k=32, ReLU+TopK FP32, untied unit-norm decoder, train MSE; viz uses encode activations.
-- B1–B6: Backend PyTorch; lazy load; /api/sae/status|train|encode; train on vocab embeddings; checkpoint under backend/artifacts/.
+- B1–B6: Backend PyTorch; ephemeral session model; /api/sae/status|train|encode|clear; train on **current scope embeddings** (not vocab); no product checkpoint.
 - F1: raw_i vs sae_i key isolation if needed.
 - X1: No Gemini labels; no sinusoidal fake SAE; no dual mesh.
 - V1: Ship **2.0.0**.
@@ -29,8 +29,7 @@ Lecciones: `.agents/skills/dev-protocol/lessons-learned.md`
 Port TopKSAE + SAEManager + train_sae; wire API; UI toggle/train/progress; replace render pipeline; docs + v2.0.0.
 
 ## Fuera de alcance
-Sinusoidal “SAE-style”, Gemini feature naming, dual RAW+SAE 3D, PDF relief-matrix from grandmother (use vocab matrix instead).
-
+Sinusoidal “SAE-style”, Gemini feature naming, dual RAW+SAE 3D, PDF relief-matrix from grandmother, full-vocab train.
 ## Flujo
 1. Branch `feat/topk-sae-denoise`.
 2. Stage A: model+train+pytest.
@@ -45,10 +44,10 @@ Checklist §7 del roadmap.
 
 ## Cómo probar
 1. Backend + frontend.
-2. Train SAE on vocab (progress epochs).
-3. Arithmetic Calculate → toggle SAE → threads length 8192 sparse; OFF → 768.
-4. Compare Visualize → SAE ON batch encode with progress; cosine updates.
-5. Reload: status is_trained; toggle preference restored.
+2. Train SAE on current Visualize/Calculate scope (progress epochs; dims may auto-scale).
+3. Compare Visualize → Train SAE → toggle SAE → threads length = resolved hidden_dim sparse; OFF → 768.
+4. Arithmetic stays RAW-only (no Clean/Denoise UI).
+5. New Visualize clears session SAE; must re-train. Reload starts untrained (ephemeral).
 
 ## Estilo
 No-fluff; deep modules; port grandmother numerics faithfully; don’t re-ask closed IDs.
@@ -59,5 +58,5 @@ No-fluff; deep modules; port grandmother numerics faithfully; don’t re-ask clo
 ## Notas para el humano
 
 - La abuela ya tenía el SAE **serio** (Top‑K entrenado). El paste sinusoidal de otra herramienta era un atajo distinto — **descartado**.
-- Entrenamiento v1 = matriz de vocab del backend, no PDFs.
+- Entrenamiento = embeddings del **scope actual** (Compare/Arithmetic), modelo efímero en RAM; dims auto-scale si N es chico.
 - Pegá este prompt en sesión limpia tras mergear lo pendiente a `main` si hace falta.

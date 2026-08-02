@@ -14,6 +14,7 @@ function resolveVizOptions(options = {}) {
   return {
     filterMode: viz.vizFilterMode,
     anchors: anchorsFromSettings(viz),
+    zeroCoverage: viz.zeroCoverage,
     viz,
   };
 }
@@ -31,7 +32,7 @@ export class MeshFactory {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const rawActivations = [];
-    const { filterMode, anchors } = resolveVizOptions(options);
+    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
 
     pointsData.forEach((item) => {
       const pos = item.position;
@@ -48,6 +49,7 @@ export class MeshFactory {
     const material = createDivergentMaterial(pointSize, 1.0, {
       anchors,
       filterMode,
+      zeroCoverage,
     });
 
     const pointsMesh = new THREE.Points(geometry, material);
@@ -64,7 +66,7 @@ export class MeshFactory {
    * Full vertex buffer retained for in-situ compare reorder position updates.
    */
   static createRibbonMesh(points, activations = null, options = {}) {
-    const { filterMode, anchors } = resolveVizOptions(options);
+    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
     let normActivations = null;
@@ -72,7 +74,7 @@ export class MeshFactory {
       normActivations = calculateZScoreNormalized(activations, 0.85);
       const colors = new Float32Array(points.length * 3);
       for (let idx = 0; idx < normActivations.length; idx++) {
-        const col = getDivergentColor(normActivations[idx], 1.0, anchors);
+        const col = getDivergentColor(normActivations[idx], 1.0, anchors, zeroCoverage);
         colors[idx * 3 + 0] = col.r;
         colors[idx * 3 + 1] = col.g;
         colors[idx * 3 + 2] = col.b;
@@ -143,7 +145,7 @@ export class MeshFactory {
    */
   static createWideRibbonMesh(points, activations = null, options = {}) {
     if (!points || points.length < 2) return null;
-    const { filterMode, anchors } = resolveVizOptions(options);
+    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
     const width = options.width ?? 3.0;
     const half = width * 0.5;
     const n = points.length;
@@ -179,7 +181,7 @@ export class MeshFactory {
       positions[iR * 3 + 1] = p.y + side.y;
       positions[iR * 3 + 2] = p.z + side.z;
 
-      const col = getDivergentColor(norm[i], 1.0, anchors);
+      const col = getDivergentColor(norm[i], 1.0, anchors, zeroCoverage);
       for (const vi of [iL, iR]) {
         colors[vi * 3] = col.r;
         colors[vi * 3 + 1] = col.g;
