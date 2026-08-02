@@ -57,7 +57,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [1.7.0] - 2026-08-02
 
 ### Added
-- **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids (screen-offset left). Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity).
+- **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids. Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity). When groups are active, overlay shows group badges only (token cards hidden — still listed in cosine panel); label layer z-index above docks so badges stay visible.
 
 ## [1.6.0] - 2026-08-02
 

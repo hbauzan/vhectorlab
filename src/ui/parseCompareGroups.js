@@ -3,8 +3,9 @@ import * as THREE from 'three';
 /** Max tokens forwarded to /compare (ComparePanel contract). */
 export const COMPARE_MAX_TOKENS = 1024;
 
-/** Extra leftward screen-space offset (px) for group badges vs token labels. */
-export const GROUP_LABEL_SCREEN_OFFSET_X = 96;
+/** Extra leftward screen-space offset (px) for group badges vs token labels.
+ * Kept small — a large offset pushed badges under the left Compare dock (z-index). */
+export const GROUP_LABEL_SCREEN_OFFSET_X = 28;
 
 const GROUP_HEADER_RE = /^([A-Za-z][A-Za-z0-9_\-]*)\s*[=:]\s*(.*)$/;
 
@@ -182,11 +183,15 @@ export function buildGroupLabels(tokenLabels) {
 }
 
 /**
- * Group badges first, then per-token labels (paint / DOM order).
+ * Overlay label set for Compare.
+ * When GROUP_* meta is present, show **only** group badges (token cards at N≈100+
+ * bury the groups and are unreadable; cosine list still has every token).
  * @param {Array} tokenLabels
  * @returns {Array}
  */
 export function mergeCompareOverlayLabels(tokenLabels) {
   const tokens = (tokenLabels || []).filter((l) => l && l.type !== 'group');
-  return [...buildGroupLabels(tokens), ...tokens];
+  const groups = buildGroupLabels(tokens);
+  if (groups.length > 0) return groups;
+  return tokens;
 }
