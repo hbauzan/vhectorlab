@@ -100,7 +100,7 @@ export const SPATIAL_SLIDER_BINDINGS = Object.freeze([
     inputId: 'thread-width-slider',
     labelId: 'thread-width-val',
     configKey: 'threadWidth',
-    decimals: 2,
+    decimals: 3,
   },
   {
     inputId: 'thread-thickness-slider',
