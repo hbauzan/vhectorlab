@@ -1,3 +1,9 @@
+> **ARCHIVO HISTÓRICO** — archivado 2026-08-02.
+> **Estado al archivar:** Etapa A entregada.
+> **Rama implementada:** `feat/collapsible-side-panels` (merge a `main`, v1.1.0).
+>
+> Prompt de agente usado para disparar la Etapa A; conservado solo como histórico de sesión.
+
 # Prompt — siguiente agente (Etapa A del roadmap)
 
 Copiá y pegá el bloque siguiente en una sesión nueva.

@@ -109,7 +109,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [0.1.0] - 2026-08-01
 
 ### Added
-- **Divergent Activation Shading (`roadmap/Shading Divergente por Activación.md`)**:
+- **Divergent Activation Shading (`roadmap/archivo/Shading Divergente por Activación.md`)**:
   - Solid Circular Point GLSL Shader (`src/visualizer/DivergentShading.js`) rendering crisp, solid circular points with 1-pixel anti-aliasing edges instead of blurred halos.
   - Dual Multi-Stop Color Ramps (`src/visualizer/DivergentShading.js`): Positive range ($0 \rightarrow +1$) transitions Negro $\rightarrow$ Rojo $\rightarrow$ Naranja $\rightarrow$ Amarillo. Negative range ($0 \rightarrow -1$) transitions Negro $\rightarrow$ Verde $\rightarrow$ Azul $\rightarrow$ Violeta.
   - Full integration in `MeshFactory.js` and `Instancer.js` connecting all 3D thread vector points with continuous ribbon lines.
@@ -117,7 +117,7 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Real-time spatial control sliders (`src/ui/ThreadSliders.js`) updated with specified ranges ($X \in [0.1, 10.0]$, $Z \in [0.1, 5.0]$, Grosor Puntos $\in [0.1, 1.0]$ con valor por defecto $0.3$).
   - TDD unit test suite (`tests/DivergentShading.test.js`) verifying multi-stop color ramp math.
 
-- **Thread Geometry & Spatial Sliders 3D (`roadmap/sliders.md`)**:
+- **Thread Geometry & Spatial Sliders 3D (`roadmap/archivo/sliders.md`)**:
   - Synthetic 3D vector thread data factory (`src/visualizer/ThreadFactory.js`) generating buffer geometries for 3D lines and point nodes.
   - In-situ GPU Float32Array buffer mutator (`updateAllThreadPositions` in `src/visualizer/LayoutEngine.js`) ensuring zero re-creation of geometries and zero memory leaks.
   - Interactive spatial control UI panel (`src/ui/ThreadSliders.js`) with real-time 60fps sliders for lateral separation ($X$), longitudinal scale ($Z$), and node thickness.
