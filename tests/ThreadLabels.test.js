@@ -116,4 +116,15 @@ describe('ThreadLabels Component Tests', () => {
     expect(threadLabels.labels[1].origin3D.y).toBe(10);
     expect(threadLabels.labels.length).toBe(2);
   });
+
+  it('registers group-label cards with distinct class', () => {
+    threadLabels.setLabels([
+      { id: 'group:G1', text: 'GROUP_1', type: 'group', origin3D: new THREE.Vector3(0, 5, 0) },
+      { id: 'tok_0', text: 'car', type: 'compare', origin3D: new THREE.Vector3(0, 10, 0) },
+    ]);
+    expect(threadLabels.labels[0].screenOffsetX).toBeGreaterThan(0);
+    expect(threadLabels.labels[1].screenOffsetX).toBe(0);
+    const cards = container.querySelectorAll('.thread-label-card');
+    expect(cards[0].classList.contains('group-label')).toBe(true);
+  });
 });

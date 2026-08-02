@@ -195,6 +195,10 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Invariante**: Visible UI copy (navbar, panels, sliders, landscape gate, aria/titles/placeholders) is English-only. Internal keys (`data-view="ANALYSIS"`, `threadAmplitudeY`, CSS classes) are not renamed for i18n. No i18n framework — single-language product surface.
 - **Compare 3D labels** remain raw input tokens (§4.6); panel chrome uses EN glossary.
 
+### 4.8. COMPARE groups — parse frontend, flat /compare, badges follow centroids
+- **Decisión (v1.7.0)**: `GROUP_name = tokens` en textarea → `parseCompareInput` concatena grupos; `/compare` sigue flat. Anchor = primer token global (D1a). Sort/reorder cosine **global** puede romper contigüidad (D2a); badges de grupo se re-anclan al centroide de miembros actuales.
+- **Invariante**: groups = metadata UI/layout, no endpoint nuevo; duplicados entre groups permitidos; offset de badge en screen-space (`GROUP_LABEL_SCREEN_OFFSET_X`).
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
