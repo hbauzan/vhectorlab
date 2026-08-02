@@ -21,13 +21,13 @@ function parseRangeInput(html, id) {
   };
 }
 
-/** Defaults = midpoint of each spatial slider (Control Espacial 3D). */
+/** Defaults = midpoint; finer steps for gradual intermediate values. */
 const SPATIAL_SLIDER_SPECS = [
-  { id: 'thread-spacing-slider', mid: 0.4, min: 0.1, max: 0.7, step: 0.1 },
-  { id: 'thread-vector-dist-slider', mid: 10.0, min: 1.0, max: 19.0, step: 1.0 },
-  { id: 'thread-amplitude-y-slider', mid: 7.0, min: 1.0, max: 13.0, step: 1.0 },
-  { id: 'thread-width-slider', mid: 0.2, min: 0.1, max: 0.3, step: 0.1 },
-  { id: 'thread-thickness-slider', mid: 0.1, min: 0.05, max: 0.15, step: 0.05 },
+  { id: 'thread-spacing-slider', mid: 0.4, min: 0.1, max: 0.7, step: 0.05, decimals: 2 },
+  { id: 'thread-vector-dist-slider', mid: 10.0, min: 1.0, max: 19.0, step: 0.1, decimals: 1 },
+  { id: 'thread-amplitude-y-slider', mid: 7.0, min: 1.0, max: 13.0, step: 0.1, decimals: 1 },
+  { id: 'thread-width-slider', mid: 0.2, min: 0.1, max: 0.3, step: 0.01, decimals: 2 },
+  { id: 'thread-thickness-slider', mid: 0.1, min: 0.05, max: 0.15, step: 0.01, decimals: 2 },
 ];
 
 describe('threadSlidersMarkup — ranges centered on defaults', () => {
@@ -64,5 +64,18 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
     expect(parseRangeInput(html, 'thread-amplitude-y-slider').value).toBeCloseTo(7.0, 5);
     expect(parseRangeInput(html, 'thread-width-slider').value).toBeCloseTo(0.2, 5);
     expect(parseRangeInput(html, 'thread-thickness-slider').value).toBeCloseTo(0.1, 5);
+  });
+
+  it('formats default labels with decimals matching each step', () => {
+    const html = threadSlidersMarkup();
+    const labelFor = (id) => {
+      const m = html.match(new RegExp(`id="${id}"[^>]*>\\s*([\\d.]+)`));
+      return m ? m[1] : null;
+    };
+    expect(labelFor('thread-spacing-val')).toBe('0.40');
+    expect(labelFor('thread-vector-dist-val')).toBe('10.0');
+    expect(labelFor('thread-amplitude-y-val')).toBe('7.0');
+    expect(labelFor('thread-width-val')).toBe('0.20');
+    expect(labelFor('thread-thickness-val')).toBe('0.10');
   });
 });
