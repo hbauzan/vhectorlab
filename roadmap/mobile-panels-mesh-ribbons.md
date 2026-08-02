@@ -68,10 +68,10 @@
 - `localStorage` para estado collapsed en desktop; mobile ignora y parte colapsado (D4).
 
 ### A.2 Criterios de aceptación
-- [ ] Minimize/restore dock izq. y der.
-- [ ] Cambio MODE Arithmetic↔Compare mantiene política de collapsed del dock izq.
-- [ ] Sin scrollbar externa del panel (§4.x).
-- [ ] HUD inferior sigue visible.
+- [x] Minimize/restore dock izq. y der.
+- [x] Cambio MODE Arithmetic↔Compare mantiene política de collapsed del dock izq.
+- [x] Sin scrollbar externa del panel (§4.x).
+- [x] HUD inferior sigue visible.
 
 ### A.3 Rama
 `feat/collapsible-side-panels`
