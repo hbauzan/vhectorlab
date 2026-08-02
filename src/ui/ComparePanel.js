@@ -63,6 +63,23 @@ export const COMPARE_AUTO_PRESETS = {
   groupsDemo: COMPARE_GROUPS_DEMO_TEXT,
 };
 
+/**
+ * Single source for COMPARE first-paint: textarea default + auto Visualize payload.
+ * Must stay grouped so GROUP_* floating badges appear without a second submit.
+ * @returns {{
+ *   mode: 'flat'|'grouped',
+ *   tokens: string[],
+ *   tokenMeta: Array<{ groupId: string, groupLabel: string }|null>,
+ *   groups: Array<{ id: string, label: string, tokens: string[] }>,
+ *   textareaValue: string,
+ * }}
+ */
+export function getCompareBootstrap() {
+  const textareaValue = COMPARE_GROUPS_DEMO_TEXT;
+  const parsed = parseCompareInput(textareaValue);
+  return { ...parsed, textareaValue };
+}
+
 /** @deprecated Use COMPARE_AUTO_PRESETS */
 export const COMPARE_WHEEL_PRESETS = COMPARE_AUTO_PRESETS;
 
@@ -158,7 +175,7 @@ export class ComparePanel {
     this.btnSubmit = this.saeUi.btnPrimary;
 
     // Default: 2-group demo so GROUP_* badges are visible out of the box
-    this.textarea.value = COMPARE_AUTO_PRESETS.groupsDemo;
+    this.textarea.value = getCompareBootstrap().textareaValue;
 
     this.initEventListeners();
   }
@@ -185,6 +202,13 @@ export class ComparePanel {
         } else if (Array.isArray(preset)) {
           this.textarea.value = preset.join(", ");
         }
+        // Preset must Visualize (not only fill text) — else GROUP_* meta never reaches 3D
+        if (!this.onCalculate) return;
+        const parsed = parseCompareInput(this.textarea.value);
+        if (parsed.tokens.length === 0) return;
+        this.setLoading(true);
+        this.onCalculate(parsed.tokens, parsed.tokenMeta)
+          .finally(() => this.setLoading(false));
       });
     });
 
