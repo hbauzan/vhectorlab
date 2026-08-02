@@ -54,6 +54,11 @@ All notable changes to VectorLab 3D will be documented in this file.
   - `VITE_API_BASE_URL=/api` enabled in `.env` / `.env.example`; `RemoteProvider` honors it.
   - Lesson §6.1: new backend routes under `/api` need no Vite remap.
 
+## [1.7.0] - 2026-08-02
+
+### Added
+- **COMPARE groups** (`feat/compare-group-labels`): parse `GROUP_name = tokens…` in the textarea; concatenate groups into the sequence; floating `GROUP_*` badges at member centroids (screen-offset left). Preset **2 Groups**. Anchor remains global #1; cosine sort is global (may break contiguity).
+
 ## [1.6.0] - 2026-08-02
 
 ### Removed
