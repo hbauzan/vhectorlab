@@ -34,4 +34,14 @@ describe('LayoutEngine Math Tests', () => {
     // Slot 0 should be vertically higher than Slot 1
     expect(pointsSlot0[0].y).toBeGreaterThan(pointsSlot1[0].y);
   });
+
+  it('debe ajustar dinámicamente la separación vertical Y al cambiar spacingY', () => {
+    const engine = new LayoutEngine({ scaleX: 1.0 });
+    const vector = [0.0, 0.0];
+    const pointsDefaultY = engine.mapVectorTo3DPoints(vector, 0, 'ANALYSIS', 5, 40.0);
+    const pointsExpandedY = engine.mapVectorTo3DPoints(vector, 0, 'ANALYSIS', 5, 80.0);
+
+    // Slot 0 (centeredYSlot = 2.0) with spacing 80 should have double the vertical Y offset of spacing 40
+    expect(pointsExpandedY[0].y).toBeCloseTo(pointsDefaultY[0].y * 2, 5);
+  });
 });
