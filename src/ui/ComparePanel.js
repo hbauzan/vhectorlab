@@ -1,4 +1,64 @@
-import { reorderCompareItems } from './compareCosine.js';
+import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
+
+/**
+ * Vocabulario típico de un manual de automóvil en español (piezas, fluidos, sistemas).
+ * Tokens simples (sin espacios) para el splitter de COMPARE.
+ */
+export const AUTO_MANUAL_VOCAB_ES = [
+  // Rodado
+  'rueda', 'ruedas', 'llanta', 'llantas', 'neumático', 'neumáticos', 'rin', 'goma',
+  'caucho', 'cubierta', 'aro', 'buje', 'eje', 'ejes', 'rodamiento', 'balero',
+  // Frenos y pedales
+  'freno', 'frenos', 'pastilla', 'pastillas', 'disco', 'tambor', 'abs', 'pedal',
+  'acelerador', 'embrague',
+  // Motor y escape
+  'motor', 'pistón', 'pistones', 'cilindro', 'cilindros', 'bujía', 'bujías',
+  'inyector', 'inyectores', 'culata', 'cigüeñal', 'leva', 'turbo', 'compresor',
+  'escape', 'catalizador', 'silenciador', 'colector', 'admisión',
+  // Refrigeración / lubricación / correas
+  'radiador', 'refrigerante', 'anticongelante', 'aceite', 'filtro', 'filtros',
+  'correa', 'correas', 'bomba', 'termostato', 'ventilador',
+  // Eléctrico
+  'batería', 'alternador', 'arranque', 'bobina', 'fusible', 'fusibles', 'relé',
+  'sensor', 'sensores', 'cable', 'cables',
+  // Transmisión
+  'transmisión', 'caja', 'marcha', 'marchas', 'diferencial', 'cardán',
+  'sincronizador', 'convertidor',
+  // Dirección y suspensión
+  'volante', 'dirección', 'suspensión', 'amortiguador', 'amortiguadores',
+  'muelle', 'muelles', 'ballesta', 'brazo', 'rótula', 'terminal',
+  // Carrocería e iluminación
+  'chasis', 'carrocería', 'capó', 'maletero', 'puerta', 'puertas', 'ventanilla',
+  'parabrisas', 'espejo', 'espejos', 'faro', 'faros', 'piloto', 'pilotos',
+  'paragolpes', 'guardabarros', 'techo', 'aleta',
+  // Habitáculo / seguridad
+  'asiento', 'asientos', 'cinturón', 'airbag', 'airbags', 'tablero',
+  'velocímetro', 'cuentakilómetros', 'claxon', 'limpiaparabrisas', 'guantera',
+  // Fluidos y combustible
+  'combustible', 'gasolina', 'diésel', 'diesel', 'líquido', 'hidráulico',
+  // Fijaciones / varios de taller
+  'junta', 'juntas', 'tornillo', 'tornillos', 'tuerca', 'tuercas', 'arandela',
+  'manguera', 'mangueras', 'depósito', 'tanque', 'tapón',
+  // Vehículo
+  'vehículo', 'automóvil', 'coche', 'auto', 'camioneta',
+];
+
+/** Deduplicated Spanish auto-manual lexicon (stable order). */
+export const AUTO_MANUAL_UNIQUE_ES = [...new Set(AUTO_MANUAL_VOCAB_ES)];
+
+/**
+ * COMPARE presets built from Spanish auto-manual vocabulary.
+ * @deprecated alias — prefer COMPARE_AUTO_PRESETS
+ */
+export const COMPARE_AUTO_PRESETS = {
+  sample5: ['rueda', 'motor', 'freno', 'volante', 'embrague'],
+  default: AUTO_MANUAL_UNIQUE_ES,
+  sample20: AUTO_MANUAL_UNIQUE_ES.slice(0, 20),
+  sample50: AUTO_MANUAL_UNIQUE_ES.slice(0, 50),
+};
+
+/** @deprecated Use COMPARE_AUTO_PRESETS */
+export const COMPARE_WHEEL_PRESETS = COMPARE_AUTO_PRESETS;
 
 /**
  * Left Sidebar Control Panel component for COMPARE Mode token sequences (1 to 1024 tokens).
@@ -25,7 +85,7 @@ export class ComparePanel {
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
           <label for="compare-tokens">Tokens / Words (separated by comma, space, or newline)</label>
-          <textarea id="compare-tokens" rows="6" placeholder="Enter words/tokens e.g. king, queen, man, woman, apple, orange..." required></textarea>
+          <textarea id="compare-tokens" rows="6" placeholder="e.g. rueda, motor, freno, volante, embrague..." required></textarea>
         </div>
 
         <div class="preset-buttons-row">
@@ -45,9 +105,15 @@ export class ComparePanel {
           <span class="metric-item">Loaded Tokens: <strong id="token-count-val">0</strong></span>
         </div>
 
-        <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">SIMILITUD COSENO vs — (1.er token)</h3>
+        <div class="compare-cosine-header">
+          <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">SIMILITUD COSENO vs —</h3>
+          <span class="compare-sort-btns">
+            <button type="button" id="btn-sort-desc" class="btn-sort-cosine" data-sort="desc" disabled title="Mayor → menor" aria-label="Ordenar de mayor a menor">▼</button>
+            <button type="button" id="btn-sort-asc" class="btn-sort-cosine" data-sort="asc" disabled title="Menor → mayor" aria-label="Ordenar de menor a mayor">▲</button>
+          </span>
+        </div>
         <ul id="compare-cosine-list" class="compare-cosine-list">
-          <li class="empty-state">Visualizá una secuencia para ver similitud vs el 1.er token...</li>
+          <li class="empty-state">Visualizá una secuencia para ver similitud vs el ancla...</li>
         </ul>
       </div>
     `;
@@ -60,9 +126,11 @@ export class ComparePanel {
     this.tokenCountVal = this.element.querySelector('#token-count-val');
     this.cosineSubtitle = this.element.querySelector('#compare-cosine-subtitle');
     this.cosineList = this.element.querySelector('#compare-cosine-list');
+    this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
+    this.btnSortAsc = this.element.querySelector('#btn-sort-asc');
 
-    // Default sample values
-    this.textarea.value = "king, queen, man, woman, prince, princess, emperor, empress, royalty, monarch";
+    // Default: full Spanish auto-manual parts lexicon
+    this.textarea.value = COMPARE_AUTO_PRESETS.default.join(", ");
 
     this.initEventListeners();
   }
@@ -89,17 +157,9 @@ export class ComparePanel {
     this.element.querySelectorAll('.btn-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const type = e.target.getAttribute('data-preset');
-        if (type === 'sample5') {
-          this.textarea.value = "king, queen, man, woman, child";
-        } else if (type === 'sample20') {
-          this.textarea.value = "king, queen, man, woman, prince, princess, emperor, empress, royalty, monarch, lord, lady, knight, castle, crown, throne, empire, kingdom, palace, scepter";
-        } else if (type === 'sample50') {
-          const sample = [];
-          const baseWords = ["vector", "tensor", "matrix", "linear", "space", "dimension", "gradient", "loss", "model", "token"];
-          for (let i = 0; i < 50; i++) {
-            sample.push(`${baseWords[i % baseWords.length]}_${Math.floor(i / baseWords.length) + 1}`);
-          }
-          this.textarea.value = sample.join(", ");
+        const preset = COMPARE_AUTO_PRESETS[type];
+        if (preset) {
+          this.textarea.value = preset.join(", ");
         }
       });
     });
@@ -115,13 +175,20 @@ export class ComparePanel {
       const delta = btn.getAttribute('data-dir') === 'up' ? -1 : 1;
       this.handleReorder(index, delta);
     });
+
+    this.element.querySelectorAll('.btn-sort-cosine').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.reorderLocked) return;
+        const direction = btn.getAttribute('data-sort');
+        this.handleSort(direction);
+      });
+    });
   }
 
-  handleReorder(fromIndex, delta) {
-    if (!this.items || this.reorderLocked) return;
-    const result = reorderCompareItems(this.items, fromIndex, delta);
+  applyReorderResult(result) {
     if (!result) return;
-
     this.items = result.items;
     this.renderCosineList(result.anchor, result.items);
 
@@ -133,8 +200,22 @@ export class ComparePanel {
     }
   }
 
+  handleReorder(fromIndex, delta) {
+    if (!this.items || this.reorderLocked) return;
+    this.applyReorderResult(reorderCompareItems(this.items, fromIndex, delta));
+  }
+
+  handleSort(direction) {
+    if (!this.items || this.reorderLocked) return;
+    this.applyReorderResult(sortCompareItemsByCosine(this.items, direction));
+  }
+
   setReorderLocked(locked) {
     this.reorderLocked = locked;
+    const hasItems = !!(this.items && this.items.length > 1);
+    if (this.btnSortDesc) this.btnSortDesc.disabled = locked || !hasItems;
+    if (this.btnSortAsc) this.btnSortAsc.disabled = locked || !hasItems;
+
     this.cosineList.querySelectorAll('.btn-reorder').forEach((btn) => {
       if (locked) {
         btn.disabled = true;
@@ -171,8 +252,9 @@ export class ComparePanel {
     if (!data || !data.items) {
       this.items = null;
       this.updateMetrics(0);
-      this.cosineSubtitle.textContent = 'SIMILITUD COSENO vs — (1.er token)';
-      this.cosineList.innerHTML = '<li class="empty-state">Visualizá una secuencia para ver similitud vs el 1.er token...</li>';
+      this.cosineSubtitle.textContent = 'SIMILITUD COSENO vs —';
+      this.cosineList.innerHTML = '<li class="empty-state">Visualizá una secuencia para ver similitud vs el ancla...</li>';
+      this.setReorderLocked(false);
       return;
     }
 
@@ -184,11 +266,12 @@ export class ComparePanel {
 
   renderCosineList(anchor, items) {
     const anchorWord = anchor?.text ?? items[0]?.text ?? '—';
-    this.cosineSubtitle.textContent = `SIMILITUD COSENO vs «${anchorWord}» (1.er token)`;
+    this.cosineSubtitle.textContent = `SIMILITUD COSENO vs «${anchorWord}»`;
 
     this.cosineList.innerHTML = '';
     if (!items || items.length === 0) {
       this.cosineList.innerHTML = '<li class="empty-state">No tokens loaded</li>';
+      this.setReorderLocked(this.reorderLocked);
       return;
     }
 
@@ -214,6 +297,8 @@ export class ComparePanel {
       `;
       this.cosineList.appendChild(li);
     });
+
+    this.setReorderLocked(this.reorderLocked);
   }
 
   show() {
