@@ -363,6 +363,36 @@ canvas {
 .hud-highlight { font-family: monospace; font-weight: 700; }
 .hud-token-text { font-weight: 700; color: var(--accent-gold); }
 
+/* Camera pose overlay (VITE_SHOW_CAM_POSE=true) — readable POS/ROT for default-view capture */
+#camera-pose-debug {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid #00ffaa;
+  color: #00ffaa;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  white-space: nowrap;
+  text-align: left;
+}
+
+#camera-pose-debug .cam-debug-title {
+  color: #ffe600;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;

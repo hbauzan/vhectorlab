@@ -50,4 +50,21 @@ describe('WebGL 3D Engine & Spatial Math', () => {
     // Velocity should be smoothly bounded around target speed per frame (~0.64), not 8x buildup
     expect(nav.velocity.length()).toBeLessThan(2.0);
   });
+
+  it('Navigation setNavigationView restores the captured default corridor pose', () => {
+    const camera = new THREE.PerspectiveCamera();
+    const nav = new Navigation(camera);
+
+    nav.setNavigationView();
+
+    expect(camera.position.x).toBeCloseTo(-178.3, 1);
+    expect(camera.position.y).toBeCloseTo(13.5, 1);
+    expect(camera.position.z).toBeCloseTo(52.2, 1);
+
+    const deg2rad = Math.PI / 180;
+    expect(nav.euler.x).toBeCloseTo(-5.4 * deg2rad, 3);
+    expect(nav.euler.y).toBeCloseTo(-51.5 * deg2rad, 3);
+    expect(nav.euler.z).toBeCloseTo(0, 3);
+    expect(nav.velocity.length()).toBe(0);
+  });
 });

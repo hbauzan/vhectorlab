@@ -101,6 +101,10 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Patrón**: Proyectar los orígenes 3D ($X=0$) de los hilos vectoriales a coordenadas 2D de pantalla (`vector.project(camera)`) para renderizar cartelitos Glassmorphic anclados al inicio de cada hilo.
 - **Invariante**: En el modo **Análisis**, los hilos se apilan verticalmente a lo largo de $Y$ con encuadre frontal directo (`Z=360`), permitiendo visualizar todos los componentes y el resultado inmediatamente sin desplazamientos manuales.
 
+### 3.4. Default Navigation Corridor Pose
+- **Invariante**: La vista inicial de **Navegación** usa la pose capturada `POS (-178.3, 13.5, 52.2)` + euler YXZ `ROT (-5.4°, -51.5°, 0°)` con sliders espaciales por defecto Separación $X=0.4$, Amplitud $Y=7.0$, Longitud $Z=0.2$.
+- **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`). Sirve para releer POS/ROT desde una captura y actualizar `setNavigationView()`.
+
 ---
 
 ## 4. Protocolo de Mantenimiento de Lecciones Aprendidas
