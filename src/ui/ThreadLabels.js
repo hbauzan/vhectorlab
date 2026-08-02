@@ -67,6 +67,27 @@ export class ThreadLabels {
   }
 
   /**
+   * Update 3D origins in-place (keeps DOM cards) — used during compare reorder tweens.
+   * @param {Array<{ id: string, origin3D: THREE.Vector3, text?: string }>} labelItems
+   */
+  updateOrigins(labelItems) {
+    if (!labelItems || !this.labels.length) return;
+    const byId = new Map(labelItems.map((item) => [item.id, item]));
+    this.labels.forEach((label) => {
+      const next = byId.get(label.id);
+      if (!next || !next.origin3D) return;
+      label.origin3D.copy(next.origin3D);
+      if (next.text != null && next.text !== label.text) {
+        label.text = next.text;
+        if (label.element) {
+          const textEl = label.element.querySelector('.thread-label-text');
+          if (textEl) textEl.textContent = next.text;
+        }
+      }
+    });
+  }
+
+  /**
    * Updates positions of floating 2D labels based on camera projection.
    * @param {THREE.Camera} camera
    * @param {number} width - Canvas width

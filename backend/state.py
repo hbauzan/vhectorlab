@@ -157,13 +157,14 @@ class AppState:
     def perform_compare(self, texts: list[str]) -> dict[str, Any]:
         """
         Computes L2-normalized embeddings for a sequence of 1 to 1024 token/text items.
+        Each item includes cosine_vs_first = dot(emb_i, emb_0) (embeddings already L2-normalized).
         """
         if self.model is None:
             raise RuntimeError("AppState not initialized with model.")
 
         cleaned = [t.strip() for t in texts if t.strip()][:1024]
         if not cleaned:
-            return {"count": 0, "items": []}
+            return {"count": 0, "anchor": None, "items": []}
 
         raw_embeddings = self.model.encode(
             cleaned, show_progress_bar=False, convert_to_numpy=True
@@ -175,17 +176,21 @@ class AppState:
         norms[norms == 0] = 1e-9
         normalized = raw_embeddings / norms
 
+        anchor_vec = normalized[0]
         items = []
         for idx, text in enumerate(cleaned):
+            cosine = float(np.dot(normalized[idx], anchor_vec))
             items.append({
                 "id": f"tok_{idx}",
                 "index": idx,
                 "text": text,
                 "embedding": normalized[idx].tolist(),
+                "cosine_vs_first": cosine,
             })
 
         return {
             "count": len(items),
+            "anchor": {"index": 0, "text": cleaned[0]},
             "items": items,
         }
 
