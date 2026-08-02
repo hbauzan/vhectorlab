@@ -29,6 +29,7 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Full unit test suite with `pytest`.
 
 - **WebGL 3D Engine & Shaders (Phase 2)**:
+  - Fixed WASD camera flight controller (`src/engine/Navigation.js`) with linear velocity interpolation (`lerp`) and input safety (ignoring keys when focused on UI form inputs and clearing inputs on window blur).
   - Custom GLSL point shader with glowing incandescent halos and anti-aliased radial smoothing (`src/engine/Shaders.js`).
   - Three.js 3D scene orchestrator with dark background (`#050505`), fog, and reference grid (`src/engine/SceneSetup.js`).
   - Inertial flight camera controller with WASDQE, mouse drag look, and Shift turbo acceleration (`src/engine/Navigation.js`).
