@@ -1,7 +1,8 @@
 import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
 
 /**
- * Returns HTML markup for the 3 spatial sliders control panel.
+ * Returns HTML markup for the spatial sliders control panel.
+ * Defaults sit at linear midpoints; steps are fine-grained for gradual tuning.
  * @param {Object} config - Initial configuration object { threadSpacing, threadWidth, threadThickness }
  * @returns {string} HTML string
  */
@@ -20,9 +21,9 @@ export function threadSlidersMarkup(config = {}) {
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-spacing-slider">Separación (X):</label>
-      <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(1)}</span>
+      <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.1" value="${spacing}">
+    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}">
   </div>
 
   <!-- Slider 2: Vector Distance Y -->
@@ -31,7 +32,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-vector-dist-slider">Distancia Vectores (Y):</label>
       <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="1.0" value="${vectorDist}">
+    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}">
   </div>
 
   <!-- Slider 3: Amplitude Y -->
@@ -40,16 +41,16 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="13.0" step="1.0" value="${amplitudeY}">
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="13.0" step="0.1" value="${amplitudeY}">
   </div>
 
   <!-- Slider 4: Width Z -->
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-width-slider">Longitud (Z):</label>
-      <span id="thread-width-val" class="slider-val">${width.toFixed(1)}</span>
+      <span id="thread-width-val" class="slider-val">${width.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.1" value="${width}">
+    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}">
   </div>
 
   <!-- Slider 5: Thickness -->
@@ -58,7 +59,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-thickness-slider">Grosor Puntos:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.05" value="${thickness}">
+    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.01" value="${thickness}">
   </div>
 </div>
 `;
@@ -104,7 +105,7 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
     spacingInput.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       config.threadSpacing = val;
-      if (spacingVal) spacingVal.textContent = val.toFixed(1);
+      if (spacingVal) spacingVal.textContent = val.toFixed(2);
       triggerChange();
     });
   }
@@ -132,7 +133,7 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
     widthInput.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
       config.threadWidth = val;
-      if (widthVal) widthVal.textContent = val.toFixed(1);
+      if (widthVal) widthVal.textContent = val.toFixed(2);
       triggerChange();
     });
   }
