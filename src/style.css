@@ -709,6 +709,68 @@ canvas {
   flex-shrink: 0;
 }
 
+/* Visualization: edge collapse tab (dock-tab affordance) */
+#visualization-controls-container.viz-panel {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: width 250ms ease, min-width 250ms ease, padding 250ms ease;
+  width: auto;
+  max-width: 280px;
+}
+
+#visualization-controls-container .viz-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  width: 280px;
+  box-sizing: border-box;
+  transition: opacity 200ms ease, transform 250ms ease;
+}
+
+#visualization-controls-container .viz-panel-tab {
+  flex: 0 0 var(--dock-tab-size, 28px);
+  width: var(--dock-tab-size, 28px);
+  min-height: 72px;
+  margin: 8px 0 8px 0;
+  align-self: flex-start;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  order: -1;
+}
+
+#visualization-controls-container.is-collapsed {
+  width: var(--dock-tab-size, 28px);
+  min-width: var(--dock-tab-size, 28px);
+  max-width: var(--dock-tab-size, 28px);
+  border-radius: 8px 0 0 8px;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+#visualization-controls-container.is-collapsed .viz-panel-body {
+  position: absolute;
+  right: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(12px);
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#visualization-controls-container.is-collapsed .viz-panel-tab {
+  margin: 0;
+  border-radius: 8px 0 0 8px;
+  border: 1px solid var(--panel-border);
+  border-right: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
 #axis-gizmo-container {
   position: relative;
   width: 100px;

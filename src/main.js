@@ -16,11 +16,11 @@ import { resolveSpatialDefaults } from './ui/spatialSliderDefaults.js';
 import {
   visualizationControlsMarkup,
   wireVisualizationControls,
+  readVisualizationPanelCollapsed,
 } from './ui/VisualizationControls.js';
 import { loadVisualizationSettings } from './ui/visualizationControlsDefaults.js';
-
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
-import { CollapsibleDock } from './ui/CollapsibleDock.js';
+import { CollapsibleDock, isMobileViewport } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
 import { TouchControls } from './ui/TouchControls.js';
 import {
@@ -160,8 +160,12 @@ class VectorLabApp {
    */
   mountVisualizationControlsUI() {
     this.vizConfig = loadVisualizationSettings();
+    const storage = typeof localStorage !== 'undefined' ? localStorage : null;
+    const collapsed = readVisualizationPanelCollapsed(storage, {
+      isMobile: isMobileViewport(),
+    });
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = visualizationControlsMarkup(this.vizConfig);
+    wrapper.innerHTML = visualizationControlsMarkup(this.vizConfig, { collapsed });
     const vizEl = wrapper.firstElementChild;
     this.vizEl = vizEl;
     // Below sliders, above AxisGizmo (V1).

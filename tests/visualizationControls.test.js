@@ -14,6 +14,10 @@ import {
   anchorsFromSettings,
 } from '../src/ui/visualizationControlsDefaults.js';
 import {
+  visualizationControlsMarkup,
+  setVisualizationPanelCollapsed,
+} from '../src/ui/VisualizationControls.js';
+import {
   NEAR_ZERO_EPS,
   shouldShowActivation,
   filterPointsData,
@@ -109,6 +113,48 @@ describe('visualizationControlsDefaults', () => {
     expect(a.positive.r).toBeCloseTo(1, 5);
     expect(a.zero).toEqual({ r: 0, g: 0, b: 0 });
     expect(a.negative.b).toBeCloseTo(230 / 255, 5);
+  });
+});
+
+describe('Visualization panel collapse tab', () => {
+  it('markup includes edge tab and aria-expanded', () => {
+    const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: false });
+    expect(html).toContain('viz-panel-tab');
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('▶');
+  });
+
+  it('collapsed markup starts with expand glyph', () => {
+    const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: true });
+    expect(html).toContain('is-collapsed');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('◀');
+  });
+
+  it('setVisualizationPanelCollapsed toggles class and glyph', () => {
+    const classList = new Set(['section-card', 'viz-panel']);
+    const tab = {
+      textContent: '▶',
+      attrs: {},
+      setAttribute(k, v) { this.attrs[k] = String(v); },
+    };
+    const el = {
+      classList: {
+        toggle: (cls, force) => {
+          if (force) classList.add(cls);
+          else classList.delete(cls);
+        },
+        contains: (cls) => classList.has(cls),
+      },
+      querySelector: (sel) => (sel === '.viz-panel-tab' ? tab : null),
+    };
+    setVisualizationPanelCollapsed(el, true);
+    expect(classList.has('is-collapsed')).toBe(true);
+    expect(tab.textContent).toBe('◀');
+    expect(tab.attrs['aria-expanded']).toBe('false');
+    setVisualizationPanelCollapsed(el, false);
+    expect(classList.has('is-collapsed')).toBe(false);
+    expect(tab.textContent).toBe('▶');
   });
 });
 
