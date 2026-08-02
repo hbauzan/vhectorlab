@@ -40,6 +40,11 @@ export const CAMERA_DEFAULT_OVERRIDES = {
     position: [-106.5, 20.4, 390.2],
     rotationDeg: [-3.9, -8.4, 0],
   },
+  // Captured COMPARE + ANALYSIS + POINTS (CAM POSE overlay)
+  'COMPARE|ANALYSIS|POINTS': {
+    position: [-150.3, 0.7, 276.6],
+    rotationDeg: [-0.5, 0.9, 0],
+  },
   // Captured COMPARE + NAVIGATION + RIBBONS (CAM POSE overlay)
   'COMPARE|NAVIGATION|RIBBONS': {
     position: [-575.8, 43.8, 237.9],
