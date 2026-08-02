@@ -1,63 +1,63 @@
-# Prompt — agente SAE Clean/Denoise (sparse projection)
+# Prompt — agente Top‑K SAE Clean/Denoise (trained)
 
-Copiá y pegá el bloque siguiente en una sesión nueva. **Decisiones cerradas** en `roadmap/sae-denoise.md` (2026-08-02).
+Copiá y pegá el bloque siguiente en una sesión nueva. **Decisiones cerradas** en `roadmap/sae-denoise.md` (2026-08-02).  
+**Importante:** esto es un **Top‑K SAE real (PyTorch, entrenado)**, NO la proyección sinusoidal descartada.
 
 ---
 
 ```text
-Usando dev-protocol, ejecutá el roadmap SAE Clean/Denoise.
+Usando dev-protocol, ejecutá el roadmap Top‑K SAE Clean/Denoise.
 
 ## Contexto
 Repo: VectorLab 3D (Python/uv + Vite/Three.js).
-Base: `main` actualizado (pull first). Incluí feat/zero-coverage si aún no está mergeado solo si hace falta — preferí main limpio + este epic.
+Base: `main` actualizado (pull first).
 Roadmap canónico (leelo COMPLETO antes de codear):
   `roadmap/sae-denoise.md`
 Lecciones: `.agents/skills/dev-protocol/lessons-learned.md`
-  (§4 paneles/docks, §4.9 viz controls, §6.1 /api proxy, §7 SemVer MAJOR).
+  (§4 docks/UI, §6.1 /api proxy, §7 SemVer MAJOR 2.0.0).
 
 ## Decisiones YA CERRADAS (no re-preguntar)
-- U1: CTA 50/50 — Calculate|Clean/Denoise (SAE) y Visualize|Clean/Denoise (SAE).
-- U2: Label exacto `Clean/Denoise (SAE)`.
-- U3: Toggle; U4: localStorage `vl3d.sae.*`; U5: params Expansion + Top-K en UI.
-- M1: Replace (6A) — SAE ON reemplaza vectores en 3D + Top-10/cosine; OFF restaura raw cacheado.
-- M2: Todos los vectores Arithmetic + Compare.
-- A1–A6: Proyección SAE-style determinística (W sinusoidal) → ReLU → Top-K; viz en espacio expandido M; métricas L0/sparsity/active features; cosine sobre z sparse.
-- B1–B4: Backend `/api/sae/project`; lazy W (9A); batch + progress (texto + pasos); no entrenar red.
-- X1: Sin Gemini labels, sin SAE neural entrenado, sin dual view, sin train UI.
-- V1: Ship **2.0.0** MAJOR.
+- U1–U5: CTA 50/50 `Clean/Denoise (SAE)` toggle; localStorage; params/train UI; progress.
+- M1–M2: Replace all Arithmetic+Compare vectors when SAE ON; cache raw 768.
+- A1–A7: Real Top‑K SAE (grandmother port): 768→8192, k=32, ReLU+TopK FP32, untied unit-norm decoder, train MSE; viz uses encode activations.
+- B1–B6: Backend PyTorch; lazy load; /api/sae/status|train|encode; train on vocab embeddings; checkpoint under backend/artifacts/.
+- F1: raw_i vs sae_i key isolation if needed.
+- X1: No Gemini labels; no sinusoidal fake SAE; no dual mesh.
+- V1: Ship **2.0.0**.
 
 ## Objetivo
-Backend pure projection + API; UI toggle/params/progress; replace pipeline; docs + v2.0.0.
+Port TopKSAE + SAEManager + train_sae; wire API; UI toggle/train/progress; replace render pipeline; docs + v2.0.0.
 
 ## Fuera de alcance
-roadmap/archivo/** (salvo notar supersede del “NO SAE”), Gemini concept naming, trained SAE, dual 3D.
+Sinusoidal “SAE-style”, Gemini feature naming, dual RAW+SAE 3D, PDF relief-matrix from grandmother (use vocab matrix instead).
 
 ## Flujo
-1. Branch `feat/sae-denoise` (or stages A/B/C in roadmap §9).
-2. TDD `backend/sae/projection.py` + pytest; wire `/api/sae/project`.
-3. UI 50/50 + defaults/localStorage + progress.
-4. App state raw/sae cache; refreshRender + lists; metrics strip.
-5. CONTEXT + lessons + CHANGELOG; bump 2.0.0.
+1. Branch `feat/topk-sae-denoise`.
+2. Stage A: model+train+pytest.
+3. Stage B: FastAPI routes + progress.
+4. Stage C: UI 50/50 + encode replace + metrics.
+5. Docs/CHANGELOG/CONTEXT/lessons; bump 2.0.0.
 6. pytest + vitest green; smoke §6–§7.
-7. APPROVAL GATE — how to test; wait for explicit OK before push/merge.
+7. APPROVAL GATE — wait for explicit OK before push/merge.
 
 ## Criterios de aceptación
-Checklist §7 del roadmap (todos).
+Checklist §7 del roadmap.
 
 ## Cómo probar
-1. `uv run` backend + `npm run dev`.
-2. Arithmetic: Calculate → toggle SAE → progress → threads show sparse peaks (length M); Top-10 changes; OFF restores.
-3. Compare: Visualize batch → SAE ON → progress i/N → all threads sparse; cosine updates.
-4. Change Top-K / Expansion while ON → reproject with progress; reload persists toggle/params.
+1. Backend + frontend.
+2. Train SAE on vocab (progress epochs).
+3. Arithmetic Calculate → toggle SAE → threads length 8192 sparse; OFF → 768.
+4. Compare Visualize → SAE ON batch encode with progress; cosine updates.
+5. Reload: status is_trained; toggle preference restored.
 
 ## Estilo
-No-fluff; deep modules; don’t expand scope; don’t re-ask closed IDs.
+No-fluff; deep modules; port grandmother numerics faithfully; don’t re-ask closed IDs.
 ```
 
 ---
 
 ## Notas para el humano
 
-- Esto **no** es un SAE neuronal entrenado: es el mismo truco del otro producto (W sinusoidal + Top‑K). El roadmap lo nombra “SAE-style” a propósito.
-- v**2.0.0** porque cambia el contrato de lo que se visualiza/métrica cuando el toggle está ON.
-- Etiquetado Gemini de features = fuera de v1 (X1).
+- La abuela ya tenía el SAE **serio** (Top‑K entrenado). El paste sinusoidal de otra herramienta era un atajo distinto — **descartado**.
+- Entrenamiento v1 = matriz de vocab del backend, no PDFs.
+- Pegá este prompt en sesión limpia tras mergear lo pendiente a `main` si hace falta.

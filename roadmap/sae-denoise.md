@@ -1,19 +1,21 @@
-# Roadmap — SAE Clean/Denoise (Sparse Projection + Top‑K)
+# Roadmap — Top‑K SAE Clean/Denoise (trained Sparse Autoencoder)
 
 **Status:** Ready for implementation handoff  
 **Date:** 2026-08-02  
 **Product:** VectorLab 3D (`lsv2`)  
 **Prompt companion:** [`PROMPT-sae-denoise.md`](./PROMPT-sae-denoise.md)  
-**Version on ship:** **MAJOR `2.0.0`** (SemVer §7 — new product capability + embedding/viz contract change when SAE ON)
+**Version on ship:** **MAJOR `2.0.0`**  
+**Reference:** Top‑K SAE from the predecessor tool (“grandmother”) — `TopKSAE` / `SAEManager` / train + encode API (see §0.2).
 
-> **Do not re-ask closed decisions** below. If something truly new appears, list once and ask; otherwise implement.  
-> Supersedes the archived non-goal “NO SAE” in `roadmap/archivo/big-picture.md` for this epic.
+> **Do not re-ask closed decisions** below.  
+> **Supersedes** the earlier draft that used deterministic sinusoidal “SAE-style” projection. That approach is **rejected**.  
+> Supersedes archived non-goal “NO SAE” in `roadmap/archivo/big-picture.md`.
 
 ---
 
 ## 0. Goal (one sentence)
 
-Add a **Clean/Denoise (SAE)** toggle (50/50 beside Calculate / Visualize) that projects dense embeddings into an expanded sparse activation space (deterministic “SAE-style” projection + Top‑K), **replaces** all Arithmetic/Compare vectors used for 3D + metrics while ON, with UI params, `localStorage`, and batch progress feedback — shipped as **v2.0.0**.
+Add **Clean/Denoise (SAE)** as a 50/50 toggle beside Calculate / Visualize that runs a **trained Top‑K Sparse Autoencoder** (768D → 8192 sparse features, default K=32), **replaces** all Arithmetic/Compare vectors used for 3D + metrics while ON, with train/encode/status on the backend, UI params, `localStorage`, and batch progress — shipped as **v2.0.0**.
 
 ---
 
@@ -21,241 +23,218 @@ Add a **Clean/Denoise (SAE)** toggle (50/50 beside Calculate / Visualize) that p
 
 | ID | Topic | Decision |
 | :--- | :--- | :--- |
-| **U1** | Button layout | Same row as primary CTA, **50/50**: Arithmetic `[ CALCULATE VECTOR \| Clean/Denoise (SAE) ]`; Compare `[ VISUALIZE SEQUENCE (3D) \| Clean/Denoise (SAE) ]`. |
-| **U2** | Label | Exact copy: **`Clean/Denoise (SAE)`** (EN-only §4.7). |
-| **U3** | Interaction | **Toggle** (pressed/active vs off). Not one-shot. |
-| **U4** | Persistence | Persist SAE on/off + UI params in **`localStorage`** (prefix e.g. `vl3d.sae.`). |
-| **U5** | Params UI | Expose parameters in UI (see §0.3). Defaults documented; live or Apply-on-toggle — prefer **apply when toggling ON** and when params change while ON (with progress). |
-| **M1** | Semantics | **6A Replace**: while SAE ON, Arithmetic + Compare use **only** SAE sparse vectors for 3D threads **and** Top-10 / cosine-vs-anchor. Toggle OFF restores cached **raw** embeddings (must keep both client-side or re-fetch). |
-| **M2** | Scope vectors | **All** vectors: Arithmetic `A/B/C/res/top1` (and any other returned embeddings); Compare **every** item embedding. |
-| **A1** | Algorithm family | **Deterministic SAE-style projection** (same family as the sibling product), **not** a trained neural SAE checkpoint in v1. Honest naming in docs/lessons: “SAE-style sparse expansion”; UI may still say SAE as product label. |
-| **A2** | Expansion | Dense dim `D` (today **768**) → expanded dim `M = D * expansionFactor` (or absolute `saeDim` — pick one param; see §0.3). Fixed deterministic matrix `W ∈ R^{M×D}` built from **sinusoidal** features so the same input always yields the same peaks. |
-| **A3** | Projection | For each vector `x ∈ R^D` (L2-normalize first if not already): `z_raw = W @ x` (or `W @ x + b` with `b=0`). Then non-linearity: **`z = max(0, z_raw)`** (ReLU) unless tests prefer `abs` — document choice. |
-| **A4** | Sparsity | **Top‑K**: keep the **K** largest activations in `z`, set the rest to **exactly `0.0`**. Target empirical sparsity often ~85–95% (depends on `M` and `K`). |
-| **A5** | Viz space | While SAE ON, 3D threads are drawn in **expanded sparse space** (`M` points per thread), not reconstructed back to `D`. Peaks = monosemantic-ish “feature needles”; valleys = zeros (flat). Matches sibling product RAW-vs-SAE topography idea. |
-| **A6** | Metrics in SAE mode | Cosine / Top-10 operate on the **sparse `z` vectors** (L2-normalize `z` before cosine). Document that scores are **not comparable** to raw-768 scores across modes. |
-| **B1** | Runtime | **Backend** FastAPI (`/api/...`). Frontend never builds `W` for production path (may mirror tiny helper in tests only if needed). |
-| **B2** | Load | **9A Lazy**: build/cache `W` (+ any buffers) on **first** SAE request / first toggle ON. Progress step: `Loading SAE projection…`. |
-| **B3** | Batch + UX | Always process in **batch** with user-visible progress: step label + current/total steps (and optional % bar). Never silent long waits. |
-| **B4** | Endpoints | Prefer a dedicated router e.g. `POST /api/sae/project` (batch of vectors → sparse + metrics). Arithmetic/Compare may accept `sae: true` **or** client calls `/sae/project` after raw compute — pick one seam and keep it deep (recommend **post-process via `/api/sae/project`** so raw endpoints stay pure). |
-| **X1** | Out of scope v1 | Trained neural SAE weights; train-from-UI; multi-model SAE packs; Gemini/LLM auto-label of features; click-peak → concept browser; Neuronpedia-style explorer; side-by-side dual 3D (6B); export/import feature dictionaries. |
-| **V1** | Version | Ship as **`2.0.0`** (MAJOR): new surface + when SAE ON the viz/metric embedding dim/contract changes. Sync manifest / package / Navbar / CHANGELOG. |
+| **U1** | Button layout | Same row, **50/50**: Arithmetic `[ CALCULATE VECTOR \| Clean/Denoise (SAE) ]`; Compare `[ VISUALIZE SEQUENCE (3D) \| Clean/Denoise (SAE) ]`. |
+| **U2** | Label | Exact: **`Clean/Denoise (SAE)`**. |
+| **U3** | Interaction | **Toggle** (`aria-pressed`). |
+| **U4** | Persistence | `localStorage` prefix `vl3d.sae.` (enabled + UI params). |
+| **U5** | Params UI | Expose at least **Top‑K** (and optionally hidden_dim if already trained — prefer read-only from `/sae/status` after train). Train hyperparams in a small panel or modal (hidden_dim, k, epochs, lr, batch_size). |
+| **M1** | Semantics | **Replace (6A)**: SAE ON → 3D + Top-10/cosine use **SAE activations** (8192D sparse). OFF → restore cached **raw 768D**. |
+| **M2** | Scope | **All** vectors: Arithmetic A/B/C/res/top1; Compare every item embedding. |
+| **A1** | Algorithm | **Real Top‑K SAE** (PyTorch `nn.Module`), **not** L1-penalty SAE, **not** sinusoidal fixed projection. |
+| **A2** | Why Top‑K | Avoids L1 shrinkage bias; exactly ≤K latents active per vector; magnitudes of survivors preserved. |
+| **A3** | Dims | Default **input_dim=768**, **hidden_dim=8192**, **k=32** (overridable at train time; encode uses checkpoint config). |
+| **A4** | Encode path | Center by `b_dec` → `ReLU(x_c @ W_enc + b_enc)` → **Top‑K in FP32** → scatter back (dead-neuron / overflow stability). |
+| **A5** | Decode | Untied `W_dec` with **unit-norm rows**; `decode` used in **training** (MSE recon). Inference for viz uses **`encode` activations** (sparse 8192D), matching grandmother `encode_vectors`. |
+| **A6** | Viz space | SAE ON → threads length **`hidden_dim`** (sparse peaks). RAW → 768. |
+| **A7** | Metrics (runtime) | From activations batch: L0 / sparsity / active feature count; from checkpoint: train MSE, dead features % (show via status). |
+| **B1** | Runtime | Backend FastAPI + PyTorch (`uv`). |
+| **B2** | Lazy load | **9A**: load checkpoint on first encode/status that needs weights. |
+| **B3** | Batch + progress | Encode/train always communicate progress (step text + current/total). Train = background (`asyncio.to_thread` / task) + poll status or WS — grandmother used async train; port that pattern. |
+| **B4** | API surface (mirror grandmother) | At minimum: `GET /api/sae/status`, `POST /api/sae/train`, `POST /api/sae/encode`. Optional later: relief-matrix style helper if needed — VectorLab can encode inline batches instead. |
+| **B5** | Train data | Train on the project **vocabulary embedding matrix** (already in backend RAM / `vocab`) unless blocked — document path. Do **not** require PDF chunk pipeline from grandmother. |
+| **B6** | Checkpoint | e.g. `backend/artifacts/sae_weights.pt` (gitignore large binaries; ship empty dir + README; train produces file). |
+| **F1** | Feature id collision | If any client dict keys dims: RAW `raw_{i}`, SAE `sae_{i}` (grandmother isolation). |
+| **X1** | Out of scope v1 | Gemini/LLM auto-label of features; click-peak concept browser; sinusoidal fake SAE; dual simultaneous RAW+SAE meshes; Neuronpedia UI. |
+| **V1** | Version | **`2.0.0`** MAJOR. |
 
-### 0.2. Algorithm (normative sketch)
+### 0.2. Normative model (from grandmother — port faithfully)
 
+```text
+TopKSAE(input_dim=768, hidden_dim=8192, k=32)
+  b_dec ∈ R^{D}
+  W_enc ∈ R^{D×H}, b_enc ∈ R^{H}
+  W_dec ∈ R^{H×D}   # untied; rows L2-normalized after each train step
+
+encode(x):
+  x_c = x - b_dec
+  pre = ReLU(x_c @ W_enc + b_enc)
+  acts = TopK(pre, k) in FP32  # exactly k nonzeros (or fewer if ties/zeros)
+  return acts ∈ R^{H}
+
+decode(acts):
+  return acts @ W_dec + b_dec
+
+forward(x) → (reconstruction, acts)
+train: Adam + MSE(reconstruction, x); after each step make_decoder_weights_unit_norm()
 ```
-Given x ∈ R^D (dense embedding):
-  1. x̂ ← L2Normalize(x)
-  2. Ensure W ∈ R^{M×D} cached (deterministic sinusoids; seed fixed in code/config)
-  3. h ← ReLU(W @ x̂)          # dense expanded activations
-  4. z ← TopK(h, K)            # all but K largest → 0 exactly
-  5. Return z ∈ R^M and per-vector metrics { l0, sparsity }
-```
 
-**Matrix W (deterministic):** for output row `i` and input col `j`:
+Port `TopKSAE`, `SAEManager`, `train_sae` into `backend/sae/` with tests. Adapt imports/paths to this repo; keep numerical behavior.
 
-```
-W[i, j] = sin(α * (i+1) * (j+1) + β * i) * γ
-```
+### 0.3. UI parameters
 
-(or equivalent fixed formula — implement one pure function, unit-test determinism). Do **not** use `np.random` without a fixed seed baked into the formula; prefer closed-form sinusoids so no RNG state leaks.
+| Control | Default | Notes |
+| :--- | :--- | :--- |
+| Toggle SAE | off | Needs trained checkpoint; else CTA → prompt to train or disable with message |
+| Top‑K (infer override?) | use checkpoint `k` | v1: **inference K = checkpoint K** (simpler). Optional later: override K at encode if model supports it |
+| Train: hidden_dim | 8192 | |
+| Train: k | 32 | |
+| Train: epochs | 50 | |
+| Train: lr | 1e-3 | |
+| Train: batch_size | 64 | |
 
-**Batch metrics (response aggregate):**
+**Train entry point:** button/link near SAE controls: `Train SAE` (only when needed). Progress: epoch i/N + loss.
 
-| Metric | Meaning |
-| :--- | :--- |
-| **L0** | Mean count of non-zeros per vector |
-| **Sparsity rate** | Fraction of zeros across the batch matrix |
-| **Active feature count** | Count of dims that were non-zero in **at least one** vector of the batch |
+### 0.4. Progress contract
 
-Expose these in API response; show a compact read-only strip in UI when SAE is ON (Arithmetic + Compare).
+**Encode batch (N vectors):**  
+`Loading SAE…` → `Encoding (i/N)…` → `Updating 3D + metrics…`
 
-### 0.3. UI parameters (v1)
+**Train:**  
+`Preparing vocab matrix…` → `Epoch e/E (loss=…)` → `Saving checkpoint…` → `Ready`
 
-| Param | Control | Default (proposed) | Range (proposed) | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `expansionFactor` | number / slider | `4` | `2 … 8` step 1 | `M = D * factor`. Alternative absolute `saeDim` only if factor feels wrong — **do not expose both**. |
-| `topK` | number / slider | `64` | `8 … 256` | Absolute K per vector. |
-| SAE toggle | button pressed state | `false` | — | `vl3d.sae.enabled` |
-
-Optional advanced (only if cheap): `seed` constant in code, not UI.
-
-**Placement of params:** small collapsible or inline group near the SAE button / under the CTA row — keep left dock `overflow: hidden` / no new outer scrollbar (§4.1 / §4.2). Prefer compact sliders matching Spatial Controls density.
-
-### 0.4. Progress contract (normative)
-
-When SAE turns ON or params change while ON:
-
-1. Show modal or inline progress host (reuse `CustomModal` **or** a non-blocking progress strip — prefer **non-blocking strip** in the left panel so 3D stays visible; if existing modal pattern is simpler, OK).
-2. Steps example (batch of `N` vectors):
-   1. `Loading SAE projection…` (1/S)
-   2. `Projecting vectors… (i/N)` 
-   3. `Applying Top‑K sparsity…`
-   4. `Updating 3D + metrics…`
-3. Always show **current step text**, **step index / total**, and a bar when duration may exceed ~300ms.
-4. Cancel: nice-to-have; not required in v1 (document if skipped).
+Always show label + step index/total (+ bar if slow).
 
 ---
 
-## 1. Product copy (English-only)
+## 1. Product copy (EN)
 
 | UI | Copy |
 | :--- | :--- |
-| Toggle button | `Clean/Denoise (SAE)` |
-| Active state | `aria-pressed="true"`; visual pressed style |
-| Progress examples | `Loading SAE projection…`, `Projecting vectors (3/12)…`, `Applying Top-K…`, `Updating scene…` |
-| Metrics strip | `L0`, `Sparsity`, `Active features` (short labels) |
-| Params | `Expansion`, `Top-K` |
+| Toggle | `Clean/Denoise (SAE)` |
+| Train | `Train SAE` |
+| Status empty | `SAE not trained — train on vocabulary first` |
+| Metrics | `L0`, `Sparsity`, `Active features`, `Train MSE`, `Dead features` |
 
 ---
 
 ## 2. UX / layout
 
 ```
-Arithmetic left panel:
-  … inputs …
-  [  CALCULATE VECTOR  |  Clean/Denoise (SAE)  ]   ← 50/50
-  [ Expansion …… ] [ Top-K …… ]   ← only need be visible when SAE relevant; OK always compact
-  metrics strip (when SAE on)
+Arithmetic:
+  [ CALCULATE VECTOR | Clean/Denoise (SAE) ]
+  [ Train SAE ]   + compact train params (or modal)
+  metrics strip when trained / when SAE on
   Top-10 …
 
-Compare left panel:
-  … textarea …
-  [ VISUALIZE SEQUENCE (3D) | Clean/Denoise (SAE) ]  ← 50/50
-  same params + metrics pattern
-  cosine list …
+Compare:
+  [ VISUALIZE SEQUENCE (3D) | Clean/Denoise (SAE) ]
+  same train/status/metrics pattern
 ```
 
-- Shrinking primary CTA: CSS grid/flex `1fr 1fr`; keep touch targets ≥44px height on mobile (§ existing mobile CSS).
-- SAE toggle does **not** replace Calculate/Visualize — user still computes raw first; SAE transforms cached results. If no data yet, SAE ON → toast/modal “Calculate / Visualize first”.
+- No data yet + SAE ON → “Calculate / Visualize first”.
+- Not trained + SAE ON → “Train SAE first” (don’t crash).
 
 ---
 
-## 3. Technical design (recommended seams)
+## 3. Technical design
 
-### 3.1. Backend (Python / `uv`)
+### 3.1. Backend
 
-| Module | Responsibility |
+| Module | Role |
 | :--- | :--- |
-| `backend/sae/projection.py` | Pure: build `W`, `project_vector`, `project_batch`, Top‑K, metrics — **unit-tested** with `pytest` |
-| `backend/sae/state.py` or cache on app state | Lazy singleton cache for `W` keyed by `(D, M, formula_version)` |
-| `backend/routers/sae.py` | `POST /api/sae/project` body: `{ vectors: number[][], top_k, expansion_factor }` → `{ vectors, metrics, dim }` |
-| Wire in `server.py` | `include_router(..., prefix="/api")` — Vite `/api` proxy already covers it (§6.1) |
+| `backend/sae/sae_model.py` | `TopKSAE`, `SAEManager` (lazy load, `encode_vectors`) |
+| `backend/sae/train_sae.py` | `train_sae(...)` + metrics (MSE, sparsity, dead features) |
+| `backend/routers/sae.py` | `/api/sae/status`, `/train`, `/encode` |
+| `backend/artifacts/` | checkpoint path; gitignore `*.pt` |
+| Tests | `backend/tests/test_sae_model.py` (encode shape, top‑k count, unit-norm dec); train smoke on tiny synthetic matrix |
 
-**TDD:** determinism (`same x → same z`), Top‑K exact zero count `M-K`, sparsity bounds, batch metrics.
+Wire router under `/api` (Vite proxy §6.1).
 
 ### 3.2. Frontend
 
-| Module | Responsibility |
+| Module | Role |
 | :--- | :--- |
-| `src/ui/saeControlsDefaults.js` | defaults, localStorage, clamp params |
-| `src/ui/SaeProgress.js` (or inline) | progress strip API: `setStep({ label, current, total })` |
-| Sidebar / ComparePanel | 50/50 button row + wire toggle + params |
-| `RemoteProvider` | `projectSae(vectors, params)` |
-| `VectorLabApp` / state | Keep `rawArithmeticData` / `rawCompareData` + `sae*` views; `refreshRender` reads active mode |
-
-**Instancer:** already maps `embedding.length` → points; SAE ON with `M ≠ 768` just works if arrays change length. Confirm LayoutEngine + labels OK with variable dim.
+| `saeControlsDefaults.js` | localStorage + defaults |
+| Sidebar / ComparePanel | 50/50 CTA + train + progress |
+| `RemoteProvider` | `saeStatus`, `saeTrain`, `saeEncode` |
+| App state | raw vs sae caches; `featureSpace: 'RAW' \| 'SAE'` |
+| Instancer | variable dim (768 vs 8192) already OK if embeddings replaced |
 
 ### 3.3. Data flow
 
 ```
-Calculate/Visualize → store RAW in state
-Toggle SAE ON → progress → POST /api/sae/project(all vectors) → store SAE vectors
-→ replace embeddings in working state → refreshRender + refresh lists
-Toggle SAE OFF → restore RAW from cache → refreshRender
+Boot → GET /sae/status
+Train (optional) → progress → checkpoint
+Calculate/Visualize → cache RAW 768
+Toggle SAE ON → POST /sae/encode(all vectors) → replace → refreshRender + lists
+Toggle OFF → restore RAW
 ```
 
 ### 3.4. Versioning
 
-- **`2.0.0`** MAJOR on merge to `main`.
-- CHANGELOG: Added SAE-style clean/denoise; note dim change when ON; note not a trained SAE.
+Ship **`2.0.0`**. CHANGELOG must say: trained Top‑K SAE; sparse feature space when ON; not L1 SAE.
 
 ---
 
 ## 4. Files likely touched
 
-| Area | Paths |
-| :--- | :--- |
-| Backend | `backend/sae/*` (new), `backend/routers/sae.py`, `backend/server.py`, `backend/tests/test_sae_*.py` |
-| UI | `src/ui/Sidebar.js`, `src/ui/ComparePanel.js`, `src/style.css`, `src/ui/saeControlsDefaults.js` (new), progress helper |
-| Core | `src/core/RemoteProvider.js`, `src/main.js`, maybe `src/core/State.js` |
-| Docs | `CHANGELOG.md`, `CONTEXT.md`, `lessons-learned.md`, `manifest.json`, `package.json`, Navbar |
-| Roadmap index | `roadmap/README.md` |
-
-**Do not touch:** `roadmap/archivo/**` (except optional one-line pointer that SAE non-goal is superseded), unrelated roadmaps.
+`backend/sae/*`, `backend/routers/sae.py`, `backend/server.py`, `backend/tests/test_sae_*.py`, `backend/artifacts/.gitkeep`, `.gitignore`, `src/ui/Sidebar.js`, `ComparePanel.js`, `RemoteProvider.js`, `main.js`, `style.css`, `saeControlsDefaults.js`, `CHANGELOG`, `CONTEXT`, `lessons-learned`, `manifest`/`package`/Navbar.
 
 ---
 
-## 5. CONTEXT glossary terms to add
+## 5. CONTEXT terms to add
 
-- **SAE-style Projection:** Deterministic dense→expanded sparse map (`W` sinusoids + ReLU + Top‑K) used for Clean/Denoise; product label may say “SAE”.
-- **Clean/Denoise (SAE):** Toggle that replaces raw embeddings with sparse expanded activations for 3D and similarity metrics.
-- **Top‑K Sparsity:** Keep K largest feature activations per vector; all others exactly zero.
-- **SAE Metrics:** L0, sparsity rate, active feature count over the current batch.
+- **Top‑K SAE:** Trained sparse autoencoder with exactly K active latents per input (no L1 shrinkage).
+- **Clean/Denoise (SAE):** Toggle replacing raw 768D embeddings with SAE sparse activations for 3D and metrics.
+- **SAE Feature Space:** Expanded latent dimension (default 8192) used while SAE is ON.
+- **Dead Features:** Latents that never activated on the train set (reported in train metrics).
 
 ---
 
 ## 6. Test plan
 
-### Unit (backend)
-- [ ] `W` deterministic for fixed `(D,M)`.
-- [ ] `project_vector` ReLU + Top‑K → exactly `K` non-zeros (ties documented).
-- [ ] Batch metrics: L0 / sparsity / active features formulas.
-- [ ] Expansion factor clamps.
+### Backend
+- [ ] Top‑K → ≤K nonzeros per row; FP32 topk path.
+- [ ] Decoder rows unit-norm after `make_decoder_weights_unit_norm`.
+- [ ] Encode shape `(N, hidden_dim)`; empty input OK.
+- [ ] Train on tiny random `(N,768)` writes checkpoint; status `is_trained`.
+- [ ] Encode 404/clear error if not trained.
 
-### Unit (frontend)
-- [ ] localStorage round-trip for enabled + params.
-- [ ] Defaults resolve.
-- [ ] Button markup 50/50 present (Arithmetic + Compare).
+### Frontend
+- [ ] 50/50 markup; localStorage round-trip.
+- [ ] Toggle without train → friendly message.
+- [ ] After encode, thread point count = hidden_dim; OFF restores 768.
 
-### Integration / smoke
-- [ ] Calculate → toggle SAE ON → progress visible → 3D thread length becomes `M`; peaks sparse.
-- [ ] Toggle OFF → back to 768-length smooth threads.
-- [ ] Compare batch N tokens → progress `i/N` → all threads sparse; cosine updates.
-- [ ] Change Top‑K while ON → reproject with progress.
-- [ ] Reload → toggle + params restored.
-- [ ] No data + SAE ON → friendly error, no crash.
+### Smoke
+- [ ] Train on vocab (or subset in dev) with progress.
+- [ ] Arithmetic + Compare replace/restore.
+- [ ] Reload persists toggle; status shows metrics.
 
 ---
 
 ## 7. Acceptance criteria
 
-- [ ] 50/50 CTAs with label `Clean/Denoise (SAE)` in Arithmetic + Compare.
-- [ ] Toggle + localStorage; params Expansion + Top‑K in UI.
-- [ ] Backend `/api/sae/project` batch; lazy `W`; progress with step text + remaining.
-- [ ] Replace-all vectors (M1/M2); 3D in sparse `M`-space; metrics on sparse vectors.
-- [ ] Deterministic sinusoid `W` + Top‑K; metrics strip when ON.
-- [ ] Vitest + pytest green; CONTEXT + lessons; **version `2.0.0`**.
-- [ ] No Gemini labeling / trained SAE / dual view (X1).
+- [ ] Real Top‑K SAE port (encode/decode/train/manager) + API status/train/encode.
+- [ ] UI 50/50 toggle + train + progress; replace-all; localStorage.
+- [ ] 3D in 8192 sparse space when ON; metrics strip; raw cache restore.
+- [ ] pytest + vitest green; CONTEXT + lessons; **v2.0.0**.
+- [ ] No sinusoidal fake SAE; no Gemini labeling (X1).
 - [ ] Approval gate before push/merge.
 
 ---
 
-## 8. Out of scope / non-goals (v1)
+## 8. Out of scope v1
 
-- Trained sparse autoencoder neural nets / checkpoints.
-- Training UI or dataset collection in-app.
-- LLM/Gemini feature naming from activating chunks.
-- Click-peak concept browser.
-- Dual RAW+SAE simultaneous 3D layers.
-- Per-model SAE packs beyond current `D=768` (support variable `D` from health/config, but one formula).
+- LLM/Gemini feature naming; click-peak browsers.
+- Sinusoidal / fixed non-trained “SAE-style” projection.
+- Dual RAW+SAE layers at once.
+- Training on arbitrary user PDFs (grandmother relief matrix) — VectorLab trains on **vocab embeddings**.
 
 ---
 
-## 9. Implementation stages (suggested)
+## 9. Stages
 
-| Stage | Branch sketch | Deliverable |
-| :--- | :--- | :--- |
-| **A** | `feat/sae-projection-backend` | Pure projection + metrics + pytest + `/api/sae/project` |
-| **B** | `feat/sae-ui-toggle` | 50/50 buttons, defaults/localStorage, progress UX, RemoteProvider |
-| **C** | same or `feat/sae-replace-render` | Wire replace cache in app state; Arithmetic + Compare refresh; metrics strip |
-| **D** | docs | CONTEXT, lessons, CHANGELOG, bump **2.0.0** |
-| **Gate** | — | Human smoke → OK → merge to `main` |
-
-Agent may combine A–C if reviewable.
+| Stage | Deliverable |
+| :--- | :--- |
+| **A** | `sae_model` + `train_sae` + pytest + artifacts path |
+| **B** | FastAPI status/train/encode + progress plumbing |
+| **C** | UI 50/50 + train + encode replace pipeline |
+| **D** | Docs + **2.0.0** |
+| **Gate** | Smoke → OK → merge |
 
 ---
 
-## 10. Open residual (only if blocked)
+## 10. Open residual
 
-None expected for v1 algorithm. If Top‑K ties or `M` too large for WebGL performance on low-end phones, clamp `expansionFactor` max down and document in lessons — ask only if default `4` OOMs or drops below 30fps on a reference Compare batch of ~50 tokens.
+- If full-vocab train is too heavy on CPU-only laptops: allow **train on random vocab subset** (e.g. 2k–10k rows) via query param — implement if needed without asking unless product wants full-vocab only.
+- GPU optional: `device` from env `SAE_DEVICE=cpu|cuda|mps`.
