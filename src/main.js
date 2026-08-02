@@ -36,7 +36,7 @@ import {
   computeActivationMetrics,
   formatSaeTrainProgress,
 } from './ui/saeControlsDefaults.js';
-import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
+import { ComparePanel, getCompareBootstrap } from './ui/ComparePanel.js';
 import { CollapsibleDock, isMobileViewport } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
 import { TouchControls } from './ui/TouchControls.js';
@@ -255,8 +255,9 @@ class VectorLabApp {
       this.sidebar.element.classList.add('hidden');
       this.comparePanel.show();
       if (!state.compareData) {
-        // Full EN auto-manual lexicon (matches textarea + COMPARE|NAVIGATION|POINTS framing)
-        this.handleCalculateCompare(COMPARE_AUTO_PRESETS.default);
+        // Same grouped demo as textarea — pass tokenMeta or GROUP_* badges never appear
+        const boot = getCompareBootstrap();
+        this.handleCalculateCompare(boot.tokens, boot.tokenMeta);
       } else {
         this.comparePanel.updateCompareResults(state.compareData);
         this.refreshRender();

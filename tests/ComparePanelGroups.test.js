@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { COMPARE_GROUPS_DEMO_TEXT } from '../src/ui/ComparePanel.js';
 import { parseCompareInput } from '../src/ui/parseCompareGroups.js';
 
