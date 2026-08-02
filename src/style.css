@@ -432,6 +432,233 @@ canvas {
   cursor: not-allowed;
 }
 
+/* SAE Clean/Denoise — 50/50 CTA row */
+.sae-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sae-cta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.sae-cta-row .btn-primary,
+.sae-cta-row .btn-sae-toggle {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 6px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.btn-sae-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-sae-toggle:hover {
+  border-color: var(--accent-cyan);
+}
+
+.btn-sae-toggle.is-active,
+.btn-sae-toggle[aria-pressed="true"] {
+  background: rgba(0, 200, 255, 0.18);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.sae-train-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-sae-train {
+  flex: 1;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-sae-train:hover {
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.btn-sae-params {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.sae-params-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.sae-params-panel.hidden,
+.sae-progress.hidden,
+.sae-metrics-strip.hidden {
+  display: none;
+}
+
+.sae-params-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sae-params-panel input {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--text-main);
+  padding: 4px 6px;
+  font-size: 0.72rem;
+}
+
+.sae-params-hint {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 0.64rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+
+.sae-status-line {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.sae-progress-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.sae-progress-spinner {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--accent-cyan);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sae-progress.is-working .sae-progress-spinner,
+.sae-progress-spinner.is-on {
+  opacity: 1;
+  visibility: visible;
+  animation: sae-spin 0.75s linear infinite;
+}
+
+.sae-progress-label {
+  font-size: 0.7rem;
+  color: var(--text-main);
+  font-weight: 600;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
+}
+
+.sae-progress-meta {
+  font-size: 0.64rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.sae-progress-bar {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sae-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent-cyan);
+  transition: width 0.2s ease;
+  border-radius: 4px;
+}
+
+.sae-progress-bar.is-indeterminate .sae-progress-fill {
+  width: 36%;
+  transition: none;
+  animation: sae-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes sae-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sae-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+.btn-sae-train:disabled,
+.btn-sae-train.is-busy {
+  opacity: 0.85;
+  cursor: wait;
+  color: var(--accent-cyan);
+  border-style: solid;
+  border-color: rgba(0, 200, 255, 0.35);
+  animation: sae-train-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes sae-train-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 200, 255, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.18); }
+}
+
+.sae-metrics-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.sae-metric-item strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
 .results-container {
   display: flex;
   flex-direction: column;
@@ -590,6 +817,19 @@ canvas {
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-footer #modal-ok-btn {
+  background: rgba(0, 200, 255, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-weight: 600;
 }
 
 /* =============================================================================
@@ -923,6 +1163,42 @@ canvas {
   padding: 4px 6px;
 }
 
+.viz-coverage-row {
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.viz-coverage-row .slider-header {
+  font-size: 0.72rem;
+}
+
+.viz-coverage-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
+}
+
+.viz-labels-toggle {
+  align-self: stretch;
+  margin-top: 2px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.viz-labels-toggle:hover {
+  border-color: var(--accent-cyan);
+}
+
+.viz-labels-toggle[aria-pressed="false"] {
+  color: var(--text-muted);
+}
+
 .viz-reset-btn {
   align-self: flex-start;
   margin-top: 2px;
@@ -954,6 +1230,10 @@ canvas {
   /* Above side docks (40) so group badges near the left margin stay visible */
   z-index: 42;
   overflow: hidden;
+}
+
+#thread-labels-container.is-hidden {
+  display: none;
 }
 
 .thread-label-card {

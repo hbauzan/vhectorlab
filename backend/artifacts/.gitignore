@@ -1,0 +1,3 @@
+# SAE checkpoints (large binaries) — train locally; do not commit weights.
+*.pt
+!.gitkeep

@@ -2,6 +2,19 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [2.0.0] - 2026-08-02
+
+### Added
+- **Top‑K SAE Clean/Denoise** (`feat/topk-sae-denoise`): trained Sparse Autoencoder (PyTorch), **not** L1 SAE and **not** sinusoidal fake projection.
+  - Defaults: 768 → 8192 latents (cap), K=32; **train on current Compare/Arithmetic scope** (not full vocab); **ephemeral in-RAM** session model; `suggest_sae_dims` auto-scales for small N; clear on Visualize/Calculate.
+  - API: `GET /api/sae/status`, `POST /api/sae/train` (embeddings + async poll), `POST /api/sae/encode` (**Top‑K sparse** `indices`/`values` + `ORJSONResponse`; client densifies), `POST /api/sae/clear`.
+  - UI: Compare-only 50/50 CTA `[ VISUALIZE | Clean/Denoise (SAE) ]`, Train SAE + params, progress, metrics strip. **No SAE in Arithmetic.**
+  - Semantics: SAE ON **replaces** all Arithmetic/Compare vectors used for 3D + cosine with sparse activations; OFF restores cached raw 768D. Preference in `localStorage` (`vl3d.sae.*`). Scope change invalidates the session SAE.
+  - Encode I/O: wire format is `[N, K]` indices+values (not dense `[N, hidden]`); model singleton stays in RAM after first `load_model()`.
+- **Zero coverage %** (carried onto this branch): Visualization panel slider expands how much of |t| stays at the zero/black color before blending to ±1 (cap 90%); `vl3d.viz.zeroCoverage`.
+- **Hide/Show labels** in Visualization panel: toggles floating thread/group badges; persists `vl3d.viz.labelsVisible`.
+- **SAE camera framing**: on Clean/Denoise toggle ON, dim-axis pitch scales so sparse features keep ~RAW wall width; camera soft-lerps to content bounds (ANALYSIS front / NAVIGATION angled). OFF restores Length + context pose with lerp. Empty train hyperparams no longer clamp to 32/k=1.
+
 ## [1.8.0] - 2026-08-02
 
 ### Added

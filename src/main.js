@@ -6,6 +6,17 @@ import { Instancer } from './visualizer/Instancer.js';
 import { AxisGizmo } from './visualizer/AxisGizmo.js';
 import { RemoteProvider } from './core/RemoteProvider.js';
 import { state } from './core/State.js';
+import {
+  applySaeToCompare,
+  cloneCompareRaw,
+  collectCompareEmbeddings,
+} from './core/saeReplace.js';
+import {
+  computeDimSpanScale,
+  inferRawDim,
+  inferSaeDim,
+} from './core/saeFraming.js';
+import { resolveCameraPose } from './engine/cameraViewDefaults.js';
 import { Navbar } from './ui/Navbar.js';
 import { Sidebar } from './ui/Sidebar.js';
 import { HUD } from './ui/HUD.js';
@@ -19,6 +30,12 @@ import {
   readVisualizationPanelCollapsed,
 } from './ui/VisualizationControls.js';
 import { loadVisualizationSettings } from './ui/visualizationControlsDefaults.js';
+import {
+  loadSaeSettings,
+  saveSaeSettings,
+  computeActivationMetrics,
+  formatSaeTrainProgress,
+} from './ui/saeControlsDefaults.js';
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock, isMobileViewport } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
@@ -92,6 +109,24 @@ class VectorLabApp {
       defaultCollapsed: false,
     });
 
+    this.saeSettings = loadSaeSettings();
+    this.saeStatus = null;
+    this.rawCompareData = null;
+    this._saeTrainPollTimer = null;
+    this._saeTrainBusy = false;
+    this._saeTrainStartedAt = 0;
+    this._saeTrainElapsedTimer = null;
+
+    const saeHooks = {
+      onSaeToggle: (enabled) => this.handleSaeToggle(enabled),
+      onSaeTrain: (settings) => this.handleSaeTrain(settings),
+      getSaeSettings: () => this.saeSettings,
+      setSaeSettings: (s) => {
+        this.saeSettings = s;
+        saveSaeSettings(s);
+      },
+    };
+
     this.sidebar = new Sidebar(
       this.leftDock.body,
       async (wordA, wordB, wordC, topK) => this.handleCalculateArithmetic(wordA, wordB, wordC, topK)
@@ -100,7 +135,8 @@ class VectorLabApp {
     this.comparePanel = new ComparePanel(
       this.leftDock.body,
       async (tokens, tokenMeta) => this.handleCalculateCompare(tokens, tokenMeta),
-      async (payload) => this.handleCompareReorder(payload)
+      async (payload) => this.handleCompareReorder(payload),
+      saeHooks
     );
 
     // Right dock: spatial sliders + AxisGizmo (roadmap D1).
@@ -172,8 +208,10 @@ class VectorLabApp {
     this.rightDock.body.insertBefore(vizEl, this.axisGizmo.container);
 
     wireVisualizationControls(vizEl, this.vizConfig, () => {
+      this.threadLabels.setVisible(this.vizConfig.labelsVisible);
       this.refreshRender();
     });
+    this.threadLabels.setVisible(this.vizConfig.labelsVisible);
   }
 
   /**
@@ -220,6 +258,13 @@ class VectorLabApp {
         this.refreshRender();
       }
     } else {
+      // SAE is Compare-only — leave Clean/Denoise when switching to Arithmetic
+      if (this.saeSettings.enabled) {
+        this.saeSettings = { ...this.saeSettings, enabled: false };
+        saveSaeSettings(this.saeSettings);
+        this.comparePanel.saeUi.setToggleEnabled(false);
+        this.restoreRawWorkspace({ reframe: false });
+      }
       this.comparePanel.hide();
       this.sidebar.element.classList.remove('hidden');
       this.refreshRender();
@@ -281,6 +326,7 @@ class VectorLabApp {
     if (health.ok) {
       state.setBackendConnected(true);
       this.navbar.setStatus(true, health.data.model);
+      await this.refreshSaeStatusUi();
       // Run initial default vector calculation (king - man + woman)
       await this.handleCalculateArithmetic("king", "man", "woman", 10);
     } else {
@@ -296,12 +342,422 @@ class VectorLabApp {
     this.animate();
   }
 
+  /** Sync SAE status/metrics strip on Compare panel only. */
+  async refreshSaeStatusUi() {
+    try {
+      this.saeStatus = await this.provider.saeStatus();
+    } catch {
+      this.saeStatus = null;
+    }
+    this.applySaeStatusToPanels();
+  }
+
+  applySaeStatusToPanels() {
+    const status = this.saeStatus;
+    const trained = !!(status && status.is_trained);
+    const training = status?.training || {};
+    const trainState = training.status;
+    const progress = formatSaeTrainProgress(training);
+    const busy = !!this._saeTrainBusy || progress.busy;
+    const elapsedSec = (busy && this._saeTrainStartedAt)
+      ? Math.max(0, Math.floor((Date.now() - this._saeTrainStartedAt) / 1000))
+      : 0;
+
+    let line = 'SAE not trained — train on current scope';
+    if (busy) {
+      line = progress.label;
+    } else if (trainState === 'failed') {
+      line = `Train failed: ${training.error_message || 'unknown error'}`;
+    } else if (trained) {
+      const cfg = status.config || {};
+      const n = status.metrics?.total_vectors ?? training.n_vectors;
+      const saved = status.persisted ? 'saved' : 'in memory';
+      line = `SAE ready (${saved}) — ${cfg.hidden_dim || '?'}D · k=${cfg.k ?? '?'}`
+        + (n != null ? ` · n=${n}` : '');
+    }
+
+    const metrics = trained && !busy
+      ? {
+          trainMse: status.metrics?.mse,
+          deadFeaturesPct: status.metrics?.dead_features_pct,
+        }
+      : null;
+
+    const ui = this.comparePanel.saeUi;
+    ui.setStatus(line);
+    ui.setTrainBusy(busy, { trained });
+    if (!busy) {
+      ui.setTrainLabel(trained);
+    }
+    if (busy) {
+      const elapsedBit = ` · working ${elapsedSec}s`;
+      ui.setProgress({
+        visible: true,
+        label: progress.label,
+        meta: `${progress.meta}${elapsedBit}`,
+        current: progress.current,
+        total: progress.total,
+        percent: progress.percent,
+        indeterminate: progress.indeterminate || progress.percent < 2,
+      });
+    } else {
+      ui.setProgress({ visible: false });
+    }
+    ui.setMetrics(metrics);
+    if (!busy) {
+      ui.syncFromSettings();
+    }
+  }
+
+  /**
+   * Compare-scope embeddings for Train SAE (RAW cache preferred).
+   * @returns {number[][]|null}
+   */
+  getCurrentScopeEmbeddings() {
+    const raw = this.rawCompareData || state.compareData;
+    if (!raw?.items?.length) return null;
+    return collectCompareEmbeddings(raw);
+  }
+
+  /**
+   * Compare Visualize changed data — keep saved SAE; optionally re-encode if toggle ON.
+   */
+  async onCompareDataRefreshed() {
+    if (!this.saeSettings.enabled) return;
+    if (!this.saeStatus?.is_trained) await this.refreshSaeStatusUi();
+    if (this.saeStatus?.is_trained && this.rawCompareData) {
+      await this.encodeCompareWithSae({ reframe: false });
+    }
+  }
+
+  async handleSaeTrain(settings) {
+    if (state.workspaceMode !== 'COMPARE') {
+      this.modal.show('COMPARE ONLY', 'Train SAE is available in Token Comparison mode.');
+      return;
+    }
+    if (this._saeTrainBusy) return;
+
+    if (!this.saeStatus) await this.refreshSaeStatusUi();
+    const alreadyTrained = !!(this.saeStatus && this.saeStatus.is_trained);
+    if (alreadyTrained) {
+      const ok = await this.modal.confirm(
+        'RETRAIN SAE',
+        'Delete the saved SAE checkpoint and train again on the current Compare scope?',
+        { confirmLabel: 'Delete & Retrain', cancelLabel: 'Cancel' }
+      );
+      if (!ok) return;
+      try {
+        await this.provider.saeClear();
+      } catch (e) {
+        this.modal.show('SAE CLEAR ERROR', e.message || 'Could not delete saved SAE.');
+        return;
+      }
+      this.saeStatus = {
+        ...(this.saeStatus || {}),
+        is_trained: false,
+        persisted: false,
+        config: null,
+        metrics: null,
+      };
+      if (this.saeSettings.enabled) {
+        this.saeSettings = { ...this.saeSettings, enabled: false };
+        saveSaeSettings(this.saeSettings);
+        this.comparePanel.saeUi.setToggleEnabled(false);
+        this.restoreRawWorkspace({ reframe: false });
+      }
+      this.applySaeStatusToPanels();
+    }
+
+    const embeddings = this.getCurrentScopeEmbeddings();
+    if (!embeddings || embeddings.length < 2) {
+      this.modal.show(
+        'NO SCOPE DATA',
+        'Visualize first, then Train SAE on those tokens.'
+      );
+      return;
+    }
+
+    const epochs = settings.epochs;
+    this._saeTrainBusy = true;
+    this._saeTrainStartedAt = Date.now();
+    this._startSaeTrainElapsedTicker();
+    this.saeStatus = {
+      ...(this.saeStatus || {}),
+      is_trained: false,
+      training: {
+        status: 'training',
+        phase_key: 'preparing',
+        message: `Starting train — ${embeddings.length} vectors · up to ${epochs} epochs…`,
+        current_epoch: 0,
+        total_epochs: epochs,
+        remaining_epochs: epochs,
+        percent: 0,
+        n_vectors: embeddings.length,
+      },
+    };
+    this.applySaeStatusToPanels();
+
+    try {
+      const started = await this.provider.saeTrain({
+        embeddings,
+        hidden_dim: settings.hiddenDim,
+        k: settings.k,
+        epochs,
+        lr: settings.lr,
+        batch_size: settings.batchSize,
+        auto_scale: true,
+      });
+      const resolvedHidden = started.resolved_hidden ?? settings.hiddenDim;
+      const resolvedK = started.resolved_k ?? settings.k;
+      const resolvedEpochs = started.resolved_epochs ?? epochs;
+      const device = started.device || 'auto';
+      this.saeStatus = {
+        ...(this.saeStatus || {}),
+        training: {
+          ...(this.saeStatus?.training || {}),
+          status: 'training',
+          phase_key: 'preparing',
+          message: started.auto_scaled
+            ? `Auto-scaled ${resolvedHidden}D·k=${resolvedK}·${resolvedEpochs}ep on ${device} — n=${started.n_vectors}…`
+            : `Preparing train — n=${started.n_vectors} · ${resolvedHidden}D · k=${resolvedK} · ${resolvedEpochs}ep on ${device}…`,
+          current_epoch: 0,
+          total_epochs: resolvedEpochs,
+          remaining_epochs: resolvedEpochs,
+          percent: 0,
+          n_vectors: started.n_vectors,
+          resolved_hidden: resolvedHidden,
+          resolved_k: resolvedK,
+        },
+      };
+      this.applySaeStatusToPanels();
+      this._startSaeTrainPolling();
+    } catch (e) {
+      this._stopSaeTrainBusy();
+      this.comparePanel.saeUi.setProgress({ visible: false });
+      this.modal.show('SAE TRAIN ERROR', e.message || 'Could not start SAE training.');
+      await this.refreshSaeStatusUi();
+    }
+  }
+
+  _startSaeTrainElapsedTicker() {
+    if (this._saeTrainElapsedTimer) clearInterval(this._saeTrainElapsedTimer);
+    this._saeTrainElapsedTimer = setInterval(() => {
+      if (!this._saeTrainBusy) {
+        this._stopSaeTrainElapsedTicker();
+        return;
+      }
+      this.applySaeStatusToPanels();
+    }, 500);
+  }
+
+  _stopSaeTrainElapsedTicker() {
+    if (this._saeTrainElapsedTimer) {
+      clearInterval(this._saeTrainElapsedTimer);
+      this._saeTrainElapsedTimer = null;
+    }
+  }
+
+  _stopSaeTrainBusy() {
+    this._saeTrainBusy = false;
+    this._saeTrainStartedAt = 0;
+    this._stopSaeTrainElapsedTicker();
+    const trained = !!(this.saeStatus && this.saeStatus.is_trained);
+    this.comparePanel.saeUi.setTrainBusy(false, { trained });
+  }
+
+  _startSaeTrainPolling() {
+    if (this._saeTrainPollTimer) clearInterval(this._saeTrainPollTimer);
+    this._saeTrainPollTimer = setInterval(async () => {
+      await this.refreshSaeStatusUi();
+      const st = this.saeStatus?.training?.status;
+      if (st === 'success' || st === 'failed' || st === 'idle') {
+        clearInterval(this._saeTrainPollTimer);
+        this._saeTrainPollTimer = null;
+        this._stopSaeTrainBusy();
+        this.applySaeStatusToPanels();
+        if (st === 'success' && this.saeSettings.enabled) {
+          await this.encodeCompareWithSae({ reframe: true });
+        }
+      }
+    }, 250);
+  }
+
+  async handleSaeToggle(enabled) {
+    this.saeSettings = { ...this.saeSettings, enabled };
+    saveSaeSettings(this.saeSettings);
+    this.comparePanel.saeUi.syncFromSettings();
+
+    if (!enabled) {
+      this.restoreRawWorkspace({ reframe: true });
+      return;
+    }
+
+    if (state.workspaceMode !== 'COMPARE') {
+      this.modal.show('COMPARE ONLY', 'Clean/Denoise (SAE) is available in Token Comparison mode.');
+      this.saeSettings = { ...this.saeSettings, enabled: false };
+      saveSaeSettings(this.saeSettings);
+      this.comparePanel.saeUi.setToggleEnabled(false);
+      return;
+    }
+
+    const trained = this.saeStatus?.is_trained;
+    if (!trained) {
+      await this.refreshSaeStatusUi();
+    }
+    if (!this.saeStatus?.is_trained) {
+      this.modal.show('SAE NOT TRAINED', 'Train SAE first');
+      this.saeSettings = { ...this.saeSettings, enabled: false };
+      saveSaeSettings(this.saeSettings);
+      this.comparePanel.saeUi.setToggleEnabled(false);
+      return;
+    }
+
+    if (!this.rawCompareData) {
+      this.modal.show('NO DATA', 'Visualize first');
+      this.saeSettings = { ...this.saeSettings, enabled: false };
+      saveSaeSettings(this.saeSettings);
+      this.comparePanel.saeUi.setToggleEnabled(false);
+      return;
+    }
+
+    await this.encodeCompareWithSae({ reframe: true });
+  }
+
+  /**
+   * Stretch dim-axis pitch so SAE feature count ≈ RAW wall width.
+   * @param {object} saeData
+   * @param {object} rawData
+   */
+  applySaeDimSpan(saeData, rawData) {
+    const rawDim = inferRawDim(rawData);
+    const saeDim = inferSaeDim(saeData);
+    const span = computeDimSpanScale(rawDim, saeDim);
+    this.instancer.setDimSpanScale(span);
+    if (!this._preSaeThreadWidth) {
+      this._preSaeThreadWidth = this.sliderConfig.threadWidth;
+    }
+    // Length (Z): gentle boost so NAVIGATION depth stays readable (cap within slider max)
+    const boostedWidth = Math.min(0.2, (this._preSaeThreadWidth || 0.1) * Math.min(span, 4));
+    this.sliderConfig.threadWidth = boostedWidth;
+    if (this.slidersEl) {
+      syncThreadSlidersFromConfig(this.slidersEl, this.sliderConfig);
+    }
+  }
+
+  /**
+   * Dim-span scale + soft camera frame after SAE toggle ON.
+   * @param {object} saeData
+   * @param {object} rawData
+   */
+  async frameAfterSaeEncode(saeData, rawData) {
+    this.applySaeDimSpan(saeData, rawData);
+    this.refreshRender();
+
+    const box = this.instancer.getContentBoundingBox();
+    if (!box.isEmpty()) {
+      await this.navigation.animateToFitBox(box, {
+        viewMode: this.viewMode,
+        durationMs: 480,
+      });
+    }
+  }
+
+  clearSaeFraming() {
+    this.instancer.setDimSpanScale(1);
+    if (this._preSaeThreadWidth != null) {
+      this.sliderConfig.threadWidth = this._preSaeThreadWidth;
+      this._preSaeThreadWidth = null;
+      if (this.slidersEl) {
+        syncThreadSlidersFromConfig(this.slidersEl, this.sliderConfig);
+      }
+    }
+  }
+
+  restoreRawWorkspace({ reframe = false } = {}) {
+    this.clearSaeFraming();
+    if (this.rawCompareData) {
+      state.setCompareData(cloneCompareRaw(this.rawCompareData));
+      this.comparePanel.updateCompareResults(state.compareData);
+    }
+    this.refreshRender();
+    this.applySaeStatusToPanels();
+    if (reframe) {
+      const pose = resolveCameraPose({
+        workspaceMode: state.workspaceMode,
+        viewMode: this.viewMode,
+        renderMode: state.renderMode,
+      });
+      this.navigation.animateToPose(pose, 480);
+    }
+  }
+
+  _setSaeProgress(opts) {
+    this.comparePanel.saeUi.setProgress(opts);
+  }
+
+  async encodeCompareWithSae({ reframe = false } = {}) {
+    if (!this.rawCompareData) return;
+    try {
+      const embeddings = collectCompareEmbeddings(this.rawCompareData);
+      const n = embeddings.length;
+      this._setSaeProgress({ visible: true, label: 'Loading SAE…', current: 0, total: n || 1 });
+      this._setSaeProgress({
+        visible: true,
+        label: `Encoding (0/${n})…`,
+        current: 0,
+        total: n || 1,
+      });
+      const encoded = await this.provider.saeEncode(embeddings);
+      this._setSaeProgress({
+        visible: true,
+        label: 'Updating 3D + metrics…',
+        current: n,
+        total: n || 1,
+      });
+      const saeData = applySaeToCompare(this.rawCompareData, encoded.activations);
+      if (state.compareData?.items) {
+        saeData.items = saeData.items.map((item, i) => ({
+          ...item,
+          groupId: state.compareData.items[i]?.groupId,
+          groupName: state.compareData.items[i]?.groupName,
+        }));
+      }
+      state.setCompareData(saeData);
+      this.comparePanel.updateCompareResults(saeData);
+
+      if (reframe) {
+        await this.frameAfterSaeEncode(saeData, this.rawCompareData);
+      } else {
+        this.applySaeDimSpan(saeData, this.rawCompareData);
+        this.refreshRender();
+      }
+
+      const batch = encoded.batch_metrics || computeActivationMetrics(encoded.activations);
+      const trainMetrics = this.saeStatus?.metrics || {};
+      this.comparePanel.saeUi.setMetrics({
+        l0: batch.l0,
+        sparsity: batch.sparsity,
+        activeFeatures: batch.active_features ?? batch.activeFeatures,
+        trainMse: trainMetrics.mse,
+        deadFeaturesPct: trainMetrics.dead_features_pct,
+      });
+    } catch (e) {
+      this.modal.show('SAE ENCODE ERROR', e.message || 'Could not encode with SAE.');
+      this.saeSettings = { ...this.saeSettings, enabled: false };
+      saveSaeSettings(this.saeSettings);
+      this.comparePanel.saeUi.setToggleEnabled(false);
+      this.restoreRawWorkspace();
+    } finally {
+      this._setSaeProgress({ visible: false });
+    }
+  }
+
   async handleCalculateArithmetic(wordA, wordB, wordC, topK) {
     try {
       const data = await this.provider.computeArithmetic(wordA, wordB, wordC, topK);
+      data.featureSpace = 'RAW';
       state.setArithmeticData(data);
 
-      // Render 3D Vector Points & Ribbons and update Thread Labels
       const labels = this.instancer.renderArithmeticData(
         data,
         state.renderMode,
@@ -310,8 +766,6 @@ class VectorLabApp {
         this.vizConfig
       );
       this.threadLabels.setLabels(labels);
-
-      // Update Sidebar results list
       this.sidebar.updateResults(data.results);
     } catch (e) {
       this.modal.show("ARITHMETIC ERROR", e.message || "Could not compute vector arithmetic.");
@@ -322,6 +776,8 @@ class VectorLabApp {
     try {
       const data = await this.provider.computeCompare(tokens);
       const withMeta = attachCompareGroupMeta(data, tokenMeta);
+      this.rawCompareData = cloneCompareRaw(withMeta);
+      withMeta.featureSpace = 'RAW';
       state.setCompareData(withMeta);
 
       const labels = this.instancer.renderCompareData(
@@ -333,6 +789,7 @@ class VectorLabApp {
       );
       this.setCompareOverlayLabels(labels);
       this.comparePanel.updateCompareResults(withMeta);
+      await this.onCompareDataRefreshed();
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
     }
@@ -352,6 +809,42 @@ class VectorLabApp {
       anchor: payload.anchor,
       items: payload.items,
     });
+
+    // Keep raw cache order in sync so SAE OFF / re-encode match list order
+    if (this.rawCompareData?.items) {
+      const byId = new Map(this.rawCompareData.items.map((it) => [it.id, it]));
+      const reorderedRaw = payload.items
+        .map((it) => byId.get(it.id))
+        .filter(Boolean);
+      if (reorderedRaw.length === this.rawCompareData.items.length) {
+        this.rawCompareData = {
+          ...this.rawCompareData,
+          count: reorderedRaw.length,
+          anchor: {
+            index: 0,
+            text: reorderedRaw[0]?.text,
+          },
+          items: reorderedRaw.map((it, index) => {
+            const emb = it.embedding;
+            const anchorEmb = reorderedRaw[0].embedding;
+            let cosine = 1;
+            if (index > 0 && emb && anchorEmb) {
+              let dot = 0;
+              let na = 0;
+              let nb = 0;
+              for (let i = 0; i < emb.length; i++) {
+                dot += emb[i] * anchorEmb[i];
+                na += emb[i] * emb[i];
+                nb += anchorEmb[i] * anchorEmb[i];
+              }
+              const denom = Math.sqrt(na) * Math.sqrt(nb);
+              cosine = denom < 1e-12 ? 0 : dot / denom;
+            }
+            return { ...it, index, cosine_vs_first: cosine };
+          }),
+        };
+      }
+    }
 
     const orderedIds = payload.items.map((item) => item.id);
     try {

@@ -14,10 +14,18 @@ function createMockElement(tagName = 'div') {
     classList: {
       add: (cls) => { classList.add(cls); _className = Array.from(classList).join(' '); },
       remove: (cls) => { classList.delete(cls); _className = Array.from(classList).join(' '); },
-      contains: (cls) => classList.has(cls)
+      contains: (cls) => classList.has(cls),
+      toggle: (cls, force) => {
+        const shouldHave = force === undefined ? !classList.has(cls) : !!force;
+        if (shouldHave) classList.add(cls); else classList.delete(cls);
+        _className = Array.from(classList).join(' ');
+        return shouldHave;
+      },
     },
     style: {},
     appendChild: (child) => children.push(child),
+    setAttribute: () => {},
+    removeAttribute: () => {},
     querySelector: (selector) => {
       const cleanSel = selector.replace('#', '').replace('.', '');
       for (const child of children) {
@@ -126,5 +134,16 @@ describe('ThreadLabels Component Tests', () => {
     expect(threadLabels.labels[1].screenOffsetX).toBe(0);
     const cards = container.querySelectorAll('.thread-label-card');
     expect(cards[0].classList.contains('group-label')).toBe(true);
+  });
+
+  it('hides and shows the overlay via setVisible', () => {
+    threadLabels.setVisible(false);
+    expect(threadLabels.isVisible()).toBe(false);
+    const overlay = container.querySelector('#thread-labels-container');
+    expect(overlay.classList.contains('is-hidden')).toBe(true);
+
+    threadLabels.setVisible(true);
+    expect(threadLabels.isVisible()).toBe(true);
+    expect(overlay.classList.contains('is-hidden')).toBe(false);
   });
 });
