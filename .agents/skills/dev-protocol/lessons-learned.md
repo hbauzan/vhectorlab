@@ -152,6 +152,11 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Solución Obligatoria**: Un solo set global de min/max con defaults fijos: Separación $X=0.4$ ∈ $[0.1,0.7]$ step $0.05$, Distancia $Y=10$ ∈ $[1,19]$ step $0.1$, Amplitud $Y=7$ ∈ $[1,40]$ step $0.1$ (**asimétrico**: default se mantiene en 7 para no regresar el punto dulce; no forzar mid lineal si max sube), Longitud $Z=0.2$ ∈ $[0.1,0.3]$ step $0.01$, Grosor $=0.05$ ∈ $[0.01,0.09]$ step $0.01$. El resto sí es simétrico lineal (`default === (min+max)/2`). Labels: 2 dec (X/Z/Grosor), 1 dec (Y). Defaults vía `resolveSpatialDefaults({ workspaceMode, viewMode, renderMode })` (`spatialSliderDefaults.js`): hoy todos caen al global; overrides por clave `MODE`, `MODE|VISTA`, `MODE|VISTA|RENDER` cuando los definás. **Doble clic** en un `<input type="range">` restaura **solo ese** slider al default resuelto del contexto actual (sin feedback extra).
 - **Invariante**: al load, defaults espaciales no cambian de valor (Amplitud sigue 7); se puede disminuir y aumentar con granularidad gradual; dblclick → default del contexto.
 
+### 4.6. ThreadLabels 3D — texto corto único
+- **Problema**: Badge de `type` + texto largo (`WORD_A` + `VECTOR A`, `#1 COS VECTOR (queen)`) hinchaba las cards glassmorphic en Análisis.
+- **Solución Obligatoria**: Un solo span con texto corto vía `threadLabelFormat.js`. Arithmetic: `WORD_A|WORD_B|WORD_C|RES|TOP1`. Compare: `TOPn` + token truncado a 10 chars. Sin badge de tipo; estilos `res-label` / `top1-label` siguen por `type`. Mismo set en todas las VISTA/RENDER.
+- **Invariante**: labels 3D ≠ panel Top-10 / lista Compare (esos paneles no se acortan con este cambio).
+
 ### 1.6. MESH surface = grilla threads × dims, no tubo
 - **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
 
