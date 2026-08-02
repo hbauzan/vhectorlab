@@ -1,6 +1,6 @@
 # Roadmap — Visualization Filters & Color Anchors (Sign / Polarity Controls)
 
-**Status:** Ready for implementation handoff  
+**Status:** Implemented — awaiting approval gate / merge  
 **Date:** 2026-08-02  
 **Product:** VectorLab 3D (`lsv2`)  
 **Prompt companion:** [`PROMPT-visualization-controls.md`](./PROMPT-visualization-controls.md)
