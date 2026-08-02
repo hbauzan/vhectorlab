@@ -68,12 +68,12 @@ describe('ThreadLabels Component Tests', () => {
     threadLabels = new ThreadLabels(container);
   });
 
-  it('debe inicializar el contenedor overlay de etiquetas', () => {
+  it('initializes the labels overlay container', () => {
     const overlay = container.querySelector('#thread-labels-container');
     expect(overlay).not.toBeNull();
   });
 
-  it('debe registrar tarjetas de etiquetas para cada hilo', () => {
+  it('registers label cards for each thread', () => {
     const mockItems = [
       { id: 'vec_a', text: 'KING', type: 'word_a', origin3D: new THREE.Vector3(0, 50, 0) },
       { id: 'res', text: 'RESULT', type: 'res', origin3D: new THREE.Vector3(0, -50, 0) }
@@ -87,7 +87,7 @@ describe('ThreadLabels Component Tests', () => {
     expect(cards[1].classList.contains('res-label')).toBe(true);
   });
 
-  it('debe limpiar las etiquetas registradas', () => {
+  it('clears registered labels', () => {
     const mockItems = [
       { id: 'vec_a', text: 'KING', type: 'word_a', origin3D: new THREE.Vector3(0, 50, 0) }
     ];
@@ -101,7 +101,7 @@ describe('ThreadLabels Component Tests', () => {
     expect(cards.length).toBe(0);
   });
 
-  it('debe actualizar origins in-situ durante tween de reorder', () => {
+  it('updates origins in-place during reorder tween', () => {
     threadLabels.setLabels([
       { id: 'tok_0', text: 'king', type: 'compare', origin3D: new THREE.Vector3(0, 10, 0) },
       { id: 'tok_1', text: 'queen', type: 'compare', origin3D: new THREE.Vector3(0, 0, 0) },
