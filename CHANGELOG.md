@@ -5,6 +5,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Remove floor GridHelper** (`fix/remove-scene-grid`): no reference grid under the 3D scene (cleaner RIBBONS/COMPARE views).
 - **Scene fog too dense for far RIBBONS/MESH** (`fix/soften-scene-fog`): `FogExp2` density `0.008` → `0.0008` so ribbons stay readable at COMPARE-scale camera distance; avoids distance “creeping” darkening. POINTS unaffected (custom shader). Transparency/`depthWrite` on ribbons tracked separately.
 
 ### Changed
