@@ -41,6 +41,9 @@
 | Mayor → menor / Ordenar… | Highest → lowest / Sort descending \| ascending |
 | Girá el teléfono… | Rotate your phone for a better experience. You can stay in portrait if you prefer. |
 | VECTOR ARITHMETIC / MODE / RENDER / POINTS / WORD_A / RES / TOP1 | keep (already EN) |
+| VISTA: | VIEW: |
+| Mejor en horizontal | Better in landscape |
+| Entendido | Got it |
 
 > **GATE B:** glosario y D6–D8 **cerrados**. El agente puede pasar A → C/D sin re-preguntar salvo términos nuevos del audit.
 
@@ -118,8 +121,8 @@ Humano confirmó D6–D8 + tabla §0.1. **No re-preguntar** salvo strings nuevos
 - `CHANGELOG` Unreleased corto; lesson § nueva solo si hay invariante (“product copy = EN; identifiers stay”).
 
 ### C.2 Criterios
-- [ ] Smoke UI: ninguna cadena ES visible en Arithmetic / Compare / Análisis / Navegación / POINTS·MESH·RIBBONS / landscape gate.
-- [ ] Vitest verde; asserts de copy actualizados.
+- [x] Smoke UI: ninguna cadena ES visible en Arithmetic / Compare / Análisis / Navegación / POINTS·MESH·RIBBONS / landscape gate.
+- [x] Vitest verde; asserts de copy actualizados.
 - [ ] Approval gate → merge.
 
 **Rama:** `feat/english-user-facing-copy`
@@ -136,7 +139,7 @@ Humano confirmó D6–D8 + tabla §0.1. **No re-preguntar** salvo strings nuevos
 - CHANGELOG: solo **Unreleased / entradas nuevas** en EN; dejar secciones históricas en español (D8).
 
 ### D.2 Criterios
-- [ ] D7/D8 cumplidos; exclusiones D3 intactas.
+- [x] D7/D8 cumplidos; exclusiones D3 intactas.
 - [ ] Suite verde; approval gate → merge.
 
 **Rama:** puede ir en `feat/english-user-facing-copy` si el agente hace C+D juntos, o `feat/english-dev-strings`.

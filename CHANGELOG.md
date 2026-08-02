@@ -5,6 +5,7 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **English-only product UI** (`feat/english-user-facing-copy`): Navbar VIEW/ANALYSIS/NAVIGATION, spatial slider labels, Arithmetic/Compare buttons, Compare empty/sort/copy + EN auto-parts presets, landscape gate. Internal `data-view` / mode keys unchanged. Test titles and in-scope `src/` comments translated to EN; historical CHANGELOG entries left in Spanish.
 - **Docs: English-only UI roadmap** — glossary + D6–D8 closed (EN Compare vocab; EN test titles/comments; keep historical CHANGELOG in Spanish). See `roadmap/english-ui-i18n.md` + `roadmap/PROMPT-english-ui.md`.
 - **ThreadLabels cortas** (`feat/short-thread-labels` + `fix/compare-labels-full-tokens`):
   - Arithmetic 3D: `WORD_A` / `WORD_B` / `WORD_C` / `RES` / `TOP1` (sin badge de tipo).

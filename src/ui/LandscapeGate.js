@@ -85,9 +85,9 @@ export class LandscapeGate {
     this.overlay.innerHTML = `
       <div class="landscape-gate-card">
         <div class="landscape-gate-icon" aria-hidden="true">↻</div>
-        <h2 id="landscape-gate-title">Mejor en horizontal</h2>
-        <p class="landscape-gate-copy">Girá el teléfono para una mejor experiencia. Podés seguir en vertical si preferís.</p>
-        <button type="button" class="btn-primary landscape-gate-dismiss">Entendido</button>
+        <h2 id="landscape-gate-title">Better in landscape</h2>
+        <p class="landscape-gate-copy">Rotate your phone for a better experience. You can stay in portrait if you prefer.</p>
+        <button type="button" class="btn-primary landscape-gate-dismiss">Got it</button>
       </div>
     `;
 

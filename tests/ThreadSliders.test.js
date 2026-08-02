@@ -27,7 +27,7 @@ function parseRangeInput(html, id) {
 
 /**
  * Defaults + ranges. Most stay linearly centered (defaultMid === (min+max)/2).
- * Amplitud Y keeps default 7 (no scene regression) with max 40 → asymmetric by design.
+ * Amplitude Y keeps default 7 (no scene regression) with max 40 → asymmetric by design.
  */
 const SPATIAL_SLIDER_SPECS = [
   { id: 'thread-spacing-slider', defaultMid: 0.4, min: 0.1, max: 0.7, step: 0.05, centered: true },
@@ -169,7 +169,7 @@ describe('wireThreadSliders — dblclick reset', () => {
     expect(changeCount).toBe(1);
   });
 
-  it('uses context override when defined for current MODE/VISTA/RENDER', () => {
+  it('uses context override when defined for current MODE/VIEW/RENDER', () => {
     SPATIAL_DEFAULT_OVERRIDES['COMPARE|ANALYSIS|MESH'] = { threadSpacing: 0.6 };
     overrideKeys.push('COMPARE|ANALYSIS|MESH');
 

@@ -1,60 +1,59 @@
 import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
 
 /**
- * Vocabulario típico de un manual de automóvil en español (piezas, fluidos, sistemas).
- * Tokens simples (sin espacios) para el splitter de COMPARE.
+ * Typical auto-manual lexicon in English (parts, fluids, systems).
+ * Simple tokens (no spaces) for the COMPARE splitter.
  */
-export const AUTO_MANUAL_VOCAB_ES = [
-  // Rodado
-  'rueda', 'ruedas', 'llanta', 'llantas', 'neumático', 'neumáticos', 'rin', 'goma',
-  'caucho', 'cubierta', 'aro', 'buje', 'eje', 'ejes', 'rodamiento', 'balero',
-  // Frenos y pedales
-  'freno', 'frenos', 'pastilla', 'pastillas', 'disco', 'tambor', 'abs', 'pedal',
-  'acelerador', 'embrague',
-  // Motor y escape
-  'motor', 'pistón', 'pistones', 'cilindro', 'cilindros', 'bujía', 'bujías',
-  'inyector', 'inyectores', 'culata', 'cigüeñal', 'leva', 'turbo', 'compresor',
-  'escape', 'catalizador', 'silenciador', 'colector', 'admisión',
-  // Refrigeración / lubricación / correas
-  'radiador', 'refrigerante', 'anticongelante', 'aceite', 'filtro', 'filtros',
-  'correa', 'correas', 'bomba', 'termostato', 'ventilador',
-  // Eléctrico
-  'batería', 'alternador', 'arranque', 'bobina', 'fusible', 'fusibles', 'relé',
-  'sensor', 'sensores', 'cable', 'cables',
-  // Transmisión
-  'transmisión', 'caja', 'marcha', 'marchas', 'diferencial', 'cardán',
-  'sincronizador', 'convertidor',
-  // Dirección y suspensión
-  'volante', 'dirección', 'suspensión', 'amortiguador', 'amortiguadores',
-  'muelle', 'muelles', 'ballesta', 'brazo', 'rótula', 'terminal',
-  // Carrocería e iluminación
-  'chasis', 'carrocería', 'capó', 'maletero', 'puerta', 'puertas', 'ventanilla',
-  'parabrisas', 'espejo', 'espejos', 'faro', 'faros', 'piloto', 'pilotos',
-  'paragolpes', 'guardabarros', 'techo', 'aleta',
-  // Habitáculo / seguridad
-  'asiento', 'asientos', 'cinturón', 'airbag', 'airbags', 'tablero',
-  'velocímetro', 'cuentakilómetros', 'claxon', 'limpiaparabrisas', 'guantera',
-  // Fluidos y combustible
-  'combustible', 'gasolina', 'diésel', 'diesel', 'líquido', 'hidráulico',
-  // Fijaciones / varios de taller
-  'junta', 'juntas', 'tornillo', 'tornillos', 'tuerca', 'tuercas', 'arandela',
-  'manguera', 'mangueras', 'depósito', 'tanque', 'tapón',
-  // Vehículo
-  'vehículo', 'automóvil', 'coche', 'auto', 'camioneta',
+export const AUTO_MANUAL_VOCAB_EN = [
+  // Wheels / tires
+  'wheel', 'wheels', 'tire', 'tires', 'rim', 'rims', 'hub', 'axle', 'axles',
+  'bearing', 'bearings', 'rubber', 'cover', 'spoke',
+  // Brakes and pedals
+  'brake', 'brakes', 'pad', 'pads', 'disc', 'rotor', 'drum', 'abs', 'pedal',
+  'accelerator', 'throttle', 'clutch',
+  // Engine and exhaust
+  'engine', 'piston', 'pistons', 'cylinder', 'cylinders', 'spark', 'plug',
+  'injector', 'injectors', 'head', 'crankshaft', 'camshaft', 'turbo', 'compressor',
+  'exhaust', 'catalytic', 'muffler', 'manifold', 'intake',
+  // Cooling / lubrication / belts
+  'radiator', 'coolant', 'antifreeze', 'oil', 'filter', 'filters',
+  'belt', 'belts', 'pump', 'thermostat', 'fan',
+  // Electrical
+  'battery', 'alternator', 'starter', 'coil', 'fuse', 'fuses', 'relay',
+  'sensor', 'sensors', 'cable', 'cables', 'wiring',
+  // Transmission
+  'transmission', 'gearbox', 'gear', 'gears', 'differential', 'driveshaft',
+  'synchronizer', 'converter',
+  // Steering and suspension
+  'steering', 'suspension', 'shock', 'shocks', 'spring', 'springs',
+  'leaf', 'arm', 'balljoint', 'tie',
+  // Body and lighting
+  'chassis', 'body', 'hood', 'trunk', 'door', 'doors', 'window',
+  'windshield', 'mirror', 'mirrors', 'headlight', 'headlights', 'taillight',
+  'bumper', 'fender', 'roof', 'panel',
+  // Cabin / safety
+  'seat', 'seats', 'seatbelt', 'airbag', 'airbags', 'dashboard',
+  'speedometer', 'odometer', 'horn', 'wiper', 'wipers', 'glovebox',
+  // Fluids and fuel
+  'fuel', 'gasoline', 'diesel', 'fluid', 'hydraulic',
+  // Fasteners / shop misc
+  'gasket', 'gaskets', 'bolt', 'bolts', 'nut', 'nuts', 'washer',
+  'hose', 'hoses', 'tank', 'cap',
+  // Vehicle
+  'vehicle', 'automobile', 'car', 'truck', 'van',
 ];
 
-/** Deduplicated Spanish auto-manual lexicon (stable order). */
-export const AUTO_MANUAL_UNIQUE_ES = [...new Set(AUTO_MANUAL_VOCAB_ES)];
+/** Deduplicated English auto-manual lexicon (stable order). */
+export const AUTO_MANUAL_UNIQUE_EN = [...new Set(AUTO_MANUAL_VOCAB_EN)];
 
 /**
- * COMPARE presets built from Spanish auto-manual vocabulary.
- * @deprecated alias — prefer COMPARE_AUTO_PRESETS
+ * COMPARE presets built from English auto-manual vocabulary.
  */
 export const COMPARE_AUTO_PRESETS = {
-  sample5: ['rueda', 'motor', 'freno', 'volante', 'embrague'],
-  default: AUTO_MANUAL_UNIQUE_ES,
-  sample20: AUTO_MANUAL_UNIQUE_ES.slice(0, 20),
-  sample50: AUTO_MANUAL_UNIQUE_ES.slice(0, 50),
+  sample5: ['wheel', 'engine', 'brake', 'steering', 'clutch'],
+  default: AUTO_MANUAL_UNIQUE_EN,
+  sample20: AUTO_MANUAL_UNIQUE_EN.slice(0, 20),
+  sample50: AUTO_MANUAL_UNIQUE_EN.slice(0, 50),
 };
 
 /** @deprecated Use COMPARE_AUTO_PRESETS */
@@ -85,7 +84,7 @@ export class ComparePanel {
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
           <label for="compare-tokens">Tokens / Words (separated by comma, space, or newline)</label>
-          <textarea id="compare-tokens" rows="6" placeholder="e.g. rueda, motor, freno, volante, embrague..." required></textarea>
+          <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine, brake, steering, clutch..." required></textarea>
         </div>
 
         <div class="preset-buttons-row">
@@ -95,7 +94,7 @@ export class ComparePanel {
         </div>
 
         <button type="submit" id="btn-compare-submit" class="btn-primary">
-          🔍 VISUALIZAR SECUENCIA (3D)
+          🔍 VISUALIZE SEQUENCE (3D)
         </button>
       </form>
 
@@ -106,14 +105,14 @@ export class ComparePanel {
         </div>
 
         <div class="compare-cosine-header">
-          <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">SIMILITUD COSENO vs —</h3>
+          <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">COSINE SIMILARITY vs —</h3>
           <span class="compare-sort-btns">
-            <button type="button" id="btn-sort-desc" class="btn-sort-cosine" data-sort="desc" disabled title="Mayor → menor" aria-label="Ordenar de mayor a menor">▼</button>
-            <button type="button" id="btn-sort-asc" class="btn-sort-cosine" data-sort="asc" disabled title="Menor → mayor" aria-label="Ordenar de menor a mayor">▲</button>
+            <button type="button" id="btn-sort-desc" class="btn-sort-cosine" data-sort="desc" disabled title="Highest → lowest" aria-label="Sort descending">▼</button>
+            <button type="button" id="btn-sort-asc" class="btn-sort-cosine" data-sort="asc" disabled title="Lowest → highest" aria-label="Sort ascending">▲</button>
           </span>
         </div>
         <ul id="compare-cosine-list" class="compare-cosine-list">
-          <li class="empty-state">Visualizá una secuencia para ver similitud vs el ancla...</li>
+          <li class="empty-state">Visualize a sequence to see similarity vs the anchor...</li>
         </ul>
       </div>
     `;
@@ -129,7 +128,7 @@ export class ComparePanel {
     this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
     this.btnSortAsc = this.element.querySelector('#btn-sort-asc');
 
-    // Default: full Spanish auto-manual parts lexicon
+    // Default: full English auto-manual parts lexicon
     this.textarea.value = COMPARE_AUTO_PRESETS.default.join(", ");
 
     this.initEventListeners();
@@ -234,7 +233,7 @@ export class ComparePanel {
       this.btnSubmit.textContent = '⏳ COMPUTING SEQUENCE EMBEDDINGS...';
     } else {
       this.btnSubmit.disabled = false;
-      this.btnSubmit.textContent = '🔍 VISUALIZAR SECUENCIA (3D)';
+      this.btnSubmit.textContent = '🔍 VISUALIZE SEQUENCE (3D)';
     }
   }
 
@@ -252,8 +251,8 @@ export class ComparePanel {
     if (!data || !data.items) {
       this.items = null;
       this.updateMetrics(0);
-      this.cosineSubtitle.textContent = 'SIMILITUD COSENO vs —';
-      this.cosineList.innerHTML = '<li class="empty-state">Visualizá una secuencia para ver similitud vs el ancla...</li>';
+      this.cosineSubtitle.textContent = 'COSINE SIMILARITY vs —';
+      this.cosineList.innerHTML = '<li class="empty-state">Visualize a sequence to see similarity vs the anchor...</li>';
       this.setReorderLocked(false);
       return;
     }
@@ -266,7 +265,7 @@ export class ComparePanel {
 
   renderCosineList(anchor, items) {
     const anchorWord = anchor?.text ?? items[0]?.text ?? '—';
-    this.cosineSubtitle.textContent = `SIMILITUD COSENO vs «${anchorWord}»`;
+    this.cosineSubtitle.textContent = `COSINE SIMILARITY vs "${anchorWord}"`;
 
     this.cosineList.innerHTML = '';
     if (!items || items.length === 0) {

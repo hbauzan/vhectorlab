@@ -60,7 +60,7 @@ describe('resolveSpatialDefaults', () => {
     expect(d.threadWidth).toBe(GLOBAL_SPATIAL_DEFAULTS.threadWidth);
   });
 
-  it('applies captured ARITHMETIC|ANALYSIS|POINTS preset (Amplitud 40)', () => {
+  it('applies captured ARITHMETIC|ANALYSIS|POINTS preset (Amplitude 40)', () => {
     // Production override lives in SPATIAL_DEFAULT_OVERRIDES — assert the seam.
     const d = resolveSpatialDefaults({
       workspaceMode: 'ARITHMETIC',

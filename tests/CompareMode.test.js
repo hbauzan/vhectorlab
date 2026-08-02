@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Instancer } from '../src/visualizer/Instancer.js';
 
 describe('Compare Mode Sequence Engine', () => {
-  it('debe procesar e instanciar secuencias de tokens de 1 a 1024 elementos', () => {
+  it('processes and instantiates token sequences from 1 to 1024', () => {
     const scene = new THREE.Scene();
     const instancer = new Instancer(scene);
 
@@ -29,7 +29,7 @@ describe('Compare Mode Sequence Engine', () => {
     expect(instancer.activeGroup.children.length).toBeGreaterThanOrEqual(5);
   });
 
-  it('debe retornar lista vacía si la respuesta de compare es nula o vacía', () => {
+  it('returns an empty list when compare response is null or empty', () => {
     const scene = new THREE.Scene();
     const instancer = new Instancer(scene);
 
@@ -38,7 +38,7 @@ describe('Compare Mode Sequence Engine', () => {
     expect(instancer.activeGroup.children.length).toBe(0);
   });
 
-  it('debe soportar secuencias grandes (ej. 50 tokens)', () => {
+  it('supports large sequences (e.g. 50 tokens)', () => {
     const scene = new THREE.Scene();
     const instancer = new Instancer(scene);
 
@@ -59,7 +59,7 @@ describe('Compare Mode Sequence Engine', () => {
     expect(labels[49].text).toBe('token_49');
   });
 
-  it('debe reordenar hilos 3D con tween in-situ (reuse meshes, nuevo sequenceIndex)', async () => {
+  it('reorders 3D threads with in-place tween (reuse meshes, new sequenceIndex)', async () => {
     const scene = new THREE.Scene();
     const instancer = new Instancer(scene);
 
