@@ -1,6 +1,6 @@
 # Roadmap: Paneles colapsables · Mobile · Mesh · Ribbons
 
-> **Estado:** decisiones de producto mayormente cerradas (2026-08-01).  
+> **Estado:** epic A→E implementado en `main` (2026-08-01).  
 > **Base:** `main` + lecciones en `.agents/skills/dev-protocol/lessons-learned.md` (§1 WebGL, §3 navegación, §4 paneles).  
 > **Referencia visual MESH/RIBBONS:** capturas del visualizador fuente (superficie quad-grid / cintas sobre plano base) en assets de sesión.  
 > **Entrega:** una rama + merge por etapa (A→E).
@@ -187,9 +187,9 @@ En phone (`≤768px` **y** no-tablet):
 - Diferenciar claramente de MESH (cintas discretas vs superficie continua).
 
 ### E.3 Criterios de aceptación
-- [ ] RIBBONS ≠ MESH ≠ POINTS.
-- [ ] Plano base presente; cintas legibles en Analysis y Navigation.
-- [ ] Tests + checklist visual.
+- [x] RIBBONS ≠ MESH ≠ POINTS.
+- [x] Plano base presente; cintas legibles en Analysis y Navigation.
+- [x] Tests + checklist visual.
 
 ### E.4 Rama
 `feat/render-mode-ribbons`
