@@ -5,6 +5,8 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Spacing (X) range → `[0.4, 2.0]`** (`feat/spacing-range-center-compare`): same track for all MODE|VIEW|RENDER; COMPARE default `0.7` unchanged. Other combo defaults unchanged (Amp/Thickness ranges untouched).
+- **Length (Z) range → `[0.001, 0.2]`** step `0.001`, label 3 decimals: never reaches 0; COMPARE `0.1` ≈ mid; global/Analysis `0.2` at max.
 - **Defaults COMPARE|NAVIGATION|POINTS** (`feat/compare-nav-points-defaults`):
   - Sliders: Spacing `0.7`, Vector Distance `10`, Amplitude `4.9`, Length `0.1`, Thickness `0.01`.
   - Camera: `POS (-106.5, 20.4, 390.2)` / `ROT (-3.9, -8.4, 0)` via `cameraViewDefaults.js`.
