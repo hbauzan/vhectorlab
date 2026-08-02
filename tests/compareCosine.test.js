@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { cosineDot, recomputeCompareAnchorScores, reorderCompareItems } from '../src/ui/compareCosine.js';
+import {
+  cosineDot,
+  recomputeCompareAnchorScores,
+  reorderCompareItems,
+  sortCompareItemsByCosine,
+} from '../src/ui/compareCosine.js';
 
 describe('compareCosine helpers', () => {
   const makeItems = () => [
@@ -43,5 +48,23 @@ describe('compareCosine helpers', () => {
   it('reorderCompareItems ignores out-of-bounds moves', () => {
     expect(reorderCompareItems(makeItems(), 0, -1)).toBeNull();
     expect(reorderCompareItems(makeItems(), 2, 1)).toBeNull();
+  });
+
+  it('sortCompareItemsByCosine keeps REF #1 and sorts the rest asc/desc', () => {
+    const items = [
+      { id: 'tok_0', text: 'a', embedding: [1, 0, 0], cosine_vs_first: 1 },
+      { id: 'tok_1', text: 'mid', embedding: [0.5, 0.866, 0], cosine_vs_first: 0.5 },
+      { id: 'tok_2', text: 'low', embedding: [0, 1, 0], cosine_vs_first: 0 },
+      { id: 'tok_3', text: 'high', embedding: [0.9, 0.435, 0], cosine_vs_first: 0.9 },
+    ];
+
+    const desc = sortCompareItemsByCosine(items, 'desc');
+    expect(desc.items.map((i) => i.text)).toEqual(['a', 'high', 'mid', 'low']);
+    expect(desc.anchor.text).toBe('a');
+    expect(desc.items[0].cosine_vs_first).toBe(1);
+
+    const asc = sortCompareItemsByCosine(items, 'asc');
+    expect(asc.items.map((i) => i.text)).toEqual(['a', 'low', 'mid', 'high']);
+    expect(asc.anchor.text).toBe('a');
   });
 });
