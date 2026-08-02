@@ -164,3 +164,17 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 
 1. **Consulta Obligatoria**: El agente **DEBE** leer este archivo al iniciar cualquier tarea de implementación, diseño de shaders, navegación o refactorización.
 2. **Actualización Continua**: Al descubrir una nueva invariante técnica, bug de renderizado o patrón de rendimiento, el agente **DEBE** agregarla a este archivo antes de finalizar la tarea.
+
+---
+
+## 6. Dev tooling / ngrok / Vite ↔ backend
+
+### 6.1. Proxy `/api` en Vite: prefijo general, no ruta-a-ruta
+- **Problema**: Exponer frontend y backend con **el mismo** hostname ngrok (dos agentes → `:5173` y `:8000`) se pisa; el celu no puede llamar a `127.0.0.1:8000`.
+- **Solución Obligatoria**:
+  - Un solo túnel ngrok → Vite (`:5173`).
+  - En `vite.config.js`, proxy de prefijo: `'/api' → http://127.0.0.1:8000` (el backend ya monta el router con `prefix="/api"`).
+  - `VITE_API_BASE_URL=/api` en `.env` (habilitado por defecto en dev/ngrok). `RemoteProvider` usa esa base; header `ngrok-skip-browser-warning` cuando el host es ngrok.
+- **¿Hay que mapear endpoint por endpoint?** **No**, si todo el API vive bajo el mismo prefijo (`/api/health`, `/api/arithmetic`, `/api/compare`, …). Un solo `proxy['/api']` cubre rutas nuevas automáticamente.
+- **Cuándo sí ruta-a-ruta**: solo si exponés paths **fuera** de `/api` (p.ej. `/health` bare sin prefijo) y querés proxearlos — ahí cada path top-level necesita su propia entrada en `server.proxy`, o movés el contrato a `/api/*`.
+- **Invariante**: nuevas rutas backend bajo `/api` → cero cambio en Vite; si alguien agrega un mount root-level, o lo mete bajo `/api` o agrega proxy explícito + lesson.
