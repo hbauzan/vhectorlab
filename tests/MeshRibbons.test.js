@@ -63,12 +63,12 @@ describe('Instancer RIBBONS mode', () => {
     expect(points.length).toBe(0);
   });
 
-  it('MESH still has surface without base plane / wide ribbons', () => {
+  it('legacy MESH falls back to POINTS (no surface mesh)', () => {
     instancer.renderArithmeticData(arithmeticFixture(), 'MESH', null, 'ANALYSIS');
     const kids = instancer.activeGroup.children;
-    expect(kids.some((c) => c.userData?.kind === 'surface')).toBe(true);
-    expect(kids.some((c) => c.userData?.kind === 'wideRibbon')).toBe(false);
-    expect(kids.some((c) => c.userData?.kind === 'basePlane')).toBe(false);
+    expect(kids.some((c) => c.userData?.kind === 'surface')).toBe(false);
+    expect(kids.some((c) => c.isPoints)).toBe(true);
+    expect(instancer.renderMode).toBe('POINTS');
   });
 
   it('COMPARE RIBBONS mounts wide ribbons without Points cloud', () => {

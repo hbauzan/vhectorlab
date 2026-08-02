@@ -205,8 +205,8 @@ describe('wireThreadSliders — dblclick reset', () => {
   });
 
   it('uses context override when defined for current MODE/VIEW/RENDER', () => {
-    SPATIAL_DEFAULT_OVERRIDES['COMPARE|ANALYSIS|MESH'] = { threadSpacing: 0.6 };
-    overrideKeys.push('COMPARE|ANALYSIS|MESH');
+    SPATIAL_DEFAULT_OVERRIDES['COMPARE|ANALYSIS|RIBBONS'] = { threadSpacing: 0.6 };
+    overrideKeys.push('COMPARE|ANALYSIS|RIBBONS');
 
     const spacingInput = createMockEl('thread-spacing-slider');
     const spacingLabel = createMockEl('thread-spacing-val');
@@ -231,7 +231,7 @@ describe('wireThreadSliders — dblclick reset', () => {
       getContext: () => ({
         workspaceMode: 'COMPARE',
         viewMode: 'ANALYSIS',
-        renderMode: 'MESH',
+        renderMode: 'RIBBONS',
       }),
     });
 

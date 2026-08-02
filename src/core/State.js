@@ -1,4 +1,14 @@
 /**
+ * Normalize render mode to the supported product surface.
+ * Unknown / retired modes (e.g. legacy "MESH") fall back to POINTS.
+ * @param {string} [mode]
+ * @returns {"POINTS"|"RIBBONS"}
+ */
+export function normalizeRenderMode(mode) {
+  return mode === "RIBBONS" ? "RIBBONS" : "POINTS";
+}
+
+/**
  * Reactive Application State for VectorLab 3D.
  */
 export class AppState {
@@ -7,7 +17,7 @@ export class AppState {
     this.wordB = "man";
     this.wordC = "woman";
     this.topK = 10;
-    this.renderMode = "POINTS"; // "POINTS" | "MESH" | "RIBBONS"
+    this.renderMode = "POINTS"; // "POINTS" | "RIBBONS"
     this.workspaceMode = "ARITHMETIC"; // "ARITHMETIC" | "COMPARE"
 
     this.backendConnected = false;
@@ -50,7 +60,7 @@ export class AppState {
   }
 
   setRenderMode(mode) {
-    this.renderMode = mode;
+    this.renderMode = normalizeRenderMode(mode);
     this.notify();
   }
 
