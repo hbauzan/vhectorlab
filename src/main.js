@@ -13,7 +13,7 @@ import { CustomModal } from './ui/CustomModal.js';
 import { ThreadLabels } from './ui/ThreadLabels.js';
 import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 
-import { ComparePanel } from './ui/ComparePanel.js';
+import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 
 class VectorLabApp {
   constructor() {
@@ -115,7 +115,7 @@ class VectorLabApp {
       this.comparePanel.show();
       if (!state.compareData) {
         // Run initial default comparison sequence
-        this.handleCalculateCompare(["king", "queen", "man", "woman", "prince", "princess"]);
+        this.handleCalculateCompare(COMPARE_AUTO_PRESETS.sample5);
       } else {
         this.comparePanel.updateCompareResults(state.compareData);
         this.refreshRender();
