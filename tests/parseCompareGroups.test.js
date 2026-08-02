@@ -86,7 +86,16 @@ describe('attachCompareGroupMeta + buildGroupLabels', () => {
     expect(groups[1].text).toBe('GROUP_2');
 
     const merged = mergeCompareOverlayLabels(tokenLabels);
-    expect(merged[0].type).toBe('group');
-    expect(merged.length).toBe(5);
+    expect(merged).toHaveLength(2);
+    expect(merged.every((l) => l.type === 'group')).toBe(true);
+    expect(merged.map((l) => l.text)).toEqual(['GROUP_1', 'GROUP_2']);
+  });
+
+  it('keeps token labels when no group meta', () => {
+    const tokenLabels = [
+      { id: 'tok_0', text: 'a', type: 'compare', origin3D: new THREE.Vector3(0, 0, 0) },
+    ];
+    expect(mergeCompareOverlayLabels(tokenLabels)).toHaveLength(1);
+    expect(mergeCompareOverlayLabels(tokenLabels)[0].type).toBe('compare');
   });
 });
