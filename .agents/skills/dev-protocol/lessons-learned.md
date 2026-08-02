@@ -51,13 +51,23 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
   }
   ```
 
-### 2.2. Rampas Cromáticas Multiestop (Dual Color Ramps)
-Para lecturas de alta visibilidad, implementar la paleta divergente multi-stop:
-- **Rango Positivo ($0 \rightarrow +1$)**: Negro ($0.0$) $\rightarrow$ Rojo ($+0.33$) $\rightarrow$ Naranja ($+0.66$) $\rightarrow$ Amarillo Incandescente ($+1.0$).
-- **Rango Negativo ($0 \rightarrow -1$)**: Negro ($0.0$) $\rightarrow$ Verde ($-0.33$) $\rightarrow$ Azul ($-0.66$) $\rightarrow$ Violeta Neón ($-1.0$).
+### 2.2. Rampas Cromáticas Divergentes Simplificadas (Dual Color Ramps)
+Para lecturas de alta visibilidad y ligera carga computacional, implementar la paleta divergente simplificada (sin transiciones intermedias a rojo o verde):
+- **Rango Positivo ($0 \rightarrow +1$)**: Negro ($0.0$) $\rightarrow$ Naranja ($+0.50$, `#FF8000`) $\rightarrow$ Amarillo Incandescente ($+1.00$, `#FFE600`).
+- **Rango Negativo ($0 \rightarrow -1$)**: Negro ($0.0$) $\rightarrow$ Azul Eléctrico ($-0.50$, `#0040FF`) $\rightarrow$ Violeta Neón ($-1.00$, `#9900E6`).
 
 ### 2.3. Conexión Incondicional de Hilos
 - Los puntos de cada hilo vectorial deben estar siempre conectados incondicionalmente por líneas de cinta (`RibbonMesh`), independientemente del modo de renderizado (`POINTS`, `MESH`, `RIBBONS`), para preservar la estructura visual del hilo.
+
+### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
+- **Patrón**: Evitar cálculos de interpolación `mix()` en fragmentos con intensidad casi nula.
+- **Solución Obligatoria**: Evaluar $|t| < 0.01$ al inicio del Fragment Shader y realizar un early return con color negro y opacidad mínima ($\alpha \approx 0.05$):
+  ```glsl
+  if (absT < 0.01) {
+      gl_FragColor = vec4(vec3(0.0), 0.05 * baseOpacity * solidEdge);
+      return;
+  }
+  ```
 
 ---
 

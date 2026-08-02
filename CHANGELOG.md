@@ -2,6 +2,16 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [0.2.0] - 2026-08-02
+
+### Changed
+- **Simplificación de Rampas Cromáticas Divergentes por Activación 3D (`src/visualizer/DivergentShading.js`)**:
+  - Eliminación de pasos intermedios de colores Rojo (rango positivo) y Verde (rango negativo) para transicionar directamente desde Negro/Transparente.
+  - Nueva rampa positiva ($0 \rightarrow +1$): Negro (`vec3(0.0)`) $\rightarrow$ Naranja (`#FF8000`) $\rightarrow$ Amarillo Incandescente (`#FFE600`).
+  - Nueva rampa negativa ($0 \rightarrow -1$): Negro (`vec3(0.0)`) $\rightarrow$ Azul Eléctrico (`#0040FF`) $\rightarrow$ Violeta Neón (`#9900E6`).
+  - Optimización computacional GPU/GLSL y CPU para $|t| < 0.01$: retorno directo de opacidad mínima ($\alpha \approx 0.05$) evitando operaciones de interpolación no necesarias.
+  - Cobertura de tests unitarios en `tests/DivergentShading.test.js` actualizada y extendida.
+
 ## [0.1.0] - 2026-08-01
 
 ### Added
