@@ -34,3 +34,6 @@ Edge-hosted UI host that slides off-screen via CSS `transform` while keeping chi
 
 _Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounting panel DOM to “hide” it.
 
+### Landscape Gate
+Soft, dismissible portrait-phone overlay that suggests rotating to landscape without locking orientation or pausing the 3D render loop.
+

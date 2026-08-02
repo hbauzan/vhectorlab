@@ -138,6 +138,11 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   - El dock host mantiene `overflow: hidden` / `fit-content` — no reintroducir scrollbar externa (§4.1 / §4.2).
 - **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
 
+### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
+- **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.
+- **Solución Obligatoria**: Overlay soft solo en phone portrait (`width ≤ 768` y `height > width`); dismiss escribe `sessionStorage` y no re-spamea en la sesión; tablet = desktop (sin overlay). El render loop **nunca** se pausa por portrait.
+- **Invariante**: landscape-first sugerido, nunca bloqueante.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

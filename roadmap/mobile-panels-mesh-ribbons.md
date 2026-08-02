@@ -103,11 +103,11 @@ En phone (`≤768px` **y** no-tablet):
 - Portrait tras dismiss: layout usable aunque apretado (misma lógica de drawers).
 
 ### B.2 Criterios de aceptación
-- [ ] Portrait phone: overlay suave visible; se puede cerrar.
-- [ ] Tras cerrar, se puede usar la app en portrait sin quedar atrapado.
-- [ ] Landscape phone: navbar + canvas + docks usables; sin overlay.
-- [ ] Tablet = layout desktop, sin overlay de rotación.
-- [ ] Desktop sin regresión.
+- [x] Portrait phone: overlay suave visible; se puede cerrar.
+- [x] Tras cerrar, se puede usar la app en portrait sin quedar atrapado.
+- [x] Landscape phone: navbar + canvas + docks usables; sin overlay.
+- [x] Tablet = layout desktop, sin overlay de rotación.
+- [x] Desktop sin regresión.
 
 ### B.3 Rama
 `feat/responsive-mobile-layout`
