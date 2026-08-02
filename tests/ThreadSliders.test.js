@@ -34,7 +34,7 @@ const SPATIAL_SLIDER_SPECS = [
   { id: 'thread-vector-dist-slider', defaultMid: 10.0, min: 1.0, max: 19.0, step: 0.1, centered: true },
   { id: 'thread-amplitude-y-slider', defaultMid: 7.0, min: 1.0, max: 40.0, step: 0.1, centered: false },
   { id: 'thread-width-slider', defaultMid: 0.2, min: 0.1, max: 0.3, step: 0.01, centered: true },
-  { id: 'thread-thickness-slider', defaultMid: 0.1, min: 0.05, max: 0.15, step: 0.01, centered: true },
+  { id: 'thread-thickness-slider', defaultMid: 0.05, min: 0.01, max: 0.09, step: 0.01, centered: true },
 ];
 
 function createMockEl(id = '') {
@@ -85,14 +85,14 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
       threadVectorDistance: 10.0,
       threadAmplitudeY: 7.0,
       threadWidth: 0.2,
-      threadThickness: 0.1,
+      threadThickness: 0.05,
     });
 
     expect(parseRangeInput(html, 'thread-spacing-slider').value).toBeCloseTo(0.4, 5);
     expect(parseRangeInput(html, 'thread-vector-dist-slider').value).toBeCloseTo(10.0, 5);
     expect(parseRangeInput(html, 'thread-amplitude-y-slider').value).toBeCloseTo(7.0, 5);
     expect(parseRangeInput(html, 'thread-width-slider').value).toBeCloseTo(0.2, 5);
-    expect(parseRangeInput(html, 'thread-thickness-slider').value).toBeCloseTo(0.1, 5);
+    expect(parseRangeInput(html, 'thread-thickness-slider').value).toBeCloseTo(0.05, 5);
   });
 
   it('formats default labels with decimals matching each step', () => {
@@ -105,7 +105,7 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
     expect(labelFor('thread-vector-dist-val')).toBe('10.0');
     expect(labelFor('thread-amplitude-y-val')).toBe('7.0');
     expect(labelFor('thread-width-val')).toBe('0.20');
-    expect(labelFor('thread-thickness-val')).toBe('0.10');
+    expect(labelFor('thread-thickness-val')).toBe('0.05');
   });
 });
 
@@ -145,7 +145,7 @@ describe('wireThreadSliders — dblclick reset', () => {
       threadSpacingY: 14.0,
       threadAmplitudeY: 11.0,
       threadWidth: 0.28,
-      threadThickness: 0.14,
+      threadThickness: 0.08,
     };
 
     let changeCount = 0;
@@ -165,7 +165,7 @@ describe('wireThreadSliders — dblclick reset', () => {
     expect(config.threadSpacing).toBe(0.55);
     expect(config.threadVectorDistance).toBe(14.0);
     expect(config.threadWidth).toBe(0.28);
-    expect(config.threadThickness).toBe(0.14);
+    expect(config.threadThickness).toBe(0.08);
     expect(changeCount).toBe(1);
   });
 
