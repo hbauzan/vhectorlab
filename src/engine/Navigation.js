@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { resolveCameraPose, VIEW_CAMERA_FALLBACKS } from './cameraViewDefaults.js';
 
 /**
  * Inertial Flight & Camera Navigation Controller (WASDQE + Mouse Drag Look + Shift Turbo).
@@ -163,20 +164,33 @@ export class Navigation {
     this.euler.setFromQuaternion(this.camera.quaternion);
   }
 
-  setAnalysisView() {
-    // Captured ARITHMETIC + ANALYSIS + POINTS framing (POS / ROT from CAM POSE overlay)
-    this.camera.position.set(-75.2, -0.8, 62.5);
-    this.euler.set(0, 0, 0, 'YXZ');
+  /**
+   * Snap camera to a resolved POS / ROT (degrees, YXZ euler).
+   * @param {{ position: number[], rotationDeg: number[] }} pose
+   */
+  applyResolvedPose(pose) {
+    const [px, py, pz] = pose.position;
+    const [rx, ry, rz] = pose.rotationDeg;
+    this.camera.position.set(px, py, pz);
+    const deg2rad = Math.PI / 180;
+    this.euler.set(rx * deg2rad, ry * deg2rad, rz * deg2rad, 'YXZ');
     this.camera.quaternion.setFromEuler(this.euler);
     this.velocity.set(0, 0, 0);
   }
 
+  /**
+   * Apply camera default for MODE / VIEW / RENDER (see cameraViewDefaults.js).
+   * @param {{ workspaceMode?: string, viewMode?: string, renderMode?: string }} [ctx]
+   */
+  setContextView(ctx = {}) {
+    this.applyResolvedPose(resolveCameraPose(ctx));
+  }
+
+  setAnalysisView() {
+    this.applyResolvedPose(VIEW_CAMERA_FALLBACKS.ANALYSIS);
+  }
+
   setNavigationView() {
-    // Captured default corridor view (king-man+woman @ Spacing 0.4 / Amplitude 7)
-    this.camera.position.set(-178.3, 13.5, 52.2);
-    const deg2rad = Math.PI / 180;
-    this.euler.set(-5.4 * deg2rad, -51.5 * deg2rad, 0, 'YXZ');
-    this.camera.quaternion.setFromEuler(this.euler);
-    this.velocity.set(0, 0, 0);
+    this.applyResolvedPose(VIEW_CAMERA_FALLBACKS.NAVIGATION);
   }
 }
