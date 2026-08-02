@@ -92,33 +92,36 @@ export class LayoutEngine {
    * @param {Array<number>} vector - Activation values
    * @param {number} sequenceIndex - Thread sequence/slot index
    * @param {string} [viewMode='NAVIGATION'] - 'NAVIGATION' | 'ANALYSIS'
-   * @param {number} [totalThreads=4] - Total number of threads for centering in ANALYSIS mode
+   * @param {number} [totalThreads=5] - Total number of threads for centering in ANALYSIS mode
+   * @param {number} [spacingY=46.0] - Vertical Y separation between threads
+   * @param {number} [amplitudeY=16.0] - Height scale factor for activation points (+1 / -1)
    */
-  mapVectorTo3DPoints(vector, sequenceIndex = 0, viewMode = 'NAVIGATION', totalThreads = 5) {
+  mapVectorTo3DPoints(vector, sequenceIndex = 0, viewMode = 'NAVIGATION', totalThreads = 5, spacingY = 46.0, amplitudeY = 16.0) {
     if (!vector || !vector.length) return [];
     const count = vector.length;
     const offsetCenterX = (count * this.scaleX) / 2.0;
 
     if (viewMode === 'ANALYSIS') {
-      // Stack threads vertically along Y axis with separation
-      const verticalSpacing = 46.0;
+      // Stack threads vertically along Y axis with customizable separation (spacingY)
+      const verticalSpacing = spacingY ?? 46.0;
       const centeredYSlot = (totalThreads - 1) / 2.0 - sequenceIndex;
       const offsetY = centeredYSlot * verticalSpacing;
-      const amplitudeY = 16.0; // Scaled activation amplitude for clear +1 / -1 visualization
+      const ampY = amplitudeY ?? 16.0; // Scaled activation amplitude for point Y peaks (+1 / -1)
 
       // Shift X start position slightly to the right (+45) so start labels clear the left sidebar
       return vector.map((val, dimIndex) => {
         const x = dimIndex * this.scaleX - offsetCenterX + 45.0;
-        const y = offsetY + val * amplitudeY;
+        const y = offsetY + val * ampY;
         const z = 0;
         return new THREE.Vector3(x, y, z);
       });
     }
 
     // Default NAVIGATION mode
+    const scaleYMultiplier = (amplitudeY !== undefined) ? (amplitudeY / 16.0) : 1.0;
     return vector.map((val, dimIndex) => {
       const x = dimIndex * this.scaleX - offsetCenterX;
-      const y = val * this.scaleY;
+      const y = val * this.scaleY * scaleYMultiplier;
       const z = sequenceIndex * this.scaleZ;
       return new THREE.Vector3(x, y, z);
     });
