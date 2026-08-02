@@ -40,3 +40,6 @@ Soft, dismissible portrait-phone overlay that suggests rotating to landscape wit
 ### Surface Mesh
 Indexed quad heightfield whose rows are vector threads (sequence slots) and columns are embedding dimensions; height follows activation. The geometry of `RENDER: MESH` mode.
 
+### Wide Ribbon
+Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS` together with a translucent Base Plane. Distinct from 1px WebGL lines.
+

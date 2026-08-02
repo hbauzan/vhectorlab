@@ -2,6 +2,14 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.5.0] - 2026-08-01
+
+### Added
+- **RENDER: RIBBONS + base plane (Etapa E)**:
+  - `MeshFactory.createWideRibbonMesh` / `createBasePlane` — real-width quad strips + translucent ground (no Line linewidth).
+  - `Instancer` mutually exclusive branch for `RIBBONS` (Arithmetic + Compare); compare reorder updates wide ribbons in-situ.
+  - Vitest: `tests/MeshRibbons.test.js`.
+
 ## [1.4.0] - 2026-08-01
 
 ### Added
