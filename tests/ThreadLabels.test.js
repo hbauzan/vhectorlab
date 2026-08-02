@@ -136,6 +136,25 @@ describe('ThreadLabels Component Tests', () => {
     expect(cards[0].classList.contains('group-label')).toBe(true);
   });
 
+  it('rebuilds DOM when updateOrigins switches tokens → group badges', () => {
+    threadLabels.setLabels([
+      { id: 'tok_0', text: 'car', type: 'compare', origin3D: new THREE.Vector3(0, 10, 0) },
+      { id: 'tok_1', text: 'grace', type: 'compare', origin3D: new THREE.Vector3(0, -10, 0) },
+    ]);
+    expect(threadLabels.labels).toHaveLength(2);
+
+    threadLabels.updateOrigins([
+      { id: 'group:GROUP_1', text: 'GROUP_1', type: 'group', origin3D: new THREE.Vector3(0, 5, 0) },
+      { id: 'group:GROUP_2', text: 'GROUP_2', type: 'group', origin3D: new THREE.Vector3(0, -5, 0) },
+    ]);
+    expect(threadLabels.labels).toHaveLength(2);
+    expect(threadLabels.labels[0].id).toBe('group:GROUP_1');
+    expect(threadLabels.labels[0].type).toBe('group');
+    const cards = container.querySelectorAll('.thread-label-card');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].classList.contains('group-label')).toBe(true);
+  });
+
   it('hides and shows the overlay via setVisible', () => {
     threadLabels.setVisible(false);
     expect(threadLabels.isVisible()).toBe(false);
