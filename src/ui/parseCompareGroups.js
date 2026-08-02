@@ -4,8 +4,8 @@ import * as THREE from 'three';
 export const COMPARE_MAX_TOKENS = 1024;
 
 /** Extra leftward screen-space offset (px) for group badges vs token labels.
- * Kept small — a large offset pushed badges under the left Compare dock (z-index). */
-export const GROUP_LABEL_SCREEN_OFFSET_X = 28;
+ * Kept modest — too large pushed badges under the left Compare dock (z-index). */
+export const GROUP_LABEL_SCREEN_OFFSET_X = 36;
 
 const GROUP_HEADER_RE = /^([A-Za-z][A-Za-z0-9_\-]*)\s*[=:]\s*(.*)$/;
 
@@ -118,6 +118,7 @@ export function parseCompareInput(rawText, maxTokens = COMPARE_MAX_TOKENS) {
 /**
  * Attach groupId/groupLabel onto /compare items by sequence index.
  * Spreads preserve meta through compareCosine reorder/sort.
+ * Also stores a compact `groups` summary for legends / overlay recovery.
  * @param {object} compareResponse
  * @param {Array<{ groupId: string, groupLabel: string }|null>|null|undefined} tokenMeta
  * @returns {object}
@@ -135,16 +136,62 @@ export function attachCompareGroupMeta(compareResponse, tokenMeta) {
     }
     return { ...item, groupId: m.groupId, groupLabel: m.groupLabel };
   });
-  return { ...compareResponse, items };
+  /** @type {Map<string, { id: string, label: string, count: number }>} */
+  const groupMap = new Map();
+  for (const it of items) {
+    if (!it?.groupId) continue;
+    const prev = groupMap.get(it.groupId);
+    if (prev) prev.count += 1;
+    else {
+      groupMap.set(it.groupId, {
+        id: it.groupId,
+        label: it.groupLabel || it.groupId,
+        count: 1,
+      });
+    }
+  }
+  return {
+    ...compareResponse,
+    items,
+    groups: [...groupMap.values()],
+  };
+}
+
+/**
+ * Re-apply groupId/groupLabel onto Instancer label rows from compare items (by id).
+ * Recovers overlay when thread runtime dropped meta or SAE remapped fields.
+ * @param {Array} tokenLabels
+ * @param {Array<{ id?: string, groupId?: string, groupLabel?: string }>|null|undefined} items
+ * @returns {Array}
+ */
+export function enrichLabelsWithGroupMeta(tokenLabels, items) {
+  if (!tokenLabels?.length) return tokenLabels || [];
+  if (!items?.length) return tokenLabels;
+  const byId = new Map();
+  for (const it of items) {
+    if (it?.id != null) byId.set(it.id, it);
+  }
+  return tokenLabels.map((lab, i) => {
+    if (!lab || lab.type === 'group') return lab;
+    const meta = (lab.id != null && byId.get(lab.id)) || items[i];
+    if (!meta?.groupId) return lab;
+    return {
+      ...lab,
+      groupId: meta.groupId,
+      groupLabel: meta.groupLabel || meta.groupId,
+    };
+  });
 }
 
 /**
  * Build floating group badges at the centroid of member thread origins.
+ * Prefer mid-thread origin when provided as origin3D (Instancer uses thread start;
+ * ANALYSIS stacks groups on Y so average start ≈ block center).
  * @param {Array<{ groupId?: string, groupLabel?: string, origin3D?: THREE.Vector3 }>} tokenLabels
- * @returns {Array<{ id: string, text: string, type: 'group', origin3D: THREE.Vector3 }>}
+ * @returns {Array<{ id: string, text: string, type: 'group', origin3D: THREE.Vector3, groupId: string, groupLabel: string }>}
  */
 export function buildGroupLabels(tokenLabels) {
-  /** @type {Map<string, { id: string, text: string, origins: THREE.Vector3[] }>} */
+  /** @type {Map<string, { id: string, text: string, groupId: string, origins: THREE.Vector3[] }>} */
   const byGroup = new Map();
 
   for (const lab of tokenLabels || []) {
@@ -153,13 +200,14 @@ export function buildGroupLabels(tokenLabels) {
       byGroup.set(lab.groupId, {
         id: `group:${lab.groupId}`,
         text: lab.groupLabel || lab.groupId,
+        groupId: lab.groupId,
         origins: [],
       });
     }
     byGroup.get(lab.groupId).origins.push(lab.origin3D);
   }
 
-  /** @type {Array<{ id: string, text: string, type: 'group', origin3D: THREE.Vector3 }>} */
+  /** @type {Array<{ id: string, text: string, type: 'group', origin3D: THREE.Vector3, groupId: string, groupLabel: string }>} */
   const out = [];
   for (const g of byGroup.values()) {
     if (!g.origins.length) continue;
@@ -176,6 +224,8 @@ export function buildGroupLabels(tokenLabels) {
       id: g.id,
       text: g.text,
       type: 'group',
+      groupId: g.groupId,
+      groupLabel: g.text,
       origin3D: new THREE.Vector3(x / n, y / n, z / n),
     });
   }

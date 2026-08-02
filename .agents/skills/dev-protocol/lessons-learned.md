@@ -202,6 +202,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Decisión (v1.7.0)**: `GROUP_name = tokens` en textarea → `parseCompareInput` concatena grupos; `/compare` sigue flat. Anchor = primer token global (D1a). Sort/reorder cosine **global** puede romper contigüidad (D2a); badges de grupo se re-anclan al centroide de miembros actuales.
 - **Invariante**: groups = metadata UI/layout, no endpoint nuevo; duplicados entre groups permitidos.
 - **Visibilidad**: con groups activos, overlay muestra **solo** badges de grupo (los token cards a N alto los tapaban y el offset grande los metía bajo el dock z-index 40). Lista cosine sigue con todos los tokens. `#thread-labels-container` z-index ≥ docks; offset screen de group badges chico.
+- **SAE + groups**: `applySaeToCompare` y encode path deben re-afirmar `groupId`/`groupLabel` desde RAW cache (no `groupName`). `ThreadLabels.updateOrigins` rebuilds DOM si el set de ids cambia (tokens → group badges).
 
 ### 4.9. Visualization Controls — sign filter + color anchors + zero coverage (v1.8.x)
 - **Panel**: glass card under 3D Spatial Controls in the **right dock**; EN copy; global (not per MODE|VIEW|RENDER).
@@ -221,6 +222,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Train fast-path**: `from_numpy` + full-batch when N small; MPS/CUDA via `SAE_DEVICE=AUTO`; CUDA AMP; `inference_mode` for final metrics; `suggest_train_schedule` caps epochs (≤12 if hidden≤128). Defaults UI epochs=20.
 - Encode already had bucketing + inference_mode + autocast; MPS autocast attempted with FP32 fallback.
 - **Encode I/O bottleneck**: GPU matmul ~20ms; dense `.tolist()` of `[N, 8192]` JSON was the freeze. Fix: `encode_vectors_sparse` → `{format:topk_sparse, indices[N,K], values[N,K]}` + router `ORJSONResponse`; `RemoteProvider.saeEncode` densifies via `densifyTopKActivations`. `load_model()` is singleton (`model is not None` short-circuit) — do not `torch.load` per request.
+- **Train UI hang**: UI could sit on `Starting SAE training… · working Ns` while backend was already `success`. Causes: (1) poll started only after `POST /train` returned — large embeddings JSON could stall the POST; (2) `refreshSaeStatusUi` nulled status on fetch error → fallback label "Starting…"; (3) async `setInterval` overlap. Fix: poll immediately on busy; keep last status on error; fetch timeouts; ignore pre-POST `idle`; clear poll in `_stopSaeTrainBusy`.
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

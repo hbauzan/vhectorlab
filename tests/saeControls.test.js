@@ -20,6 +20,8 @@ describe('saeControlsDefaults', () => {
       getItem: (k) => (store.has(k) ? store.get(k) : null),
       setItem: (k, v) => { store.set(k, String(v)); },
       removeItem: (k) => { store.delete(k); },
+      key: (i) => [...store.keys()][i] ?? null,
+      get length() { return store.size; },
     };
 
     const settings = resolveSaeSettings({
@@ -39,9 +41,32 @@ describe('saeControlsDefaults', () => {
     expect(loaded.batchSize).toBe(32);
   });
 
-  it('defaults enabled=false', () => {
+  it('defaults are 8192 / k32 / 20ep and purge legacy poisoned keys', () => {
     expect(DEFAULT_SAE_SETTINGS.enabled).toBe(false);
+    expect(DEFAULT_SAE_SETTINGS.hiddenDim).toBe(8192);
+    expect(DEFAULT_SAE_SETTINGS.k).toBe(32);
+    expect(DEFAULT_SAE_SETTINGS.epochs).toBe(20);
     expect(loadSaeSettings(null).enabled).toBe(false);
+
+    const store = new Map([
+      ['vl3d.sae.hiddenDim', '32'],
+      ['vl3d.sae.k', '1'],
+      ['vl3d.sae.epochs', '1'],
+      ['vl3d.sae.enabled', 'true'],
+    ]);
+    const storage = {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => { store.set(k, String(v)); },
+      removeItem: (k) => { store.delete(k); },
+      key: (i) => [...store.keys()][i] ?? null,
+      get length() { return store.size; },
+    };
+    const loaded = loadSaeSettings(storage);
+    expect(loaded.hiddenDim).toBe(8192);
+    expect(loaded.k).toBe(32);
+    expect(loaded.epochs).toBe(20);
+    expect(loaded.enabled).toBe(false);
+    expect(store.has('vl3d.sae.hiddenDim')).toBe(false);
   });
 
   it('computes L0 / sparsity from sparse rows', () => {
