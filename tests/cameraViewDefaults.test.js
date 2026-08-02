@@ -33,7 +33,7 @@ describe('resolveCameraPose', () => {
     const pose = resolveCameraPose({
       workspaceMode: 'COMPARE',
       viewMode: 'ANALYSIS',
-      renderMode: 'MESH',
+      renderMode: 'RIBBONS',
     });
     expect(pose.position).toEqual(VIEW_CAMERA_FALLBACKS.ANALYSIS.position);
     expect(pose.rotationDeg).toEqual(VIEW_CAMERA_FALLBACKS.ANALYSIS.rotationDeg);
@@ -47,21 +47,21 @@ describe('resolveCameraPose', () => {
     setOverride('ARITHMETIC|NAVIGATION', {
       rotationDeg: [1, 2, 3],
     });
-    setOverride('ARITHMETIC|NAVIGATION|MESH', {
+    setOverride('ARITHMETIC|NAVIGATION|RIBBONS', {
       position: [9, 8, 7],
     });
 
     const pose = resolveCameraPose({
       workspaceMode: 'ARITHMETIC',
       viewMode: 'NAVIGATION',
-      renderMode: 'MESH',
+      renderMode: 'RIBBONS',
     });
     expect(pose.position).toEqual([9, 8, 7]);
     expect(pose.rotationDeg).toEqual([1, 2, 3]);
   });
 
   it('does not leak overrides from a different context', () => {
-    setOverride('COMPARE|ANALYSIS|MESH', {
+    setOverride('COMPARE|ANALYSIS|RIBBONS', {
       position: [-1, -2, -3],
       rotationDeg: [9, 8, 7],
     });
@@ -85,6 +85,20 @@ describe('resolveCameraPose', () => {
     expect(pose.position[2]).toBeCloseTo(390.2, 5);
     expect(pose.rotationDeg[0]).toBeCloseTo(-3.9, 5);
     expect(pose.rotationDeg[1]).toBeCloseTo(-8.4, 5);
+    expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
+  });
+
+  it('applies captured COMPARE|ANALYSIS|POINTS pose', () => {
+    const pose = resolveCameraPose({
+      workspaceMode: 'COMPARE',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    });
+    expect(pose.position[0]).toBeCloseTo(-150.3, 5);
+    expect(pose.position[1]).toBeCloseTo(0.7, 5);
+    expect(pose.position[2]).toBeCloseTo(276.6, 5);
+    expect(pose.rotationDeg[0]).toBeCloseTo(-0.5, 5);
+    expect(pose.rotationDeg[1]).toBeCloseTo(0.9, 5);
     expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
   });
 

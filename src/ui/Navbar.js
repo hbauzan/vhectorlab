@@ -1,5 +1,5 @@
 /**
- * Top Navbar component with title, status indicator, View Mode tabs (ANALYSIS | NAVIGATION), and Render Mode selector tabs (POINTS | MESH | RIBBONS).
+ * Top Navbar component with title, status indicator, View Mode tabs (ANALYSIS | NAVIGATION), and Render Mode selector tabs (POINTS | RIBBONS).
  */
 export class Navbar {
   constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
@@ -16,7 +16,7 @@ export class Navbar {
         <div class="logo-icon">🌐</div>
         <div class="title-group">
           <h1>VECTORLAB <span class="accent-3d">3D</span></h1>
-          <span class="version-tag">v1.5.0</span>
+          <span class="version-tag">v1.6.0</span>
         </div>
       </div>
 
@@ -36,7 +36,6 @@ export class Navbar {
         <div class="render-mode-tabs">
           <span class="tab-label">RENDER:</span>
           <button data-mode="POINTS" class="mode-tab active">POINTS</button>
-          <button data-mode="MESH" class="mode-tab">MESH</button>
           <button data-mode="RIBBONS" class="mode-tab">RIBBONS</button>
         </div>
       </div>

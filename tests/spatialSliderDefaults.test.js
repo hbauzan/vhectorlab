@@ -23,7 +23,7 @@ describe('resolveSpatialDefaults', () => {
     const d = resolveSpatialDefaults({
       workspaceMode: 'COMPARE',
       viewMode: 'ANALYSIS',
-      renderMode: 'MESH',
+      renderMode: 'RIBBONS',
     });
     expect(d.threadSpacing).toBe(GLOBAL_SPATIAL_DEFAULTS.threadSpacing);
     expect(d.threadVectorDistance).toBe(GLOBAL_SPATIAL_DEFAULTS.threadVectorDistance);
@@ -50,7 +50,7 @@ describe('resolveSpatialDefaults', () => {
   });
 
   it('does not leak overrides from a different context', () => {
-    setOverride('COMPARE|ANALYSIS|MESH', { threadWidth: 0.25 });
+    setOverride('COMPARE|ANALYSIS|RIBBONS', { threadWidth: 0.25 });
 
     const d = resolveSpatialDefaults({
       workspaceMode: 'ARITHMETIC',
@@ -84,6 +84,19 @@ describe('resolveSpatialDefaults', () => {
     expect(d.threadVectorDistance).toBe(10.0);
     expect(d.threadAmplitudeY).toBe(4.9);
     expect(d.threadWidth).toBe(0.1);
+    expect(d.threadThickness).toBe(0.01);
+  });
+
+  it('applies captured COMPARE|ANALYSIS|POINTS preset', () => {
+    const d = resolveSpatialDefaults({
+      workspaceMode: 'COMPARE',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    });
+    expect(d.threadSpacing).toBe(1.45);
+    expect(d.threadVectorDistance).toBe(1.0);
+    expect(d.threadAmplitudeY).toBe(1.0);
+    expect(d.threadWidth).toBe(0.2);
     expect(d.threadThickness).toBe(0.01);
   });
 

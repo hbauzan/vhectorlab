@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
 import { arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
+import { normalizeRenderMode } from '../core/State.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -15,10 +16,10 @@ export class Instancer {
     this.activeGroup.name = "VectorPointsGroup";
     this.scene.add(this.activeGroup);
 
-    this.renderMode = "POINTS"; // "POINTS" | "MESH" | "RIBBONS"
+    this.renderMode = "POINTS"; // "POINTS" | "RIBBONS"
     this.currentData = null;
 
-    /** @type {null|{ viewMode: string, totalThreads: number, spacingY: number, amplitudeY: number, pointsMesh: THREE.Points|null, baselineMesh: THREE.Line|null, threads: Array }} */
+    /** @type {null|{ viewMode: string, totalThreads: number, spacingY: number, amplitudeY: number, pointsMesh: THREE.Points|null, baselineMesh: THREE.Line|null, threads: Array, renderMode: string }} */
     this.compareRuntime = null;
     this._reorderRaf = null;
     this._reorderBusy = false;
@@ -52,13 +53,14 @@ export class Instancer {
   /**
    * Renders the arithmetic vectors data: inputs A, B, C and result V_res.
    * @param {Object} arithmeticResponse - API response from /arithmetic
-   * @param {string} renderMode - "POINTS" | "MESH" | "RIBBONS"
+   * @param {string} renderMode - "POINTS" | "RIBBONS" (unknown/retired modes → POINTS)
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration { threadSpacing, threadWidth, threadThickness }
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata for origins
    */
   renderArithmeticData(arithmeticResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
     this.clear();
+    renderMode = normalizeRenderMode(renderMode);
     this.renderMode = renderMode;
     this.currentData = arithmeticResponse;
 
@@ -150,18 +152,10 @@ export class Instancer {
   }
 
   /**
-   * Mount POINTS | MESH | RIBBONS geometry (mutually exclusive).
+   * Mount POINTS | RIBBONS geometry (mutually exclusive).
    * @private
    */
   _mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor) {
-    if (renderMode === "MESH") {
-      const surface = MeshFactory.createSurfaceMesh(surfaceRows, {
-        singleThreadWidth: Math.max(1.5, 8.0 * (thicknessFactor || 0.3)),
-      });
-      if (surface) this.activeGroup.add(surface);
-      return;
-    }
-
     if (renderMode === "RIBBONS") {
       // No base plane: translucent dark quad showed through ribbons as a hard dark rectangle.
       const ribbonWidth = Math.max(2.0, 14.0 * (thicknessFactor || 0.3));
@@ -187,13 +181,14 @@ export class Instancer {
   /**
    * Renders token/text sequence comparison data (1 to 1024 tokens).
    * @param {Object} compareResponse - API response from /compare
-   * @param {string} renderMode - "POINTS" | "MESH" | "RIBBONS"
+   * @param {string} renderMode - "POINTS" | "RIBBONS" (unknown/retired modes → POINTS)
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
    */
   renderCompareData(compareResponse, renderMode = "POINTS", spatialConfig = null, viewMode = "NAVIGATION") {
     this.clear();
+    renderMode = normalizeRenderMode(renderMode);
     this.renderMode = renderMode;
     this.currentData = compareResponse;
 
@@ -253,7 +248,7 @@ export class Instancer {
       if (renderMode === "RIBBONS") {
         const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
         ribbonMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, { width: ribbonWidth });
-      } else if (renderMode !== "MESH") {
+      } else {
         ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations);
       }
       if (ribbonMesh) {
@@ -293,13 +288,7 @@ export class Instancer {
     }
 
     let pointsMesh = null;
-    let surfaceMesh = null;
-    if (renderMode === "MESH") {
-      surfaceMesh = MeshFactory.createSurfaceMesh(surfaceRows, {
-        singleThreadWidth: Math.max(1.5, 8.0 * thicknessFactor),
-      });
-      if (surfaceMesh) this.activeGroup.add(surfaceMesh);
-    } else if (renderMode === "POINTS" && pointsData.length) {
+    if (renderMode === "POINTS" && pointsData.length) {
       // RIBBONS must not mount the POINTS cloud (square Chebyshev dots on top of strips).
       pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
       pointsMesh.userData = { pointsData };
@@ -312,7 +301,6 @@ export class Instancer {
       spacingY,
       amplitudeY,
       pointsMesh,
-      surfaceMesh,
       baselineMesh,
       threads,
       renderMode,
@@ -455,13 +443,6 @@ export class Instancer {
           });
 
           this._syncCompareBaseline(origins);
-
-          if (runtime.surfaceMesh) {
-            const rows = runtime.threads.map((thread) => ({
-              points: thread._layoutPoints || [],
-            }));
-            MeshFactory.updateSurfaceMeshPositions(runtime.surfaceMesh, rows);
-          }
 
           if (onFrame) onFrame(labels);
 
