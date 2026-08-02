@@ -2,6 +2,14 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Ngrok / phone dev access** (`feat/ngrok-dev-access`):
+  - Vite `allowedHosts` + `/api` proxy to `127.0.0.1:8000` (prefix proxy — not per-route).
+  - `VITE_API_BASE_URL=/api` enabled in `.env` / `.env.example`; `RemoteProvider` honors it.
+  - Lesson §6.1: new backend routes under `/api` need no Vite remap.
+
 ## [1.5.0] - 2026-08-01
 
 ### Added
