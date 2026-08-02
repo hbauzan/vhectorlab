@@ -8,11 +8,11 @@ All notable changes to VectorLab 3D will be documented in this file.
 - **Defaults COMPARE|NAVIGATION|RIBBONS + fog off for RIBBONS** (`feat/compare-nav-ribbons-defaults-no-fog`):
   - Sliders: Spacing `1.55`, Dist Y `10`, Amp `7`, Length `0.057`, Thickness `0.05`.
   - Camera: `POS (-575.8, 43.8, 237.9)` / `ROT (-22.4, -35.7, 0)`.
-  - `setFogForRenderMode('RIBBONS')` clears scene fog; POINTS|MESH keep soft FogExp2.
+  - `setFogForRenderMode('RIBBONS')` clears scene fog; POINTS keeps soft FogExp2.
   - Compare+RIBBONS no longer mounts the POINTS cloud (square dots on strips).
 - **RIBBONS dark rectangle through translucent strips** (`fix/remove-ribbons-base-plane`): stop mounting `createBasePlaneForThreads` under wide ribbons (Arithmetic + Compare). Factory helpers retained unused.
 - **Remove floor GridHelper** (`fix/remove-scene-grid`): no reference grid under the 3D scene (cleaner RIBBONS/COMPARE views).
-- **Scene fog too dense for far RIBBONS/MESH** (`fix/soften-scene-fog`): `FogExp2` density `0.008` → `0.0008` so ribbons stay readable at COMPARE-scale camera distance; avoids distance “creeping” darkening. POINTS unaffected (custom shader).
+- **Scene fog too dense for far RIBBONS** (`fix/soften-scene-fog`): `FogExp2` density `0.008` → `0.0008` so ribbons stay readable at COMPARE-scale camera distance; avoids distance “creeping” darkening. POINTS unaffected (custom shader).
 
 ### Changed
 - **Spacing (X) range → `[0.4, 2.0]`** (`feat/spacing-range-center-compare`): same track for all MODE|VIEW|RENDER; COMPARE default `0.7` unchanged. Other combo defaults unchanged (Amp/Thickness ranges untouched).
@@ -48,6 +48,11 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Vite `allowedHosts` + `/api` proxy to `127.0.0.1:8000` (prefix proxy — not per-route).
   - `VITE_API_BASE_URL=/api` enabled in `.env` / `.env.example`; `RemoteProvider` honors it.
   - Lesson §6.1: new backend routes under `/api` need no Vite remap.
+
+## [1.6.0] - 2026-08-02
+
+### Removed
+- **RENDER: MESH** (`chore/remove-render-mesh`): surface heightfield mode retired from navbar and runtime. Supported modes: POINTS | RIBBONS. `normalizeRenderMode` maps legacy `"MESH"` → POINTS. Deleted `createSurfaceMesh` / `updateSurfaceMeshPositions` and `tests/MeshSurface.test.js`.
 
 ## [1.5.0] - 2026-08-01
 

@@ -10,7 +10,7 @@
  *   "ARITHMETIC"
  *   "ARITHMETIC|NAVIGATION"
  *   "ARITHMETIC|NAVIGATION|POINTS"
- *   "COMPARE|ANALYSIS|MESH"
+ *   "COMPARE|ANALYSIS|RIBBONS"
  */
 
 /** @typedef {{ threadSpacing: number, threadVectorDistance: number, threadAmplitudeY: number, threadWidth: number, threadThickness: number }} SpatialSliderValues */

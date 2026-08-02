@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-/** Exponential fog density — soft atmosphere without blacking out far MESH. */
+/** Exponential fog density — soft atmosphere without blacking out far RIBBONS/POINTS frames. */
 export const SCENE_FOG_DENSITY = 0.0008;
 export const SCENE_FOG_COLOR = 0x050505;
 
@@ -19,7 +19,7 @@ export class SceneSetup {
     // 1. Scene setup with dark background #050505
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(SCENE_FOG_COLOR);
-    // Soft FogExp2 for POINTS|MESH; toggled off for RIBBONS via setFogForRenderMode.
+    // Soft FogExp2 for POINTS; toggled off for RIBBONS via setFogForRenderMode.
     this.scene.fog = new THREE.FogExp2(SCENE_FOG_COLOR, SCENE_FOG_DENSITY);
 
     // 2. Camera setup
@@ -53,7 +53,7 @@ export class SceneSetup {
   }
 
   /**
-   * RIBBONS: no fog. POINTS|MESH: soft FogExp2.
+   * RIBBONS: no fog. POINTS: soft FogExp2.
    * @param {string} [renderMode]
    */
   setFogForRenderMode(renderMode = 'POINTS') {

@@ -28,10 +28,10 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Solución Obligatoria**: No montar grid en `SceneSetup` — fondo + fog bastan; el AxisGizmo del dock cubre orientación.
 - **Invariante**: no reintroducir grid de piso sin pedido explícito.
 
-### 1.2b. Fog de escena vs RIBBONS/MESH (no confundir con depthWrite)
-- **Problema**: `FogExp2(0x050505, 0.008)` oscurecía `MeshBasicMaterial` (RIBBONS/MESH, `fog: true` por default) según distancia a cámara — a poses COMPARE (~Z 390) las cintas casi negras y la “sombra trepa” al orbitar. POINTS (shader custom sin fog chunks) no se veían igual.
+### 1.2b. Fog de escena vs RIBBONS (no confundir con depthWrite)
+- **Problema**: `FogExp2(0x050505, 0.008)` oscurecía `MeshBasicMaterial` (RIBBONS, `fog: true` por default) según distancia a cámara — a poses COMPARE (~Z 390) las cintas casi negras y la “sombra trepa” al orbitar. POINTS (shader custom sin fog chunks) no se veían igual.
 - **Solución Obligatoria**: Densidad suave `SCENE_FOG_DENSITY = 0.0008` (`SceneSetup.js`) — atmósfera leve, legible a ~400u (`exp(-d·dist) > 0.5`). **RIBBONS**: fog desactivado (`setFogForRenderMode` / `shouldEnableSceneFog`) para probar saturación total a distancia. No es lighting ni colormap.
-- **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS/MESH, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
+- **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
 - **Seguimiento**: RIBBONS ya no monta `basePlane`. Compare+RIBBONS no monta POINTS (bug: `else if (pointsData.length)` atrapaba RIBBONS). `depthWrite` / opacidad de wide ribbons → si reaparece solapamiento al orbitar.
 
 ### 1.3. Renderizado de Puntos Sólidos y Definidos (Sin Halos Esfumados)
@@ -73,9 +73,9 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 
 ### 2.3. Continuidad de hilo según RENDER mode (mutuamente excluyentes)
 - **POINTS**: puntos + línea fina `createRibbonMesh` (continuidad 1px).
-- **MESH**: la continuidad **es** la superficie de quads (`createSurfaceMesh`); no montar Points.
 - **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`); sin plano base (el quad oscuro se veía a través de cintas transparentes). No usar `LineBasicMaterial.linewidth` (§1.4).
-- Colormap MESH/RIBBONS: rampa **divergente** VectorLab (opción a del roadmap) para consistencia de marca.
+- Colormap RIBBONS: rampa **divergente** VectorLab para consistencia de marca.
+- **Retired**: `RENDER: MESH` (surface heightfield) removed in v1.6.0 — `normalizeRenderMode('MESH')` → POINTS. Do not reintroduce without an explicit product decision.
 
 ### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
 - **Patrón**: Evitar cálculos de interpolación `mix()` en fragmentos con intensidad casi nula.
@@ -175,13 +175,14 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Invariante**: no mezclar políticas Arithmetic↔Compare; labels 3D ≠ paneles laterales (Top-10 / cosine list).
 - **Lección**: acortar labels en un mode no implica el mismo formato en el otro — validar Compare aparte antes de unificar.
 
-### 1.6. MESH surface = grilla threads × dims, no tubo
-- **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
+### 1.6. RENDER: MESH retired (v1.6.0)
+- **Decisión**: surface heightfield (`createSurfaceMesh`) removed from product — no aportaba vs POINTS/RIBBONS y costaba mantener.
+- **Invariante**: navbar + runtime = POINTS | RIBBONS only. Legacy `"MESH"` → POINTS via `normalizeRenderMode`. No reintroduce surface mode without explicit ask.
 
 ### 1.7. RIBBONS = wide mesh strips (nunca Line linewidth; sin base plane)
 - **Problema**: `LineBasicMaterial.linewidth` queda capado a 1px en WebGL (§1.4); no sirve para cintas anchas de referencia. Un `createBasePlane` semitransparente bajo las cintas se veía como rectángulo oscuro a lo lejos (bordes rectos).
-- **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline). Sin Points. Sin montar plano base en Instancer. Distincto de MESH (cintas discretas vs superficie continua).
-- **Invariante**: RIBBONS ≠ MESH ≠ POINTS; no reintroducir base plane bajo ribbons sin opacificar/`depthWrite` conscientes.
+- **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline). Sin Points. Sin montar plano base en Instancer.
+- **Invariante**: RIBBONS ≠ POINTS; no reintroducir base plane bajo ribbons sin opacificar/`depthWrite` conscientes.
 
 ### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
 - **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.
@@ -214,3 +215,33 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **¿Hay que mapear endpoint por endpoint?** **No**, si todo el API vive bajo el mismo prefijo (`/api/health`, `/api/arithmetic`, `/api/compare`, …). Un solo `proxy['/api']` cubre rutas nuevas automáticamente.
 - **Cuándo sí ruta-a-ruta**: solo si exponés paths **fuera** de `/api` (p.ej. `/health` bare sin prefijo) y querés proxearlos — ahí cada path top-level necesita su propia entrada en `server.proxy`, o movés el contrato a `/api/*`.
 - **Invariante**: nuevas rutas backend bajo `/api` → cero cambio en Vite; si alguien agrega un mount root-level, o lo mete bajo `/api` o agrega proxy explícito + lesson.
+
+---
+
+## 7. Product versioning (SemVer) — VectorLab 3D
+
+### 7.1. Diagnosis (why it felt broken)
+- **Too fast (Aug 2026 epic day)**: `1.1.0`→`1.5.0` burned a **MINOR per roadmap etapa** (docks / landscape / touch / MESH / RIBBONS) on the same calendar day. Semantically each etapa *was* a capability, but the Navbar tag looked like five releases without five ship moments.
+- **Too slow (post-`1.5.0`)**: many user-visible changes (defaults, fog, EN copy, slider ranges) sat only under `[Unreleased]` while `manifest` / Navbar stayed `1.5.0`. The tag stopped tracking “what users can do now.”
+
+### 7.2. Policy (what to bump when)
+Sync **`manifest.json` + `package.json` + Navbar `version-tag` + `CHANGELOG` section** together.
+
+| Bump | When |
+| :--- | :--- |
+| **MAJOR (`x.0.0`)** | Breaking backend/API contracts, embedding dim, or data shapes that break clients. |
+| **MINOR (`1.y.0`)** | Add **or remove** a product surface: MODE / VIEW / RENDER mode, major panel capability, or comparable user-facing feature. *This release:* retiring MESH → **1.6.0** (same weight class as when MESH shipped as `1.4.0`). |
+| **PATCH (`1.y.z`)** | Fixes, spatial/camera defaults, fog/copy/i18n polish, docs-only sync that still ships. Prefer PATCH over leaving long Unreleased tails. |
+
+**Cadence rule**: bump **once per shippable delivery** of a notable change — not once per internal etapa on the same day, and not “never until the next epic.” Batch same-day etapas into one MINOR if they ship together.
+
+### 7.3. Build numbers — analysis (do **not** use as product version)
+Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
+
+| Approach | Pros | Cons for this repo |
+| :--- | :--- | :--- |
+| **SemVer build metadata (`1.6.0+gitsha`)** | Traceable artifacts | Not for “is this a new feature?”; Navbar noise; easy to confuse with PATCH |
+| **Four-part `1.6.0.N`** | Monotonic every merge | Not npm/SemVer; invents a fourth digit users don’t understand |
+| **CI build only in debug HUD** | Debug without product inflation | Fine as *optional* `VITE_SHOW_BUILD` — not the public version |
+
+**Decision**: product version stays **three-part SemVer**. History of capability = `CHANGELOG`. Optional CI/git SHA belongs in a debug overlay (like cam pose), **not** in the brand version tag. Build numbers do **not** replace PATCH/MINOR discipline.
