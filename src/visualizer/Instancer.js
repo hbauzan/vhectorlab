@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
-import { arithmeticThreadLabel, compareThreadLabel } from '../ui/threadLabelFormat.js';
+import { arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -277,7 +277,7 @@ export class Instancer {
       if (vec3D.length > 0) {
         threadLabelItems.push({
           id: threadId,
-          text: compareThreadLabel(idx + 1, item.text),
+          text: item.text,
           type: "compare",
           origin3D: vec3D[0]
         });
@@ -449,7 +449,7 @@ export class Instancer {
               origins.push(origin);
               labels.push({
                 id: thread.id,
-                text: compareThreadLabel(toIdx[i] + 1, thread.text),
+                text: thread.text,
                 type: "compare",
                 origin3D: origin,
               });
