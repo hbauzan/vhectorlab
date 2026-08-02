@@ -10,6 +10,7 @@ All notable changes to VectorLab 3D will be documented in this file.
   - Applies to POINTS (shader discard) and RIBBONS / continuity lines (index omission) in ARITHMETIC + COMPARE.
   - Three hex color anchors (+1 / 0 / −1) replace the fixed mid-stop divergent ramp; defaults `#FFE600` / `#000000` / `#9900E6`.
   - POINTS shader uniforms `uColorPos` / `uColorNeg` / `uColorZero`; live update + `localStorage` (`vl3d.viz.*`) + Reset.
+  - Edge collapse tab (dock-tab affordance) slides the Visualization card to a thin strip; persists `vl3d.viz.panelCollapsed`.
 
 ## [Unreleased]
 
