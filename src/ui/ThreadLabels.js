@@ -34,7 +34,7 @@ export class ThreadLabels {
         const isTop1 = item.type === 'top_1' || item.type === 'top1';
         card.className = `thread-label-card ${isRes ? 'res-label' : ''} ${isTop1 ? 'top1-label' : ''}`.trim();
 
-        // Single short label (no type badge) — Arithmetic WORD_* / RES / TOP1; Compare TOPn token
+        // Single short label (no type badge) — Arithmetic WORD_* / RES / TOP1; Compare keeps full token text
         const labelText = document.createElement('span');
         labelText.className = 'thread-label-text';
         labelText.textContent = item.text;

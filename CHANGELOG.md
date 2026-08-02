@@ -5,9 +5,9 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
-- **ThreadLabels cortas** (`feat/short-thread-labels`):
+- **ThreadLabels cortas** (`feat/short-thread-labels` + `fix/compare-labels-full-tokens`):
   - Arithmetic 3D: `WORD_A` / `WORD_B` / `WORD_C` / `RES` / `TOP1` (sin badge de tipo).
-  - Compare 3D: `TOPn` + token (máx. 10 chars); mismo formato en reorder.
+  - Compare 3D: token completo ingresado (sin `TOPn` / sin truncar) — todos los items de la secuencia.
 - **Defaults ARITHMETIC|ANALYSIS|POINTS** (`feat/arithmetic-analysis-points-defaults`):
   - Sliders: Separación `0.4`, Distancia Y `10`, Amplitud Y `40`, Longitud Z `0.2`, Grosor `0.05` (override en `spatialSliderDefaults.js`).
   - Cámara Análisis: `POS (-75.2, -0.8, 62.5)` / `ROT (0, 0, 0)`.
