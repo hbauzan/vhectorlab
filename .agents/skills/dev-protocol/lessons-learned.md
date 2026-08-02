@@ -23,6 +23,11 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
   blending: THREE.NormalBlending
   ```
 
+### 1.2b. Fog de escena vs RIBBONS/MESH (no confundir con depthWrite)
+- **Problema**: `FogExp2(0x050505, 0.008)` oscurecía `MeshBasicMaterial` (RIBBONS/MESH, `fog: true` por default) según distancia a cámara — a poses COMPARE (~Z 390) las cintas casi negras y la “sombra trepa” al orbitar. POINTS (shader custom sin fog chunks) no se veían igual.
+- **Solución Obligatoria**: Densidad suave `SCENE_FOG_DENSITY = 0.0008` (`SceneSetup.js`) — atmósfera leve, legible a ~400u (`exp(-d·dist) > 0.5`). No es lighting ni colormap.
+- **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS/MESH, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
+- **Seguimiento**: transparencia / `depthWrite` en wide ribbons → PR dedicado (no mezclar con fog).
 ### 1.3. Renderizado de Puntos Sólidos y Definidos (Sin Halos Esfumados)
 - **Problema**: Un gradiente suave amplio de `smoothstep(0.0, 0.5, dist)` genera puntos borrosos, translúcidos y "esfumados".
 - **Solución Obligatoria**: Renderizar discos sólidos con un borde de anti-aliasing ultra-definido de 1 píxel:
