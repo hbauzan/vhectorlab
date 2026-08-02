@@ -821,3 +821,227 @@ canvas {
   white-space: nowrap;
 }
 
+/* =============================================================================
+   Landscape Gate (soft portrait overlay — Etapa B / D13)
+   ============================================================================= */
+.landscape-gate {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(5, 5, 5, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.landscape-gate-card {
+  max-width: 320px;
+  width: 100%;
+  padding: 24px 20px;
+  border-radius: 14px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.landscape-gate-icon {
+  font-size: 2.4rem;
+  color: var(--accent-cyan);
+  line-height: 1;
+}
+
+.landscape-gate-card h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.landscape-gate-copy {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.landscape-gate-dismiss {
+  min-height: 44px;
+  min-width: 140px;
+  margin-top: 4px;
+}
+
+/* =============================================================================
+   Phone layout ≤768px (tablet = desktop — D5)
+   ============================================================================= */
+@media (max-width: 768px) {
+  body, html {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  .glass-navbar {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+    align-items: flex-start;
+  }
+
+  .navbar-brand .version-tag,
+  .navbar-brand .logo-icon {
+    display: none;
+  }
+
+  .title-group h1 {
+    font-size: 0.95rem;
+  }
+
+  .navbar-center-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .view-mode-tabs,
+  .render-mode-tabs,
+  .workspace-mode-tabs {
+    gap: 4px;
+    padding: 2px;
+  }
+
+  .tab-label {
+    display: none;
+  }
+
+  .mode-tab,
+  .view-tab,
+  .workspace-tab {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 10px;
+    font-size: 0.72rem;
+  }
+
+  .status-indicator {
+    margin-left: auto;
+  }
+
+  .status-text {
+    font-size: 0.65rem;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Docks as overlay drawers — do not push canvas layout */
+  .collapsible-dock {
+    top: 96px;
+    z-index: 80;
+  }
+
+  .dock-left {
+    left: max(8px, env(safe-area-inset-left));
+  }
+
+  .dock-right {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(64px, env(safe-area-inset-bottom));
+  }
+
+  .collapsible-dock:not(.is-collapsed) .dock-body {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.65);
+  }
+
+  .dock-tab {
+    min-height: 44px;
+    min-width: 44px;
+    width: 44px;
+    flex-basis: 44px;
+  }
+
+  .collapsible-dock {
+    --dock-tab-size: 44px;
+  }
+
+  .glass-sidebar {
+    width: min(300px, calc(100vw - 64px));
+    max-height: calc(100dvh - 140px);
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .sidebar-header h2 {
+    font-size: 0.9rem;
+  }
+
+  .sidebar-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .input-group input,
+  .input-group select,
+  .input-group textarea {
+    font-size: 16px; /* iOS zoom guard */
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  #compare-panel textarea {
+    min-height: 72px;
+    max-height: 96px;
+  }
+
+  .btn-primary,
+  .btn-preset,
+  .btn-sort-cosine,
+  .btn-reorder {
+    min-height: 44px;
+  }
+
+  .btn-preset {
+    font-size: 0.72rem;
+    padding: 8px 6px;
+  }
+
+  #thread-sliders-container {
+    width: min(260px, calc(100vw - 64px));
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .slider-group input[type="range"] {
+    min-height: 44px;
+  }
+
+  .glass-hud {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    height: auto;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  #axis-gizmo-container {
+    width: 72px;
+    height: 72px;
+  }
+
+  #compare-panel .compare-cosine-list {
+    max-height: min(180px, 32dvh);
+  }
+}
+
