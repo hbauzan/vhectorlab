@@ -2,6 +2,14 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.3.0] - 2026-08-01
+
+### Added
+- **Mobile touch navigation (Etapa C)**:
+  - Virtual joystick (move) + canvas finger-drag look + ▲/▼ (Q/E) via `TouchControls` → `Navigation.setMoveAxes` / `applyLookDelta` / `setVertical`.
+  - UI touches on docks/HUD/navbar do not steal look; desktop WASDQE path unchanged (`lerp` §3.1).
+  - Vitest: `tests/TouchControls.test.js`.
+
 ## [1.2.0] - 2026-08-01
 
 ### Added
