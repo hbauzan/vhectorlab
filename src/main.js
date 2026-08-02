@@ -70,7 +70,8 @@ class VectorLabApp {
 
     this.comparePanel = new ComparePanel(
       this.appContainer,
-      async (tokens) => this.handleCalculateCompare(tokens)
+      async (tokens) => this.handleCalculateCompare(tokens),
+      async (payload) => this.handleCompareReorder(payload)
     );
 
     // 5. Spatial Control Sliders 3D Setup
@@ -116,6 +117,7 @@ class VectorLabApp {
         // Run initial default comparison sequence
         this.handleCalculateCompare(["king", "queen", "man", "woman", "prince", "princess"]);
       } else {
+        this.comparePanel.updateCompareResults(state.compareData);
         this.refreshRender();
       }
     } else {
@@ -206,9 +208,38 @@ class VectorLabApp {
         this.viewMode
       );
       this.threadLabels.setLabels(labels);
-      this.comparePanel.updateMetrics(data.count);
+      this.comparePanel.updateCompareResults(data);
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
+    }
+  }
+
+  /**
+   * In-memory COMPARE reorder: refresh list scores already done by panel;
+   * animate 3D thread slots to the new sequence order (no backend re-call).
+   */
+  async handleCompareReorder(payload) {
+    if (!payload || !payload.items) return;
+
+    state.setCompareData({
+      ...(state.compareData || {}),
+      count: payload.count,
+      anchor: payload.anchor,
+      items: payload.items,
+    });
+
+    const orderedIds = payload.items.map((item) => item.id);
+    try {
+      const labels = await this.instancer.animateCompareReorder(orderedIds, {
+        duration: 320,
+        onFrame: (frameLabels) => this.threadLabels.updateOrigins(frameLabels),
+      });
+      if (labels && labels.length) {
+        this.threadLabels.updateOrigins(labels);
+      }
+    } catch (_) {
+      // Fallback: hard re-layout without flicker-prone double clear if tween busy/unavailable
+      this.refreshRender();
     }
   }
 

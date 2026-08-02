@@ -167,10 +167,117 @@ canvas {
   padding: 10px 14px;
   font-size: 0.85rem;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .compare-metrics-box strong {
   color: var(--accent-gold);
+}
+
+/* COMPARE: cosine-vs-anchor list — scroll only inside the list (§4.1 panel invariant) */
+#compare-panel .compare-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  gap: 6px;
+}
+
+#compare-panel .compare-cosine-subtitle {
+  flex-shrink: 0;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+#compare-panel .compare-cosine-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: min(280px, calc(100vh - 420px));
+  padding-right: 2px;
+  flex: 1 1 auto;
+}
+
+.compare-cosine-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: default;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  /* Row itself is non-interactive (no camera focus); only ▲/▼ buttons receive events */
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.compare-cosine-item .rank {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  min-width: 22px;
+}
+
+.compare-cosine-item .word {
+  font-weight: 600;
+  color: var(--accent-gold);
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compare-cosine-item .badge-ref {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #050505;
+  background: var(--accent-cyan);
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
+.compare-cosine-item .score {
+  font-family: monospace;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.compare-cosine-item .reorder-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.compare-cosine-item .btn-reorder {
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-muted);
+  font-size: 0.55rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.compare-cosine-item .btn-reorder:hover:not(:disabled) {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.compare-cosine-item .btn-reorder:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .status-indicator {
