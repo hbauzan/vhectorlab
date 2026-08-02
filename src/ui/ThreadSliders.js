@@ -1,4 +1,9 @@
 import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
+import {
+  GLOBAL_SPATIAL_DEFAULTS,
+  resolveSpatialDefaults,
+  SPATIAL_SLIDER_BINDINGS,
+} from './spatialSliderDefaults.js';
 
 /**
  * Returns HTML markup for the spatial sliders control panel.
@@ -7,11 +12,11 @@ import { updateAllThreadPositions } from '../visualizer/LayoutEngine.js';
  * @returns {string} HTML string
  */
 export function threadSlidersMarkup(config = {}) {
-  const spacing = config.threadSpacing ?? 0.4;
-  const vectorDist = config.threadVectorDistance ?? config.threadSpacingY ?? 10.0;
-  const amplitudeY = config.threadAmplitudeY ?? 7.0;
-  const width = config.threadWidth ?? 0.2;
-  const thickness = config.threadThickness ?? 0.10;
+  const spacing = config.threadSpacing ?? GLOBAL_SPATIAL_DEFAULTS.threadSpacing;
+  const vectorDist = config.threadVectorDistance ?? config.threadSpacingY ?? GLOBAL_SPATIAL_DEFAULTS.threadVectorDistance;
+  const amplitudeY = config.threadAmplitudeY ?? GLOBAL_SPATIAL_DEFAULTS.threadAmplitudeY;
+  const width = config.threadWidth ?? GLOBAL_SPATIAL_DEFAULTS.threadWidth;
+  const thickness = config.threadThickness ?? GLOBAL_SPATIAL_DEFAULTS.threadThickness;
 
   return `
 <div id="thread-sliders-container" class="section-card">
@@ -23,7 +28,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-spacing-slider">Separación (X):</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}">
+    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}" title="Doble clic: restaurar default">
   </div>
 
   <!-- Slider 2: Vector Distance Y -->
@@ -32,7 +37,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-vector-dist-slider">Distancia Vectores (Y):</label>
       <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}">
+    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}" title="Doble clic: restaurar default">
   </div>
 
   <!-- Slider 3: Amplitude Y -->
@@ -41,7 +46,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="13.0" step="0.1" value="${amplitudeY}">
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="13.0" step="0.1" value="${amplitudeY}" title="Doble clic: restaurar default">
   </div>
 
   <!-- Slider 4: Width Z -->
@@ -50,7 +55,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-width-slider">Longitud (Z):</label>
       <span id="thread-width-val" class="slider-val">${width.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}">
+    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}" title="Doble clic: restaurar default">
   </div>
 
   <!-- Slider 5: Thickness -->
@@ -59,7 +64,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-thickness-slider">Grosor Puntos:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.01" value="${thickness}">
+    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.01" value="${thickness}" title="Doble clic: restaurar default">
   </div>
 </div>
 `;
@@ -68,29 +73,21 @@ export function threadSlidersMarkup(config = {}) {
 
 /**
  * Binds real-time event listeners to sliders for immediate 60fps spatial updates.
+ * Double-click on a range input restores that slider's default for the current
+ * MODE/VISTA/RENDER context (via resolveSpatialDefaults).
  *
  * @param {HTMLElement} container - DOM container containing slider elements
  * @param {Array<Object>|null} threads - Synthetic threads array (optional)
  * @param {Object} config - Config object mutated on input
  * @param {Function} [onChangeCallback] - Optional callback triggered on slider input
+ * @param {{ getContext?: () => { workspaceMode?: string, viewMode?: string, renderMode?: string } }} [options]
  */
-export function wireThreadSliders(container, threads, config, onChangeCallback = null) {
+export function wireThreadSliders(container, threads, config, onChangeCallback = null, options = {}) {
   if (!container) return;
 
-  const spacingInput = container.querySelector('#thread-spacing-slider');
-  const spacingVal = container.querySelector('#thread-spacing-val');
-
-  const vectorDistInput = container.querySelector('#thread-vector-dist-slider');
-  const vectorDistVal = container.querySelector('#thread-vector-dist-val');
-
-  const ampYInput = container.querySelector('#thread-amplitude-y-slider');
-  const ampYVal = container.querySelector('#thread-amplitude-y-val');
-
-  const widthInput = container.querySelector('#thread-width-slider');
-  const widthVal = container.querySelector('#thread-width-val');
-
-  const thicknessInput = container.querySelector('#thread-thickness-slider');
-  const thicknessVal = container.querySelector('#thread-thickness-val');
+  const getContext = typeof options.getContext === 'function'
+    ? options.getContext
+    : () => ({});
 
   const triggerChange = () => {
     if (threads && threads.length) {
@@ -101,48 +98,32 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
     }
   };
 
-  if (spacingInput) {
-    spacingInput.addEventListener('input', (e) => {
+  for (const binding of SPATIAL_SLIDER_BINDINGS) {
+    const input = container.querySelector(`#${binding.inputId}`);
+    const labelEl = container.querySelector(`#${binding.labelId}`);
+    if (!input) continue;
+
+    input.addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
-      config.threadSpacing = val;
-      if (spacingVal) spacingVal.textContent = val.toFixed(2);
+      config[binding.configKey] = val;
+      if (binding.aliasKeys) {
+        for (const alias of binding.aliasKeys) config[alias] = val;
+      }
+      if (labelEl) labelEl.textContent = val.toFixed(binding.decimals);
       triggerChange();
     });
-  }
 
-  if (vectorDistInput) {
-    vectorDistInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      config.threadVectorDistance = val;
-      config.threadSpacingY = val;
-      if (vectorDistVal) vectorDistVal.textContent = val.toFixed(1);
-      triggerChange();
-    });
-  }
-
-  if (ampYInput) {
-    ampYInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      config.threadAmplitudeY = val;
-      if (ampYVal) ampYVal.textContent = val.toFixed(1);
-      triggerChange();
-    });
-  }
-
-  if (widthInput) {
-    widthInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      config.threadWidth = val;
-      if (widthVal) widthVal.textContent = val.toFixed(2);
-      triggerChange();
-    });
-  }
-
-  if (thicknessInput) {
-    thicknessInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      config.threadThickness = val;
-      if (thicknessVal) thicknessVal.textContent = val.toFixed(2);
+    input.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      const defaults = resolveSpatialDefaults(getContext());
+      const val = defaults[binding.configKey];
+      if (val === undefined || Number.isNaN(val)) return;
+      input.value = String(val);
+      config[binding.configKey] = val;
+      if (binding.aliasKeys) {
+        for (const alias of binding.aliasKeys) config[alias] = val;
+      }
+      if (labelEl) labelEl.textContent = val.toFixed(binding.decimals);
       triggerChange();
     });
   }
