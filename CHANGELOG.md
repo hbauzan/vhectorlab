@@ -5,6 +5,8 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Control Espacial 3D — finer steps** (`feat/finer-spatial-slider-steps`):
+  - Gradual intermediate values: Separación step `0.05` (2 dec), Distancia/Amplitud Y step `0.1` (1 dec), Longitud/Grosor step `0.01` (2 dec). Min/max/mid unchanged.
 - **Control Espacial 3D — ranges re-centrados** (`feat/recenter-spatial-slider-ranges`):
   - Defaults (punto dulce) son el mid lineal de cada slider: Separación X `0.4` ∈ `[0.1, 0.7]`, Distancia Y `10` ∈ `[1, 19]`, Amplitud Y `7` ∈ `[1, 13]`, Longitud Z `0.2` ∈ `[0.1, 0.3]`, Grosor `0.10` ∈ `[0.05, 0.15]`.
   - Corrige Distancia Y y Grosor pegados al mínimo al load.
