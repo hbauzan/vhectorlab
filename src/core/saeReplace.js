@@ -86,6 +86,7 @@ export function cloneCompareRaw(data) {
 
 /**
  * Apply SAE activations to compare item embeddings; recompute cosine_vs_first.
+ * Preserves groupId / groupLabel (and any other item meta) from rawData.
  * @param {object} rawData
  * @param {number[][]} activations
  * @returns {object}
@@ -105,6 +106,9 @@ export function applySaeToCompare(rawData, activations) {
     ...item,
     embedding: activations[i],
     cosine_vs_first: i === 0 ? 1 : cosineSimilarity(activations[i], anchor),
+    // Explicit keep — do not let callers overwrite with stale/wrong keys
+    groupId: item.groupId,
+    groupLabel: item.groupLabel,
   }));
   next.featureSpace = 'SAE';
   return next;

@@ -145,6 +145,25 @@ export class RemoteProvider {
   }
 
   /**
+   * @param {RequestInit} [init]
+   * @param {number} [timeoutMs]
+   */
+  async _fetchWithTimeout(url, init = {}, timeoutMs = 60000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (e) {
+      if (e?.name === 'AbortError') {
+        throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /**
    * Train ephemeral SAE on the current workspace scope vectors.
    * @param {{
    *   embeddings: number[][],
@@ -152,6 +171,7 @@ export class RemoteProvider {
    *   k?: number,
    *   epochs?: number,
    *   lr?: number,
+   *   batchSize?: number,
    *   batch_size?: number,
    *   auto_scale?: boolean,
    * }} params
@@ -166,14 +186,19 @@ export class RemoteProvider {
       k: params.k ?? 32,
       epochs: params.epochs ?? 50,
       lr: params.lr ?? 1e-3,
-      batch_size: params.batch_size ?? 64,
+      batch_size: params.batch_size ?? params.batchSize ?? 64,
       auto_scale: params.auto_scale !== false,
     };
-    const res = await fetch(apiUrl(this.baseUrl, '/sae/train'), {
-      method: 'POST',
-      headers: this._headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(body),
-    });
+    // Large scope JSON can take a bit to upload/parse; 90s cap unsticks the UI.
+    const res = await this._fetchWithTimeout(
+      apiUrl(this.baseUrl, '/sae/train'),
+      {
+        method: 'POST',
+        headers: this._headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body),
+      },
+      90000
+    );
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
       const detail = errorJson.detail;
@@ -184,10 +209,14 @@ export class RemoteProvider {
 
   /** Invalidate ephemeral session SAE (scope changed). */
   async saeClear() {
-    const res = await fetch(apiUrl(this.baseUrl, '/sae/clear'), {
-      method: 'POST',
-      headers: this._headers(),
-    });
+    const res = await this._fetchWithTimeout(
+      apiUrl(this.baseUrl, '/sae/clear'),
+      {
+        method: 'POST',
+        headers: this._headers(),
+      },
+      30000
+    );
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
       const detail = errorJson.detail;
@@ -199,23 +228,17 @@ export class RemoteProvider {
   /**
    * Encode via Top-K sparse wire format; densify locally for compare/3D.
    * @param {number[][]} embeddings
-   * @returns {Promise<{
-   *   activations: number[][],
-   *   dimension: number,
-   *   k?: number,
-   *   count: number,
-   *   format?: string,
-   *   batch_metrics?: object,
-   *   indices?: number[][],
-   *   values?: number[][],
-   * }>}
    */
   async saeEncode(embeddings) {
-    const res = await fetch(apiUrl(this.baseUrl, '/sae/encode'), {
-      method: 'POST',
-      headers: this._headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ embeddings }),
-    });
+    const res = await this._fetchWithTimeout(
+      apiUrl(this.baseUrl, '/sae/encode'),
+      {
+        method: 'POST',
+        headers: this._headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ embeddings }),
+      },
+      90000
+    );
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
       const detail = errorJson.detail;

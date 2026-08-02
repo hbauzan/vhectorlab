@@ -5,6 +5,7 @@ import {
   attachCompareGroupMeta,
   buildGroupLabels,
   mergeCompareOverlayLabels,
+  enrichLabelsWithGroupMeta,
   splitCompareTokens,
   stripOuterQuotes,
 } from '../src/ui/parseCompareGroups.js';
@@ -97,5 +98,62 @@ describe('attachCompareGroupMeta + buildGroupLabels', () => {
     ];
     expect(mergeCompareOverlayLabels(tokenLabels)).toHaveLength(1);
     expect(mergeCompareOverlayLabels(tokenLabels)[0].type).toBe('compare');
+  });
+
+  it('enrichLabelsWithGroupMeta recovers ids from compare items', () => {
+    const labels = [
+      { id: 'tok_0', text: 'car', type: 'compare', origin3D: new THREE.Vector3(0, 1, 0) },
+      { id: 'tok_1', text: 'grace', type: 'compare', origin3D: new THREE.Vector3(0, -1, 0) },
+    ];
+    const items = [
+      { id: 'tok_0', groupId: 'GROUP_1', groupLabel: 'GROUP_1' },
+      { id: 'tok_1', groupId: 'GROUP_2', groupLabel: 'GROUP_2' },
+    ];
+    const enriched = enrichLabelsWithGroupMeta(labels, items);
+    const merged = mergeCompareOverlayLabels(enriched);
+    expect(merged).toHaveLength(2);
+    expect(merged.map((l) => l.text)).toEqual(['GROUP_1', 'GROUP_2']);
+  });
+
+  it('attachCompareGroupMeta exposes groups summary', () => {
+    const meta = [
+      { groupId: 'GROUP_1', groupLabel: 'GROUP_1' },
+      { groupId: 'GROUP_1', groupLabel: 'GROUP_1' },
+      { groupId: 'GROUP_2', groupLabel: 'GROUP_2' },
+    ];
+    const data = attachCompareGroupMeta({
+      count: 3,
+      items: [
+        { id: 'tok_0', text: 'a' },
+        { id: 'tok_1', text: 'b' },
+        { id: 'tok_2', text: 'c' },
+      ],
+    }, meta);
+    expect(data.groups).toEqual([
+      { id: 'GROUP_1', label: 'GROUP_1', count: 2 },
+      { id: 'GROUP_2', label: 'GROUP_2', count: 1 },
+    ]);
+  });
+});
+
+describe('applySaeToCompare preserves group meta', () => {
+  it('keeps groupId/groupLabel on every item', async () => {
+    const { applySaeToCompare } = await import('../src/core/saeReplace.js');
+    const raw = {
+      count: 2,
+      items: [
+        { id: 'tok_0', text: 'a', embedding: [1, 0], groupId: 'GROUP_1', groupLabel: 'GROUP_1' },
+        { id: 'tok_1', text: 'b', embedding: [0, 1], groupId: 'GROUP_2', groupLabel: 'GROUP_2' },
+      ],
+    };
+    const next = applySaeToCompare(raw, [
+      [1, 0, 0],
+      [0, 1, 0],
+    ]);
+    expect(next.items[0].groupId).toBe('GROUP_1');
+    expect(next.items[0].groupLabel).toBe('GROUP_1');
+    expect(next.items[1].groupId).toBe('GROUP_2');
+    expect(next.items[1].groupLabel).toBe('GROUP_2');
+    expect(next.featureSpace).toBe('SAE');
   });
 });

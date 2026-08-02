@@ -1,5 +1,5 @@
 /**
- * SAE Clean/Denoise controls — defaults + localStorage (`vl3d.sae.*`).
+ * SAE Clean/Denoise controls — defaults + localStorage (`vl3d.sae.v2.*`).
  */
 
 /** @typedef {{
@@ -11,7 +11,8 @@
  *   batchSize: number,
  * }} SaeUiSettings */
 
-export const SAE_STORAGE_PREFIX = 'vl3d.sae.';
+/** v2 prefix — ignores poisoned v1 keys (e.g. hidden=32 / k=1 / epochs=1 leftovers). */
+export const SAE_STORAGE_PREFIX = 'vl3d.sae.v2.';
 
 export const SAE_STORAGE_KEYS = Object.freeze({
   enabled: `${SAE_STORAGE_PREFIX}enabled`,
@@ -22,7 +23,7 @@ export const SAE_STORAGE_KEYS = Object.freeze({
   batchSize: `${SAE_STORAGE_PREFIX}batchSize`,
 });
 
-/** @type {SaeUiSettings} */
+/** Product defaults: auto-scale still shrinks for small N (≈672D·k32·20ep for n=136). */
 export const DEFAULT_SAE_SETTINGS = Object.freeze({
   enabled: false,
   hiddenDim: 8192,
@@ -31,6 +32,27 @@ export const DEFAULT_SAE_SETTINGS = Object.freeze({
   lr: 1e-3,
   batchSize: 64,
 });
+
+/**
+ * Drop legacy `vl3d.sae.*` (pre-v2) keys so Train never inherits crippled hypers.
+ * @param {Storage} storage
+ */
+export function purgeLegacySaeStorage(storage) {
+  if (!storage) return;
+  try {
+    const toRemove = [];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (!key) continue;
+      if (key.startsWith('vl3d.sae.') && !key.startsWith(SAE_STORAGE_PREFIX)) {
+        toRemove.push(key);
+      }
+    }
+    for (const key of toRemove) storage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
 
 /**
  * @param {unknown} value
@@ -88,6 +110,7 @@ export function resolveSaeSettings(partial = null) {
 export function loadSaeSettings(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
   if (!storage) return { ...DEFAULT_SAE_SETTINGS };
   try {
+    purgeLegacySaeStorage(storage);
     return resolveSaeSettings({
       enabled: storage.getItem(SAE_STORAGE_KEYS.enabled),
       hiddenDim: storage.getItem(SAE_STORAGE_KEYS.hiddenDim),
@@ -109,18 +132,13 @@ export function saveSaeSettings(settings, storage = typeof localStorage !== 'und
   if (!storage) return;
   const resolved = resolveSaeSettings(settings);
   try {
+    purgeLegacySaeStorage(storage);
     storage.setItem(SAE_STORAGE_KEYS.enabled, String(resolved.enabled));
     storage.setItem(SAE_STORAGE_KEYS.hiddenDim, String(resolved.hiddenDim));
     storage.setItem(SAE_STORAGE_KEYS.k, String(resolved.k));
     storage.setItem(SAE_STORAGE_KEYS.epochs, String(resolved.epochs));
     storage.setItem(SAE_STORAGE_KEYS.lr, String(resolved.lr));
     storage.setItem(SAE_STORAGE_KEYS.batchSize, String(resolved.batchSize));
-    // Drop legacy vocab-subset key if present
-    try {
-      storage.removeItem(`${SAE_STORAGE_PREFIX}maxVectors`);
-    } catch {
-      /* ignore */
-    }
   } catch {
     // Quota / private mode
   }

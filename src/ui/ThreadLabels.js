@@ -97,10 +97,19 @@ export class ThreadLabels {
 
   /**
    * Update 3D origins in-place (keeps DOM cards) — used during compare reorder tweens.
+   * If the overlay set changes (e.g. tokens → group badges), rebuild cards.
    * @param {Array<{ id: string, origin3D: THREE.Vector3, text?: string }>} labelItems
    */
   updateOrigins(labelItems) {
-    if (!labelItems || !this.labels.length) return;
+    if (!labelItems) return;
+    const sameShape =
+      labelItems.length === this.labels.length
+      && labelItems.every((item, i) => item.id === this.labels[i]?.id);
+    if (!sameShape) {
+      this.setLabels(labelItems);
+      return;
+    }
+    if (!this.labels.length) return;
     const byId = new Map(labelItems.map((item) => [item.id, item]));
     this.labels.forEach((label) => {
       const next = byId.get(label.id);
