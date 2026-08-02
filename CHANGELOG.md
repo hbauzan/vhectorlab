@@ -5,6 +5,8 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Control Espacial 3D — dblclick reset** (`feat/spatial-slider-dblclick-reset`):
+  - Doble clic en un slider restaura solo ese valor al default del contexto MODE/VISTA/RENDER (hoy = global mid; overrides listos en `spatialSliderDefaults.js`).
 - **Control Espacial 3D — finer steps** (`feat/finer-spatial-slider-steps`):
   - Gradual intermediate values: Separación step `0.05` (2 dec), Distancia/Amplitud Y step `0.1` (1 dec), Longitud/Grosor step `0.01` (2 dec). Min/max/mid unchanged.
 - **Control Espacial 3D — ranges re-centrados** (`feat/recenter-spatial-slider-ranges`):
