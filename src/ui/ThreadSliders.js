@@ -28,7 +28,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-spacing-slider">Spacing (X):</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.05" value="${spacing}" title="Double-click: restore default">
+    <input type="range" id="thread-spacing-slider" min="0.4" max="2.0" step="0.05" value="${spacing}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 2: Vector Distance Y -->
@@ -53,9 +53,9 @@ export function threadSlidersMarkup(config = {}) {
   <div class="slider-group">
     <div class="slider-header">
       <label for="thread-width-slider">Length (Z):</label>
-      <span id="thread-width-val" class="slider-val">${width.toFixed(2)}</span>
+      <span id="thread-width-val" class="slider-val">${width.toFixed(3)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.01" value="${width}" title="Double-click: restore default">
+    <input type="range" id="thread-width-slider" min="0.001" max="0.2" step="0.001" value="${width}" title="Double-click: restore default">
   </div>
 
   <!-- Slider 5: Thickness -->

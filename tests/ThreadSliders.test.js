@@ -26,14 +26,15 @@ function parseRangeInput(html, id) {
 }
 
 /**
- * Defaults + ranges. Most stay linearly centered (defaultMid === (min+max)/2).
- * Amplitude Y keeps default 7 (no scene regression) with max 40 → asymmetric by design.
+ * Defaults + ranges. Shared min/max for every MODE|VIEW|RENDER.
+ * Spacing [0.4, 2.0] step 0.05 — COMPARE default 0.7 stays; global 0.4 at min.
+ * Length [0.001, 0.2] step 0.001 — never 0; COMPARE 0.1 ≈ mid; global 0.2 at max.
  */
 const SPATIAL_SLIDER_SPECS = [
-  { id: 'thread-spacing-slider', defaultMid: 0.4, min: 0.1, max: 0.7, step: 0.05, centered: true },
+  { id: 'thread-spacing-slider', defaultMid: 0.4, min: 0.4, max: 2.0, step: 0.05, centered: false },
   { id: 'thread-vector-dist-slider', defaultMid: 10.0, min: 1.0, max: 19.0, step: 0.1, centered: true },
   { id: 'thread-amplitude-y-slider', defaultMid: 7.0, min: 1.0, max: 40.0, step: 0.1, centered: false },
-  { id: 'thread-width-slider', defaultMid: 0.2, min: 0.1, max: 0.3, step: 0.01, centered: true },
+  { id: 'thread-width-slider', defaultMid: 0.2, min: 0.001, max: 0.2, step: 0.001, centered: false },
   { id: 'thread-thickness-slider', defaultMid: 0.05, min: 0.01, max: 0.09, step: 0.01, centered: true },
 ];
 
@@ -66,17 +67,51 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
       expect(input.step).toBeCloseTo(spec.step, 5);
       expect(input.value).toBeCloseTo(spec.defaultMid, 5);
 
-      // Default must land on a step tick and allow travel both ways.
+      // Default must land on a step tick and stay in range.
       const ticksFromMin = (spec.defaultMid - input.min) / input.step;
       expect(ticksFromMin).toBeCloseTo(Math.round(ticksFromMin), 5);
-      expect(input.value).toBeGreaterThan(input.min);
-      expect(input.value).toBeLessThan(input.max);
+      expect(input.value).toBeGreaterThanOrEqual(input.min);
+      expect(input.value).toBeLessThanOrEqual(input.max);
 
       if (spec.centered) {
         const mid = (input.min + input.max) / 2;
         expect(mid).toBeCloseTo(spec.defaultMid, 5);
+        expect(input.value).toBeGreaterThan(input.min);
+        expect(input.value).toBeLessThan(input.max);
       }
     }
+  });
+
+  it('places COMPARE|NAVIGATION|POINTS Spacing 0.7 within [0.4, 2.0]', () => {
+    const html = threadSlidersMarkup({
+      threadSpacing: 0.7,
+      threadVectorDistance: 10.0,
+      threadAmplitudeY: 4.9,
+      threadWidth: 0.1,
+      threadThickness: 0.01,
+    });
+    const input = parseRangeInput(html, 'thread-spacing-slider');
+    expect(input.min).toBeCloseTo(0.4, 5);
+    expect(input.max).toBeCloseTo(2.0, 5);
+    expect(input.value).toBeCloseTo(0.7, 5);
+  });
+
+  it('Length (Z) never reaches 0; COMPARE 0.1 sits near mid of [0.001, 0.2]', () => {
+    const html = threadSlidersMarkup({
+      threadSpacing: 0.7,
+      threadVectorDistance: 10.0,
+      threadAmplitudeY: 4.9,
+      threadWidth: 0.1,
+      threadThickness: 0.01,
+    });
+    const input = parseRangeInput(html, 'thread-width-slider');
+    expect(input.min).toBeCloseTo(0.001, 5);
+    expect(input.min).toBeGreaterThan(0);
+    expect(input.max).toBeCloseTo(0.2, 5);
+    expect(input.step).toBeCloseTo(0.001, 5);
+    expect(input.value).toBeCloseTo(0.1, 5);
+    const mid = (input.min + input.max) / 2;
+    expect(Math.abs(input.value - mid)).toBeLessThan(0.002);
   });
 
   it('keeps explicit config values as the input value (still within range)', () => {
@@ -104,7 +139,7 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
     expect(labelFor('thread-spacing-val')).toBe('0.40');
     expect(labelFor('thread-vector-dist-val')).toBe('10.0');
     expect(labelFor('thread-amplitude-y-val')).toBe('7.0');
-    expect(labelFor('thread-width-val')).toBe('0.20');
+    expect(labelFor('thread-width-val')).toBe('0.200');
     expect(labelFor('thread-thickness-val')).toBe('0.05');
   });
 });
@@ -144,7 +179,7 @@ describe('wireThreadSliders — dblclick reset', () => {
       threadVectorDistance: 14.0,
       threadSpacingY: 14.0,
       threadAmplitudeY: 11.0,
-      threadWidth: 0.28,
+      threadWidth: 0.15,
       threadThickness: 0.08,
     };
 
@@ -164,7 +199,7 @@ describe('wireThreadSliders — dblclick reset', () => {
     expect(ampLabel.textContent).toBe('7.0');
     expect(config.threadSpacing).toBe(0.55);
     expect(config.threadVectorDistance).toBe(14.0);
-    expect(config.threadWidth).toBe(0.28);
+    expect(config.threadWidth).toBe(0.15);
     expect(config.threadThickness).toBe(0.08);
     expect(changeCount).toBe(1);
   });
