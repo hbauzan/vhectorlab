@@ -30,9 +30,9 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 
 ### 1.2b. Fog de escena vs RIBBONS/MESH (no confundir con depthWrite)
 - **Problema**: `FogExp2(0x050505, 0.008)` oscurecía `MeshBasicMaterial` (RIBBONS/MESH, `fog: true` por default) según distancia a cámara — a poses COMPARE (~Z 390) las cintas casi negras y la “sombra trepa” al orbitar. POINTS (shader custom sin fog chunks) no se veían igual.
-- **Solución Obligatoria**: Densidad suave `SCENE_FOG_DENSITY = 0.0008` (`SceneSetup.js`) — atmósfera leve, legible a ~400u (`exp(-d·dist) > 0.5`). No es lighting ni colormap.
+- **Solución Obligatoria**: Densidad suave `SCENE_FOG_DENSITY = 0.0008` (`SceneSetup.js`) — atmósfera leve, legible a ~400u (`exp(-d·dist) > 0.5`). **RIBBONS**: fog desactivado (`setFogForRenderMode` / `shouldEnableSceneFog`) para probar saturación total a distancia. No es lighting ni colormap.
 - **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS/MESH, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
-- **Seguimiento**: RIBBONS ya no monta `basePlane` (rectángulo oscuro a través de cintas transparentes). `depthWrite` / opacidad de wide ribbons → si reaparece solapamiento al orbitar.
+- **Seguimiento**: RIBBONS ya no monta `basePlane`. Compare+RIBBONS no monta POINTS (bug: `else if (pointsData.length)` atrapaba RIBBONS). `depthWrite` / opacidad de wide ribbons → si reaparece solapamiento al orbitar.
 
 ### 1.3. Renderizado de Puntos Sólidos y Definidos (Sin Halos Esfumados)
 - **Problema**: Un gradiente suave amplio de `smoothstep(0.0, 0.5, dist)` genera puntos borrosos, translúcidos y "esfumados".
@@ -126,6 +126,7 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Overrides capturados**:
   - `ARITHMETIC|ANALYSIS|POINTS` — sliders Amplitud $Y=40$, Grosor $0.05$; cámara vía fallback ANALYSIS.
   - `COMPARE|NAVIGATION|POINTS` — sliders Spacing `0.7`, Dist Y `10`, Amp `4.9`, Length `0.1`, Thickness `0.01`; cámara `POS (-106.5, 20.4, 390.2)` / `ROT (-3.9°, -8.4°, 0°)`; primer load COMPARE usa `COMPARE_AUTO_PRESETS.default` (lexicón completo), no `sample5`.
+  - `COMPARE|NAVIGATION|RIBBONS` — sliders Spacing `1.55`, Dist Y `10`, Amp `7`, Length `0.057`, Thickness `0.05`; cámara `POS (-575.8, 43.8, 237.9)` / `ROT (-22.4°, -35.7°, 0°)`; fog **off** en RIBBONS (`shouldEnableSceneFog`).
 - **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`).
 - **Workflow de captura**: Activar overlay → navegar a la pose → screenshot POS/ROT → actualizar `CAMERA_DEFAULT_OVERRIDES` y/o `SPATIAL_DEFAULT_OVERRIDES` para la clave `MODE|VIEW|RENDER`.
 

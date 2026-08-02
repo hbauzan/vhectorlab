@@ -1,8 +1,13 @@
 import * as THREE from 'three';
 
-/** Exponential fog density — soft atmosphere without blacking out far RIBBONS/MESH. */
+/** Exponential fog density — soft atmosphere without blacking out far MESH. */
 export const SCENE_FOG_DENSITY = 0.0008;
 export const SCENE_FOG_COLOR = 0x050505;
+
+/** RIBBONS runs without fog so far strips stay fully saturated. */
+export function shouldEnableSceneFog(renderMode = 'POINTS') {
+  return renderMode !== 'RIBBONS';
+}
 
 /**
  * Initializes and manages the Three.js 3D WebGL scene setup.
@@ -14,8 +19,7 @@ export class SceneSetup {
     // 1. Scene setup with dark background #050505
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(SCENE_FOG_COLOR);
-    // Soft FogExp2: MeshBasicMaterial (RIBBONS/MESH) respects fog; density must stay
-    // readable at COMPARE camera distances (~300–400). POINTS shaders omit fog.
+    // Soft FogExp2 for POINTS|MESH; toggled off for RIBBONS via setFogForRenderMode.
     this.scene.fog = new THREE.FogExp2(SCENE_FOG_COLOR, SCENE_FOG_DENSITY);
 
     // 2. Camera setup
@@ -46,6 +50,18 @@ export class SceneSetup {
 
     // Resize handling
     window.addEventListener('resize', () => this.onWindowResize());
+  }
+
+  /**
+   * RIBBONS: no fog. POINTS|MESH: soft FogExp2.
+   * @param {string} [renderMode]
+   */
+  setFogForRenderMode(renderMode = 'POINTS') {
+    if (!shouldEnableSceneFog(renderMode)) {
+      this.scene.fog = null;
+      return;
+    }
+    this.scene.fog = new THREE.FogExp2(SCENE_FOG_COLOR, SCENE_FOG_DENSITY);
   }
 
   onWindowResize() {

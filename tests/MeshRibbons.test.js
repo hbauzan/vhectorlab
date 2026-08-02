@@ -70,4 +70,20 @@ describe('Instancer RIBBONS mode', () => {
     expect(kids.some((c) => c.userData?.kind === 'wideRibbon')).toBe(false);
     expect(kids.some((c) => c.userData?.kind === 'basePlane')).toBe(false);
   });
+
+  it('COMPARE RIBBONS mounts wide ribbons without Points cloud', () => {
+    const mock = {
+      count: 3,
+      items: [
+        { id: 'tok_0', index: 0, text: 'a', embedding: new Array(16).fill(0.1) },
+        { id: 'tok_1', index: 1, text: 'b', embedding: new Array(16).fill(-0.1) },
+        { id: 'tok_2', index: 2, text: 'c', embedding: new Array(16).fill(0.05) },
+      ],
+    };
+    instancer.renderCompareData(mock, 'RIBBONS', { threadThickness: 0.05 }, 'NAVIGATION');
+    const kids = instancer.activeGroup.children;
+    expect(kids.filter((c) => c.userData?.kind === 'wideRibbon').length).toBe(3);
+    expect(kids.filter((c) => c.isPoints).length).toBe(0);
+    expect(instancer.compareRuntime.pointsMesh).toBeNull();
+  });
 });
