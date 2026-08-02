@@ -1,14 +1,11 @@
 # Roadmap
 
-Los documentos de planificación históricos viven en **[`archivo/`](./archivo/)**.
+Documentos de planificación **activos** viven en esta carpeta. Históricos en **[`archivo/`](./archivo/)**.
 
-Archivados el **2026-08-02**. El código y el changelog actuales son la fuente de verdad (`CHANGELOG.md`, `CONTEXT.md`, `main`).
+| Doc | Tema | Estado |
+|---|---|---|
+| [`english-ui-i18n.md`](./english-ui-i18n.md) | English-only UI / product strings (audit → glossary gate → apply) | **Activo** |
+| [`PROMPT-english-ui.md`](./PROMPT-english-ui.md) | Prompt para agente que ejecuta el epic EN | **Activo** |
+| [`archivo/`](./archivo/) | Epic A→E mobile/MESH/RIBBONS, specs legacy, release 1.0 | Archivado 2026-08-02 |
 
-| Doc | Tema |
-|---|---|
-| [`archivo/mobile-panels-mesh-ribbons.md`](./archivo/mobile-panels-mesh-ribbons.md) | Epic A→E (docks, mobile, MESH, RIBBONS) |
-| [`archivo/PROMPT-etapa-A-collapsible-docks.md`](./archivo/PROMPT-etapa-A-collapsible-docks.md) | Prompt agente Etapa A |
-| [`archivo/v1.0.0-release.md`](./archivo/v1.0.0-release.md) | Checklist release 1.0.0 |
-| [`archivo/Shading Divergente por Activación.md`](./archivo/Shading%20Divergente%20por%20Activación.md) | Spec shading divergente |
-| [`archivo/sliders.md`](./archivo/sliders.md) | Spec sliders espaciales |
-| [`archivo/big-picture.md`](./archivo/big-picture.md) | Visión / fases iniciales |
+Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `main`.
