@@ -4,6 +4,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
+| [`compare-group-contrast-viz.md`](./compare-group-contrast-viz.md) | Legibilidad contraste GROUP_* (Amplitude, SAE z-score dust, dim sort) | **Activo / planned** |
+| [`PROMPT-compare-group-contrast-viz.md`](./PROMPT-compare-group-contrast-viz.md) | Prompt para agente (pregunta D1–D12 → implementa) | **Activo** |
 | [`english-ui-i18n.md`](./english-ui-i18n.md) | English-only UI / product strings (audit → glossary gate → apply) | **Activo** |
 | [`PROMPT-english-ui.md`](./PROMPT-english-ui.md) | Prompt para agente que ejecuta el epic EN | **Activo** |
 | [`visualization-sign-filters-colors.md`](./visualization-sign-filters-colors.md) | Filtro All/+/− + anclas de color +1/0/−1 (panel Visualization) | **Activo** |
