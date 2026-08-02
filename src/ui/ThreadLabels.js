@@ -32,17 +32,13 @@ export class ThreadLabels {
         card = document.createElement('div');
         const isRes = item.type === 'res' || item.type === 'result';
         const isTop1 = item.type === 'top_1' || item.type === 'top1';
-        card.className = `thread-label-card ${isRes ? 'res-label' : ''} ${isTop1 ? 'top1-label' : ''}`;
-        
-        const badge = document.createElement('span');
-        badge.className = 'thread-label-badge';
-        badge.textContent = item.type.toUpperCase();
+        card.className = `thread-label-card ${isRes ? 'res-label' : ''} ${isTop1 ? 'top1-label' : ''}`.trim();
 
+        // Single short label (no type badge) — Arithmetic WORD_* / RES / TOP1; Compare TOPn token
         const labelText = document.createElement('span');
         labelText.className = 'thread-label-text';
         labelText.textContent = item.text;
 
-        card.appendChild(badge);
         card.appendChild(labelText);
         if (this.overlay) {
           this.overlay.appendChild(card);
