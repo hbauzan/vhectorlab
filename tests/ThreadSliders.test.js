@@ -27,12 +27,12 @@ function parseRangeInput(html, id) {
 
 /**
  * Defaults + ranges. Most stay linearly centered (defaultMid === (min+max)/2).
- * Amplitud Y keeps default 7 (no scene regression) with max 20 → asymmetric by design.
+ * Amplitud Y keeps default 7 (no scene regression) with max 40 → asymmetric by design.
  */
 const SPATIAL_SLIDER_SPECS = [
   { id: 'thread-spacing-slider', defaultMid: 0.4, min: 0.1, max: 0.7, step: 0.05, centered: true },
   { id: 'thread-vector-dist-slider', defaultMid: 10.0, min: 1.0, max: 19.0, step: 0.1, centered: true },
-  { id: 'thread-amplitude-y-slider', defaultMid: 7.0, min: 1.0, max: 20.0, step: 0.1, centered: false },
+  { id: 'thread-amplitude-y-slider', defaultMid: 7.0, min: 1.0, max: 40.0, step: 0.1, centered: false },
   { id: 'thread-width-slider', defaultMid: 0.2, min: 0.1, max: 0.3, step: 0.01, centered: true },
   { id: 'thread-thickness-slider', defaultMid: 0.1, min: 0.05, max: 0.15, step: 0.01, centered: true },
 ];
