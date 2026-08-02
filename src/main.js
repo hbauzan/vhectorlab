@@ -65,8 +65,7 @@ class VectorLabApp {
 
     this.sidebar = new Sidebar(
       this.appContainer,
-      async (wordA, wordB, wordC, topK) => this.handleCalculateArithmetic(wordA, wordB, wordC, topK),
-      (resultItem, index) => this.handleResultClick(resultItem, index)
+      async (wordA, wordB, wordC, topK) => this.handleCalculateArithmetic(wordA, wordB, wordC, topK)
     );
 
     this.comparePanel = new ComparePanel(
@@ -210,17 +209,6 @@ class VectorLabApp {
       this.comparePanel.updateMetrics(data.count);
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
-    }
-  }
-
-  handleResultClick(resultItem, index) {
-    // Move 3D camera to focus on result vector
-    const resVec = state.arithmeticData?.vector_res;
-    if (resVec && resVec.length) {
-      const targetPoint = this.instancer.layoutEngine.mapVectorTo3DPoints(resVec, 0, this.viewMode)[0];
-      if (targetPoint) {
-        this.navigation.focusPosition(targetPoint);
-      }
     }
   }
 

@@ -203,14 +203,15 @@ canvas {
   top: 72px;
   left: 20px;
   width: 320px;
+  height: fit-content;
   max-height: calc(100vh - 160px);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   z-index: 40;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .sidebar-header h2 {
@@ -227,7 +228,8 @@ canvas {
 .sidebar-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .input-group {
@@ -283,21 +285,24 @@ canvas {
   cursor: not-allowed;
 }
 
+.results-container {
+  display: flex;
+  flex-direction: column;
+}
+
 .results-container h3 {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .results-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: calc(100vh - 360px);
-  min-height: 200px;
-  overflow-y: auto;
+  gap: 3px;
+  overflow: hidden;
 }
 
 .result-item {
@@ -306,21 +311,23 @@ canvas {
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: default;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  pointer-events: none;
 }
 
-.result-item:hover {
-  background: rgba(0, 255, 170, 0.1);
-  border-color: var(--accent-cyan);
-}
-
-.result-item .rank { color: var(--text-muted); font-size: 0.75rem; }
+.result-item .rank { color: var(--text-muted); font-size: 0.65rem; }
 .result-item .word { font-weight: 600; color: var(--accent-gold); }
-.result-item .score { font-family: monospace; color: var(--text-muted); }
+.result-item .score { font-family: monospace; color: var(--text-muted); font-size: 0.7rem; }
+
+.empty-state {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 8px;
+}
 
 /* Bottom Floating HUD */
 .glass-hud {
