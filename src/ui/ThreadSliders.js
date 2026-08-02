@@ -22,7 +22,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-spacing-slider">Separación (X):</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-spacing-slider" min="0.1" max="10.0" step="0.1" value="${spacing}">
+    <input type="range" id="thread-spacing-slider" min="0.1" max="0.7" step="0.1" value="${spacing}">
   </div>
 
   <!-- Slider 2: Vector Distance Y -->
@@ -31,7 +31,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-vector-dist-slider">Distancia Vectores (Y):</label>
       <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-vector-dist-slider" min="10.0" max="120.0" step="1.0" value="${vectorDist}">
+    <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="1.0" value="${vectorDist}">
   </div>
 
   <!-- Slider 3: Amplitude Y -->
@@ -40,7 +40,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-amplitude-y-slider">Amplitud (Y):</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="240.0" step="1.0" value="${amplitudeY}">
+    <input type="range" id="thread-amplitude-y-slider" min="1.0" max="13.0" step="1.0" value="${amplitudeY}">
   </div>
 
   <!-- Slider 4: Width Z -->
@@ -49,7 +49,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-width-slider">Longitud (Z):</label>
       <span id="thread-width-val" class="slider-val">${width.toFixed(1)}</span>
     </div>
-    <input type="range" id="thread-width-slider" min="0.1" max="5.0" step="0.1" value="${width}">
+    <input type="range" id="thread-width-slider" min="0.1" max="0.3" step="0.1" value="${width}">
   </div>
 
   <!-- Slider 5: Thickness -->
@@ -58,7 +58,7 @@ export function threadSlidersMarkup(config = {}) {
       <label for="thread-thickness-slider">Grosor Puntos:</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
-    <input type="range" id="thread-thickness-slider" min="0.1" max="1.0" step="0.05" value="${thickness}">
+    <input type="range" id="thread-thickness-slider" min="0.05" max="0.15" step="0.05" value="${thickness}">
   </div>
 </div>
 `;
