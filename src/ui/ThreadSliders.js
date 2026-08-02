@@ -72,6 +72,23 @@ export function threadSlidersMarkup(config = {}) {
 
 
 /**
+ * Writes config values into range inputs + labels (e.g. after context default apply).
+ * @param {HTMLElement} container
+ * @param {Object} config
+ */
+export function syncThreadSlidersFromConfig(container, config) {
+  if (!container || !config) return;
+  for (const binding of SPATIAL_SLIDER_BINDINGS) {
+    const val = config[binding.configKey];
+    if (val === undefined || Number.isNaN(val)) continue;
+    const input = container.querySelector(`#${binding.inputId}`);
+    const labelEl = container.querySelector(`#${binding.labelId}`);
+    if (input) input.value = String(val);
+    if (labelEl) labelEl.textContent = Number(val).toFixed(binding.decimals);
+  }
+}
+
+/**
  * Binds real-time event listeners to sliders for immediate 60fps spatial updates.
  * Double-click on a range input restores that slider's default for the current
  * MODE/VISTA/RENDER context (via resolveSpatialDefaults).

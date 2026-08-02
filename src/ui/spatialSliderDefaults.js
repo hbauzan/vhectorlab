@@ -30,7 +30,14 @@ export const GLOBAL_SPATIAL_DEFAULTS = Object.freeze({
  * @type {Record<string, Partial<SpatialSliderValues>>}
  */
 export const SPATIAL_DEFAULT_OVERRIDES = {
-  // e.g. 'COMPARE|ANALYSIS': { threadAmplitudeY: 5.0 },
+  // Captured ARITHMETIC + ANÁLISIS + POINTS (Control Espacial + framing dulce)
+  'ARITHMETIC|ANALYSIS|POINTS': {
+    threadSpacing: 0.4,
+    threadVectorDistance: 10.0,
+    threadAmplitudeY: 40.0,
+    threadWidth: 0.2,
+    threadThickness: 0.05,
+  },
 };
 
 /**
