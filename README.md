@@ -16,6 +16,14 @@ uv run pytest
 uv run python -m backend.server
 ```
 
+## ⚙️ Variables de entorno
+
+Copiá `.env.example` → `.env`. Frontend (Vite):
+
+| Variable | Default | Descripción |
+| :--- | :--- | :--- |
+| `VITE_SHOW_CAM_POSE` | `false` | Overlay live `POS`/`ROT` de cámara para capturar la vista default de Navegación |
+
 ## 🛠️ Herramientas
 - **Generar / Actualizar Vocabulario**:
   ```bash

@@ -1,10 +1,16 @@
 /**
  * Bottom Floating Telemetry HUD component (Glassmorphic design).
  * Displays real-time X, Y, Z coordinates, activation values, and token text.
+ * Optional camera pose overlay (VITE_SHOW_CAM_POSE=true).
  */
 export class HUD {
-  constructor(containerElement) {
+  /**
+   * @param {HTMLElement} [containerElement]
+   * @param {{ showCamPose?: boolean }} [options]
+   */
+  constructor(containerElement, options = {}) {
     this.container = containerElement || document.body;
+    this.showCamPose = options.showCamPose === true;
 
     this.element = document.createElement('div');
     this.element.id = 'bottom-hud';
@@ -31,6 +37,52 @@ export class HUD {
     this.segmentEl = this.element.querySelector('#hud-segment');
     this.activationEl = this.element.querySelector('#hud-activation');
     this.tokenEl = this.element.querySelector('#hud-token');
+
+    this.cameraDebugEl = null;
+    this.camPosEl = null;
+    this.camRotEl = null;
+
+    if (this.showCamPose) {
+      this.cameraDebugEl = document.createElement('div');
+      this.cameraDebugEl.id = 'camera-pose-debug';
+      this.cameraDebugEl.setAttribute('aria-hidden', 'true');
+
+      const title = document.createElement('div');
+      title.className = 'cam-debug-title';
+      title.textContent = 'CAM POSE';
+
+      this.camPosEl = document.createElement('div');
+      this.camPosEl.id = 'cam-debug-pos';
+      this.camPosEl.textContent = 'POS: --';
+
+      this.camRotEl = document.createElement('div');
+      this.camRotEl.id = 'cam-debug-rot';
+      this.camRotEl.textContent = 'ROT: --';
+
+      this.cameraDebugEl.appendChild(title);
+      this.cameraDebugEl.appendChild(this.camPosEl);
+      this.cameraDebugEl.appendChild(this.camRotEl);
+      this.container.appendChild(this.cameraDebugEl);
+    }
+  }
+
+  /**
+   * Updates the on-screen camera pose readout (position + YXZ euler degrees).
+   * No-op unless constructed with showCamPose: true.
+   * @param {import('three').Camera} camera
+   * @param {import('three').Euler} [euler]
+   */
+  updateCameraPose(camera, euler = null) {
+    if (!this.showCamPose || !camera || !this.camPosEl) return;
+
+    const p = camera.position;
+    this.camPosEl.textContent = `POS: ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`;
+
+    if (euler && this.camRotEl) {
+      const rad2deg = 180 / Math.PI;
+      this.camRotEl.textContent =
+        `ROT: ${(euler.x * rad2deg).toFixed(1)}, ${(euler.y * rad2deg).toFixed(1)}, ${(euler.z * rad2deg).toFixed(1)}`;
+    }
   }
 
   updateTelemetry(data) {
