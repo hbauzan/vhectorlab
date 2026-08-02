@@ -174,6 +174,12 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 
 ---
 
+### 4.7. Product copy = English; identifiers stay
+- **Invariante**: Visible UI copy (navbar, panels, sliders, landscape gate, aria/titles/placeholders) is English-only. Internal keys (`data-view="ANALYSIS"`, `threadAmplitudeY`, CSS classes) are not renamed for i18n. No i18n framework — single-language product surface.
+- **Compare 3D labels** remain raw input tokens (§4.6); panel chrome uses EN glossary.
+
+---
+
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
 
 1. **Consulta Obligatoria**: El agente **DEBE** leer este archivo al iniciar cualquier tarea de implementación, diseño de shaders, navegación o refactorización.

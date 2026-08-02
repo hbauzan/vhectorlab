@@ -32,7 +32,7 @@ export class Sidebar {
         </div>
 
         <button type="submit" id="btn-calculate" class="btn-primary">
-          ⚡ CALCULAR VECTOR
+          ⚡ CALCULATE VECTOR
         </button>
       </form>
 
@@ -75,7 +75,7 @@ export class Sidebar {
       this.btnCalculate.textContent = '⏳ COMPUTING EMBEDDINGS...';
     } else {
       this.btnCalculate.disabled = false;
-      this.btnCalculate.textContent = '⚡ CALCULAR VECTOR';
+      this.btnCalculate.textContent = '⚡ CALCULATE VECTOR';
     }
   }
 

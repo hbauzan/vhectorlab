@@ -34,8 +34,8 @@ export function calculateZScoreNormalized(values, scaleFactor = 1.2) {
  * Calculates CPU color and dynamic opacity based on activation value.
  *
  * Color Ramps:
- * Positive (0 to +1): Negro (0.0) -> Naranja (+0.50) -> Amarillo (+1.00)
- * Negative (0 to -1): Negro (0.0) -> Azul Eléctrico (-0.50) -> Violeta (-1.00)
+ * Positive (0 to +1): Black (0.0) -> Orange (+0.50) -> Yellow (+1.00)
+ * Negative (0 to -1): Black (0.0) -> Electric Blue (-0.50) -> Violet (-1.00)
  *
  * @param {number} val - Activation value (v)
  * @param {number} [absMax=1.0] - Maximum absolute value for normalization
@@ -46,7 +46,7 @@ export function getDivergentColor(val, absMax = 1.0) {
   let t = Math.max(-1.0, Math.min(1.0, val / denom));
   const absT = Math.abs(t);
 
-  // Optimización computacional para |t| < 0.01
+  // Computational short-circuit for |t| < 0.01
   if (absT < 0.01) {
     return { r: 0.0, g: 0.0, b: 0.0, alpha: 0.05 };
   }
@@ -56,7 +56,7 @@ export function getDivergentColor(val, absMax = 1.0) {
   let r = 0.0, g = 0.0, b = 0.0;
 
   if (t > 0) {
-    // Positivo (0 a +1): Negro (0.0) -> Naranja (+0.50) -> Amarillo Incandescente (+1.00)
+    // Positive (0 to +1): Black (0.0) -> Orange (+0.50) -> Incandescent Yellow (+1.00)
     if (t < 0.50) {
       const k = t / 0.50;
       r = 1.0 * k;
@@ -69,7 +69,7 @@ export function getDivergentColor(val, absMax = 1.0) {
       b = 0.0;
     }
   } else {
-    // Negativo (0 a -1): Negro (0.0) -> Azul Eléctrico (-0.50) -> Violeta Neón (-1.00)
+    // Negative (0 to -1): Black (0.0) -> Electric Blue (-0.50) -> Neon Violet (-1.00)
     const f = -t;
     if (f < 0.50) {
       const k = f / 0.50;
@@ -106,8 +106,8 @@ void main() {
 
 /**
  * GLSL Fragment Shader for Dual Divergent Color Ramps (Solid Circular Points):
- * Positivo (0 a +1): Negro (0.0) -> Naranja (+0.50) -> Amarillo Incandescente (+1.00)
- * Negativo (0 a -1): Negro (0.0) -> Azul Eléctrico (-0.50) -> Violeta Neón (-1.00)
+ * Positive (0 to +1): Black (0.0) -> Orange (+0.50) -> Incandescent Yellow (+1.00)
+ * Negative (0 to -1): Black (0.0) -> Electric Blue (-0.50) -> Neon Violet (-1.00)
  */
 export const divergentFragmentShader = `
 varying float vIntensity;
@@ -123,7 +123,7 @@ void main() {
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);
 
-    // Optimización computacional para |t| < 0.01: retorno directo sin interpolación
+    // Computational short-circuit for |t| < 0.01: early return without interpolation
     if (absT < 0.01) {
         gl_FragColor = vec4(vec3(0.0), 0.05 * baseOpacity * solidEdge);
         return;
@@ -134,7 +134,7 @@ void main() {
     vec3 color = vec3(0.0);
 
     if (t > 0.0) {
-        // Positivo (0 a +1): Negro -> Naranja (#FF8000) -> Amarillo (#FFE600)
+        // Positive (0 to +1): Black -> Orange (#FF8000) -> Yellow (#FFE600)
         if (t < 0.50) {
             float k = t / 0.50;
             color = mix(vec3(0.0), vec3(1.0, 0.5, 0.0), k);
@@ -143,7 +143,7 @@ void main() {
             color = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 0.95, 0.0), k);
         }
     } else {
-        // Negativo (0 a -1): Negro -> Azul Eléctrico (#0040FF) -> Violeta Neón (#9900E6)
+        // Negative (0 to -1): Black -> Electric Blue (#0040FF) -> Neon Violet (#9900E6)
         float f = -t;
         if (f < 0.50) {
             float k = f / 0.50;
