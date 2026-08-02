@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
-import { arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
+import { arithmeticSequenceIndex, arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
 import { normalizeRenderMode } from '../core/State.js';
 
 /**
@@ -18,11 +18,34 @@ export class Instancer {
 
     this.renderMode = "POINTS"; // "POINTS" | "RIBBONS"
     this.currentData = null;
+    /** Multiplier on dim-axis pitch (scaleX) so SAE sparse dims keep RAW visual span. */
+    this.dimSpanScale = 1.0;
 
     /** @type {null|{ viewMode: string, totalThreads: number, spacingY: number, amplitudeY: number, pointsMesh: THREE.Points|null, baselineMesh: THREE.Line|null, threads: Array, renderMode: string }} */
     this.compareRuntime = null;
     this._reorderRaf = null;
     this._reorderBusy = false;
+  }
+
+  /**
+   * @param {number} scale  rawDim/saeDim when SAE ON; 1 when RAW
+   */
+  setDimSpanScale(scale) {
+    const n = Number(scale);
+    this.dimSpanScale = Number.isFinite(n) && n > 0 ? n : 1.0;
+  }
+
+  /**
+   * World-space AABB of currently mounted vector geometry (empty box if none).
+   * @returns {THREE.Box3}
+   */
+  getContentBoundingBox() {
+    const box = new THREE.Box3();
+    if (!this.activeGroup || this.activeGroup.children.length === 0) {
+      return box;
+    }
+    box.setFromObject(this.activeGroup);
+    return box;
   }
 
   clear() {
@@ -67,7 +90,8 @@ export class Instancer {
 
     if (spatialConfig) {
       if (spatialConfig.threadSpacing !== undefined) {
-        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+        // Dim axis pitch (ANALYSIS wall width + NAVIGATION thread length along X)
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing * (this.dimSpanScale || 1);
       }
       if (spatialConfig.threadWidth !== undefined) {
         this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;
@@ -114,31 +138,36 @@ export class Instancer {
     };
 
     const compKeys = ["vec_a", "vec_b", "vec_c"];
+    const compSlots = /** @type {const} */ (['A', 'B', 'C']);
     const compLabels = [
       arithmeticThreadLabel('A'),
       arithmeticThreadLabel('B'),
       arithmeticThreadLabel('C'),
     ];
 
+    // Order: WORD_A → WORD_B → WORD_C → RES → TOP1 (both ANALYSIS + NAVIGATION)
     if (arithmeticResponse.components) {
       compKeys.forEach((key, kIdx) => {
         const compVec = arithmeticResponse.components[key];
         if (compVec && compVec.length) {
-          const sequenceIdx = viewMode === "ANALYSIS" ? kIdx : (kIdx + 1) * 2;
-          pushThread(key, compLabels[kIdx], `word_${String.fromCharCode(97 + kIdx)}`, compVec, sequenceIdx);
+          pushThread(
+            key,
+            compLabels[kIdx],
+            `word_${String.fromCharCode(97 + kIdx)}`,
+            compVec,
+            arithmeticSequenceIndex(compSlots[kIdx])
+          );
         }
       });
     }
 
     const vecRes = arithmeticResponse.vector_res;
-    const resSequenceIdx = viewMode === "ANALYSIS" ? 3 : 0;
-    pushThread("res", arithmeticThreadLabel('RES'), "res", vecRes, resSequenceIdx);
+    pushThread("res", arithmeticThreadLabel('RES'), "res", vecRes, arithmeticSequenceIndex('RES'));
 
     const top1Vec = (arithmeticResponse.components && arithmeticResponse.components.vec_top1)
       ? arithmeticResponse.components.vec_top1
       : vecRes;
-    const top1SequenceIdx = viewMode === "ANALYSIS" ? 4 : 8;
-    pushThread("top1", arithmeticThreadLabel('TOP1'), "top_1", top1Vec, top1SequenceIdx);
+    pushThread("top1", arithmeticThreadLabel('TOP1'), "top_1", top1Vec, arithmeticSequenceIndex('TOP1'));
 
     if (viewMode === "ANALYSIS" && threadLabelItems.length >= 2) {
       const baselineMesh = MeshFactory.createBaselineMesh(
@@ -203,7 +232,8 @@ export class Instancer {
 
     if (spatialConfig) {
       if (spatialConfig.threadSpacing !== undefined) {
-        this.layoutEngine.scaleX = spatialConfig.threadSpacing;
+        // Dim axis pitch (ANALYSIS wall width + NAVIGATION thread length along X)
+        this.layoutEngine.scaleX = spatialConfig.threadSpacing * (this.dimSpanScale || 1);
       }
       if (spatialConfig.threadWidth !== undefined) {
         this.layoutEngine.scaleZ = spatialConfig.threadWidth * 25.0;

@@ -24,6 +24,7 @@ export class Navigation {
     this.moveSpeed = 75.0; // Bounded speed units/sec for responsive control
     this.turboMultiplier = 2.0;
     this.damping = 0.85;
+    this._cameraTweenRaf = null;
 
     /** Touch / virtual-joystick axes in [-1, 1] (camera-local X/Z). */
     this.touchAxes = { x: 0, z: 0 };
@@ -155,13 +156,9 @@ export class Navigation {
   }
 
   focusPosition(targetPosition, duration = 1.0) {
-    // Smooth camera transition to target 3D vector point
     const offset = new THREE.Vector3(0, 30, 80);
     const targetCamPos = new THREE.Vector3().copy(targetPosition).add(offset);
-
-    this.camera.position.copy(targetCamPos);
-    this.camera.lookAt(targetPosition);
-    this.euler.setFromQuaternion(this.camera.quaternion);
+    this.animateLookAt(targetCamPos, targetPosition, Math.max(0, Number(duration) || 0) * 1000);
   }
 
   /**
@@ -169,6 +166,7 @@ export class Navigation {
    * @param {{ position: number[], rotationDeg: number[] }} pose
    */
   applyResolvedPose(pose) {
+    this._cancelCameraTween();
     const [px, py, pz] = pose.position;
     const [rx, ry, rz] = pose.rotationDeg;
     this.camera.position.set(px, py, pz);
@@ -176,6 +174,146 @@ export class Navigation {
     this.euler.set(rx * deg2rad, ry * deg2rad, rz * deg2rad, 'YXZ');
     this.camera.quaternion.setFromEuler(this.euler);
     this.velocity.set(0, 0, 0);
+  }
+
+  /**
+   * Smoothly fly camera to `position` while looking at `lookAt` (ease-out cubic).
+   * @param {THREE.Vector3|{x:number,y:number,z:number}} position
+   * @param {THREE.Vector3|{x:number,y:number,z:number}} lookAt
+   * @param {number} [durationMs=450]
+   * @returns {Promise<void>}
+   */
+  animateLookAt(position, lookAt, durationMs = 450) {
+    this._cancelCameraTween();
+    const toPos = position.isVector3
+      ? position.clone()
+      : new THREE.Vector3(position.x, position.y, position.z);
+    const toLook = lookAt.isVector3
+      ? lookAt.clone()
+      : new THREE.Vector3(lookAt.x, lookAt.y, lookAt.z);
+
+    const fromPos = this.camera.position.clone();
+    const fromQuat = this.camera.quaternion.clone();
+    const toCam = this.camera.clone();
+    toCam.position.copy(toPos);
+    toCam.lookAt(toLook);
+    const toQuat = toCam.quaternion.clone();
+
+    const duration = Math.max(0, Number(durationMs) || 0);
+    this.velocity.set(0, 0, 0);
+
+    if (duration <= 0 || typeof requestAnimationFrame !== 'function') {
+      this.camera.position.copy(toPos);
+      this.camera.quaternion.copy(toQuat);
+      this.euler.setFromQuaternion(this.camera.quaternion, 'YXZ');
+      return Promise.resolve();
+    }
+
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const start = performance.now();
+
+    return new Promise((resolve) => {
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        const e = easeOutCubic(t);
+        this.camera.position.lerpVectors(fromPos, toPos, e);
+        this.camera.quaternion.slerpQuaternions(fromQuat, toQuat, e);
+        this.euler.setFromQuaternion(this.camera.quaternion, 'YXZ');
+        if (t < 1) {
+          this._cameraTweenRaf = requestAnimationFrame(tick);
+        } else {
+          this._cameraTweenRaf = null;
+          resolve();
+        }
+      };
+      this._cameraTweenRaf = requestAnimationFrame(tick);
+    });
+  }
+
+  /**
+   * Frame content bounds: ANALYSIS = front wall; NAVIGATION = angled overview.
+   * @param {THREE.Box3} box
+   * @param {{ viewMode?: string, durationMs?: number }} [opts]
+   * @returns {Promise<void>}
+   */
+  animateToFitBox(box, opts = {}) {
+    if (!box || box.isEmpty()) return Promise.resolve();
+    const viewMode = opts.viewMode === 'ANALYSIS' ? 'ANALYSIS' : 'NAVIGATION';
+    const durationMs = opts.durationMs ?? 450;
+
+    const center = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    box.getCenter(center);
+    box.getSize(size);
+    const radius = Math.max(size.x, size.y, size.z, 1) * 0.5;
+
+    let targetPos;
+    if (viewMode === 'ANALYSIS') {
+      // Front-on wall: sit on +Z looking toward −Z (default camera forward)
+      const dist = Math.max(radius * 2.4, size.x * 0.65, size.y * 1.4, 90);
+      targetPos = new THREE.Vector3(center.x - size.x * 0.05, center.y, center.z + dist);
+    } else {
+      const dist = Math.max(radius * 2.8, size.x * 0.7, 140);
+      targetPos = new THREE.Vector3(
+        center.x - dist * 0.4,
+        center.y + Math.max(dist * 0.1, size.y * 0.35 + 12),
+        center.z + dist * 0.85
+      );
+    }
+    return this.animateLookAt(targetPos, center, durationMs);
+  }
+
+  /**
+   * Lerp to a resolved POS/ROT pose.
+   * @param {{ position: number[], rotationDeg: number[] }} pose
+   * @param {number} [durationMs=450]
+   * @returns {Promise<void>}
+   */
+  animateToPose(pose, durationMs = 450) {
+    this._cancelCameraTween();
+    const [px, py, pz] = pose.position;
+    const [rx, ry, rz] = pose.rotationDeg;
+    const deg2rad = Math.PI / 180;
+    const toPos = new THREE.Vector3(px, py, pz);
+    const toEuler = new THREE.Euler(rx * deg2rad, ry * deg2rad, rz * deg2rad, 'YXZ');
+    const toQuat = new THREE.Quaternion().setFromEuler(toEuler);
+
+    const fromPos = this.camera.position.clone();
+    const fromQuat = this.camera.quaternion.clone();
+    const duration = Math.max(0, Number(durationMs) || 0);
+    this.velocity.set(0, 0, 0);
+
+    if (duration <= 0 || typeof requestAnimationFrame !== 'function') {
+      this.applyResolvedPose(pose);
+      return Promise.resolve();
+    }
+
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const start = performance.now();
+
+    return new Promise((resolve) => {
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / duration);
+        const e = easeOutCubic(t);
+        this.camera.position.lerpVectors(fromPos, toPos, e);
+        this.camera.quaternion.slerpQuaternions(fromQuat, toQuat, e);
+        this.euler.setFromQuaternion(this.camera.quaternion, 'YXZ');
+        if (t < 1) {
+          this._cameraTweenRaf = requestAnimationFrame(tick);
+        } else {
+          this._cameraTweenRaf = null;
+          resolve();
+        }
+      };
+      this._cameraTweenRaf = requestAnimationFrame(tick);
+    });
+  }
+
+  _cancelCameraTween() {
+    if (this._cameraTweenRaf != null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this._cameraTweenRaf);
+    }
+    this._cameraTweenRaf = null;
   }
 
   /**

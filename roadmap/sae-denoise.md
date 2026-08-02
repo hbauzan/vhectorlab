@@ -1,6 +1,6 @@
 # Roadmap — Top‑K SAE Clean/Denoise (trained Sparse Autoencoder)
 
-**Status:** Ready for implementation handoff  
+**Status:** Implemented (`feat/topk-sae-denoise`) — approval gate before merge  
 **Date:** 2026-08-02  
 **Product:** VectorLab 3D (`lsv2`)  
 **Prompt companion:** [`PROMPT-sae-denoise.md`](./PROMPT-sae-denoise.md)  
@@ -23,13 +23,13 @@ Add **Clean/Denoise (SAE)** as a 50/50 toggle beside Calculate / Visualize that 
 
 | ID | Topic | Decision |
 | :--- | :--- | :--- |
-| **U1** | Button layout | Same row, **50/50**: Arithmetic `[ CALCULATE VECTOR \| Clean/Denoise (SAE) ]`; Compare `[ VISUALIZE SEQUENCE (3D) \| Clean/Denoise (SAE) ]`. |
+| **U1** | Button layout | **Compare only**: `[ VISUALIZE SEQUENCE (3D) \| Clean/Denoise (SAE) ]`. Arithmetic has no SAE controls. |
 | **U2** | Label | Exact: **`Clean/Denoise (SAE)`**. |
 | **U3** | Interaction | **Toggle** (`aria-pressed`). |
 | **U4** | Persistence | `localStorage` prefix `vl3d.sae.` (enabled + UI params). |
 | **U5** | Params UI | Expose at least **Top‑K** (and optionally hidden_dim if already trained — prefer read-only from `/sae/status` after train). Train hyperparams in a small panel or modal (hidden_dim, k, epochs, lr, batch_size). |
-| **M1** | Semantics | **Replace (6A)**: SAE ON → 3D + Top-10/cosine use **SAE activations** (8192D sparse). OFF → restore cached **raw 768D**. |
-| **M2** | Scope | **All** vectors: Arithmetic A/B/C/res/top1; Compare every item embedding. |
+| **M1** | Semantics | **Replace (6A)**: SAE ON → Compare 3D + cosine use **SAE activations**. OFF → restore cached **raw 768D**. |
+| **M2** | Scope | **Compare** item embeddings only (not Arithmetic). |
 | **A1** | Algorithm | **Real Top‑K SAE** (PyTorch `nn.Module`), **not** L1-penalty SAE, **not** sinusoidal fixed projection. |
 | **A2** | Why Top‑K | Avoids L1 shrinkage bias; exactly ≤K latents active per vector; magnitudes of survivors preserved. |
 | **A3** | Dims | Default **input_dim=768**, **hidden_dim=8192**, **k=32** (overridable at train time; encode uses checkpoint config). |
@@ -41,8 +41,8 @@ Add **Clean/Denoise (SAE)** as a 50/50 toggle beside Calculate / Visualize that 
 | **B2** | Lazy load | **9A**: load checkpoint on first encode/status that needs weights. |
 | **B3** | Batch + progress | Encode/train always communicate progress (step text + current/total). Train = background (`asyncio.to_thread` / task) + poll status or WS — grandmother used async train; port that pattern. |
 | **B4** | API surface (mirror grandmother) | At minimum: `GET /api/sae/status`, `POST /api/sae/train`, `POST /api/sae/encode`. Optional later: relief-matrix style helper if needed — VectorLab can encode inline batches instead. |
-| **B5** | Train data | Train on the project **vocabulary embedding matrix** (already in backend RAM / `vocab`) unless blocked — document path. Do **not** require PDF chunk pipeline from grandmother. |
-| **B6** | Checkpoint | e.g. `backend/artifacts/sae_weights.pt` (gitignore large binaries; ship empty dir + README; train produces file). |
+| **B5** | Train data | Train on the **current Compare scope** (item embeddings in `POST /sae/train`). **Not** vocab; **not** Arithmetic. |
+| **B6** | Checkpoint | **Ephemeral in-memory** session model only. No product `sae_weights.pt`. Clear via `POST /sae/clear` when Visualize/Calculate changes data. |
 | **F1** | Feature id collision | If any client dict keys dims: RAW `raw_{i}`, SAE `sae_{i}` (grandmother isolation). |
 | **X1** | Out of scope v1 | Gemini/LLM auto-label of features; click-peak concept browser; sinusoidal fake SAE; dual simultaneous RAW+SAE meshes; Neuronpedia UI. |
 | **V1** | Version | **`2.0.0`** MAJOR. |
@@ -90,7 +90,7 @@ Port `TopKSAE`, `SAEManager`, `train_sae` into `backend/sae/` with tests. Adapt 
 `Loading SAE…` → `Encoding (i/N)…` → `Updating 3D + metrics…`
 
 **Train:**  
-`Preparing vocab matrix…` → `Epoch e/E (loss=…)` → `Saving checkpoint…` → `Ready`
+`Preparing scope matrix…` → `Epoch e/E (loss=…)` → `Installing session model…` → `Ready`
 
 Always show label + step index/total (+ bar if slow).
 
@@ -102,7 +102,7 @@ Always show label + step index/total (+ bar if slow).
 | :--- | :--- |
 | Toggle | `Clean/Denoise (SAE)` |
 | Train | `Train SAE` |
-| Status empty | `SAE not trained — train on vocabulary first` |
+| Status empty | `SAE not trained — train on current scope` |
 | Metrics | `L0`, `Sparsity`, `Active features`, `Train MSE`, `Dead features` |
 
 ---
@@ -111,17 +111,15 @@ Always show label + step index/total (+ bar if slow).
 
 ```
 Arithmetic:
-  [ CALCULATE VECTOR | Clean/Denoise (SAE) ]
-  [ Train SAE ]   + compact train params (or modal)
-  metrics strip when trained / when SAE on
-  Top-10 …
+  [ CALCULATE VECTOR ]
+  Top-10 …   (no SAE)
 
 Compare:
   [ VISUALIZE SEQUENCE (3D) | Clean/Denoise (SAE) ]
-  same train/status/metrics pattern
+  [ Train SAE ] + params / progress / metrics
 ```
 
-- No data yet + SAE ON → “Calculate / Visualize first”.
+- No data yet + SAE ON → “Visualize first”.
 - Not trained + SAE ON → “Train SAE first” (don’t crash).
 
 ---
@@ -145,7 +143,7 @@ Wire router under `/api` (Vite proxy §6.1).
 | Module | Role |
 | :--- | :--- |
 | `saeControlsDefaults.js` | localStorage + defaults |
-| Sidebar / ComparePanel | 50/50 CTA + train + progress |
+| Sidebar / ComparePanel | Calculate plain; Compare 50/50 CTA + train + progress |
 | `RemoteProvider` | `saeStatus`, `saeTrain`, `saeEncode` |
 | App state | raw vs sae caches; `featureSpace: 'RAW' \| 'SAE'` |
 | Instancer | variable dim (768 vs 8192) already OK if embeddings replaced |
@@ -218,7 +216,8 @@ Ship **`2.0.0`**. CHANGELOG must say: trained Top‑K SAE; sparse feature space 
 - LLM/Gemini feature naming; click-peak browsers.
 - Sinusoidal / fixed non-trained “SAE-style” projection.
 - Dual RAW+SAE layers at once.
-- Training on arbitrary user PDFs (grandmother relief matrix) — VectorLab trains on **vocab embeddings**.
+- Training on arbitrary user PDFs (grandmother relief matrix) — VectorLab trains on **current workspace embeddings** (ephemeral session).
+- Training on the full vocabulary matrix (superseded — caused scope mismatch vs Compare/Arithmetic views).
 
 ---
 

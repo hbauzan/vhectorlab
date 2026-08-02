@@ -15,6 +15,7 @@ if _root_dir not in sys.path:
     sys.path.insert(0, _root_dir)
 
 from backend.routers.core import router as core_router
+from backend.routers.sae import router as sae_router
 from backend.state import state
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,7 +58,9 @@ app.add_middleware(
 )
 
 app.include_router(core_router, prefix="/api")
+app.include_router(sae_router, prefix="/api")
 app.include_router(core_router)  # Also expose without /api prefix for convenience
+app.include_router(sae_router)
 
 # Mount static frontend files if dist/ exists (Docker / Production mode)
 from pathlib import Path

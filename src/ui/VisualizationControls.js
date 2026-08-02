@@ -7,10 +7,13 @@ import {
   DEFAULT_VISUALIZATION_SETTINGS,
   normalizeHex,
   normalizeFilterMode,
+  normalizeZeroCoverage,
   resolveVisualizationSettings,
   saveVisualizationSettings,
   resetVisualizationSettings,
   VIZ_STORAGE_PREFIX,
+  ZERO_COVERAGE_MIN,
+  ZERO_COVERAGE_MAX,
 } from './visualizationControlsDefaults.js';
 import {
   readCollapsedPreference,
@@ -34,6 +37,15 @@ export function vizPanelTabGlyph(collapsed) {
  */
 export function vizPanelTabLabel(collapsed) {
   return collapsed ? 'Expand Visualization panel' : 'Collapse Visualization panel';
+}
+
+/**
+ * Button label for thread-labels visibility toggle.
+ * @param {boolean} labelsVisible
+ * @returns {string}
+ */
+export function labelsToggleButtonText(labelsVisible) {
+  return labelsVisible ? 'Hide labels' : 'Show labels';
 }
 
 /**
@@ -92,6 +104,18 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       </div>
     </div>
 
+    <div class="viz-coverage-row slider-group">
+      <div class="slider-header">
+        <label for="viz-zero-coverage-slider">Zero coverage:</label>
+        <span id="viz-zero-coverage-val" class="slider-val">${s.zeroCoverage}%</span>
+      </div>
+      <input type="range" id="viz-zero-coverage-slider" min="${ZERO_COVERAGE_MIN}" max="${ZERO_COVERAGE_MAX}" step="1" value="${s.zeroCoverage}" title="How much of ± range stays at the zero color before blending to +1/−1">
+    </div>
+
+    <button type="button" id="viz-labels-toggle" class="viz-labels-toggle" aria-pressed="${s.labelsVisible ? 'true' : 'false'}" title="Show or hide floating thread labels">
+      ${labelsToggleButtonText(s.labelsVisible)}
+    </button>
+
     <button type="button" id="viz-reset-btn" class="viz-reset-btn">Reset</button>
   </div>
 </div>
@@ -119,6 +143,16 @@ export function syncVisualizationControlsFromConfig(container, config) {
     const text = container.querySelector(`#viz-color-${key}-hex`);
     if (swatch) swatch.value = hex;
     if (text) text.value = hex;
+  }
+  const covInput = container.querySelector('#viz-zero-coverage-slider');
+  const covLabel = container.querySelector('#viz-zero-coverage-val');
+  if (covInput) covInput.value = String(s.zeroCoverage);
+  if (covLabel) covLabel.textContent = `${s.zeroCoverage}%`;
+
+  const labelsBtn = container.querySelector('#viz-labels-toggle');
+  if (labelsBtn) {
+    labelsBtn.setAttribute('aria-pressed', s.labelsVisible ? 'true' : 'false');
+    labelsBtn.textContent = labelsToggleButtonText(s.labelsVisible);
   }
 }
 
@@ -211,6 +245,27 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
   bindColor('positive', 'colorPositive');
   bindColor('zero', 'colorZero');
   bindColor('negative', 'colorNegative');
+
+  const covInput = container.querySelector('#viz-zero-coverage-slider');
+  const covLabel = container.querySelector('#viz-zero-coverage-val');
+  if (covInput) {
+    covInput.addEventListener('input', () => {
+      const next = normalizeZeroCoverage(covInput.value);
+      config.zeroCoverage = next;
+      if (covLabel) covLabel.textContent = `${next}%`;
+      emit();
+    });
+  }
+
+  const labelsBtn = container.querySelector('#viz-labels-toggle');
+  if (labelsBtn) {
+    labelsBtn.addEventListener('click', () => {
+      config.labelsVisible = !config.labelsVisible;
+      labelsBtn.setAttribute('aria-pressed', config.labelsVisible ? 'true' : 'false');
+      labelsBtn.textContent = labelsToggleButtonText(config.labelsVisible);
+      emit();
+    });
+  }
 
   const resetBtn = container.querySelector('#viz-reset-btn');
   if (resetBtn) {

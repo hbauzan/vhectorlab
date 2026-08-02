@@ -1,6 +1,6 @@
 {
   "project": "vectorlab-3d",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "bootstrap_run": false,
   "state_schema": {
     "model_name": "all-mpnet-base-v2",
@@ -10,7 +10,9 @@
   },
   "constraints": {
     "vector_dim": 768,
-    "cors_allow_origins": ["*"],
+    "cors_allow_origins": [
+      "*"
+    ],
     "cors_allow_credentials": false
   }
 }
