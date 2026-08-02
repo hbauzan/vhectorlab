@@ -1,8 +1,8 @@
 # Roadmap: English-only product surface (UI + in-scope code)
 
-> **Estado:** listo para ejecutar (2026-08-02).  
+> **Estado:** cerrado / merged a `main` (2026-08-02).  
 > **Base:** `main` + lecciones `.agents/skills/dev-protocol/lessons-learned.md`.  
-> **Entrega:** por etapas (A→D), rama `feat/…` + approval gate por etapa.  
+> **Entrega:** A→D completadas (`docs/english-ui-audit` + `feat/english-user-facing-copy`).  
 > **Idioma objetivo:** **English** en todo lo que ve el usuario y en strings/tests del producto.  
 > **Fuera de alcance explícito:** `roadmap/archivo/**`, `.agents/**` skills (salvo lesson i18n nueva), handoffs de agentes. Este roadmap + audit + prompt **sí** se actualizan.
 
@@ -92,9 +92,9 @@
 3. Entregar tabla en el PR/comentario de etapa: `file:line | current | suggested EN | class`.
 
 ### A.3 Criterios
-- [ ] Cero superficies user-facing omitidas en el inventario (smoke UI documentado).
-- [ ] Lista de dudas de glosario actualizada (§0.1) si aparecen términos nuevos.
-- [ ] **No** merge de código de traducción en A (solo doc de auditoría: puede vivir como sección append en este roadmap o `roadmap/english-ui-audit.md`).
+- [x] Cero superficies user-facing omitidas en el inventario (smoke UI documentado).
+- [x] Lista de dudas de glosario actualizada (§0.1) si aparecen términos nuevos.
+- [x] **No** merge de código de traducción en A (solo doc de auditoría: puede vivir como sección append en este roadmap o `roadmap/english-ui-audit.md`).
 
 **Rama sugerida:** `docs/english-ui-audit` (o sección en este archivo + commit docs).
 
@@ -123,7 +123,7 @@ Humano confirmó D6–D8 + tabla §0.1. **No re-preguntar** salvo strings nuevos
 ### C.2 Criterios
 - [x] Smoke UI: ninguna cadena ES visible en Arithmetic / Compare / Análisis / Navegación / POINTS·MESH·RIBBONS / landscape gate.
 - [x] Vitest verde; asserts de copy actualizados.
-- [ ] Approval gate → merge.
+- [x] Approval gate → merge.
 
 **Rama:** `feat/english-user-facing-copy`
 
@@ -140,7 +140,7 @@ Humano confirmó D6–D8 + tabla §0.1. **No re-preguntar** salvo strings nuevos
 
 ### D.2 Criterios
 - [x] D7/D8 cumplidos; exclusiones D3 intactas.
-- [ ] Suite verde; approval gate → merge.
+- [x] Suite verde; approval gate → merge.
 
 **Rama:** puede ir en `feat/english-user-facing-copy` si el agente hace C+D juntos, o `feat/english-dev-strings`.
 
