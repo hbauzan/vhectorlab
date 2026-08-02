@@ -45,9 +45,9 @@ export function updateAllThreadPositions(threads, config, pointSpacing = 0.1) {
       thread.pointsMesh.position.x = offsetX;
       if (thread.pointsMesh.material) {
         if (thread.pointsMesh.material.uniforms && thread.pointsMesh.material.uniforms.pointSize) {
-          thread.pointsMesh.material.uniforms.pointSize.value = thickness * 5.0;
+          thread.pointsMesh.material.uniforms.pointSize.value = thickness * 15.0;
         } else {
-          thread.pointsMesh.material.size = thickness * 5.0;
+          thread.pointsMesh.material.size = thickness * 15.0;
           thread.pointsMesh.material.needsUpdate = true;
         }
       }
