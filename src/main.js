@@ -42,6 +42,7 @@ import { LandscapeGate } from './ui/LandscapeGate.js';
 import { TouchControls } from './ui/TouchControls.js';
 import {
   attachCompareGroupMeta,
+  enrichLabelsWithGroupMeta,
   mergeCompareOverlayLabels,
 } from './ui/parseCompareGroups.js';
 
@@ -116,6 +117,9 @@ class VectorLabApp {
     this._saeTrainBusy = false;
     this._saeTrainStartedAt = 0;
     this._saeTrainElapsedTimer = null;
+    this._saeTrainPollInFlight = false;
+    this._saeTrainSeenRunning = false;
+    this._saeTrainPostDone = false;
 
     const saeHooks = {
       onSaeToggle: (enabled) => this.handleSaeToggle(enabled),
@@ -274,14 +278,32 @@ class VectorLabApp {
   refreshRender() {
     if (state.workspaceMode === 'COMPARE') {
       if (state.compareData) {
+        // Ensure Instancer threads carry group meta (RAW cache is source of truth)
+        let data = state.compareData;
+        if (this.rawCompareData?.items?.length) {
+          const byId = new Map(this.rawCompareData.items.map((it) => [it.id, it]));
+          data = {
+            ...data,
+            items: (data.items || []).map((item, i) => {
+              const raw = byId.get(item.id) || this.rawCompareData.items[i];
+              if (!raw?.groupId) return item;
+              return {
+                ...item,
+                groupId: raw.groupId,
+                groupLabel: raw.groupLabel || raw.groupId,
+              };
+            }),
+          };
+        }
         const labels = this.instancer.renderCompareData(
-          state.compareData,
+          data,
           state.renderMode,
           this.sliderConfig,
           this.viewMode,
           this.vizConfig
         );
         this.setCompareOverlayLabels(labels);
+        this.comparePanel.updateGroupLegend(data.items);
       }
     } else {
       if (state.arithmeticData) {
@@ -299,10 +321,13 @@ class VectorLabApp {
 
   /**
    * Token labels + optional GROUP_* floating badges (centroid, screen-offset left).
+   * Enriches from compare/raw items so meta survives SAE + reorder.
    * @param {Array} tokenLabels
    */
   setCompareOverlayLabels(tokenLabels) {
-    this.threadLabels.setLabels(mergeCompareOverlayLabels(tokenLabels));
+    const items = this.rawCompareData?.items || state.compareData?.items;
+    const enriched = enrichLabelsWithGroupMeta(tokenLabels, items);
+    this.threadLabels.setLabels(mergeCompareOverlayLabels(enriched));
   }
 
   /**
@@ -310,7 +335,9 @@ class VectorLabApp {
    * @param {Array} tokenLabels
    */
   updateCompareOverlayOrigins(tokenLabels) {
-    this.threadLabels.updateOrigins(mergeCompareOverlayLabels(tokenLabels));
+    const items = this.rawCompareData?.items || state.compareData?.items;
+    const enriched = enrichLabelsWithGroupMeta(tokenLabels, items);
+    this.threadLabels.updateOrigins(mergeCompareOverlayLabels(enriched));
   }
 
   async init() {
@@ -345,9 +372,12 @@ class VectorLabApp {
   /** Sync SAE status/metrics strip on Compare panel only. */
   async refreshSaeStatusUi() {
     try {
-      this.saeStatus = await this.provider.saeStatus();
+      const next = await this.provider.saeStatus();
+      // Keep last-known status on transient failures (nulling made the UI look stuck
+      // at "Starting SAE training…" while _saeTrainBusy stayed true).
+      if (next) this.saeStatus = next;
     } catch {
-      this.saeStatus = null;
+      /* keep this.saeStatus */
     }
     this.applySaeStatusToPanels();
   }
@@ -496,6 +526,11 @@ class VectorLabApp {
       },
     };
     this.applySaeStatusToPanels();
+    // Poll ASAP — do not wait for POST /train to return (large JSON body can stall;
+    // if the job already started on the server we still need live %).
+    this._saeTrainSeenRunning = false;
+    this._saeTrainPostDone = false;
+    this._startSaeTrainPolling();
 
     try {
       const started = await this.provider.saeTrain({
@@ -507,34 +542,45 @@ class VectorLabApp {
         batch_size: settings.batchSize,
         auto_scale: true,
       });
+      this._saeTrainPostDone = true;
       const resolvedHidden = started.resolved_hidden ?? settings.hiddenDim;
       const resolvedK = started.resolved_k ?? settings.k;
       const resolvedEpochs = started.resolved_epochs ?? epochs;
       const device = started.device || 'auto';
-      this.saeStatus = {
-        ...(this.saeStatus || {}),
-        training: {
-          ...(this.saeStatus?.training || {}),
-          status: 'training',
-          phase_key: 'preparing',
-          message: started.auto_scaled
-            ? `Auto-scaled ${resolvedHidden}D·k=${resolvedK}·${resolvedEpochs}ep on ${device} — n=${started.n_vectors}…`
-            : `Preparing train — n=${started.n_vectors} · ${resolvedHidden}D · k=${resolvedK} · ${resolvedEpochs}ep on ${device}…`,
-          current_epoch: 0,
-          total_epochs: resolvedEpochs,
-          remaining_epochs: resolvedEpochs,
-          percent: 0,
-          n_vectors: started.n_vectors,
-          resolved_hidden: resolvedHidden,
-          resolved_k: resolvedK,
-        },
-      };
-      this.applySaeStatusToPanels();
-      this._startSaeTrainPolling();
+      // Only overwrite if poll has not already moved past preparing/success.
+      const live = this.saeStatus?.training?.status;
+      if (live !== 'success' && live !== 'failed') {
+        this.saeStatus = {
+          ...(this.saeStatus || {}),
+          training: {
+            ...(this.saeStatus?.training || {}),
+            status: 'training',
+            phase_key: 'preparing',
+            message: started.auto_scaled
+              ? `Auto-scaled ${resolvedHidden}D·k=${resolvedK}·${resolvedEpochs}ep on ${device} — n=${started.n_vectors}…`
+              : `Preparing train — n=${started.n_vectors} · ${resolvedHidden}D · k=${resolvedK} · ${resolvedEpochs}ep on ${device}…`,
+            current_epoch: 0,
+            total_epochs: resolvedEpochs,
+            remaining_epochs: resolvedEpochs,
+            percent: 0,
+            n_vectors: started.n_vectors,
+            resolved_hidden: resolvedHidden,
+            resolved_k: resolvedK,
+          },
+        };
+        this.applySaeStatusToPanels();
+      }
     } catch (e) {
+      // If a job is already running, keep polling instead of hard-failing the UI.
+      const msg = e.message || '';
+      if (/already in progress/i.test(msg)) {
+        this._saeTrainPostDone = true;
+        this._startSaeTrainPolling();
+        return;
+      }
       this._stopSaeTrainBusy();
       this.comparePanel.saeUi.setProgress({ visible: false });
-      this.modal.show('SAE TRAIN ERROR', e.message || 'Could not start SAE training.');
+      this.modal.show('SAE TRAIN ERROR', msg || 'Could not start SAE training.');
       await this.refreshSaeStatusUi();
     }
   }
@@ -561,25 +607,49 @@ class VectorLabApp {
     this._saeTrainBusy = false;
     this._saeTrainStartedAt = 0;
     this._stopSaeTrainElapsedTicker();
+    if (this._saeTrainPollTimer) {
+      clearInterval(this._saeTrainPollTimer);
+      this._saeTrainPollTimer = null;
+    }
+    this._saeTrainPollInFlight = false;
+    this._saeTrainSeenRunning = false;
+    this._saeTrainPostDone = false;
     const trained = !!(this.saeStatus && this.saeStatus.is_trained);
     this.comparePanel.saeUi.setTrainBusy(false, { trained });
   }
 
   _startSaeTrainPolling() {
     if (this._saeTrainPollTimer) clearInterval(this._saeTrainPollTimer);
-    this._saeTrainPollTimer = setInterval(async () => {
-      await this.refreshSaeStatusUi();
-      const st = this.saeStatus?.training?.status;
-      if (st === 'success' || st === 'failed' || st === 'idle') {
-        clearInterval(this._saeTrainPollTimer);
-        this._saeTrainPollTimer = null;
-        this._stopSaeTrainBusy();
-        this.applySaeStatusToPanels();
-        if (st === 'success' && this.saeSettings.enabled) {
-          await this.encodeCompareWithSae({ reframe: true });
+    this._saeTrainPollInFlight = false;
+    const tick = async () => {
+      if (this._saeTrainPollInFlight) return;
+      this._saeTrainPollInFlight = true;
+      try {
+        await this.refreshSaeStatusUi();
+        const st = this.saeStatus?.training?.status;
+        if (st === 'training') this._saeTrainSeenRunning = true;
+        // Do not treat pre-POST "idle" (after clear) as completion.
+        const terminal = st === 'success' || st === 'failed';
+        const readyToFinish = terminal && (this._saeTrainSeenRunning || this._saeTrainPostDone);
+        if (readyToFinish) {
+          if (this._saeTrainPollTimer) {
+            clearInterval(this._saeTrainPollTimer);
+            this._saeTrainPollTimer = null;
+          }
+          const wasBusy = this._saeTrainBusy;
+          this._stopSaeTrainBusy();
+          this.applySaeStatusToPanels();
+          if (wasBusy && st === 'success' && this.saeSettings.enabled) {
+            await this.encodeCompareWithSae({ reframe: true });
+          }
         }
+      } finally {
+        this._saeTrainPollInFlight = false;
       }
-    }, 250);
+    };
+    // Immediate tick so we don't wait 250ms stuck on "Starting…"
+    tick();
+    this._saeTrainPollTimer = setInterval(tick, 250);
   }
 
   async handleSaeToggle(enabled) {
@@ -715,12 +785,17 @@ class VectorLabApp {
         total: n || 1,
       });
       const saeData = applySaeToCompare(this.rawCompareData, encoded.activations);
-      if (state.compareData?.items) {
-        saeData.items = saeData.items.map((item, i) => ({
-          ...item,
-          groupId: state.compareData.items[i]?.groupId,
-          groupName: state.compareData.items[i]?.groupName,
-        }));
+      // Re-assert group meta from RAW cache (survives any stale state.compareData keys)
+      if (this.rawCompareData?.items) {
+        saeData.items = saeData.items.map((item, i) => {
+          const raw = this.rawCompareData.items[i];
+          if (!raw) return item;
+          return {
+            ...item,
+            groupId: raw.groupId,
+            groupLabel: raw.groupLabel,
+          };
+        });
       }
       state.setCompareData(saeData);
       this.comparePanel.updateCompareResults(saeData);

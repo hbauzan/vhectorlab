@@ -121,6 +121,7 @@ export class ComparePanel {
         <div id="compare-metrics" class="compare-metrics-box">
           <span class="metric-item">Loaded Tokens: <strong id="token-count-val">0</strong></span>
         </div>
+        <div id="compare-groups-legend" class="compare-groups-legend" hidden></div>
 
         <div class="compare-cosine-header">
           <h3 id="compare-cosine-subtitle" class="compare-cosine-subtitle">COSINE SIMILARITY vs —</h3>
@@ -140,6 +141,7 @@ export class ComparePanel {
     this.form = this.element.querySelector('#compare-form');
     this.textarea = this.element.querySelector('#compare-tokens');
     this.tokenCountVal = this.element.querySelector('#token-count-val');
+    this.groupsLegend = this.element.querySelector('#compare-groups-legend');
     this.cosineSubtitle = this.element.querySelector('#compare-cosine-subtitle');
     this.cosineList = this.element.querySelector('#compare-cosine-list');
     this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
@@ -155,8 +157,8 @@ export class ComparePanel {
     });
     this.btnSubmit = this.saeUi.btnPrimary;
 
-    // Default: full English auto-manual parts lexicon
-    this.textarea.value = COMPARE_AUTO_PRESETS.default.join(", ");
+    // Default: 2-group demo so GROUP_* badges are visible out of the box
+    this.textarea.value = COMPARE_AUTO_PRESETS.groupsDemo;
 
     this.initEventListeners();
   }
@@ -261,6 +263,35 @@ export class ComparePanel {
   }
 
   /**
+   * Visible group chips under metrics (GROUP_1 · N) — survives even if 3D overlay fails.
+   * @param {Array<{ groupId?: string, groupLabel?: string }>|null|undefined} items
+   */
+  updateGroupLegend(items) {
+    if (!this.groupsLegend) return;
+    /** @type {Map<string, { label: string, count: number }>} */
+    const counts = new Map();
+    for (const it of items || []) {
+      if (!it?.groupId) continue;
+      const label = it.groupLabel || it.groupId;
+      const prev = counts.get(it.groupId);
+      if (prev) prev.count += 1;
+      else counts.set(it.groupId, { label, count: 1 });
+    }
+    if (!counts.size) {
+      this.groupsLegend.setAttribute('hidden', '');
+      this.groupsLegend.innerHTML = '';
+      return;
+    }
+    this.groupsLegend.removeAttribute('hidden');
+    this.groupsLegend.innerHTML = [...counts.values()]
+      .map(
+        (g) =>
+          `<span class="compare-group-chip" title="${g.count} tokens">${g.label}<em>${g.count}</em></span>`
+      )
+      .join('');
+  }
+
+  /**
    * Populate metrics + cosine-vs-anchor list from /compare response (or reordered payload).
    * @param {{ count: number, anchor?: { text: string }, items: Array }} data
    */
@@ -268,6 +299,7 @@ export class ComparePanel {
     if (!data || !data.items) {
       this.items = null;
       this.updateMetrics(0);
+      this.updateGroupLegend(null);
       this.cosineSubtitle.textContent = 'COSINE SIMILARITY vs —';
       this.cosineList.innerHTML = '<li class="empty-state">Visualize a sequence to see similarity vs the anchor...</li>';
       this.setReorderLocked(false);
@@ -276,6 +308,7 @@ export class ComparePanel {
 
     this.items = data.items.slice();
     this.updateMetrics(data.count);
+    this.updateGroupLegend(data.items);
     const anchor = data.anchor || (data.items[0] ? { index: 0, text: data.items[0].text } : null);
     this.renderCosineList(anchor, data.items);
   }
