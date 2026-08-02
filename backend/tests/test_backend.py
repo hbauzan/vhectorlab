@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -66,3 +67,38 @@ def test_app_endpoints():
         assert len(data["items"]) == 4
         assert data["items"][0]["text"] == "king"
         assert "embedding" in data["items"][0]
+        assert data["anchor"] == {"index": 0, "text": "king"}
+        assert data["items"][0]["cosine_vs_first"] == pytest.approx(1.0, abs=1e-5)
+        for item in data["items"]:
+            assert "cosine_vs_first" in item
+            assert -1.0 <= item["cosine_vs_first"] <= 1.0 + 1e-6
+
+
+def test_perform_compare_cosine_vs_first_with_stub_model():
+    """Unit: cosine_vs_first = dot(emb_i, emb_0) on L2-normalized embeddings; anchor is first token."""
+    import numpy as np
+    from backend.state import AppState
+
+    class StubModel:
+        def encode(self, texts, show_progress_bar=False, convert_to_numpy=True):
+            # Orthogonal-ish known vectors (will be L2-normalized by perform_compare)
+            table = {
+                "a": np.array([3.0, 0.0, 0.0], dtype=np.float64),
+                "b": np.array([0.0, 4.0, 0.0], dtype=np.float64),
+                "c": np.array([3.0, 4.0, 0.0], dtype=np.float64),
+            }
+            return np.stack([table[t] for t in texts])
+
+    app_state = AppState()
+    app_state.model = StubModel()
+
+    data = app_state.perform_compare(["a", "b", "c"])
+
+    assert data["count"] == 3
+    assert data["anchor"] == {"index": 0, "text": "a"}
+    assert data["items"][0]["cosine_vs_first"] == pytest.approx(1.0, abs=1e-9)
+    # â=[1,0,0], b̂=[0,1,0] → cos=0; ĉ=[0.6,0.8,0] → cos=0.6
+    assert data["items"][1]["text"] == "b"
+    assert data["items"][1]["cosine_vs_first"] == pytest.approx(0.0, abs=1e-9)
+    assert data["items"][2]["text"] == "c"
+    assert data["items"][2]["cosine_vs_first"] == pytest.approx(0.6, abs=1e-9)

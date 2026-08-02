@@ -100,4 +100,20 @@ describe('ThreadLabels Component Tests', () => {
     const cards = container.querySelectorAll('.thread-label-card');
     expect(cards.length).toBe(0);
   });
+
+  it('debe actualizar origins in-situ durante tween de reorder', () => {
+    threadLabels.setLabels([
+      { id: 'tok_0', text: 'king', type: 'compare', origin3D: new THREE.Vector3(0, 10, 0) },
+      { id: 'tok_1', text: 'queen', type: 'compare', origin3D: new THREE.Vector3(0, 0, 0) },
+    ]);
+
+    threadLabels.updateOrigins([
+      { id: 'tok_0', origin3D: new THREE.Vector3(0, 0, 0) },
+      { id: 'tok_1', origin3D: new THREE.Vector3(0, 10, 0) },
+    ]);
+
+    expect(threadLabels.labels[0].origin3D.y).toBe(0);
+    expect(threadLabels.labels[1].origin3D.y).toBe(10);
+    expect(threadLabels.labels.length).toBe(2);
+  });
 });

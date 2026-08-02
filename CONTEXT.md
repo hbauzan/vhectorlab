@@ -20,3 +20,12 @@ WebGL fragment shader rendering glowing incandescence for 3D activation points m
 ### In-situ Buffer Mutation
 Updating existing GPU `Float32Array` attributes directly and setting `needsUpdate = true`, avoiding geometry re-creation and memory leaks during real-time UI interactions.
 
+### Compare Sequence
+Ordered list of 1–1024 token/text items visualized as parallel 3D threads; list order equals layout `sequenceIndex`.
+
+### Anchor Token
+The token currently at position #1 in a Compare Sequence. Cosine similarity for every row is computed against this embedding (`cosine_vs_first`).
+
+### Cosine-vs-First Score
+Dot product between an item’s L2-normalized embedding and the Anchor Token embedding; the anchor row is always `1.0000` (REF).
+
