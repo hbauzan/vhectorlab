@@ -114,12 +114,11 @@ varying float vIntensity;
 uniform float baseOpacity;
 
 void main() {
-    vec2 coord = gl_PointCoord - vec2(0.5);
-    float dist = length(coord);
-    if (dist > 0.5) discard; // Círculo perfecto
+    vec2 coord = abs(gl_PointCoord - vec2(0.5));
+    float maxDist = max(coord.x, coord.y);
 
-    // Sharp solid circle with crisp anti-aliased edge
-    float solidEdge = 1.0 - smoothstep(0.44, 0.49, dist);
+    // Sharp 1-pixel anti-aliased square bounding edge
+    float solidEdge = 1.0 - smoothstep(0.44, 0.49, maxDist);
 
     float t = clamp(vIntensity, -1.0, 1.0);
     float absT = abs(t);

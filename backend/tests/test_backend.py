@@ -57,3 +57,12 @@ def test_app_endpoints():
             )
             or len(words) == 5
         )
+
+        # 5. Compare endpoint
+        res = client.post("/compare", json={"texts": ["king", "queen", "man", "woman"]})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["count"] == 4
+        assert len(data["items"]) == 4
+        assert data["items"][0]["text"] == "king"
+        assert "embedding" in data["items"][0]
