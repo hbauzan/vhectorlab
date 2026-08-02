@@ -25,13 +25,16 @@ function parseRangeInput(html, id) {
   };
 }
 
-/** Defaults = midpoint; finer steps for gradual intermediate values. */
+/**
+ * Defaults + ranges. Most stay linearly centered (defaultMid === (min+max)/2).
+ * Amplitud Y keeps default 7 (no scene regression) with max 20 → asymmetric by design.
+ */
 const SPATIAL_SLIDER_SPECS = [
-  { id: 'thread-spacing-slider', mid: 0.4, min: 0.1, max: 0.7, step: 0.05, decimals: 2 },
-  { id: 'thread-vector-dist-slider', mid: 10.0, min: 1.0, max: 19.0, step: 0.1, decimals: 1 },
-  { id: 'thread-amplitude-y-slider', mid: 7.0, min: 1.0, max: 13.0, step: 0.1, decimals: 1 },
-  { id: 'thread-width-slider', mid: 0.2, min: 0.1, max: 0.3, step: 0.01, decimals: 2 },
-  { id: 'thread-thickness-slider', mid: 0.1, min: 0.05, max: 0.15, step: 0.01, decimals: 2 },
+  { id: 'thread-spacing-slider', defaultMid: 0.4, min: 0.1, max: 0.7, step: 0.05, centered: true },
+  { id: 'thread-vector-dist-slider', defaultMid: 10.0, min: 1.0, max: 19.0, step: 0.1, centered: true },
+  { id: 'thread-amplitude-y-slider', defaultMid: 7.0, min: 1.0, max: 20.0, step: 0.1, centered: false },
+  { id: 'thread-width-slider', defaultMid: 0.2, min: 0.1, max: 0.3, step: 0.01, centered: true },
+  { id: 'thread-thickness-slider', defaultMid: 0.1, min: 0.05, max: 0.15, step: 0.01, centered: true },
 ];
 
 function createMockEl(id = '') {
@@ -52,7 +55,7 @@ function createMockEl(id = '') {
 }
 
 describe('threadSlidersMarkup — ranges centered on defaults', () => {
-  it('emits min/max/step/value so each default is the linear midpoint', () => {
+  it('emits min/max/step/value with defaults in range (centered where required)', () => {
     const html = threadSlidersMarkup();
 
     for (const spec of SPATIAL_SLIDER_SPECS) {
@@ -61,13 +64,18 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
       expect(input.min).toBeCloseTo(spec.min, 5);
       expect(input.max).toBeCloseTo(spec.max, 5);
       expect(input.step).toBeCloseTo(spec.step, 5);
-      expect(input.value).toBeCloseTo(spec.mid, 5);
+      expect(input.value).toBeCloseTo(spec.defaultMid, 5);
 
-      const mid = (input.min + input.max) / 2;
-      expect(mid).toBeCloseTo(spec.mid, 5);
-      // Mid must land on a step tick (within float noise).
-      const ticksFromMin = (spec.mid - input.min) / input.step;
+      // Default must land on a step tick and allow travel both ways.
+      const ticksFromMin = (spec.defaultMid - input.min) / input.step;
       expect(ticksFromMin).toBeCloseTo(Math.round(ticksFromMin), 5);
+      expect(input.value).toBeGreaterThan(input.min);
+      expect(input.value).toBeLessThan(input.max);
+
+      if (spec.centered) {
+        const mid = (input.min + input.max) / 2;
+        expect(mid).toBeCloseTo(spec.defaultMid, 5);
+      }
     }
   });
 
