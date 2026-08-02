@@ -2,10 +2,11 @@
  * Top Navbar component with title, status indicator, View Mode tabs (ANÁLISIS | NAVEGACIÓN), and Render Mode selector tabs (POINTS | MESH | RIBBONS).
  */
 export class Navbar {
-  constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback) {
+  constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
     this.container = containerElement || document.body;
     this.onRenderModeChange = onRenderModeChangeCallback;
     this.onViewModeChange = onViewModeChangeCallback;
+    this.onWorkspaceModeChange = onWorkspaceModeChangeCallback;
 
     this.element = document.createElement('header');
     this.element.id = 'top-navbar';
@@ -15,11 +16,17 @@ export class Navbar {
         <div class="logo-icon">🌐</div>
         <div class="title-group">
           <h1>VECTORLAB <span class="accent-3d">3D</span></h1>
-          <span class="version-tag">v0.1.0</span>
+          <span class="version-tag">v1.0.0</span>
         </div>
       </div>
 
       <div class="navbar-center-controls">
+        <div class="workspace-mode-tabs">
+          <span class="tab-label">MODE:</span>
+          <button data-workspace="ARITHMETIC" class="workspace-tab active">ARITHMETIC</button>
+          <button data-workspace="COMPARE" class="workspace-tab">COMPARE</button>
+        </div>
+
         <div class="view-mode-tabs">
           <span class="tab-label">VISTA:</span>
           <button data-view="ANALYSIS" class="view-tab active">ANÁLISIS</button>
@@ -44,6 +51,7 @@ export class Navbar {
 
     this.renderTabs = this.element.querySelectorAll('.mode-tab');
     this.viewTabs = this.element.querySelectorAll('.view-tab');
+    this.workspaceTabs = this.element.querySelectorAll('.workspace-tab');
     this.statusDot = this.element.querySelector('#backend-status-dot');
     this.statusText = this.element.querySelector('#backend-status-text');
 
@@ -51,6 +59,18 @@ export class Navbar {
   }
 
   initEventListeners() {
+    this.workspaceTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const mode = e.target.getAttribute('data-workspace');
+        this.workspaceTabs.forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+
+        if (this.onWorkspaceModeChange) {
+          this.onWorkspaceModeChange(mode);
+        }
+      });
+    });
+
     this.renderTabs.forEach(tab => {
       tab.addEventListener('click', (e) => {
         const mode = e.target.getAttribute('data-mode');
@@ -79,6 +99,16 @@ export class Navbar {
   setViewMode(viewMode) {
     this.viewTabs.forEach(t => {
       if (t.getAttribute('data-view') === viewMode) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+  }
+
+  setWorkspaceMode(workspaceMode) {
+    this.workspaceTabs.forEach(t => {
+      if (t.getAttribute('data-workspace') === workspaceMode) {
         t.classList.add('active');
       } else {
         t.classList.remove('active');

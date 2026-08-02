@@ -69,6 +69,31 @@ export class MeshFactory {
 
     return lineMesh;
   }
+
+  /**
+   * Creates a vertical reference baseline line connecting thread origins in Analysis Mode.
+   * @param {Array<THREE.Vector3>} originPoints - List of thread origin points (X = startX)
+   * @param {number} [color=0x00e5ff] - Baseline line color
+   * @returns {THREE.Line|null}
+   */
+  static createBaselineMesh(originPoints, color = 0x00e5ff) {
+    if (!originPoints || originPoints.length < 2) return null;
+
+    const sortedPoints = [...originPoints].sort((a, b) => b.y - a.y);
+    const geometry = new THREE.BufferGeometry().setFromPoints(sortedPoints);
+
+    const material = new THREE.LineBasicMaterial({
+      color: color,
+      linewidth: 2,
+      transparent: true,
+      opacity: 0.6
+    });
+
+    const lineMesh = new THREE.Line(geometry, material);
+    lineMesh.frustumCulled = false;
+
+    return lineMesh;
+  }
 }
 
 
