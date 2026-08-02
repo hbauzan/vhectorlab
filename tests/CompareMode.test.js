@@ -20,10 +20,10 @@ describe('Compare Mode Sequence Engine', () => {
     const labels = instancer.renderCompareData(mockCompareResponse, 'POINTS', null, 'ANALYSIS');
 
     expect(labels.length).toBe(4);
-    expect(labels[0].text).toBe('king');
-    expect(labels[1].text).toBe('queen');
-    expect(labels[2].text).toBe('man');
-    expect(labels[3].text).toBe('woman');
+    expect(labels[0].text).toBe('TOP1 king');
+    expect(labels[1].text).toBe('TOP2 queen');
+    expect(labels[2].text).toBe('TOP3 man');
+    expect(labels[3].text).toBe('TOP4 woman');
 
     // Group should contain ribbon meshes, baseline mesh, and points mesh
     expect(instancer.activeGroup.children.length).toBeGreaterThanOrEqual(5);
@@ -56,7 +56,7 @@ describe('Compare Mode Sequence Engine', () => {
     const labels = instancer.renderCompareData(mockCompareResponse, 'POINTS', null, 'ANALYSIS');
 
     expect(labels.length).toBe(50);
-    expect(labels[49].text).toBe('token_49');
+    expect(labels[49].text).toBe('TOP50 token_49');
   });
 
   it('debe reordenar hilos 3D con tween in-situ (reuse meshes, nuevo sequenceIndex)', async () => {

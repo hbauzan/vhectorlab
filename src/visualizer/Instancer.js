@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MeshFactory } from './MeshFactory.js';
 import { LayoutEngine } from './LayoutEngine.js';
+import { arithmeticThreadLabel, compareThreadLabel } from '../ui/threadLabelFormat.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -111,9 +112,9 @@ export class Instancer {
 
     const compKeys = ["vec_a", "vec_b", "vec_c"];
     const compLabels = [
-      arithmeticResponse.word_a || "VECTOR A",
-      arithmeticResponse.word_b || "VECTOR B",
-      arithmeticResponse.word_c || "VECTOR C",
+      arithmeticThreadLabel('A'),
+      arithmeticThreadLabel('B'),
+      arithmeticThreadLabel('C'),
     ];
 
     if (arithmeticResponse.components) {
@@ -128,15 +129,13 @@ export class Instancer {
 
     const vecRes = arithmeticResponse.vector_res;
     const resSequenceIdx = viewMode === "ANALYSIS" ? 3 : 0;
-    pushThread("res", "RESULT VECTOR", "res", vecRes, resSequenceIdx);
+    pushThread("res", arithmeticThreadLabel('RES'), "res", vecRes, resSequenceIdx);
 
-    const top1Word = arithmeticResponse.top1_word
-      || (arithmeticResponse.results && arithmeticResponse.results[0] ? arithmeticResponse.results[0].word : "queen");
     const top1Vec = (arithmeticResponse.components && arithmeticResponse.components.vec_top1)
       ? arithmeticResponse.components.vec_top1
       : vecRes;
     const top1SequenceIdx = viewMode === "ANALYSIS" ? 4 : 8;
-    pushThread("top1", `#1 COS VECTOR (${top1Word})`, "top_1", top1Vec, top1SequenceIdx);
+    pushThread("top1", arithmeticThreadLabel('TOP1'), "top_1", top1Vec, top1SequenceIdx);
 
     if (viewMode === "ANALYSIS" && threadLabelItems.length >= 2) {
       const baselineMesh = MeshFactory.createBaselineMesh(
@@ -278,7 +277,7 @@ export class Instancer {
       if (vec3D.length > 0) {
         threadLabelItems.push({
           id: threadId,
-          text: item.text,
+          text: compareThreadLabel(idx + 1, item.text),
           type: "compare",
           origin3D: vec3D[0]
         });
@@ -450,7 +449,7 @@ export class Instancer {
               origins.push(origin);
               labels.push({
                 id: thread.id,
-                text: thread.text,
+                text: compareThreadLabel(toIdx[i] + 1, thread.text),
                 type: "compare",
                 origin3D: origin,
               });
