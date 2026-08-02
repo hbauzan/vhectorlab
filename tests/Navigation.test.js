@@ -11,7 +11,7 @@ function stubCamera() {
 }
 
 describe('Navigation default poses', () => {
-  it('setAnalysisView uses captured ARITHMETIC|ANALYSIS|POINTS pose', () => {
+  it('setAnalysisView uses ANALYSIS view fallback pose', () => {
     const camera = stubCamera();
     const nav = new Navigation(camera, { addEventListener() {} });
     nav.setAnalysisView();
@@ -28,6 +28,38 @@ describe('Navigation default poses', () => {
     const camera = stubCamera();
     const nav = new Navigation(camera, { addEventListener() {} });
     nav.setNavigationView();
+
+    expect(nav.camera.position.x).toBeCloseTo(-178.3, 5);
+    expect(nav.camera.position.y).toBeCloseTo(13.5, 5);
+    expect(nav.camera.position.z).toBeCloseTo(52.2, 5);
+  });
+
+  it('setContextView applies COMPARE|NAVIGATION|POINTS captured pose', () => {
+    const camera = stubCamera();
+    const nav = new Navigation(camera, { addEventListener() {} });
+    nav.setContextView({
+      workspaceMode: 'COMPARE',
+      viewMode: 'NAVIGATION',
+      renderMode: 'POINTS',
+    });
+
+    expect(nav.camera.position.x).toBeCloseTo(-106.5, 5);
+    expect(nav.camera.position.y).toBeCloseTo(20.4, 5);
+    expect(nav.camera.position.z).toBeCloseTo(390.2, 5);
+    const deg2rad = Math.PI / 180;
+    expect(nav.euler.x).toBeCloseTo(-3.9 * deg2rad, 5);
+    expect(nav.euler.y).toBeCloseTo(-8.4 * deg2rad, 5);
+    expect(nav.euler.z).toBeCloseTo(0, 5);
+  });
+
+  it('setContextView does not leak COMPARE pose into ARITHMETIC|NAVIGATION', () => {
+    const camera = stubCamera();
+    const nav = new Navigation(camera, { addEventListener() {} });
+    nav.setContextView({
+      workspaceMode: 'ARITHMETIC',
+      viewMode: 'NAVIGATION',
+      renderMode: 'POINTS',
+    });
 
     expect(nav.camera.position.x).toBeCloseTo(-178.3, 5);
     expect(nav.camera.position.y).toBeCloseTo(13.5, 5);

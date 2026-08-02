@@ -26,7 +26,6 @@ export const GLOBAL_SPATIAL_DEFAULTS = Object.freeze({
 
 /**
  * Partial overrides keyed by workspaceMode [|viewMode [|renderMode]].
- * Leave empty until per-view / per-mode defaults are defined.
  * @type {Record<string, Partial<SpatialSliderValues>>}
  */
 export const SPATIAL_DEFAULT_OVERRIDES = {
@@ -37,6 +36,14 @@ export const SPATIAL_DEFAULT_OVERRIDES = {
     threadAmplitudeY: 40.0,
     threadWidth: 0.2,
     threadThickness: 0.05,
+  },
+  // Captured COMPARE + NAVIGATION + POINTS (Spatial Controls + CAM POSE framing)
+  'COMPARE|NAVIGATION|POINTS': {
+    threadSpacing: 0.7,
+    threadVectorDistance: 10.0,
+    threadAmplitudeY: 4.9,
+    threadWidth: 0.1,
+    threadThickness: 0.01,
   },
 };
 
