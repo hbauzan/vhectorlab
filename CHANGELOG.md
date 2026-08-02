@@ -2,6 +2,14 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.4.0] - 2026-08-01
+
+### Added
+- **RENDER: MESH surface (Etapa D)**:
+  - `MeshFactory.createSurfaceMesh` — indexed quad heightfield (threads × dims), divergent colormap.
+  - `Instancer` branches on `renderMode === 'MESH'` (no Points); Arithmetic + Compare; compare reorder updates surface in-situ.
+  - Vitest: `tests/MeshSurface.test.js`.
+
 ## [1.3.0] - 2026-08-01
 
 ### Added
