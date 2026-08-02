@@ -127,6 +127,17 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
   - Bloquear spamming de flechas mientras `_reorderBusy` (un tween a la vez).
 - **Invariante**: lista COMPARE ↔ orden de hilos 3D siempre sincronizados; #1 es ancla REF con score `1.0000`.
 
+### 4.3. Docks colapsables: transform + tab, sin desmontar DOM; MODE comparte estado izq.
+- **Problema**: Ocultar paneles con `display: none` / desmontar nodos pierde estado de formularios, sliders y lista cosine; duplicar lógica left/right y resetear collapse al cambiar MODE rompe la UX.
+- **Solución Obligatoria**:
+  - Host único `CollapsibleDock` por borde: slide con `transform` (~250ms); hijos permanecen montados.
+  - Colapsado: `pointer-events: none` en `.dock-body`; la pestaña (`.dock-tab`) sigue `pointer-events: auto` y expone `aria-expanded`.
+  - **Dock izq. / MODE**: un solo flag collapsed (y una key `localStorage`) para Arithmetic|Compare; el cambio de MODE solo alterna `.hidden` del panel activo dentro del body — no toca collapse.
+  - **Dock der.**: sliders + AxisGizmo viven en el mismo host; el HUD inferior de telemetría **nunca** entra al dock (siempre visible).
+  - Desktop: persistir collapsed en `localStorage`. Mobile (`max-width: 768px`): default collapsed y no persistir (hook Etapa B).
+  - El dock host mantiene `overflow: hidden` / `fit-content` — no reintroducir scrollbar externa (§4.1 / §4.2).
+- **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

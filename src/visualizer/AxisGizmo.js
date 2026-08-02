@@ -2,23 +2,21 @@ import * as THREE from 'three';
 
 /**
  * Renderable 3D Orientation Axis Gizmo (Corner HUD).
+ * Mounts into an optional parent (right collapsible dock); falls back to document.body.
  */
 export class AxisGizmo {
-  constructor(mainCamera) {
+  /**
+   * @param {import('three').Camera} mainCamera
+   * @param {HTMLElement} [parentElement]
+   */
+  constructor(mainCamera, parentElement = null) {
     this.mainCamera = mainCamera;
 
     this.container = document.createElement('div');
     this.container.id = 'axis-gizmo-container';
-    this.container.style.cssText = `
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      width: 100px;
-      height: 100px;
-      pointer-events: none;
-      z-index: 100;
-    `;
-    document.body.appendChild(this.container);
+    this.container.setAttribute('aria-hidden', 'true');
+    const host = parentElement || document.body;
+    host.appendChild(this.container);
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-50, 50, 50, -50, 1, 1000);
