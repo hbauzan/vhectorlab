@@ -16,6 +16,7 @@ import { threadSlidersMarkup, wireThreadSliders } from './ui/ThreadSliders.js';
 import { ComparePanel, COMPARE_AUTO_PRESETS } from './ui/ComparePanel.js';
 import { CollapsibleDock } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
+import { TouchControls } from './ui/TouchControls.js';
 
 class VectorLabApp {
   constructor() {
@@ -47,6 +48,13 @@ class VectorLabApp {
 
     // Soft portrait overlay (Etapa B / D13) — never pauses the render loop.
     this.landscapeGate = new LandscapeGate({ parent: this.appContainer });
+
+    // Mobile joystick + look + Q/E (Etapa C). Hidden on desktop/tablet layout.
+    this.touchControls = new TouchControls({
+      parent: this.appContainer,
+      navigation: this.navigation,
+      canvas: this.sceneSetup.renderer.domElement,
+    });
 
     this.navbar = new Navbar(
       this.appContainer,
