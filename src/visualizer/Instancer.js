@@ -299,7 +299,8 @@ export class Instancer {
         singleThreadWidth: Math.max(1.5, 8.0 * thicknessFactor),
       });
       if (surfaceMesh) this.activeGroup.add(surfaceMesh);
-    } else if (pointsData.length) {
+    } else if (renderMode === "POINTS" && pointsData.length) {
+      // RIBBONS must not mount the POINTS cloud (square Chebyshev dots on top of strips).
       pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);

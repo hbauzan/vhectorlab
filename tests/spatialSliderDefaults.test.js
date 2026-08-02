@@ -86,4 +86,17 @@ describe('resolveSpatialDefaults', () => {
     expect(d.threadWidth).toBe(0.1);
     expect(d.threadThickness).toBe(0.01);
   });
+
+  it('applies captured COMPARE|NAVIGATION|RIBBONS preset', () => {
+    const d = resolveSpatialDefaults({
+      workspaceMode: 'COMPARE',
+      viewMode: 'NAVIGATION',
+      renderMode: 'RIBBONS',
+    });
+    expect(d.threadSpacing).toBe(1.55);
+    expect(d.threadVectorDistance).toBe(10.0);
+    expect(d.threadAmplitudeY).toBe(7.0);
+    expect(d.threadWidth).toBe(0.057);
+    expect(d.threadThickness).toBe(0.05);
+  });
 });

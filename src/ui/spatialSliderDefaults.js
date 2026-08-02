@@ -45,6 +45,14 @@ export const SPATIAL_DEFAULT_OVERRIDES = {
     threadWidth: 0.1,
     threadThickness: 0.01,
   },
+  // Captured COMPARE + NAVIGATION + RIBBONS
+  'COMPARE|NAVIGATION|RIBBONS': {
+    threadSpacing: 1.55,
+    threadVectorDistance: 10.0,
+    threadAmplitudeY: 7.0,
+    threadWidth: 0.057,
+    threadThickness: 0.05,
+  },
 };
 
 /**
