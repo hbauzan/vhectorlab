@@ -149,6 +149,10 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 ### 1.6. MESH surface = grilla threads × dims, no tubo
 - **Invariante**: `RENDER: MESH` construye un heightfield indexado (filas = hilos/secuencia, columnas = dims embedding) con `frustumCulled = false`, `transparent` + `depthWrite = false`. Un solo hilo se expande a strip de 2 filas. Sliders espaciales afectan vía `LayoutEngine` antes de crear/actualizar la surface.
 
+### 1.7. RIBBONS = wide mesh strips + base plane (nunca Line linewidth)
+- **Problema**: `LineBasicMaterial.linewidth` queda capado a 1px en WebGL (§1.4); no sirve para cintas anchas de referencia.
+- **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline) + `createBasePlane` semitransparente. Sin Points. Distincto de MESH (cintas discretas vs superficie continua).
+
 ### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
 - **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.
 - **Solución Obligatoria**: Overlay soft solo en phone portrait (`width ≤ 768` y `height > width`); dismiss escribe `sessionStorage` y no re-spamea en la sesión; tablet = desktop (sin overlay). El render loop **nunca** se pausa por portrait.

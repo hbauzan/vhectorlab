@@ -151,7 +151,7 @@ export class Instancer {
   }
 
   /**
-   * Mount POINTS (points + thin lines), MESH (surface), or defer RIBBONS to Etapa E.
+   * Mount POINTS | MESH | RIBBONS geometry (mutually exclusive).
    * @private
    */
   _mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor) {
@@ -163,7 +163,18 @@ export class Instancer {
       return;
     }
 
-    // POINTS (default) and RIBBONS-until-E: thin continuity lines + points
+    if (renderMode === "RIBBONS") {
+      const plane = MeshFactory.createBasePlaneForThreads(surfaceRows);
+      if (plane) this.activeGroup.add(plane);
+      const ribbonWidth = Math.max(2.0, 14.0 * (thicknessFactor || 0.3));
+      surfaceRows.forEach((row) => {
+        const wide = MeshFactory.createWideRibbonMesh(row.points, row.activations, { width: ribbonWidth });
+        if (wide) this.activeGroup.add(wide);
+      });
+      return;
+    }
+
+    // POINTS: thin continuity lines + point cloud
     surfaceRows.forEach((row) => {
       const ribbon = MeshFactory.createRibbonMesh(row.points, row.activations);
       this.activeGroup.add(ribbon);
@@ -240,9 +251,13 @@ export class Instancer {
 
       surfaceRows.push({ points: vec3D, activations });
 
-      const ribbonMesh = renderMode === "MESH"
-        ? null
-        : MeshFactory.createRibbonMesh(vec3D, activations);
+      let ribbonMesh = null;
+      if (renderMode === "RIBBONS") {
+        const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
+        ribbonMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, { width: ribbonWidth });
+      } else if (renderMode !== "MESH") {
+        ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations);
+      }
       if (ribbonMesh) {
         ribbonMesh.userData.threadId = threadId;
         this.activeGroup.add(ribbonMesh);
@@ -281,11 +296,15 @@ export class Instancer {
 
     let pointsMesh = null;
     let surfaceMesh = null;
+    let basePlane = null;
     if (renderMode === "MESH") {
       surfaceMesh = MeshFactory.createSurfaceMesh(surfaceRows, {
         singleThreadWidth: Math.max(1.5, 8.0 * thicknessFactor),
       });
       if (surfaceMesh) this.activeGroup.add(surfaceMesh);
+    } else if (renderMode === "RIBBONS") {
+      basePlane = MeshFactory.createBasePlaneForThreads(surfaceRows);
+      if (basePlane) this.activeGroup.add(basePlane);
     } else if (pointsData.length) {
       pointsMesh = MeshFactory.createPointsMesh(pointsData, { pointSize: 15.0 * thicknessFactor });
       pointsMesh.userData = { pointsData };
@@ -299,6 +318,7 @@ export class Instancer {
       amplitudeY,
       pointsMesh,
       surfaceMesh,
+      basePlane,
       baselineMesh,
       threads,
       renderMode,
@@ -322,13 +342,17 @@ export class Instancer {
     );
     if (!vec3D.length) return null;
 
-    const ribbonPos = thread.ribbonMesh?.geometry?.attributes?.position;
-    if (ribbonPos) {
-      for (let i = 0; i < vec3D.length; i++) {
-        ribbonPos.setXYZ(i, vec3D[i].x, vec3D[i].y, vec3D[i].z);
+    if (thread.ribbonMesh?.userData?.kind === "wideRibbon") {
+      MeshFactory.updateWideRibbonMeshPositions(thread.ribbonMesh, vec3D);
+    } else {
+      const ribbonPos = thread.ribbonMesh?.geometry?.attributes?.position;
+      if (ribbonPos) {
+        for (let i = 0; i < vec3D.length; i++) {
+          ribbonPos.setXYZ(i, vec3D[i].x, vec3D[i].y, vec3D[i].z);
+        }
+        ribbonPos.needsUpdate = true;
+        if (updateBounds) thread.ribbonMesh.geometry.computeBoundingSphere();
       }
-      ribbonPos.needsUpdate = true;
-      if (updateBounds) thread.ribbonMesh.geometry.computeBoundingSphere();
     }
 
     const pointsPos = runtime.pointsMesh?.geometry?.attributes?.position;
