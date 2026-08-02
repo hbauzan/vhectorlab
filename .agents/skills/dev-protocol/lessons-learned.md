@@ -104,10 +104,23 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 ### 3.4. Default Navigation Corridor Pose
 - **Invariante**: La vista inicial de **Navegación** usa la pose capturada `POS (-178.3, 13.5, 52.2)` + euler YXZ `ROT (-5.4°, -51.5°, 0°)` con sliders espaciales por defecto Separación $X=0.4$, Amplitud $Y=7.0$, Longitud $Z=0.2$.
 - **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`). Sirve para releer POS/ROT desde una captura y actualizar `setNavigationView()`.
+- **Workflow de captura**: Para fijar una nueva vista default, activar el overlay, navegar a la pose deseada, screenshotear `POS`/`ROT` legibles, y actualizar `Navigation.setNavigationView()` + defaults de sliders espaciales si cambian.
 
 ---
 
-## 4. Protocolo de Mantenimiento de Lecciones Aprendidas
+## 4. UI Panels (Sidebar / Compare)
+
+### 4.1. Panel Arithmetic sin Scrollbar + Top-10 Compacto Read-Only
+- **Problema**: Expandir `.results-list` con `min-height` grande + `overflow-y: auto` en el panel y en la lista generaba una barra deslizante molesta en Vector Arithmetic.
+- **Solución Obligatoria**:
+  - `.glass-sidebar`: `height: fit-content`, `overflow: hidden` (sin scroll del panel).
+  - Top-10 compacto (padding/gap/font reducidos) para que los 10 resultados quepan sin overflow.
+  - Items del Top-10 **solo lectura**: sin `click`, sin hover interactivo, `pointer-events: none`, `cursor: default`. No re-enfocar la cámara al clicar un vecino.
+- **Invariante**: El Top-10 es métrica visible, no control de navegación 3D.
+
+---
+
+## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
 
 1. **Consulta Obligatoria**: El agente **DEBE** leer este archivo al iniciar cualquier tarea de implementación, diseño de shaders, navegación o refactorización.
 2. **Actualización Continua**: Al descubrir una nueva invariante técnica, bug de renderizado o patrón de rendimiento, el agente **DEBE** agregarla a este archivo antes de finalizar la tarea.
