@@ -2,6 +2,17 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [1.1.0] - 2026-08-01
+
+### Added
+- **Collapsible side docks (Etapa A)**:
+  - `CollapsibleDock` (`src/ui/CollapsibleDock.js`): left/right docks with edge tabs, ~250ms `transform` slide, no DOM unmount, `aria-expanded` on the tab.
+  - **Left dock**: hosts Arithmetic *or* Compare (MODE). Shared collapsed state across MODE switches (same `localStorage` key `vl3d.dock.left.collapsed`).
+  - **Right dock**: spatial sliders + `AxisGizmo` (D1). Key `vl3d.dock.right.collapsed`.
+  - Desktop persists collapsed in `localStorage`; mobile probe (`max-width: 768px`) defaults collapsed and skips persist (D4 hook for Etapa B).
+  - Bottom telemetry HUD remains always visible (D3).
+  - Vitest coverage in `tests/CollapsibleDock.test.js`.
+
 ## [1.0.0] - 2026-08-02
 
 ### Added

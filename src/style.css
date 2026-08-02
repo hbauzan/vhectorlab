@@ -343,11 +343,11 @@ canvas {
   box-shadow: 0 0 8px var(--accent-red);
 }
 
-/* Left Sidebar */
+/* Left Sidebar (hosted inside #left-dock — dock owns absolute position) */
 .glass-sidebar {
-  position: absolute;
-  top: 72px;
-  left: 20px;
+  position: relative;
+  top: auto;
+  left: auto;
   width: 320px;
   height: fit-content;
   max-height: calc(100vh - 160px);
@@ -592,12 +592,106 @@ canvas {
 }
 
 /* =============================================================================
-   Thread Geometry Spatial Sliders 3D Styling
+   Collapsible side docks (Etapa A)
+   Left: Arithmetic | Compare host. Right: sliders + AxisGizmo.
+   Bottom HUD (#bottom-hud) is NEVER hosted here — always visible (D3).
    ============================================================================= */
-#thread-sliders-container {
+.collapsible-dock {
+  --dock-tab-size: 28px;
+  --dock-transition: transform 250ms ease;
   position: absolute;
   top: 72px;
+  z-index: 45;
+  display: flex;
+  align-items: flex-start;
+  transition: var(--dock-transition);
+  will-change: transform;
+}
+
+.collapsible-dock .dock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* §4.1 / §4.2: no external scrollbar on the dock host */
+  overflow: hidden;
+  height: fit-content;
+  max-height: calc(100vh - 160px);
+}
+
+.collapsible-dock.is-collapsed .dock-body {
+  pointer-events: none;
+}
+
+.dock-tab {
+  flex: 0 0 var(--dock-tab-size);
+  width: var(--dock-tab-size);
+  min-height: 72px;
+  margin-top: 8px;
+  padding: 8px 0;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 46;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dock-tab:hover {
+  background: rgba(0, 255, 170, 0.12);
+  color: var(--accent-gold);
+}
+
+.dock-left {
+  left: 20px;
+  flex-direction: row;
+}
+
+.dock-left .dock-tab {
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+}
+
+.dock-left.is-collapsed {
+  transform: translateX(calc(-100% + var(--dock-tab-size)));
+}
+
+.dock-right {
   right: 20px;
+  bottom: 20px;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.dock-right .dock-body {
+  height: 100%;
+  max-height: none;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.dock-right .dock-tab {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  align-self: flex-start;
+}
+
+.dock-right.is-collapsed {
+  transform: translateX(calc(100% - var(--dock-tab-size)));
+}
+
+/* =============================================================================
+   Thread Geometry Spatial Sliders 3D Styling (inside #right-dock)
+   ============================================================================= */
+#thread-sliders-container {
+  position: relative;
+  top: auto;
+  right: auto;
   width: 280px;
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
@@ -610,6 +704,17 @@ canvas {
   gap: 14px;
   z-index: 40;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+#axis-gizmo-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  pointer-events: none;
+  z-index: 100;
+  align-self: flex-end;
+  flex-shrink: 0;
 }
 
 .sliders-title {
