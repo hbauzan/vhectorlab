@@ -29,8 +29,8 @@ export class Navbar {
 
         <div class="view-mode-tabs">
           <span class="tab-label">VISTA:</span>
-          <button data-view="ANALYSIS" class="view-tab active">ANÁLISIS</button>
-          <button data-view="NAVIGATION" class="view-tab">NAVEGACIÓN</button>
+          <button data-view="ANALYSIS" class="view-tab">ANÁLISIS</button>
+          <button data-view="NAVIGATION" class="view-tab active">NAVEGACIÓN</button>
         </div>
 
         <div class="render-mode-tabs">

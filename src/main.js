@@ -33,8 +33,8 @@ class VectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. View Mode State ("ANALYSIS" by default | "NAVIGATION")
-    this.viewMode = 'ANALYSIS';
+    // 3. View Mode State ("NAVIGATION" by default | "ANALYSIS")
+    this.viewMode = 'NAVIGATION';
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     this.modal = new CustomModal();
@@ -74,10 +74,10 @@ class VectorLabApp {
 
     // 5. Spatial Control Sliders 3D Setup
     this.sliderConfig = {
-      threadSpacing: 0.8,
-      threadVectorDistance: 46.0,
-      threadAmplitudeY: 16.0,
-      threadWidth: 0.1,
+      threadSpacing: 1.5,
+      threadVectorDistance: 10.0,
+      threadAmplitudeY: 12.0,
+      threadWidth: 0.2,
       threadThickness: 0.10
     };
 
@@ -149,8 +149,8 @@ class VectorLabApp {
   }
 
   async init() {
-    // Set initial front camera view for ANALYSIS mode
-    this.navigation.setAnalysisView();
+    // Set initial camera view for NAVIGATION mode
+    this.navigation.setNavigationView();
 
     // Check backend health status
     const health = await this.provider.checkHealth();
