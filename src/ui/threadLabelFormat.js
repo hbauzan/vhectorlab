@@ -4,6 +4,21 @@
  * Compare: full entered token text (unchanged — show every token as typed)
  */
 
+/** Canonical Arithmetic thread order (layout sequenceIndex 0..4). */
+export const ARITHMETIC_THREAD_ORDER = Object.freeze(['A', 'B', 'C', 'RES', 'TOP1']);
+
+/**
+ * @param {'A'|'B'|'C'|'RES'|'TOP1'} slot
+ * @returns {number} sequenceIndex for LayoutEngine (same in ANALYSIS + NAVIGATION)
+ */
+export function arithmeticSequenceIndex(slot) {
+  const idx = ARITHMETIC_THREAD_ORDER.indexOf(slot);
+  if (idx < 0) {
+    throw new Error(`Unknown arithmetic thread slot: ${slot}`);
+  }
+  return idx;
+}
+
 /**
  * @param {'A'|'B'|'C'|'RES'|'TOP1'} slot
  * @returns {string}
