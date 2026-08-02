@@ -5,6 +5,11 @@ All notable changes to VectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **Defaults COMPARE|NAVIGATION|POINTS** (`feat/compare-nav-points-defaults`):
+  - Sliders: Spacing `0.7`, Vector Distance `10`, Amplitude `4.9`, Length `0.1`, Thickness `0.01`.
+  - Camera: `POS (-106.5, 20.4, 390.2)` / `ROT (-3.9, -8.4, 0)` via `cameraViewDefaults.js`.
+  - Camera poses now resolve per MODE|VIEW|RENDER (VIEW fallbacks + overrides); applied with sliders on context change.
+  - First COMPARE entry loads full EN auto-manual lexicon (`COMPARE_AUTO_PRESETS.default`), not `sample5`.
 - **English-only product UI** (`feat/english-user-facing-copy`): Navbar VIEW/ANALYSIS/NAVIGATION, spatial slider labels, Arithmetic/Compare buttons, Compare empty/sort/copy + EN auto-parts presets, landscape gate. Internal `data-view` / mode keys unchanged. Test titles and in-scope `src/` comments translated to EN; historical CHANGELOG entries left in Spanish.
 - **Docs: English-only UI roadmap** — glossary + D6–D8 closed (EN Compare vocab; EN test titles/comments; keep historical CHANGELOG in Spanish). See `roadmap/english-ui-i18n.md` + `roadmap/PROMPT-english-ui.md`.
 - **ThreadLabels cortas** (`feat/short-thread-labels` + `fix/compare-labels-full-tokens`):

@@ -109,11 +109,14 @@ Para lecturas de alta visibilidad y ligera carga computacional, implementar la p
 - **Solución Obligatoria**: Look solo si `target` es `CANVAS` y no hace match de docks/HUD/joystick (`isUiTouchTarget`). Joystick y botones Q/E escriben ejes en `Navigation` (`setMoveAxes` / `setVertical`); el update sigue el mismo `lerp` §3.1. Desktop mouse/WASD intacto.
 - **Invariante**: scroll en `.compare-cosine-list` no mueve cámara; touch UI ≠ look.
 
-### 3.4. Default Navigation Corridor Pose
-- **Invariante**: La vista inicial de **Navegación** usa la pose capturada `POS (-178.3, 13.5, 52.2)` + euler YXZ `ROT (-5.4°, -51.5°, 0°)` con sliders espaciales por defecto Separación $X=0.4$, Amplitud $Y=7.0$, Longitud $Z=0.2$.
-- **Análisis (ARITHMETIC + POINTS)**: pose capturada `POS (-75.2, -0.8, 62.5)` + `ROT (0°, 0°, 0°)`; sliders vía override `ARITHMETIC|ANALYSIS|POINTS` (Amplitud $Y=40$, Grosor $0.05$, resto = global). Al cambiar MODE/VISTA/RENDER se reaplica `resolveSpatialDefaults` + sync UI.
-- **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`). Sirve para releer POS/ROT desde una captura y actualizar `setNavigationView()` / `setAnalysisView()`.
-- **Workflow de captura**: Para fijar una nueva vista default, activar el overlay, navegar a la pose deseada, screenshotear `POS`/`ROT` legibles, y actualizar Navigation + `SPATIAL_DEFAULT_OVERRIDES` si cambian.
+### 3.4. Default poses by MODE|VIEW|RENDER
+- **Invariante**: Al cambiar MODE / VIEW / RENDER se reaplica cámara (`resolveCameraPose` → `Navigation.setContextView`) + sliders (`resolveSpatialDefaults` → sync UI). Claves `MODE`, `MODE|VIEW`, `MODE|VIEW|RENDER` (más específico gana).
+- **Fallbacks de VIEW** (sin override): NAVIGATION corridor `POS (-178.3, 13.5, 52.2)` / `ROT (-5.4°, -51.5°, 0°)`; ANALYSIS `POS (-75.2, -0.8, 62.5)` / `ROT (0°, 0°, 0°)`.
+- **Overrides capturados**:
+  - `ARITHMETIC|ANALYSIS|POINTS` — sliders Amplitud $Y=40$, Grosor $0.05$; cámara vía fallback ANALYSIS.
+  - `COMPARE|NAVIGATION|POINTS` — sliders Spacing `0.7`, Dist Y `10`, Amp `4.9`, Length `0.1`, Thickness `0.01`; cámara `POS (-106.5, 20.4, 390.2)` / `ROT (-3.9°, -8.4°, 0°)`; primer load COMPARE usa `COMPARE_AUTO_PRESETS.default` (lexicón completo), no `sample5`.
+- **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`).
+- **Workflow de captura**: Activar overlay → navegar a la pose → screenshot POS/ROT → actualizar `CAMERA_DEFAULT_OVERRIDES` y/o `SPATIAL_DEFAULT_OVERRIDES` para la clave `MODE|VIEW|RENDER`.
 
 ---
 
