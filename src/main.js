@@ -216,8 +216,8 @@ class VHectorLabApp {
   }
 
   /**
-   * Visualization panel: always on app root, glued to the bottom HUD
-   * (desktop right sheet + phone full-width sheet).
+   * Visualization panel under Spatial Controls in the right dock
+   * (top-right dock-styled collapse tab).
    */
   mountVisualizationControlsUI() {
     this.vizConfig = loadVisualizationSettings();
@@ -259,12 +259,13 @@ class VHectorLabApp {
       dockBody: this.rightDock.body,
       appRoot: this.appContainer,
     });
-    if (vizEl.parentElement !== parent) {
-      parent.appendChild(vizEl);
+    // Below Spatial Controls, above AxisGizmo.
+    if (vizEl.parentElement !== parent || vizEl.nextElementSibling !== this.axisGizmo.container) {
+      parent.insertBefore(vizEl, this.axisGizmo.container);
     }
   }
 
-  /** Retarget layout glyphs when crossing the phone breakpoint. */
+  /** Retarget layout attribute when crossing the phone breakpoint. */
   syncVisualizationPanelHost() {
     if (!this.vizEl) return;
     const mobile = isMobileViewport();
