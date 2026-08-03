@@ -2,6 +2,11 @@
 
 All notable changes to VectorLab 3D will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **HUD ACTIVATION stuck at 0.0000**: resolve hover from `pointsData[index]` / ribbon `activations`; adaptive precision up to 32 decimals (shrink / scientific / `ACT:` on narrow mobile slots).
+
 ## [2.1.0] - 2026-08-02
 
 ### Added

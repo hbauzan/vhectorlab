@@ -105,6 +105,7 @@ export class MeshFactory {
     lineMesh.userData = {
       kind: 'continuityLine',
       pointCount: points.length,
+      activations: activations ? Array.from(activations) : null,
     };
 
     return lineMesh;
@@ -207,7 +208,12 @@ export class MeshFactory {
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false;
-    mesh.userData = { kind: 'wideRibbon', pointCount: n, width };
+    mesh.userData = {
+      kind: 'wideRibbon',
+      pointCount: n,
+      width,
+      activations: Array.from(acts),
+    };
     return mesh;
   }
 

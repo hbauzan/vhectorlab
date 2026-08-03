@@ -246,6 +246,11 @@ Portable findings from VectorLab 3D `v2.1.0` — apply if the older app shares A
 
 **Modules shipped (reference):** `saeFilterBridge.js`, `groupStackLayout.js`, `dimContrastSort.js`; wiring in Compare panel + Instancer layout. Diagnosis: `scripts/diagnose_group_separation.py`. Roadmap: `roadmap/compare-group-contrast-viz.md`.
 
+### 4.12. Bottom HUD hover activation (POINTS / RIBBONS)
+- **Problema**: `ACTIVATION` siempre `0.0000` — `Interaction` pasaba `userData` del mesh (`{ pointsData }`), y el HUD leía `userData.val` / `data.activation` (inexistentes).
+- **Solución Obligatoria**: Resolver vía `resolveHoverTelemetry` → `pointsData[index].activation` (POINTS) o `userData.activations` + face/`index` (RIBBONS / continuity). Formatear con `formatActivationValue` (hasta 32 decimales, shrink + scientific si el slot es angosto; label `ACT:` en mobile). `title` tooltip con valor completo.
+- **Invariante**: telemetría de hover ≠ normalización de color; mostrar valor **crudo** del embedding/activación en ese índice.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
