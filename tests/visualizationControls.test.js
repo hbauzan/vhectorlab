@@ -125,7 +125,7 @@ describe('visualizationControlsDefaults', () => {
 });
 
 describe('Visualization panel collapse tab', () => {
-  it('edge layout uses vertical glyphs with top-right dock-tab (not side ◀/▶)', () => {
+  it('edge layout uses vertical glyphs with top handle (not side ◀/▶)', () => {
     expect(vizPanelTabGlyph(false, 'edge')).toBe('▼');
     expect(vizPanelTabGlyph(true, 'edge')).toBe('▲');
     const expanded = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
