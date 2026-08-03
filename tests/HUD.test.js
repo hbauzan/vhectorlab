@@ -78,3 +78,70 @@ describe('HUD camera pose overlay', () => {
     expect(hud.camRotEl.textContent).toBe('ROT: -5.4, -51.5, 0.0');
   });
 });
+
+describe('HUD activation telemetry', () => {
+  let root;
+
+  beforeEach(() => {
+    root = document.createElement('div');
+  });
+
+  it('shows real activation from pointsData instead of 0.0000', () => {
+    const hud = new HUD(root);
+    // Node mock lacks innerHTML parsing — attach real-ish readout nodes
+    const center = document.createElement('div');
+    center.className = 'hud-center';
+    Object.defineProperty(center, 'clientWidth', { get: () => 360 });
+
+    const label = document.createElement('span');
+    label.className = 'hud-label';
+    Object.defineProperty(label, 'offsetWidth', { get: () => 100 });
+
+    const segment = document.createElement('span');
+    Object.defineProperty(segment, 'offsetWidth', { get: () => 70 });
+
+    const activation = document.createElement('span');
+    const coords = document.createElement('span');
+    const token = document.createElement('span');
+
+    center.appendChild(label);
+    center.appendChild(segment);
+    center.appendChild(activation);
+
+    hud.centerEl = center;
+    hud.segmentEl = segment;
+    hud.activationEl = activation;
+    hud.coordsEl = coords;
+    hud.tokenEl = token;
+
+    hud.updateTelemetry({
+      index: 0,
+      point: { x: 5, y: 1, z: 0 },
+      userData: {
+        pointsData: [{
+          activation: 0.0000421,
+          meta: { type: 'compare', token: 'alpha', dim: 3, val: 0.0000421 },
+        }],
+      },
+    });
+
+    expect(activation.textContent).not.toMatch(/0\.0000$/);
+    expect(activation.textContent).toMatch(/0\.0000421|4\.21e-/i);
+    expect(token.textContent).toBe('alpha');
+    expect(segment.textContent).toBe('COMPARE');
+  });
+
+  it('clears to -- when hover leaves', () => {
+    const hud = new HUD(root);
+    hud.activationEl = document.createElement('span');
+    hud.coordsEl = document.createElement('span');
+    hud.segmentEl = document.createElement('span');
+    hud.tokenEl = document.createElement('span');
+    hud.activationEl.style = {};
+    hud.activationEl.removeAttribute = () => {};
+
+    hud.updateTelemetry(null);
+    expect(hud.activationEl.textContent).toBe('ACTIVATION: --');
+    expect(hud.segmentEl.textContent).toBe('NEUTRAL SPACE');
+  });
+});

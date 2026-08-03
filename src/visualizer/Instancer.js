@@ -326,6 +326,8 @@ export class Instancer {
       }
       if (ribbonMesh) {
         ribbonMesh.userData.threadId = threadId;
+        ribbonMesh.userData.token = item.text;
+        ribbonMesh.userData.type = 'compare';
         this.activeGroup.add(ribbonMesh);
       }
 
