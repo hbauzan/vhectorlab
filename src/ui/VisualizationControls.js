@@ -1,7 +1,7 @@
 /**
  * Visualization panel: sign filter + divergent color anchors.
- * Lives under Spatial Controls in the right dock. Collapse control is a
- * dock-tab-styled horizontal handle on the TOP of the glass card.
+ * Mounted on the app root and glued to the bottom HUD.
+ * Short left dock-tab (▼/▲) collapses the sheet down onto the HUD baseline.
  */
 
 import {
@@ -27,7 +27,7 @@ export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 /** @typedef {'edge' | 'sheet'} VizPanelLayout */
 
 /**
- * Desktop = dock stack with top-right tab; phone keeps sheet layout flag for CSS.
+ * Desktop = edge sheet on HUD; phone = full-width sheet (same left tab chrome).
  * @param {boolean} isMobile
  * @returns {VizPanelLayout}
  */
@@ -36,26 +36,28 @@ export function vizPanelLayoutForViewport(isMobile) {
 }
 
 /**
- * Visualization mounts in the right dock (under Spatial Controls).
- * @param {{ isMobile?: boolean, dockBody: HTMLElement, appRoot: HTMLElement }} opts
+ * Where to mount the Visualization host.
+ * Always on the app root — glued to the bottom HUD (desktop + phone).
+ * Must not live under the right dock (`transform` traps fixed/absolute children).
+ * @param {{ isMobile?: boolean, dockBody?: HTMLElement, appRoot: HTMLElement }} opts
  * @returns {HTMLElement}
  */
 export function resolveVisualizationMountParent(opts) {
-  if (!opts || !opts.dockBody) {
-    throw new Error('resolveVisualizationMountParent requires dockBody');
+  if (!opts || !opts.appRoot) {
+    throw new Error('resolveVisualizationMountParent requires appRoot');
   }
   void opts.isMobile;
-  void opts.appRoot;
-  return opts.dockBody;
+  void opts.dockBody;
+  return opts.appRoot;
 }
 
 /**
+ * Vertical collapse glyphs: expanded ▼ (fold down onto HUD); collapsed ▲ (raise).
  * @param {boolean} collapsed
  * @param {VizPanelLayout} [layout='edge']
  * @returns {string}
  */
 export function vizPanelTabGlyph(collapsed, layout = 'edge') {
-  // Top-right tab collapses the card vertically (same glyphs on phone sheet).
   void layout;
   return collapsed ? '▲' : '▼';
 }
@@ -232,7 +234,7 @@ export function setVisualizationPanelLayout(container, layout) {
 }
 
 /**
- * Wire filter radios, hex/swatch inputs, Reset, and edge collapse tab.
+ * Wire filter radios, hex/swatch inputs, Reset, and left collapse tab.
  * Mutates `config` in place; persists to localStorage; calls onChange.
  *
  * @param {HTMLElement} container

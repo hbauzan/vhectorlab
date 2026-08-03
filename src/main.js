@@ -216,8 +216,8 @@ class VHectorLabApp {
   }
 
   /**
-   * Visualization panel under Spatial Controls in the right dock
-   * (top-right dock-styled collapse tab).
+   * Visualization panel glued to the bottom HUD (app root).
+   * Short left dock-tab collapses the sheet down onto the HUD baseline.
    */
   mountVisualizationControlsUI() {
     this.vizConfig = loadVisualizationSettings();
@@ -259,9 +259,8 @@ class VHectorLabApp {
       dockBody: this.rightDock.body,
       appRoot: this.appContainer,
     });
-    // Below Spatial Controls, above AxisGizmo.
-    if (vizEl.parentElement !== parent || vizEl.nextElementSibling !== this.axisGizmo.container) {
-      parent.insertBefore(vizEl, this.axisGizmo.container);
+    if (vizEl.parentElement !== parent) {
+      parent.appendChild(vizEl);
     }
   }
 
