@@ -125,9 +125,7 @@ describe('visualizationControlsDefaults', () => {
 });
 
 describe('Visualization panel collapse tab', () => {
-  it('edge layout uses vertical glyphs (must not fight right-dock ◀/▶ tab)', () => {
-    // Side ◀/▶ on Visualization inflates host width past the Spatial card; with
-    // dock-right align-items:flex-end the handle jumps and steals dock-tab hits.
+  it('edge layout uses vertical glyphs with top-right dock-tab (not side ◀/▶)', () => {
     expect(vizPanelTabGlyph(false, 'edge')).toBe('▼');
     expect(vizPanelTabGlyph(true, 'edge')).toBe('▲');
     const expanded = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
@@ -192,19 +190,19 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Expand Visualization sheet');
   });
 
-  it('resolveVisualizationMountParent always uses app root (HUD-glued)', () => {
+  it('resolveVisualizationMountParent uses the right dock body', () => {
     const dockBody = { id: 'dock' };
     const appRoot = { id: 'app' };
     expect(resolveVisualizationMountParent({
       isMobile: true,
       dockBody,
       appRoot,
-    })).toBe(appRoot);
+    })).toBe(dockBody);
     expect(resolveVisualizationMountParent({
       isMobile: false,
       dockBody,
       appRoot,
-    })).toBe(appRoot);
+    })).toBe(dockBody);
   });
 
   it('setVisualizationPanelCollapsed toggles class and glyph', () => {
