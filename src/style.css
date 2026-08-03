@@ -770,17 +770,13 @@ canvas {
   padding: 8px;
 }
 
-/* Bottom Floating HUD — inset floating bar; leave a slot for the viz pill */
+/* Bottom Floating HUD */
 .glass-hud {
-  --hud-inset: 20px;
-  --hud-height: 48px;
-  --viz-collapsed-size: 48px;
-  --viz-gap: 8px;
   position: absolute;
-  bottom: var(--hud-inset);
-  left: var(--hud-inset);
-  right: calc(var(--hud-inset) + var(--viz-collapsed-size) + var(--viz-gap));
-  height: var(--hud-height);
+  bottom: 20px;
+  left: 20px;
+  right: 140px;
+  height: 48px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1017,6 +1013,7 @@ canvas {
   max-height: none;
   justify-content: space-between;
   align-items: flex-end;
+  gap: 16px;
 }
 
 .dock-right .dock-tab {
@@ -1057,88 +1054,81 @@ canvas {
 }
 
 /*
-  Visualization: always on app root, glued to the bottom HUD.
-  Expanded: sits on top of the HUD (opens upward).
-  Collapsed: HUD-height pill in the reserved right slot (same baseline as HUD).
-  column-reverse → handle on the HUD seam; body above.
+  Visualization: under Spatial Controls in the right dock.
+  Dock-tab chrome on the TOP-RIGHT (outside the glass body) — same look as
+  left/right dock tabs, without fighting the dock's left ▶ strip.
+  Host width matches Spatial (280); glass body is tighter (252) so the tab
+  sits in the right gutter without overflowing overflow:hidden on .dock-body.
 */
 #visualization-controls-container.viz-panel {
-  --hud-inset: 20px;
-  --hud-height: 48px;
-  --viz-width: 280px;
-  --viz-collapsed-size: 48px;
-  position: absolute;
-  right: var(--hud-inset);
-  bottom: calc(var(--hud-inset) + var(--hud-height));
-  z-index: 45;
-  flex-direction: column-reverse;
+  --viz-width: 252px;
+  --viz-tab-size: 28px;
+  --viz-host-width: 280px;
+  position: relative;
+  flex-direction: column;
   align-items: stretch;
   gap: 0;
   padding: 0;
-  width: var(--viz-width);
-  max-width: var(--viz-width);
+  margin-top: 6px;
+  width: var(--viz-host-width);
+  max-width: var(--viz-host-width);
   background: transparent;
   border: none;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   overflow: visible;
-  transition: width 200ms ease, min-width 200ms ease, bottom 200ms ease;
 }
 
 #visualization-controls-container .viz-panel-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
   width: var(--viz-width);
-  max-height: min(48vh, 420px);
-  overflow-x: hidden;
-  overflow-y: auto;
   box-sizing: border-box;
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
-  border-radius: 12px 12px 0 0;
-  border-bottom: none;
+  border-radius: 12px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 200ms ease, transform 250ms ease, max-height 250ms ease;
+  transition: opacity 200ms ease, max-height 250ms ease;
 }
 
 #visualization-controls-container .viz-panel-tab {
-  flex: 0 0 22px;
-  width: 100%;
-  min-height: 22px;
-  height: 22px;
+  position: absolute;
+  top: 8px;
+  right: 0;
+  flex: none;
+  width: var(--viz-tab-size);
+  min-height: 56px;
+  height: 56px;
   margin: 0;
   padding: 0;
-  align-self: stretch;
-  border-radius: 0;
+  border-radius: 0 8px 8px 0;
   border: 1px solid var(--panel-border);
-  font-size: 0.7rem;
+  border-left: none;
+  font-size: 0.75rem;
   line-height: 1;
+  z-index: 46;
 }
 
 #visualization-controls-container.is-collapsed {
-  bottom: var(--hud-inset);
-  width: var(--viz-collapsed-size);
-  min-width: var(--viz-collapsed-size);
-  max-width: var(--viz-collapsed-size);
+  width: var(--viz-tab-size);
+  min-width: var(--viz-tab-size);
+  max-width: var(--viz-tab-size);
+  min-height: 56px;
+  align-self: flex-end;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-body {
-  position: absolute;
-  left: auto;
-  right: 0;
-  bottom: 100%;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px);
-  width: var(--viz-width);
-  height: 0;
   max-height: 0;
+  height: 0;
   padding: 0;
+  margin: 0;
   overflow: hidden;
   border: none;
   box-shadow: none;
@@ -1146,14 +1136,34 @@ canvas {
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-tab {
-  flex: 0 0 var(--hud-height);
-  width: 100%;
-  min-height: var(--hud-height);
-  height: var(--hud-height);
-  margin: 0;
-  border-radius: 12px;
+  top: 0;
+  right: 0;
+  border-radius: 8px;
   border: 1px solid var(--panel-border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Compact Visualization internals */
+#visualization-controls-container .sliders-title {
+  font-size: 0.85rem;
+  padding-bottom: 6px;
+  margin: 0;
+}
+
+#visualization-controls-container .viz-filter-group {
+  gap: 6px;
+}
+
+#visualization-controls-container .viz-colors-section {
+  gap: 6px;
+}
+
+#visualization-controls-container .viz-color-row {
+  gap: 6px;
+}
+
+#visualization-controls-container .viz-coverage-row {
+  gap: 4px;
 }
 
 #axis-gizmo-container {
@@ -1721,105 +1731,37 @@ canvas {
     gap: 10px;
   }
 
-  /*
-    Visualization bottom sheet (phone): glued to HUD baseline.
-    Collapsed pill shares the HUD row; expanded opens upward.
-  */
   #visualization-controls-container.viz-panel {
-    --hud-inset: max(6px, env(safe-area-inset-bottom));
-    --hud-height: 26px;
-    --viz-collapsed-size: 26px;
-    position: fixed;
-    left: max(8px, env(safe-area-inset-left));
-    right: max(8px, env(safe-area-inset-right));
-    bottom: calc(var(--hud-inset) + var(--hud-height) + 4px);
-    z-index: 90;
-    flex-direction: column-reverse;
-    align-items: stretch;
-    width: auto;
-    max-width: none;
-    min-width: 0;
-    padding: 0;
-    gap: 0;
-    transition: transform 250ms ease, bottom 200ms ease;
-  }
-
-  #visualization-controls-container .viz-panel-tab {
-    flex: 0 0 22px;
-    width: 100%;
-    min-height: 22px;
-    height: 22px;
-    margin: 0;
-    padding: 0;
-    align-self: stretch;
-    border-radius: 0;
-    border: 1px solid var(--panel-border);
-    font-size: 0.7rem;
+    width: min(260px, calc(100vw - 64px));
+    max-width: min(260px, calc(100vw - 64px));
+    margin-top: 8px;
   }
 
   #visualization-controls-container .viz-panel-body {
-    width: 100%;
-    max-height: min(42dvh, 320px);
-    overflow-x: hidden;
+    width: min(232px, calc(100vw - 96px));
+    padding: 10px;
+    gap: 8px;
+    max-height: min(40dvh, 280px);
     overflow-y: auto;
-    padding: 10px 12px;
-    gap: 10px;
-    border-radius: 10px 10px 0 0;
-    border-bottom: none;
   }
 
   #visualization-controls-container.is-collapsed {
-    left: auto;
-    right: max(8px, env(safe-area-inset-right));
-    bottom: var(--hud-inset);
-    width: var(--viz-collapsed-size);
-    min-width: var(--viz-collapsed-size);
-    max-width: var(--viz-collapsed-size);
-  }
-
-  #visualization-controls-container.is-collapsed .viz-panel-body {
-    position: absolute;
-    left: auto;
-    right: 0;
-    bottom: 100%;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(10px);
-    width: min(260px, calc(100vw - 64px));
-    height: 0;
-    max-height: 0;
-    padding: 0;
-    overflow: hidden;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-  }
-
-  #visualization-controls-container.is-collapsed .viz-panel-tab {
-    flex: 0 0 var(--hud-height);
-    min-height: var(--hud-height);
-    height: var(--hud-height);
-    margin: 0;
-    border-radius: 8px;
-    border: 1px solid var(--panel-border);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
   }
 
   .slider-group input[type="range"] {
     min-height: 44px;
   }
 
-  /* Delicate bottom telemetry strip — inset, slot for viz pill */
+  /* Delicate bottom telemetry strip */
   .glass-hud {
-    --hud-inset: max(4px, env(safe-area-inset-bottom));
-    --hud-height: 26px;
-    --viz-collapsed-size: 26px;
-    --viz-gap: 4px;
-    left: max(6px, env(safe-area-inset-left));
-    right: calc(max(6px, env(safe-area-inset-right)) + var(--viz-collapsed-size) + var(--viz-gap));
-    bottom: var(--hud-inset);
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
     height: auto;
-    min-height: var(--hud-height);
+    min-height: 26px;
     padding: 3px 8px;
     font-size: 0.58rem;
     flex-wrap: nowrap;

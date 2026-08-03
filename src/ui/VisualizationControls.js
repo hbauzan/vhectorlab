@@ -1,7 +1,7 @@
 /**
  * Visualization panel: sign filter + divergent color anchors.
- * Always mounted on the app root and glued to the bottom HUD
- * (desktop right sheet + phone full-width sheet; opens upward).
+ * Lives under Spatial Controls in the right dock. Collapse control is a
+ * dock-tab-styled strip on the top-right (outside the glass card).
  */
 
 import {
@@ -27,7 +27,7 @@ export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 /** @typedef {'edge' | 'sheet'} VizPanelLayout */
 
 /**
- * Desktop = side edge tab; phone = bottom sheet (open upward).
+ * Desktop = dock stack with top-right tab; phone keeps sheet layout flag for CSS.
  * @param {boolean} isMobile
  * @returns {VizPanelLayout}
  */
@@ -36,20 +36,17 @@ export function vizPanelLayoutForViewport(isMobile) {
 }
 
 /**
- * Where to mount the Visualization host.
- * Always on the app root — glued to the bottom HUD (desktop + phone).
- * Must not live under the right dock (`transform` traps fixed/absolute children
- * and space-between left a floating collapsed handle).
+ * Visualization mounts in the right dock (under Spatial Controls).
  * @param {{ isMobile?: boolean, dockBody: HTMLElement, appRoot: HTMLElement }} opts
  * @returns {HTMLElement}
  */
 export function resolveVisualizationMountParent(opts) {
-  if (!opts || !opts.appRoot) {
-    throw new Error('resolveVisualizationMountParent requires appRoot');
+  if (!opts || !opts.dockBody) {
+    throw new Error('resolveVisualizationMountParent requires dockBody');
   }
   void opts.isMobile;
-  void opts.dockBody;
-  return opts.appRoot;
+  void opts.appRoot;
+  return opts.dockBody;
 }
 
 /**
@@ -58,8 +55,7 @@ export function resolveVisualizationMountParent(opts) {
  * @returns {string}
  */
 export function vizPanelTabGlyph(collapsed, layout = 'edge') {
-  // Vertical for both edge (desktop stack) and sheet (phone).
-  // Side ◀/▶ fights the right-dock tab and inflates host width under flex-end.
+  // Top-right tab collapses the card vertically (same glyphs on phone sheet).
   void layout;
   return collapsed ? '▲' : '▼';
 }
