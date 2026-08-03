@@ -770,13 +770,17 @@ canvas {
   padding: 8px;
 }
 
-/* Bottom Floating HUD */
+/* Bottom Floating HUD — inset floating bar; leave a slot for the viz pill */
 .glass-hud {
+  --hud-inset: 20px;
+  --hud-height: 48px;
+  --viz-collapsed-size: 48px;
+  --viz-gap: 8px;
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 140px;
-  height: 48px;
+  bottom: var(--hud-inset);
+  left: var(--hud-inset);
+  right: calc(var(--hud-inset) + var(--viz-collapsed-size) + var(--viz-gap));
+  height: var(--hud-height);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1053,24 +1057,33 @@ canvas {
 }
 
 /*
-  Visualization: host = dock-like flex row (no card chrome).
-  Collapse tab sits OUTSIDE the glass card — same affordance as CollapsibleDock.
-  Card chrome + width belong on .viz-panel-body only (not the outer host).
+  Visualization: always on app root, glued to the bottom HUD.
+  Expanded: sits on top of the HUD (opens upward).
+  Collapsed: HUD-height pill in the reserved right slot (same baseline as HUD).
+  column-reverse → handle on the HUD seam; body above.
 */
 #visualization-controls-container.viz-panel {
-  flex-direction: row;
-  align-items: flex-start;
+  --hud-inset: 20px;
+  --hud-height: 48px;
+  --viz-width: 280px;
+  --viz-collapsed-size: 48px;
+  position: absolute;
+  right: var(--hud-inset);
+  bottom: calc(var(--hud-inset) + var(--hud-height));
+  z-index: 45;
+  flex-direction: column-reverse;
+  align-items: stretch;
   gap: 0;
   padding: 0;
-  width: auto;
-  max-width: none;
+  width: var(--viz-width);
+  max-width: var(--viz-width);
   background: transparent;
   border: none;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   overflow: visible;
-  transition: width 250ms ease, min-width 250ms ease;
+  transition: width 200ms ease, min-width 200ms ease, bottom 200ms ease;
 }
 
 #visualization-controls-container .viz-panel-body {
@@ -1078,49 +1091,68 @@ canvas {
   flex-direction: column;
   gap: 14px;
   padding: 16px;
-  width: 280px;
+  width: var(--viz-width);
+  max-height: min(48vh, 420px);
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 200ms ease, transform 250ms ease;
+  transition: opacity 200ms ease, transform 250ms ease, max-height 250ms ease;
 }
 
 #visualization-controls-container .viz-panel-tab {
-  flex: 0 0 var(--dock-tab-size, 28px);
-  width: var(--dock-tab-size, 28px);
-  min-height: 72px;
-  margin: 8px 0;
-  align-self: flex-start;
-  border-radius: 8px 0 0 8px;
-  border-right: none;
+  flex: 0 0 22px;
+  width: 100%;
+  min-height: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  border-radius: 0;
+  border: 1px solid var(--panel-border);
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 #visualization-controls-container.is-collapsed {
-  width: var(--dock-tab-size, 28px);
-  min-width: var(--dock-tab-size, 28px);
-  max-width: var(--dock-tab-size, 28px);
+  bottom: var(--hud-inset);
+  width: var(--viz-collapsed-size);
+  min-width: var(--viz-collapsed-size);
+  max-width: var(--viz-collapsed-size);
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-body {
   position: absolute;
+  left: auto;
   right: 0;
+  bottom: 100%;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(12px);
-  width: 0;
+  transform: translateY(8px);
+  width: var(--viz-width);
+  height: 0;
+  max-height: 0;
   padding: 0;
   overflow: hidden;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-tab {
+  flex: 0 0 var(--hud-height);
+  width: 100%;
+  min-height: var(--hud-height);
+  height: var(--hud-height);
   margin: 0;
-  border-radius: 8px 0 0 8px;
+  border-radius: 12px;
   border: 1px solid var(--panel-border);
-  border-right: none;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -1690,36 +1722,38 @@ canvas {
   }
 
   /*
-    Visualization bottom sheet (phone): host on app root, open upward.
-    data-viz-layout="sheet" is set from JS; CSS also scopes under max-width.
+    Visualization bottom sheet (phone): glued to HUD baseline.
+    Collapsed pill shares the HUD row; expanded opens upward.
   */
   #visualization-controls-container.viz-panel {
+    --hud-inset: max(6px, env(safe-area-inset-bottom));
+    --hud-height: 26px;
+    --viz-collapsed-size: 26px;
     position: fixed;
     left: max(8px, env(safe-area-inset-left));
     right: max(8px, env(safe-area-inset-right));
-    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 30px);
+    bottom: calc(var(--hud-inset) + var(--hud-height) + 4px);
     z-index: 90;
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: stretch;
     width: auto;
     max-width: none;
     min-width: 0;
     padding: 0;
     gap: 0;
-    transition: transform 250ms ease;
+    transition: transform 250ms ease, bottom 200ms ease;
   }
 
   #visualization-controls-container .viz-panel-tab {
-    flex: 0 0 26px;
+    flex: 0 0 22px;
     width: 100%;
-    min-height: 26px;
-    height: 26px;
+    min-height: 22px;
+    height: 22px;
     margin: 0;
     padding: 0;
     align-self: stretch;
-    border-radius: 10px 10px 0 0;
+    border-radius: 0;
     border: 1px solid var(--panel-border);
-    border-bottom: none;
     font-size: 0.7rem;
   }
 
@@ -1730,24 +1764,28 @@ canvas {
     overflow-y: auto;
     padding: 10px 12px;
     gap: 10px;
-    border-radius: 0 0 10px 10px;
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
   }
 
   #visualization-controls-container.is-collapsed {
-    width: auto;
-    min-width: 0;
-    max-width: none;
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: var(--hud-inset);
+    width: var(--viz-collapsed-size);
+    min-width: var(--viz-collapsed-size);
+    max-width: var(--viz-collapsed-size);
   }
 
   #visualization-controls-container.is-collapsed .viz-panel-body {
     position: absolute;
-    left: 0;
+    left: auto;
     right: 0;
-    bottom: 0;
+    bottom: 100%;
     opacity: 0;
     pointer-events: none;
     transform: translateY(10px);
-    width: auto;
+    width: min(260px, calc(100vw - 64px));
     height: 0;
     max-height: 0;
     padding: 0;
@@ -1758,8 +1796,11 @@ canvas {
   }
 
   #visualization-controls-container.is-collapsed .viz-panel-tab {
+    flex: 0 0 var(--hud-height);
+    min-height: var(--hud-height);
+    height: var(--hud-height);
     margin: 0;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--panel-border);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   }
@@ -1768,13 +1809,17 @@ canvas {
     min-height: 44px;
   }
 
-  /* Delicate bottom telemetry strip */
+  /* Delicate bottom telemetry strip — inset, slot for viz pill */
   .glass-hud {
+    --hud-inset: max(4px, env(safe-area-inset-bottom));
+    --hud-height: 26px;
+    --viz-collapsed-size: 26px;
+    --viz-gap: 4px;
     left: max(6px, env(safe-area-inset-left));
-    right: max(6px, env(safe-area-inset-right));
-    bottom: max(4px, env(safe-area-inset-bottom));
+    right: calc(max(6px, env(safe-area-inset-right)) + var(--viz-collapsed-size) + var(--viz-gap));
+    bottom: var(--hud-inset);
     height: auto;
-    min-height: 26px;
+    min-height: var(--hud-height);
     padding: 3px 8px;
     font-size: 0.58rem;
     flex-wrap: nowrap;
