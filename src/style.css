@@ -790,12 +790,24 @@ canvas {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.hud-center {
+  flex: 1 1 auto;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hud-left, .hud-right {
+  flex: 0 1 auto;
 }
 
 .hud-label {
   color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .hud-val { font-family: monospace; font-weight: 600; color: var(--text-main); }
@@ -806,10 +818,30 @@ canvas {
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 700;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 28vw;
 }
 
-.hud-highlight { font-family: monospace; font-weight: 700; }
-.hud-token-text { font-weight: 700; color: var(--accent-gold); }
+.hud-highlight {
+  font-family: monospace;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  min-width: 0;
+  max-width: 100%;
+}
+.hud-token-text {
+  font-weight: 700;
+  color: var(--accent-gold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22vw;
+}
 
 /* Camera pose overlay (VITE_SHOW_CAM_POSE=true) — readable POS/ROT for default-view capture */
 #camera-pose-debug {
@@ -1654,7 +1686,29 @@ canvas {
     padding: 8px 12px;
     font-size: 0.7rem;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 4px 8px;
+  }
+
+  .hud-left, .hud-right {
+    flex: 1 1 40%;
+  }
+
+  .hud-center {
+    flex: 1 1 100%;
+    order: 3;
+    justify-content: flex-start;
+  }
+
+  .hud-badge {
+    max-width: 36vw;
+  }
+
+  .hud-token-text {
+    max-width: 40vw;
+  }
+
+  .hud-highlight {
+    font-size: 0.72rem;
   }
 
   #axis-gizmo-container {

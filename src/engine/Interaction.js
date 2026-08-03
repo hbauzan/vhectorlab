@@ -60,6 +60,7 @@ export class Interaction {
             object: hit.object,
             index: index,
             point: hit.point,
+            face: hit.face || null,
             userData: hit.object.userData
           });
         }

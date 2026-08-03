@@ -3,6 +3,12 @@
  * Displays real-time X, Y, Z coordinates, activation values, and token text.
  * Optional camera pose overlay (VITE_SHOW_CAM_POSE=true).
  */
+import {
+  resolveHoverTelemetry,
+  formatActivationValue,
+  activationDisplayBudget,
+} from './hoverTelemetry.js';
+
 export class HUD {
   /**
    * @param {HTMLElement} [containerElement]
@@ -37,6 +43,19 @@ export class HUD {
     this.segmentEl = this.element.querySelector('#hud-segment');
     this.activationEl = this.element.querySelector('#hud-activation');
     this.tokenEl = this.element.querySelector('#hud-token');
+    this.centerEl = this.element.querySelector('.hud-center');
+
+    this._lastActivation = null;
+    this._resizeObserver = null;
+
+    if (typeof ResizeObserver !== 'undefined' && this.centerEl) {
+      this._resizeObserver = new ResizeObserver(() => {
+        if (this._lastActivation != null) {
+          this._renderActivation(this._lastActivation);
+        }
+      });
+      this._resizeObserver.observe(this.centerEl);
+    }
 
     this.cameraDebugEl = null;
     this.camPosEl = null;
@@ -86,27 +105,64 @@ export class HUD {
   }
 
   updateTelemetry(data) {
-    if (!data) {
+    const t = resolveHoverTelemetry(data);
+    if (!t) {
+      this._lastActivation = null;
       this.coordsEl.textContent = 'X: -- | Y: -- | Z: --';
       this.segmentEl.textContent = 'NEUTRAL SPACE';
-      this.activationEl.textContent = 'ACTIVATION: 0.000';
+      this.activationEl.textContent = 'ACTIVATION: --';
       this.activationEl.style.color = '#888888';
+      this.activationEl.removeAttribute('title');
       this.tokenEl.textContent = 'NONE';
       return;
     }
 
-    const pos = data.point || { x: 0, y: 0, z: 0 };
+    const pos = t.point || { x: 0, y: 0, z: 0 };
     this.coordsEl.textContent = `X: ${Math.round(pos.x)} | Y: ${Math.round(pos.y)} | Z: ${Math.round(pos.z)}`;
 
-    const val = data.userData?.val !== undefined ? data.userData.val : (data.activation || 0);
-    const formattedVal = val.toFixed(4);
-    this.activationEl.textContent = `ACTIVATION: ${formattedVal}`;
-    this.activationEl.style.color = val > 0.3 ? '#ffe600' : '#00ffaa';
+    this._lastActivation = t.activation;
+    this._renderActivation(t.activation);
 
-    const typeStr = (data.userData?.type || 'VECTOR').toUpperCase();
-    this.segmentEl.textContent = typeStr;
+    this.segmentEl.textContent = t.type;
+    this.tokenEl.textContent = t.token;
+  }
 
-    const tokenText = data.userData?.word || data.userData?.token || `DIM #${data.index || 0}`;
-    this.tokenEl.textContent = tokenText;
+  /**
+   * @param {number} val
+   * @private
+   */
+  _renderActivation(val) {
+    const slotPx = this._activationSlotWidth();
+    const fontSize = this._activationFontSize();
+    const { maxChars, compactLabel } = activationDisplayBudget(slotPx, 'ACTIVATION: ', fontSize);
+    const label = compactLabel ? 'ACT: ' : 'ACTIVATION: ';
+    const formatted = formatActivationValue(val, { maxDecimals: 32, maxChars });
+
+    this.activationEl.textContent = `${label}${formatted}`;
+    this.activationEl.title = `ACTIVATION: ${formatActivationValue(val, { maxDecimals: 32, maxChars: 48 })}`;
+    this.activationEl.style.color = Math.abs(val) > 0.3 ? '#ffe600' : '#00ffaa';
+  }
+
+  /** @private */
+  _activationSlotWidth() {
+    if (!this.centerEl) return 160;
+    const centerW = this.centerEl.clientWidth || 160;
+    const labelW = this.centerEl.querySelector('.hud-label')?.offsetWidth || 0;
+    const badgeW = this.segmentEl?.offsetWidth || 0;
+    const gap = 16;
+    const available = centerW - labelW - badgeW - gap;
+    // Mobile wrap: if center is tight, allow activation to use most of the bar
+    if (available < 64 && this.element?.clientWidth) {
+      return Math.max(72, Math.floor(this.element.clientWidth * 0.45));
+    }
+    return Math.max(64, available);
+  }
+
+  /** @private */
+  _activationFontSize() {
+    if (typeof window === 'undefined' || !this.activationEl) return 12;
+    const cs = window.getComputedStyle?.(this.activationEl);
+    const px = cs ? parseFloat(cs.fontSize) : 12;
+    return Number.isFinite(px) && px > 0 ? px : 12;
   }
 }
