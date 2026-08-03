@@ -1034,30 +1034,43 @@ canvas {
   top: auto;
   right: auto;
   width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+/* Spatial Controls card chrome (Visualization chrome lives on .viz-panel-body) */
+#thread-sliders-container {
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  z-index: 40;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  flex-shrink: 0;
 }
 
-/* Visualization: edge collapse tab (dock-tab affordance) */
+/*
+  Visualization: host = dock-like flex row (no card chrome).
+  Collapse tab sits OUTSIDE the glass card — same affordance as CollapsibleDock.
+  Card chrome + width belong on .viz-panel-body only (not the outer host).
+*/
 #visualization-controls-container.viz-panel {
   flex-direction: row;
   align-items: flex-start;
   gap: 0;
   padding: 0;
-  overflow: hidden;
-  transition: width 250ms ease, min-width 250ms ease, padding 250ms ease;
   width: auto;
-  max-width: 280px;
+  max-width: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+  transition: width 250ms ease, min-width 250ms ease;
 }
 
 #visualization-controls-container .viz-panel-body {
@@ -1067,6 +1080,12 @@ canvas {
   padding: 16px;
   width: 280px;
   box-sizing: border-box;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   transition: opacity 200ms ease, transform 250ms ease;
 }
 
@@ -1074,21 +1093,16 @@ canvas {
   flex: 0 0 var(--dock-tab-size, 28px);
   width: var(--dock-tab-size, 28px);
   min-height: 72px;
-  margin: 8px 0 8px 0;
+  margin: 8px 0;
   align-self: flex-start;
   border-radius: 8px 0 0 8px;
   border-right: none;
-  order: -1;
 }
 
 #visualization-controls-container.is-collapsed {
   width: var(--dock-tab-size, 28px);
   min-width: var(--dock-tab-size, 28px);
   max-width: var(--dock-tab-size, 28px);
-  border-radius: 8px 0 0 8px;
-  background: transparent;
-  box-shadow: none;
-  border: none;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-body {
@@ -1666,8 +1680,18 @@ canvas {
     padding: 8px 6px;
   }
 
-  #thread-sliders-container,
-  #visualization-controls-container {
+  #thread-sliders-container {
+    width: min(260px, calc(100vw - 64px));
+    padding: 12px;
+    gap: 10px;
+  }
+
+  #visualization-controls-container.viz-panel {
+    width: auto;
+    padding: 0;
+  }
+
+  #visualization-controls-container .viz-panel-body {
     width: min(260px, calc(100vw - 64px));
     padding: 12px;
     gap: 10px;
