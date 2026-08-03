@@ -1053,17 +1053,20 @@ canvas {
 }
 
 /*
-  Visualization: host = dock-like flex row (no card chrome).
-  Collapse tab sits OUTSIDE the glass card — same affordance as CollapsibleDock.
-  Card chrome + width belong on .viz-panel-body only (not the outer host).
+  Visualization: host has no card chrome.
+  Desktop (edge): vertical stack handle ABOVE the card (same column width as
+  Spatial Controls) — never a left side-tab (that fought the right-dock ▶ tab
+  and jumped under align-items:flex-end when width collapsed to tab-only).
+  Phone (sheet): fixed bottom sheet; handle on top of the sheet.
+  Card chrome + width belong on .viz-panel-body only.
 */
 #visualization-controls-container.viz-panel {
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0;
   padding: 0;
-  width: auto;
-  max-width: none;
+  width: 280px;
+  max-width: 280px;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -1084,43 +1087,54 @@ canvas {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: 0 0 12px 12px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 200ms ease, transform 250ms ease;
+  transition: opacity 200ms ease, transform 250ms ease, max-height 250ms ease;
 }
 
 #visualization-controls-container .viz-panel-tab {
-  flex: 0 0 var(--dock-tab-size, 28px);
-  width: var(--dock-tab-size, 28px);
-  min-height: 72px;
-  margin: 8px 0;
-  align-self: flex-start;
-  border-radius: 8px 0 0 8px;
-  border-right: none;
+  flex: 0 0 22px;
+  width: 100%;
+  min-height: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  align-self: stretch;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid var(--panel-border);
+  border-bottom: none;
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 #visualization-controls-container.is-collapsed {
-  width: var(--dock-tab-size, 28px);
-  min-width: var(--dock-tab-size, 28px);
-  max-width: var(--dock-tab-size, 28px);
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-body {
   position: absolute;
+  left: 0;
   right: 0;
+  top: 22px;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(12px);
-  width: 0;
+  transform: translateY(-8px);
+  width: 280px;
+  height: 0;
+  max-height: 0;
   padding: 0;
   overflow: hidden;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-tab {
   margin: 0;
-  border-radius: 8px 0 0 8px;
+  border-radius: 10px;
   border: 1px solid var(--panel-border);
-  border-right: none;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 

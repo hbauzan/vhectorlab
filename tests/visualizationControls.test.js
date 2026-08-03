@@ -125,12 +125,31 @@ describe('visualizationControlsDefaults', () => {
 });
 
 describe('Visualization panel collapse tab', () => {
+  it('edge layout uses vertical glyphs (must not fight right-dock ◀/▶ tab)', () => {
+    // Side ◀/▶ on Visualization inflates host width past the Spatial card; with
+    // dock-right align-items:flex-end the handle jumps and steals dock-tab hits.
+    expect(vizPanelTabGlyph(false, 'edge')).toBe('▼');
+    expect(vizPanelTabGlyph(true, 'edge')).toBe('▲');
+    const expanded = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
+      collapsed: false,
+      layout: 'edge',
+    });
+    expect(expanded).toContain('▼');
+    expect(expanded).not.toContain('▶');
+    const collapsed = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
+      collapsed: true,
+      layout: 'edge',
+    });
+    expect(collapsed).toContain('▲');
+    expect(collapsed).not.toContain('◀');
+  });
+
   it('markup includes edge tab and aria-expanded', () => {
     const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: false });
     expect(html).toContain('viz-panel-tab');
     expect(html).toContain('data-viz-layout="edge"');
     expect(html).toContain('aria-expanded="true"');
-    expect(html).toContain('▶');
+    expect(html).toContain('▼');
     expect(html).toContain('viz-zero-coverage-slider');
     expect(html).toContain('Zero coverage');
     expect(html).toContain('viz-labels-toggle');
@@ -156,7 +175,7 @@ describe('Visualization panel collapse tab', () => {
     const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: true });
     expect(html).toContain('is-collapsed');
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('◀');
+    expect(html).toContain('▲');
   });
 
   it('sheet layout uses up/down glyphs and layout attribute', () => {
@@ -191,7 +210,7 @@ describe('Visualization panel collapse tab', () => {
   it('setVisualizationPanelCollapsed toggles class and glyph', () => {
     const classList = new Set(['section-card', 'viz-panel']);
     const tab = {
-      textContent: '▶',
+      textContent: '▼',
       attrs: {},
       setAttribute(k, v) { this.attrs[k] = String(v); },
     };
@@ -208,17 +227,17 @@ describe('Visualization panel collapse tab', () => {
     };
     setVisualizationPanelCollapsed(el, true);
     expect(classList.has('is-collapsed')).toBe(true);
-    expect(tab.textContent).toBe('◀');
+    expect(tab.textContent).toBe('▲');
     expect(tab.attrs['aria-expanded']).toBe('false');
     setVisualizationPanelCollapsed(el, false);
     expect(classList.has('is-collapsed')).toBe(false);
-    expect(tab.textContent).toBe('▶');
+    expect(tab.textContent).toBe('▼');
   });
 
   it('setVisualizationPanelLayout switches sheet glyphs', () => {
     const classList = new Set(['section-card', 'viz-panel', 'is-collapsed']);
     const tab = {
-      textContent: '◀',
+      textContent: '▲',
       attrs: {},
       setAttribute(k, v) { this.attrs[k] = String(v); },
     };
