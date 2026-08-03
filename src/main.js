@@ -216,8 +216,8 @@ class VHectorLabApp {
   }
 
   /**
-   * Visualization panel: desktop = under Spatial Controls in right dock;
-   * phone = bottom sheet on app root (must leave transformed dock host).
+   * Visualization panel: always on app root, glued to the bottom HUD
+   * (desktop right sheet + phone full-width sheet).
    */
   mountVisualizationControlsUI() {
     this.vizConfig = loadVisualizationSettings();
@@ -231,7 +231,7 @@ class VHectorLabApp {
     wrapper.innerHTML = visualizationControlsMarkup(this.vizConfig, { collapsed, layout });
     const vizEl = wrapper.firstElementChild;
     this.vizEl = vizEl;
-    this.placeVisualizationControls(vizEl, mobile);
+    this.placeVisualizationControls(vizEl);
 
     wireVisualizationControls(vizEl, this.vizConfig, () => {
       this.threadLabels.setVisible(this.vizConfig.labelsVisible);
@@ -252,31 +252,25 @@ class VHectorLabApp {
 
   /**
    * @param {HTMLElement} vizEl
-   * @param {boolean} [isMobile]
    */
-  placeVisualizationControls(vizEl, isMobile = isMobileViewport()) {
+  placeVisualizationControls(vizEl) {
     const parent = resolveVisualizationMountParent({
-      isMobile,
+      isMobile: isMobileViewport(),
       dockBody: this.rightDock.body,
       appRoot: this.appContainer,
     });
-    if (isMobile) {
+    if (vizEl.parentElement !== parent) {
       parent.appendChild(vizEl);
-      return;
-    }
-    // Below sliders, above AxisGizmo (desktop).
-    if (vizEl.parentElement !== parent || vizEl.nextElementSibling !== this.axisGizmo.container) {
-      parent.insertBefore(vizEl, this.axisGizmo.container);
     }
   }
 
-  /** Re-host + retarget glyphs when crossing the phone breakpoint. */
+  /** Retarget layout glyphs when crossing the phone breakpoint. */
   syncVisualizationPanelHost() {
     if (!this.vizEl) return;
     const mobile = isMobileViewport();
     const layout = vizPanelLayoutForViewport(mobile);
     setVisualizationPanelLayout(this.vizEl, layout);
-    this.placeVisualizationControls(this.vizEl, mobile);
+    this.placeVisualizationControls(this.vizEl);
   }
 
   /**
