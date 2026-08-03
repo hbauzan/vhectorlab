@@ -1,7 +1,7 @@
 /**
  * Visualization panel: sign filter + divergent color anchors.
- * Desktop: edge collapse tab in the right dock (sibling outside card chrome).
- * Phone: bottom sheet on app root (open upward; must leave transformed dock).
+ * Always mounted on the app root and glued to the bottom HUD
+ * (desktop right sheet + phone full-width sheet; opens upward).
  */
 
 import {
@@ -36,16 +36,20 @@ export function vizPanelLayoutForViewport(isMobile) {
 }
 
 /**
- * Where to mount the Visualization host (sheet must leave the right dock —
- * a transformed ancestor traps `position: fixed`).
- * @param {{ isMobile: boolean, dockBody: HTMLElement, appRoot: HTMLElement }} opts
+ * Where to mount the Visualization host.
+ * Always on the app root — glued to the bottom HUD (desktop + phone).
+ * Must not live under the right dock (`transform` traps fixed/absolute children
+ * and space-between left a floating collapsed handle).
+ * @param {{ isMobile?: boolean, dockBody: HTMLElement, appRoot: HTMLElement }} opts
  * @returns {HTMLElement}
  */
 export function resolveVisualizationMountParent(opts) {
-  if (!opts || !opts.dockBody || !opts.appRoot) {
-    throw new Error('resolveVisualizationMountParent requires dockBody and appRoot');
+  if (!opts || !opts.appRoot) {
+    throw new Error('resolveVisualizationMountParent requires appRoot');
   }
-  return opts.isMobile ? opts.appRoot : opts.dockBody;
+  void opts.isMobile;
+  void opts.dockBody;
+  return opts.appRoot;
 }
 
 /**

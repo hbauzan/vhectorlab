@@ -192,7 +192,7 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Expand Visualization sheet');
   });
 
-  it('resolveVisualizationMountParent leaves the dock on phone', () => {
+  it('resolveVisualizationMountParent always uses app root (HUD-glued)', () => {
     const dockBody = { id: 'dock' };
     const appRoot = { id: 'app' };
     expect(resolveVisualizationMountParent({
@@ -204,7 +204,7 @@ describe('Visualization panel collapse tab', () => {
       isMobile: false,
       dockBody,
       appRoot,
-    })).toBe(dockBody);
+    })).toBe(appRoot);
   });
 
   it('setVisualizationPanelCollapsed toggles class and glyph', () => {
