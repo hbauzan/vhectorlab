@@ -27,6 +27,16 @@ describe('isUiTouchTarget', () => {
     expect(isUiTouchTarget(child)).toBe(true);
   });
 
+  it('treats Visualization sheet as UI', () => {
+    const sheet = {
+      id: 'visualization-controls-container',
+      tagName: 'DIV',
+      closest: (sel) => (sel.includes('#visualization-controls-container') ? sheet : null),
+    };
+    const child = { tagName: 'BUTTON', closest: (sel) => sheet.closest(sel) };
+    expect(isUiTouchTarget(child)).toBe(true);
+  });
+
   it('allows bare canvas', () => {
     const canvas = { tagName: 'CANVAS', closest: () => null };
     expect(isUiTouchTarget(canvas)).toBe(false);

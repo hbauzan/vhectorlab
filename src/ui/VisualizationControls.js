@@ -1,6 +1,7 @@
 /**
- * Visualization panel: sign filter + divergent color anchors (right dock).
- * Includes an edge collapse tab (same affordance as CollapsibleDock).
+ * Visualization panel: sign filter + divergent color anchors.
+ * Desktop: edge collapse tab in the right dock (sibling outside card chrome).
+ * Phone: bottom sheet on app root (open upward; must leave transformed dock).
  */
 
 import {
@@ -23,20 +24,59 @@ import {
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
+/** @typedef {'edge' | 'sheet'} VizPanelLayout */
+
+/**
+ * Desktop = side edge tab; phone = bottom sheet (open upward).
+ * @param {boolean} isMobile
+ * @returns {VizPanelLayout}
+ */
+export function vizPanelLayoutForViewport(isMobile) {
+  return isMobile ? 'sheet' : 'edge';
+}
+
+/**
+ * Where to mount the Visualization host (sheet must leave the right dock —
+ * a transformed ancestor traps `position: fixed`).
+ * @param {{ isMobile: boolean, dockBody: HTMLElement, appRoot: HTMLElement }} opts
+ * @returns {HTMLElement}
+ */
+export function resolveVisualizationMountParent(opts) {
+  if (!opts || !opts.dockBody || !opts.appRoot) {
+    throw new Error('resolveVisualizationMountParent requires dockBody and appRoot');
+  }
+  return opts.isMobile ? opts.appRoot : opts.dockBody;
+}
+
 /**
  * @param {boolean} collapsed
+ * @param {VizPanelLayout} [layout='edge']
  * @returns {string}
  */
-export function vizPanelTabGlyph(collapsed) {
+export function vizPanelTabGlyph(collapsed, layout = 'edge') {
+  if (layout === 'sheet') return collapsed ? '▲' : '▼';
   return collapsed ? '◀' : '▶';
 }
 
 /**
  * @param {boolean} collapsed
+ * @param {VizPanelLayout} [layout='edge']
  * @returns {string}
  */
-export function vizPanelTabLabel(collapsed) {
+export function vizPanelTabLabel(collapsed, layout = 'edge') {
+  if (layout === 'sheet') {
+    return collapsed ? 'Expand Visualization sheet' : 'Collapse Visualization sheet';
+  }
   return collapsed ? 'Expand Visualization panel' : 'Collapse Visualization panel';
+}
+
+/**
+ * @param {HTMLElement | null | undefined} container
+ * @returns {VizPanelLayout}
+ */
+export function readVizPanelLayout(container) {
+  const raw = container && container.dataset ? container.dataset.vizLayout : null;
+  return raw === 'sheet' ? 'sheet' : 'edge';
 }
 
 /**
@@ -50,19 +90,20 @@ export function labelsToggleButtonText(labelsVisible) {
 
 /**
  * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} [config]
- * @param {{ collapsed?: boolean }} [opts]
+ * @param {{ collapsed?: boolean, layout?: VizPanelLayout }} [opts]
  * @returns {string}
  */
 export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTINGS, opts = {}) {
   const s = resolveVisualizationSettings(config);
   const collapsed = opts.collapsed === true;
+  const layout = opts.layout === 'sheet' ? 'sheet' : 'edge';
   const checked = (mode) => (s.vizFilterMode === mode ? 'checked' : '');
   const collapsedClass = collapsed ? ' is-collapsed' : '';
-  const glyph = vizPanelTabGlyph(collapsed);
-  const label = vizPanelTabLabel(collapsed);
+  const glyph = vizPanelTabGlyph(collapsed, layout);
+  const label = vizPanelTabLabel(collapsed, layout);
 
   return `
-<div id="visualization-controls-container" class="section-card viz-panel${collapsedClass}">
+<div id="visualization-controls-container" class="section-card viz-panel${collapsedClass}" data-viz-layout="${layout}">
   <button type="button" class="viz-panel-tab dock-tab" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="viz-panel-body" title="${label}" aria-label="${label}">${glyph}</button>
   <div id="viz-panel-body" class="viz-panel-body">
     <h3 class="sliders-title">Visualization</h3>
@@ -164,15 +205,28 @@ export function syncVisualizationControlsFromConfig(container, config) {
 export function setVisualizationPanelCollapsed(container, collapsed) {
   if (!container) return;
   const next = Boolean(collapsed);
+  const layout = readVizPanelLayout(container);
   container.classList.toggle('is-collapsed', next);
   const tab = container.querySelector('.viz-panel-tab');
   if (tab) {
-    const label = vizPanelTabLabel(next);
+    const label = vizPanelTabLabel(next, layout);
     tab.setAttribute('aria-expanded', next ? 'false' : 'true');
     tab.setAttribute('aria-label', label);
     tab.setAttribute('title', label);
-    tab.textContent = vizPanelTabGlyph(next);
+    tab.textContent = vizPanelTabGlyph(next, layout);
   }
+}
+
+/**
+ * Sync layout attribute + tab glyphs for the current viewport mode.
+ * @param {HTMLElement} container
+ * @param {VizPanelLayout} layout
+ */
+export function setVisualizationPanelLayout(container, layout) {
+  if (!container) return;
+  const next = layout === 'sheet' ? 'sheet' : 'edge';
+  container.dataset.vizLayout = next;
+  setVisualizationPanelCollapsed(container, container.classList.contains('is-collapsed'));
 }
 
 /**
