@@ -9,7 +9,7 @@ export function normalizeRenderMode(mode) {
 }
 
 /**
- * Reactive Application State for VectorLab 3D.
+ * Reactive Application State for VHectorLab 3D.
  */
 export class AppState {
   constructor() {

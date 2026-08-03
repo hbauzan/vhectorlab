@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================
-# VECTORLAB 3D - CONTROL PANEL & CLI SETUP
+# VHectorLab 3D - CONTROL PANEL & CLI SETUP
 # ==========================================
 
 # ANSI Color Palette
@@ -14,12 +14,12 @@ MAGENTA="\033[1;35m"
 RED="\033[1;31m"
 DIM="\033[2m"
 
-LOG_FILE="vectorlab_dev.log"
+LOG_FILE="vhectorlab_dev.log"
 
 show_menu() {
     clear
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}       🌐 VECTORLAB 3D - CONTROL PANEL${RESET}"
+    echo -e "${CYAN}${BOLD}       🌐 VHectorLab 3D - CONTROL PANEL${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     echo -e " ${GREEN}${BOLD}1. 🚀 Desplegar / Iniciar Herramienta${RESET} ${DIM}(Verifica, Testea, Inicia y Abre Browser)${RESET}"
     echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI en 127.0.0.1:8000)${RESET}"
@@ -178,14 +178,14 @@ manage_vocab() {
 
 build_hf_docker() {
     echo -e "${YELLOW}${BOLD}Compiling Hugging Face Spaces Monolithic Docker Image...${RESET}"
-    docker build -t vectorlab-3d:latest .
+    docker build -t vhectorlab-3d:latest .
     echo -e "${GREEN}${BOLD}✅ Docker build complete! Container ready on port 7860.${RESET}"
     read -p "Press Enter to return to menu..."
 }
 
 publish_hf_space() {
     echo -e "${YELLOW}${BOLD}--- Hugging Face Spaces Publisher Wizard ---${RESET}"
-    read -p "Enter your Hugging Face Space repository ID (e.g. username/vectorlab-3d): " space_id
+    read -p "Enter your Hugging Face Space repository ID (e.g. username/vhectorlab-3d): " space_id
     if [ -z "$space_id" ]; then
         echo -e "${RED}Space ID required.${RESET}"
         read -p "Press Enter..."

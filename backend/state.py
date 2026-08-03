@@ -1,5 +1,5 @@
 """
-Global App State for VectorLab 3D.
+Global App State for VHectorLab 3D.
 Manages lazy-loaded SentenceTransformer model and pre-computed vocabulary embeddings in RAM.
 """
 

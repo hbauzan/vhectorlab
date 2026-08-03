@@ -15,7 +15,7 @@ export const executeLayoutMath = {
 /**
  * Updates 3D spatial layout position buffers in-situ for a list of thread objects.
  * Modifies Float32Array positions without re-creating geometries (zero memory leaks).
- * Scaled for VectorLab 3D camera distance (camera: Z=400, Y=150).
+ * Scaled for VHectorLab 3D camera distance (camera: Z=400, Y=150).
  *
  * @param {Array<Object>} threads - Array of synthetic thread objects
  * @param {Object} config - { threadSpacing, threadWidth, threadThickness }

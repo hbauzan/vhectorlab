@@ -1917,8 +1917,8 @@ wheels = [
 ]
 
 [[package]]
-name = "vectorlab-backend"
-version = "0.1.0"
+name = "vhectorlab-backend"
+version = "2.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },

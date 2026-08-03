@@ -1,5 +1,5 @@
 /**
- * Custom GLSL Shaders for VectorLab 3D.
+ * Custom GLSL Shaders for VHectorLab 3D.
  * Renders glowing incandescent points with radial anti-aliasing and magnitude-based color gradients.
  */
 

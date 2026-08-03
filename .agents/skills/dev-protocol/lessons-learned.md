@@ -77,7 +77,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 ### 2.3. Continuidad de hilo según RENDER mode (mutuamente excluyentes)
 - **POINTS**: puntos + línea fina `createRibbonMesh` (continuidad 1px).
 - **RIBBONS**: la continuidad **es** la cinta ancha (`createWideRibbonMesh`); sin plano base (el quad oscuro se veía a través de cintas transparentes). No usar `LineBasicMaterial.linewidth` (§1.4).
-- Colormap RIBBONS: rampa **divergente** VectorLab (anchors) para consistencia de marca.
+- Colormap RIBBONS: rampa **divergente** VHectorLab (anchors) para consistencia de marca.
 - **Retired**: `RENDER: MESH` (surface heightfield) removed in v1.6.0 — `normalizeRenderMode('MESH')` → POINTS. Do not reintroduce without an explicit product decision.
 
 ### 2.4. Optimización de Fragment Shader para Cero Activación ($|t| < 0.01$)
@@ -233,7 +233,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - Soft ANALYSIS Y gap: +1 empty slot between consecutive different `groupId` blocks (`groupStackLayout`).
 
 #### Handoff for predecessor / sister apps (architect brief)
-Portable findings from VectorLab 3D `v2.1.0` — apply if the older app shares ANALYSIS matrix paint + groups + SAE Top‑K:
+Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares ANALYSIS matrix paint + groups + SAE Top‑K:
 
 | Finding | Detail | Recommended fix |
 | :--- | :--- | :--- |
@@ -274,7 +274,12 @@ Portable findings from VectorLab 3D `v2.1.0` — apply if the older app shares A
 
 ---
 
-## 7. Product versioning (SemVer) — VectorLab 3D
+## 7. Product versioning (SemVer) — VHectorLab 3D
+
+### 7.0. Product name (2026-08-03)
+- Canonical product name: **VHectorLab 3D** (was VectorLab 3D / VECTORLAB). Keep `roadmap/` historical docs as-is.
+- Do **not** rename `localStorage` keys `vl3d.*` — technical prefix, not brand; renaming breaks persisted prefs.
+- Sync brand + SemVer: `manifest.json`, `package.json`, Navbar `version-tag`, FastAPI `app.version`, `CHANGELOG`.
 
 ### 7.1. Diagnosis (why it felt broken)
 - **Too fast (Aug 2026 epic day)**: `1.1.0`→`1.5.0` burned a **MINOR per roadmap etapa** (docks / landscape / touch / MESH / RIBBONS) on the same calendar day. Semantically each etapa *was* a capability, but the Navbar tag looked like five releases without five ship moments.

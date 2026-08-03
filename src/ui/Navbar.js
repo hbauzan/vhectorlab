@@ -15,8 +15,8 @@ export class Navbar {
       <div class="navbar-brand">
         <div class="logo-icon">🌐</div>
         <div class="title-group">
-          <h1>VECTORLAB <span class="accent-3d">3D</span></h1>
-          <span class="version-tag">v2.1.0</span>
+          <h1>VHectorLab <span class="accent-3d">3D</span></h1>
+          <span class="version-tag">v2.1.1</span>
         </div>
       </div>
 
