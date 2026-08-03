@@ -1,5 +1,5 @@
 """
-Core API Router for VectorLab 3D.
+Core API Router for VHectorLab 3D.
 Provides /health, /embed, /tokenize, and /arithmetic endpoints.
 """
 

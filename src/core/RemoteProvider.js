@@ -1,5 +1,5 @@
 /**
- * HTTP Remote Provider Client for VectorLab 3D FastAPI Backend.
+ * HTTP Remote Provider Client for VHectorLab 3D FastAPI Backend.
  *
  * Base URL resolution:
  * - `VITE_API_BASE_URL` if set (preferred; `.env` enables `/api` for Vite proxy / ngrok)

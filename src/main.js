@@ -55,7 +55,7 @@ import {
   mergeCompareOverlayLabels,
 } from './ui/parseCompareGroups.js';
 
-class VectorLabApp {
+class VHectorLabApp {
   constructor() {
     this.appContainer = document.getElementById('app');
 
@@ -1022,5 +1022,5 @@ class VectorLabApp {
 
 // Instantiate App when DOM is loaded
 window.addEventListener('DOMContentLoaded', () => {
-  new VectorLabApp();
+  new VHectorLabApp();
 });

@@ -1,4 +1,4 @@
-# Context & Domain Model Glossary - VectorLab 3D
+# Context & Domain Model Glossary - VHectorLab 3D
 
 ## Ubiquitous Language
 

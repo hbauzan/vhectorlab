@@ -1,4 +1,4 @@
-# VectorLab 3D Backend
+# VHectorLab 3D Backend
 
 FastAPI backend providing vector arithmetic and semantic embeddings visualization APIs.
 

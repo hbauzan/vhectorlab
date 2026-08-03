@@ -1,8 +1,11 @@
 # Changelog
 
-All notable changes to VectorLab 3D will be documented in this file.
+All notable changes to VHectorLab 3D will be documented in this file.
 
-## [Unreleased]
+## [2.1.1] - 2026-08-03
+
+### Changed
+- **Rebrand**: product name **VectorLab 3D** → **VHectorLab 3D** (UI, docs, package manifest).
 
 ### Fixed
 - **HUD ACTIVATION stuck at 0.0000**: resolve hover from `pointsData[index]` / ribbon `activations`; adaptive precision up to 32 decimals (shrink / scientific / `ACT:` on narrow mobile slots).
