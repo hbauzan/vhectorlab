@@ -1,6 +1,6 @@
-# 🗺️ VectorLab 3D
+# 🗺️ VHectorLab 3D
 
-VectorLab 3D es una herramienta de visualización tridimensional (WebGL/Three.js) y ejecución de **Aritmética Vectorial ($A - B + C$)** sobre embeddings semánticos con respuesta en milisegundos.
+VHectorLab 3D es una herramienta de visualización tridimensional (WebGL/Three.js) y ejecución de **Aritmética Vectorial ($A - B + C$)** sobre embeddings semánticos con respuesta en milisegundos.
 
 ## 🚀 Inicio Rápido (Backend)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vocabulary Generator Script for VectorLab 3D.
+Vocabulary Generator Script for VHectorLab 3D.
 Generates or updates public/vocab.txt with a specified number of common English words.
 """
 
@@ -50,7 +50,7 @@ def generate_vocab(output_path: Path, count: int = 10000, source_url: str = DEFA
     return len(words)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate vocabulary file for VectorLab 3D")
+    parser = argparse.ArgumentParser(description="Generate vocabulary file for VHectorLab 3D")
     parser.add_argument("--output", type=str, default="public/vocab.txt", help="Output path for vocab.txt")
     parser.add_argument("--count", type=int, default=10000, help="Number of words to generate")
     args = parser.parse_args()

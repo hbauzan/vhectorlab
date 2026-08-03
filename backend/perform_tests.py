@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-System Heartbeat and Diagnostic Runner for VectorLab 3D.
+System Heartbeat and Diagnostic Runner for VHectorLab 3D.
 Tests /health and /arithmetic endpoints locally using httpx or direct state.
 """
 

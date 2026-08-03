@@ -1,4 +1,4 @@
-# Monolithic Dockerfile for VectorLab 3D on Hugging Face Spaces (Port 7860)
+# Monolithic Dockerfile for VHectorLab 3D on Hugging Face Spaces (Port 7860)
 FROM python:3.10-slim
 
 # Install system dependencies & Node.js
