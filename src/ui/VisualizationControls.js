@@ -54,8 +54,10 @@ export function resolveVisualizationMountParent(opts) {
  * @returns {string}
  */
 export function vizPanelTabGlyph(collapsed, layout = 'edge') {
-  if (layout === 'sheet') return collapsed ? '▲' : '▼';
-  return collapsed ? '◀' : '▶';
+  // Vertical for both edge (desktop stack) and sheet (phone).
+  // Side ◀/▶ fights the right-dock tab and inflates host width under flex-end.
+  void layout;
+  return collapsed ? '▲' : '▼';
 }
 
 /**
