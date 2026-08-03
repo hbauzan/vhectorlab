@@ -125,7 +125,7 @@ describe('visualizationControlsDefaults', () => {
 });
 
 describe('Visualization panel collapse tab', () => {
-  it('edge layout uses vertical glyphs with top handle (not side ◀/▶)', () => {
+  it('edge layout uses vertical glyphs (▼ raised, ▲ resting on HUD)', () => {
     expect(vizPanelTabGlyph(false, 'edge')).toBe('▼');
     expect(vizPanelTabGlyph(true, 'edge')).toBe('▲');
     const expanded = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
@@ -176,7 +176,7 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('▲');
   });
 
-  it('sheet layout uses up/down glyphs and layout attribute', () => {
+  it('sheet layout uses the same vertical glyphs and layout attribute', () => {
     expect(vizPanelLayoutForViewport(true)).toBe('sheet');
     expect(vizPanelLayoutForViewport(false)).toBe('edge');
     expect(vizPanelTabGlyph(true, 'sheet')).toBe('▲');
@@ -190,19 +190,19 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Expand Visualization sheet');
   });
 
-  it('resolveVisualizationMountParent uses the right dock body', () => {
+  it('resolveVisualizationMountParent always uses app root (HUD glue)', () => {
     const dockBody = { id: 'dock' };
     const appRoot = { id: 'app' };
     expect(resolveVisualizationMountParent({
       isMobile: true,
       dockBody,
       appRoot,
-    })).toBe(dockBody);
+    })).toBe(appRoot);
     expect(resolveVisualizationMountParent({
       isMobile: false,
       dockBody,
       appRoot,
-    })).toBe(dockBody);
+    })).toBe(appRoot);
   });
 
   it('setVisualizationPanelCollapsed toggles class and glyph', () => {
@@ -232,7 +232,7 @@ describe('Visualization panel collapse tab', () => {
     expect(tab.textContent).toBe('▼');
   });
 
-  it('setVisualizationPanelLayout switches sheet glyphs', () => {
+  it('setVisualizationPanelLayout keeps vertical glyphs on sheet', () => {
     const classList = new Set(['section-card', 'viz-panel', 'is-collapsed']);
     const tab = {
       textContent: '▲',
