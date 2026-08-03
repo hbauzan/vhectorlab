@@ -770,20 +770,23 @@ canvas {
   padding: 8px;
 }
 
-/* Bottom Floating HUD */
+/* Bottom Floating HUD — scales with viewport; clears gizmo on desktop */
 .glass-hud {
+  --hud-pad: clamp(10px, 2.8vw, 24px);
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 140px;
-  height: 48px;
+  bottom: var(--hud-pad);
+  left: var(--hud-pad);
+  right: max(var(--hud-pad), clamp(112px, 14vw, 160px));
+  height: clamp(40px, 5.5vh, 48px);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 clamp(12px, 2vw, 20px);
   z-index: 40;
-  font-size: 0.8rem;
+  font-size: clamp(0.68rem, 1.1vw, 0.8rem);
+  gap: 8px;
+  min-width: 0;
 }
 
 .hud-left, .hud-center, .hud-right {
@@ -1055,23 +1058,20 @@ canvas {
 
 /*
   Visualization: under Spatial Controls in the right dock.
-  Dock-tab chrome on the TOP-RIGHT (outside the glass body) — same look as
-  left/right dock tabs, without fighting the dock's left ▶ strip.
-  Host width matches Spatial (280); glass body is tighter (252) so the tab
-  sits in the right gutter without overflowing overflow:hidden on .dock-body.
+  Dock-tab chrome as a TOP handle (horizontal strip, same glass as side docks).
+  Body is a tighter card that meets the handle — elegant stacked window.
 */
 #visualization-controls-container.viz-panel {
-  --viz-width: 252px;
-  --viz-tab-size: 28px;
-  --viz-host-width: 280px;
+  --viz-width: 260px;
+  --viz-tab-h: 28px;
   position: relative;
   flex-direction: column;
   align-items: stretch;
   gap: 0;
   padding: 0;
-  margin-top: 6px;
-  width: var(--viz-host-width);
-  max-width: var(--viz-host-width);
+  margin-top: 8px;
+  width: var(--viz-width);
+  max-width: var(--viz-width);
   background: transparent;
   border: none;
   box-shadow: none;
@@ -1080,45 +1080,47 @@ canvas {
   overflow: visible;
 }
 
-#visualization-controls-container .viz-panel-body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  width: var(--viz-width);
-  box-sizing: border-box;
-  background: var(--panel-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 200ms ease, max-height 250ms ease;
-}
-
 #visualization-controls-container .viz-panel-tab {
-  position: absolute;
-  top: 8px;
-  right: 0;
-  flex: none;
-  width: var(--viz-tab-size);
-  min-height: 56px;
-  height: 56px;
+  position: relative;
+  top: auto;
+  right: auto;
+  flex: 0 0 var(--viz-tab-h);
+  width: 100%;
+  min-height: var(--viz-tab-h);
+  height: var(--viz-tab-h);
   margin: 0;
   padding: 0;
-  border-radius: 0 8px 8px 0;
+  align-self: stretch;
+  border-radius: 10px 10px 0 0;
   border: 1px solid var(--panel-border);
-  border-left: none;
+  border-bottom: none;
   font-size: 0.75rem;
   line-height: 1;
   z-index: 46;
 }
 
+#visualization-controls-container .viz-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  transition: opacity 200ms ease, max-height 250ms ease;
+}
+
 #visualization-controls-container.is-collapsed {
-  width: var(--viz-tab-size);
-  min-width: var(--viz-tab-size);
-  max-width: var(--viz-tab-size);
-  min-height: 56px;
+  width: var(--viz-width);
+  min-width: var(--viz-width);
+  max-width: var(--viz-width);
+  min-height: var(--viz-tab-h);
   align-self: flex-end;
 }
 
@@ -1136,9 +1138,7 @@ canvas {
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-tab {
-  top: 0;
-  right: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--panel-border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -1154,16 +1154,40 @@ canvas {
   gap: 6px;
 }
 
+#visualization-controls-container .viz-filter-label {
+  font-size: 0.72rem;
+}
+
 #visualization-controls-container .viz-colors-section {
   gap: 6px;
+}
+
+#visualization-controls-container .viz-colors-title {
+  font-size: 0.72rem;
 }
 
 #visualization-controls-container .viz-color-row {
   gap: 6px;
 }
 
+#visualization-controls-container .viz-color-row label {
+  font-size: 0.72rem;
+  min-width: 1.4rem;
+}
+
+#visualization-controls-container .viz-color-hex {
+  font-size: 0.72rem;
+  padding: 4px 6px;
+}
+
 #visualization-controls-container .viz-coverage-row {
   gap: 4px;
+}
+
+#visualization-controls-container .viz-labels-toggle,
+#visualization-controls-container .viz-reset-btn {
+  padding: 6px 10px;
+  font-size: 0.72rem;
 }
 
 #axis-gizmo-container {
@@ -1732,40 +1756,50 @@ canvas {
   }
 
   #visualization-controls-container.viz-panel {
-    width: min(260px, calc(100vw - 64px));
-    max-width: min(260px, calc(100vw - 64px));
-    margin-top: 8px;
+    --viz-width: min(260px, calc(100vw - 64px));
+    --viz-tab-h: 26px;
+    width: var(--viz-width);
+    max-width: var(--viz-width);
+    margin-top: 10px;
+  }
+
+  #visualization-controls-container .viz-panel-tab {
+    flex-basis: var(--viz-tab-h);
+    min-height: var(--viz-tab-h);
+    height: var(--viz-tab-h);
+    font-size: 0.7rem;
   }
 
   #visualization-controls-container .viz-panel-body {
-    width: min(232px, calc(100vw - 96px));
-    padding: 10px;
-    gap: 8px;
-    max-height: min(40dvh, 280px);
+    width: 100%;
+    padding: 8px 10px 10px;
+    gap: 7px;
+    max-height: min(38dvh, 260px);
     overflow-y: auto;
   }
 
   #visualization-controls-container.is-collapsed {
-    width: 28px;
-    min-width: 28px;
-    max-width: 28px;
+    width: var(--viz-width);
+    min-width: 0;
+    max-width: var(--viz-width);
   }
 
   .slider-group input[type="range"] {
     min-height: 44px;
   }
 
-  /* Delicate bottom telemetry strip */
+  /* HUD: full side-to-side with safe insets; scales with phone width */
   .glass-hud {
-    left: max(8px, env(safe-area-inset-left));
-    right: max(8px, env(safe-area-inset-right));
-    bottom: max(8px, env(safe-area-inset-bottom));
+    --hud-pad: max(6px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    left: max(6px, env(safe-area-inset-left));
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(4px, env(safe-area-inset-bottom));
     height: auto;
     min-height: 26px;
-    padding: 3px 8px;
-    font-size: 0.58rem;
+    padding: 3px clamp(6px, 2.5vw, 10px);
+    font-size: clamp(0.52rem, 2.4vw, 0.62rem);
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: clamp(4px, 1.5vw, 8px);
     border-radius: 8px;
   }
 

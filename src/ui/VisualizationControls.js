@@ -1,7 +1,7 @@
 /**
  * Visualization panel: sign filter + divergent color anchors.
  * Lives under Spatial Controls in the right dock. Collapse control is a
- * dock-tab-styled strip on the top-right (outside the glass card).
+ * dock-tab-styled horizontal handle on the TOP of the glass card.
  */
 
 import {
