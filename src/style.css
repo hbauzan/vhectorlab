@@ -13,6 +13,10 @@
   --accent-red: #ff3366;
   --accent-blue: #00ccff;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Bottom HUD inset — spans tip-to-tip with equal side air (navbar-like width) */
+  --hud-pad: clamp(12px, 2vw, 20px);
+  --hud-height: clamp(40px, 5.5vh, 48px);
+  --hud-bottom: var(--hud-pad);
 }
 
 * {
@@ -87,6 +91,41 @@ canvas {
   background: rgba(255, 255, 255, 0.08);
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+.navbar-tabs-scroller {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0;
+}
+
+.navbar-tabs-arrow {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--accent-cyan);
+  font-size: 0.5rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.navbar-tabs-arrow:disabled,
+.navbar-tabs-arrow[aria-disabled="true"] {
+  opacity: 0.25;
+  cursor: default;
+  color: var(--text-muted);
 }
 
 .navbar-center-controls {
@@ -770,14 +809,13 @@ canvas {
   padding: 8px;
 }
 
-/* Bottom Floating HUD — scales with viewport; clears gizmo on desktop */
+/* Bottom Floating HUD — tip-to-tip like navbar, equal side inset (not edge-glued) */
 .glass-hud {
-  --hud-pad: clamp(10px, 2.8vw, 24px);
   position: absolute;
-  bottom: var(--hud-pad);
+  bottom: var(--hud-bottom);
   left: var(--hud-pad);
-  right: max(var(--hud-pad), clamp(112px, 14vw, 160px));
-  height: clamp(40px, 5.5vh, 48px);
+  right: var(--hud-pad);
+  height: var(--hud-height);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -1006,7 +1044,8 @@ canvas {
 
 .dock-right {
   right: 20px;
-  bottom: 20px;
+  /* Sit above the full-width HUD so AxisGizmo does not cover telemetry */
+  bottom: calc(var(--hud-bottom) + var(--hud-height) + 8px);
   flex-direction: row;
   align-items: stretch;
 }
@@ -1032,8 +1071,7 @@ canvas {
 /* =============================================================================
    Thread Geometry Spatial Sliders 3D Styling (inside #right-dock)
    ============================================================================= */
-#thread-sliders-container,
-#visualization-controls-container {
+#thread-sliders-container {
   position: relative;
   top: auto;
   right: auto;
@@ -1043,10 +1081,6 @@ canvas {
   gap: 14px;
   z-index: 40;
   flex-shrink: 0;
-}
-
-/* Spatial Controls card chrome (Visualization chrome lives on .viz-panel-body) */
-#thread-sliders-container {
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1057,44 +1091,51 @@ canvas {
 }
 
 /*
-  Visualization: under Spatial Controls in the right dock.
-  Dock-tab chrome as a TOP handle (horizontal strip, same glass as side docks).
-  Body is a tighter card that meets the handle — elegant stacked window.
+  Visualization: app root, glued onto the top edge of the bottom HUD.
+  Expanded + collapsed share the same HUD seam (right end of the full-width bar).
+  Collapse only hides the body — the short left dock-tab stays parked on the HUD.
 */
 #visualization-controls-container.viz-panel {
   --viz-width: 260px;
-  --viz-tab-h: 28px;
-  position: relative;
-  flex-direction: column;
-  align-items: stretch;
+  --viz-tab-size: 28px;
+  --viz-tab-h: 72px;
+  position: absolute;
+  right: var(--hud-pad);
+  bottom: calc(var(--hud-bottom) + var(--hud-height) - 1px);
+  z-index: 45;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 0;
   padding: 0;
-  margin-top: 8px;
-  width: var(--viz-width);
-  max-width: var(--viz-width);
+  margin: 0;
+  width: calc(var(--viz-width) + var(--viz-tab-size));
+  max-width: calc(var(--viz-width) + var(--viz-tab-size));
   background: transparent;
   border: none;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   overflow: visible;
+  transition: width 250ms ease, min-width 250ms ease, max-width 250ms ease;
 }
 
 #visualization-controls-container .viz-panel-tab {
   position: relative;
   top: auto;
   right: auto;
-  flex: 0 0 var(--viz-tab-h);
-  width: 100%;
+  flex: 0 0 var(--viz-tab-size);
+  width: var(--viz-tab-size);
   min-height: var(--viz-tab-h);
   height: var(--viz-tab-h);
   margin: 0;
-  padding: 0;
-  align-self: stretch;
-  border-radius: 10px 10px 0 0;
+  margin-top: 0;
+  padding: 8px 0;
+  align-self: flex-start;
+  border-radius: 8px 0 0 8px;
   border: 1px solid var(--panel-border);
-  border-bottom: none;
-  font-size: 0.75rem;
+  border-right: none;
+  font-size: 0.85rem;
   line-height: 1;
   z-index: 46;
 }
@@ -1104,31 +1145,42 @@ canvas {
   flex-direction: column;
   gap: 8px;
   padding: 10px 12px 12px;
-  width: 100%;
+  width: var(--viz-width);
+  max-width: var(--viz-width);
+  max-height: min(48vh, 420px);
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
-  border-top: none;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 12px 0 0;
+  border-bottom: none;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  transition: opacity 200ms ease, max-height 250ms ease;
+  transition: opacity 200ms ease, max-height 250ms ease, transform 250ms ease;
 }
 
 #visualization-controls-container.is-collapsed {
-  width: var(--viz-width);
-  min-width: var(--viz-width);
-  max-width: var(--viz-width);
-  min-height: var(--viz-tab-h);
-  align-self: flex-end;
+  /* Stay on the HUD seam — do not drop into a side orphan slot */
+  width: var(--viz-tab-size);
+  min-width: var(--viz-tab-size);
+  max-width: var(--viz-tab-size);
+  align-items: flex-end;
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-body {
+  position: absolute;
+  left: var(--viz-tab-size);
+  right: auto;
+  bottom: 0;
   opacity: 0;
   pointer-events: none;
-  max-height: 0;
+  transform: translateY(12px);
+  width: var(--viz-width);
+  max-width: var(--viz-width);
   height: 0;
+  max-height: 0;
   padding: 0;
   margin: 0;
   overflow: hidden;
@@ -1138,9 +1190,12 @@ canvas {
 }
 
 #visualization-controls-container.is-collapsed .viz-panel-tab {
-  border-radius: 10px;
+  /* Flat bottom meets the HUD top — same “stuck to edge” feel as side docks */
+  border-radius: 8px 8px 0 0;
   border: 1px solid var(--panel-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-bottom: none;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
+  align-self: flex-end;
 }
 
 /* Compact Visualization internals */
@@ -1613,19 +1668,33 @@ canvas {
    Phone layout ≤768px (tablet = desktop — D5)
    ============================================================================= */
 @media (max-width: 768px) {
+  :root {
+    --hud-pad: max(6px, env(safe-area-inset-left), env(safe-area-inset-right));
+    --hud-height: 26px;
+    --hud-bottom: max(4px, env(safe-area-inset-bottom));
+    /* Slim single-row top chrome — height ≈ brand text */
+    --navbar-height: 28px;
+  }
+
   body, html {
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
       env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  /* Compact top chrome — denser than 44px HIG so the canvas keeps air */
   .glass-navbar {
-    height: auto;
-    min-height: 36px;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px 8px;
+    height: var(--navbar-height);
+    min-height: var(--navbar-height);
+    max-height: var(--navbar-height);
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0 6px;
     align-items: center;
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .navbar-brand {
+    gap: 4px;
+    flex-shrink: 0;
   }
 
   .navbar-brand .version-tag,
@@ -1634,23 +1703,46 @@ canvas {
   }
 
   .title-group h1 {
-    font-size: 0.82rem;
-    letter-spacing: 0.5px;
+    font-size: 0.7rem;
+    letter-spacing: 0.4px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .navbar-tabs-scroller {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .navbar-tabs-scroller.is-overflowing .navbar-tabs-arrow {
+    display: inline-flex;
   }
 
   .navbar-center-controls {
-    flex-wrap: wrap;
-    gap: 4px;
-    order: 3;
-    width: 100%;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    order: 0;
+    width: auto;
+    min-width: 0;
+    gap: 3px;
     justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .navbar-center-controls::-webkit-scrollbar {
+    display: none;
   }
 
   .view-mode-tabs,
   .render-mode-tabs,
   .workspace-mode-tabs {
-    gap: 2px;
+    gap: 1px;
     padding: 1px;
+    border-radius: 5px;
+    flex-shrink: 0;
   }
 
   .tab-label {
@@ -1660,28 +1752,35 @@ canvas {
   .mode-tab,
   .view-tab,
   .workspace-tab {
-    min-height: 28px;
+    min-height: 20px;
+    height: 20px;
     min-width: 0;
-    padding: 3px 7px;
-    font-size: 0.62rem;
-    border-radius: 4px;
+    padding: 0 5px;
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
+    border-radius: 3px;
+    line-height: 1;
   }
 
   .status-indicator {
-    margin-left: auto;
+    margin-left: 0;
+    flex-shrink: 0;
+    gap: 0;
   }
 
+  /* Dot only — keeps the strip as thin as the brand line */
   .status-text {
-    font-size: 0.58rem;
-    max-width: 72px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: none;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
   }
 
   /* Docks as overlay drawers — do not push canvas layout */
   .collapsible-dock {
-    top: 72px;
+    top: calc(var(--navbar-height) + 6px);
     z-index: 80;
   }
 
@@ -1691,7 +1790,8 @@ canvas {
 
   .dock-right {
     right: max(8px, env(safe-area-inset-right));
-    bottom: max(56px, env(safe-area-inset-bottom));
+    /* Above compact HUD + viz tab resting on it */
+    bottom: calc(var(--hud-bottom) + var(--hud-height) + 8px);
   }
 
   .collapsible-dock:not(.is-collapsed) .dock-body {
@@ -1755,47 +1855,67 @@ canvas {
     gap: 10px;
   }
 
+  /*
+    Visualization bottom sheet (phone): same HUD-seam glue as desktop.
+    Collapsed tab stays on top of the HUD (not a side orphan).
+  */
   #visualization-controls-container.viz-panel {
     --viz-width: min(260px, calc(100vw - 64px));
-    --viz-tab-h: 26px;
-    width: var(--viz-width);
-    max-width: var(--viz-width);
-    margin-top: 10px;
+    --viz-tab-size: 28px;
+    --viz-tab-h: 56px;
+    position: fixed;
+    left: auto;
+    right: var(--hud-pad);
+    bottom: calc(var(--hud-bottom) + var(--hud-height) - 1px);
+    z-index: 90;
+    width: calc(var(--viz-width) + var(--viz-tab-size));
+    max-width: calc(100vw - 16px);
+    margin: 0;
   }
 
   #visualization-controls-container .viz-panel-tab {
-    flex-basis: var(--viz-tab-h);
+    flex: 0 0 var(--viz-tab-size);
+    width: var(--viz-tab-size);
     min-height: var(--viz-tab-h);
     height: var(--viz-tab-h);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   #visualization-controls-container .viz-panel-body {
-    width: 100%;
+    width: var(--viz-width);
+    max-width: var(--viz-width);
     padding: 8px 10px 10px;
     gap: 7px;
     max-height: min(38dvh, 260px);
     overflow-y: auto;
+    border-radius: 0 10px 0 0;
   }
 
   #visualization-controls-container.is-collapsed {
-    width: var(--viz-width);
-    min-width: 0;
-    max-width: var(--viz-width);
+    left: auto;
+    right: var(--hud-pad);
+    width: var(--viz-tab-size);
+    min-width: var(--viz-tab-size);
+    max-width: var(--viz-tab-size);
+  }
+
+  #visualization-controls-container.is-collapsed .viz-panel-tab {
+    border-radius: 8px 8px 0 0;
+    border-bottom: none;
+    align-self: flex-end;
   }
 
   .slider-group input[type="range"] {
     min-height: 44px;
   }
 
-  /* HUD: full side-to-side with safe insets; scales with phone width */
+  /* HUD: tip-to-tip with safe-area insets (same language as desktop) */
   .glass-hud {
-    --hud-pad: max(6px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
-    left: max(6px, env(safe-area-inset-left));
-    right: max(6px, env(safe-area-inset-right));
-    bottom: max(4px, env(safe-area-inset-bottom));
+    left: var(--hud-pad);
+    right: var(--hud-pad);
+    bottom: var(--hud-bottom);
     height: auto;
-    min-height: 26px;
+    min-height: var(--hud-height);
     padding: 3px clamp(6px, 2.5vw, 10px);
     font-size: clamp(0.52rem, 2.4vw, 0.62rem);
     flex-wrap: nowrap;
