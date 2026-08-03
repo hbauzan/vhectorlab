@@ -132,6 +132,21 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Hide labels');
   });
 
+  it('collapse tab is a sibling of viz-panel-body (outside card chrome)', () => {
+    const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: false });
+    const hostOpen = html.indexOf('id="visualization-controls-container"');
+    const tabOpen = html.indexOf('class="viz-panel-tab dock-tab"');
+    const bodyOpen = html.indexOf('id="viz-panel-body"');
+    const bodyClose = html.indexOf('</div>\n</div>', bodyOpen);
+    expect(hostOpen).toBeGreaterThan(-1);
+    expect(tabOpen).toBeGreaterThan(hostOpen);
+    expect(bodyOpen).toBeGreaterThan(tabOpen);
+    // Tab must not be nested inside the body card markup.
+    expect(tabOpen).toBeLessThan(bodyOpen);
+    expect(bodyClose).toBeGreaterThan(bodyOpen);
+    expect(html.slice(bodyOpen, bodyClose)).not.toContain('viz-panel-tab');
+  });
+
   it('collapsed markup starts with expand glyph', () => {
     const html = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, { collapsed: true });
     expect(html).toContain('is-collapsed');
