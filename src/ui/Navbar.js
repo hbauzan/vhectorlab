@@ -1,6 +1,9 @@
 /**
  * Top Navbar component with title, status indicator, View Mode tabs (ANALYSIS | NAVIGATION), and Render Mode selector tabs (POINTS | RIBBONS).
+ * Mobile: overflow tab strip gets ◀ ▶ scroll arrows.
  */
+import { getTabsScrollState, nextTabsScrollLeft } from './navbarTabsScroll.js';
+
 export class Navbar {
   constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
     this.container = containerElement || document.body;
@@ -20,24 +23,28 @@ export class Navbar {
         </div>
       </div>
 
-      <div class="navbar-center-controls">
-        <div class="workspace-mode-tabs">
-          <span class="tab-label">MODE:</span>
-          <button data-workspace="ARITHMETIC" class="workspace-tab active">ARITHMETIC</button>
-          <button data-workspace="COMPARE" class="workspace-tab">COMPARE</button>
-        </div>
+      <div class="navbar-tabs-scroller">
+        <button type="button" class="navbar-tabs-arrow navbar-tabs-prev" aria-label="Scroll tabs left" title="Previous">◀</button>
+        <div class="navbar-center-controls">
+          <div class="workspace-mode-tabs">
+            <span class="tab-label">MODE:</span>
+            <button data-workspace="ARITHMETIC" class="workspace-tab active">ARITHMETIC</button>
+            <button data-workspace="COMPARE" class="workspace-tab">COMPARE</button>
+          </div>
 
-        <div class="view-mode-tabs">
-          <span class="tab-label">VIEW:</span>
-          <button data-view="ANALYSIS" class="view-tab">ANALYSIS</button>
-          <button data-view="NAVIGATION" class="view-tab active">NAVIGATION</button>
-        </div>
+          <div class="view-mode-tabs">
+            <span class="tab-label">VIEW:</span>
+            <button data-view="ANALYSIS" class="view-tab">ANALYSIS</button>
+            <button data-view="NAVIGATION" class="view-tab active">NAVIGATION</button>
+          </div>
 
-        <div class="render-mode-tabs">
-          <span class="tab-label">RENDER:</span>
-          <button data-mode="POINTS" class="mode-tab active">POINTS</button>
-          <button data-mode="RIBBONS" class="mode-tab">RIBBONS</button>
+          <div class="render-mode-tabs">
+            <span class="tab-label">RENDER:</span>
+            <button data-mode="POINTS" class="mode-tab active">POINTS</button>
+            <button data-mode="RIBBONS" class="mode-tab">RIBBONS</button>
+          </div>
         </div>
+        <button type="button" class="navbar-tabs-arrow navbar-tabs-next" aria-label="Scroll tabs right" title="Next">▶</button>
       </div>
 
       <div class="status-indicator">
@@ -53,8 +60,13 @@ export class Navbar {
     this.workspaceTabs = this.element.querySelectorAll('.workspace-tab');
     this.statusDot = this.element.querySelector('#backend-status-dot');
     this.statusText = this.element.querySelector('#backend-status-text');
+    this.tabsTrack = this.element.querySelector('.navbar-center-controls');
+    this.tabsPrev = this.element.querySelector('.navbar-tabs-prev');
+    this.tabsNext = this.element.querySelector('.navbar-tabs-next');
+    this.tabsScroller = this.element.querySelector('.navbar-tabs-scroller');
 
     this.initEventListeners();
+    this.initTabsScroll();
   }
 
   initEventListeners() {
@@ -93,6 +105,62 @@ export class Navbar {
         }
       });
     });
+  }
+
+  initTabsScroll() {
+    if (!this.tabsTrack || !this.tabsPrev || !this.tabsNext || !this.tabsScroller) return;
+
+    const sync = () => this.syncTabsScrollArrows();
+    this.tabsTrack.addEventListener('scroll', sync, { passive: true });
+
+    this.tabsPrev.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.scrollTabs(-1);
+    });
+    this.tabsNext.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.scrollTabs(1);
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this._tabsResizeObserver = new ResizeObserver(sync);
+      this._tabsResizeObserver.observe(this.tabsTrack);
+      this._tabsResizeObserver.observe(this.tabsScroller);
+    }
+
+    // Layout may settle after fonts / first paint
+    requestAnimationFrame(sync);
+    window.addEventListener('resize', sync);
+    this._tabsResizeHandler = sync;
+  }
+
+  scrollTabs(direction) {
+    const track = this.tabsTrack;
+    if (!track) return;
+    const next = nextTabsScrollLeft(
+      track.scrollLeft,
+      track.clientWidth,
+      track.scrollWidth,
+      direction,
+    );
+    if (typeof track.scrollTo === 'function') {
+      track.scrollTo({ left: next, behavior: 'smooth' });
+    } else {
+      track.scrollLeft = next;
+    }
+    this.syncTabsScrollArrows();
+  }
+
+  syncTabsScrollArrows() {
+    const track = this.tabsTrack;
+    if (!track || !this.tabsPrev || !this.tabsNext || !this.tabsScroller) return;
+
+    const state = getTabsScrollState(track.scrollLeft, track.clientWidth, track.scrollWidth);
+    this.tabsScroller.classList.toggle('is-overflowing', state.overflow);
+    this.tabsPrev.disabled = !state.canPrev;
+    this.tabsNext.disabled = !state.canNext;
+    this.tabsPrev.setAttribute('aria-disabled', state.canPrev ? 'false' : 'true');
+    this.tabsNext.setAttribute('aria-disabled', state.canNext ? 'false' : 'true');
   }
 
   setViewMode(viewMode) {
