@@ -210,7 +210,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Sign filter**: `all | positive | negative` on **normalized t** (post z-score/tanh), ε=`0.01` aligned with shader short-circuit. +/− only hide the opposite sign **and** near-zero. Applies to POINTS (fragment `discard`) **and** continuity `LineSegments` / wide-ribbon **index omission** (F4) — keep full vertex buffers so COMPARE reorder in-situ still works.
 - **Color anchors**: user hex +1 / 0 / −1 replace fixed mid-stop ramps; lerp `0↔+1` and `0↔−1`. POINTS shader uses uniforms `uColorPos` / `uColorNeg` / `uColorZero` (never hardcode ramp in GLSL).
 - **Zero coverage %**: slider **below Colors, above Reset**. Remaps `|t|` so zero color occupies `coverage` of the ± range before lerp (`remapAbsTWithZeroCoverage`); CPU + `uZeroCoverage` share math. Cap 90% so ±1 remains reachable. Persist `vl3d.viz.*` including `zeroCoverage`.
-- **Collapse tab**: Visualization card has its own edge tab (dock-tab affordance) independent of the right-dock host; key `vl3d.viz.panelCollapsed`.
+- **Collapse tab**: Visualization has its own edge tab (dock-tab affordance) independent of the right-dock host; key `vl3d.viz.panelCollapsed`. **Chrome del card va en `.viz-panel-body`, no en el host** — el tab es hermano del body (afuera del glass), igual que `.dock-tab` vs `.dock-body`. No poner `overflow:hidden` / `max-width:280px` / border en el host o el tab queda “adentro”.
 - **SemVer**: if `main` already shipped a MINOR (e.g. groups `1.7.0`), the next capability must take the **next** MINOR (`1.8.0`) — never reuse a version number already on `main`.
 - **Invariante**: filter-on-normalized-t; F4 = geometry not points-only; anchors always drive ramp in v1; no backend for viz controls.
 
