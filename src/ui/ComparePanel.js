@@ -144,7 +144,7 @@ export class ComparePanel {
           <span class="metric-item">Loaded Tokens: <strong id="token-count-val">0</strong></span>
         </div>
         <div id="compare-groups-legend" class="compare-groups-legend" hidden></div>
-        <label id="compare-dim-sort-row" class="compare-dim-sort" hidden>
+        <label id="compare-dim-sort-row" class="compare-dim-sort" hidden title="Reorder X axis by |mean_G1 − mean_G2| so group differences cluster on the left">
           <input type="checkbox" id="compare-dim-sort-toggle">
           <span>Sort dims by group contrast</span>
         </label>
