@@ -11,6 +11,7 @@ const UI_BLOCK_SELECTOR = [
   '#right-dock',
   '#bottom-hud',
   '#top-navbar',
+  '#visualization-controls-container',
   '#landscape-gate',
   '#touch-controls',
   '.glass-modal',
