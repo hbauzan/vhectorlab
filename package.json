@@ -1,6 +1,6 @@
 {
-  "name": "vectorlab-3d",
-  "version": "2.1.0",
+  "name": "vhectorlab-3d",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,5 +1,5 @@
 """
-FastAPI Server Entrypoint for VectorLab 3D.
+FastAPI Server Entrypoint for VHectorLab 3D.
 Handles application lifespan, lazy-loading models, CORS configuration, and router binding.
 """
 
@@ -21,12 +21,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("vectorlab")
+logger = logging.getLogger("vhectorlab")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing VectorLab 3D backend lifespan...")
+    logger.info("Initializing VHectorLab 3D backend lifespan...")
     model_name = os.getenv("MODEL_NAME", "all-mpnet-base-v2")
     vocab_path = os.getenv("VOCAB_PATH", "public/vocab.txt")
 
@@ -38,13 +38,13 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("Shutting down VectorLab 3D backend...")
+    logger.info("Shutting down VHectorLab 3D backend...")
 
 
 app = FastAPI(
-    title="VectorLab 3D API",
+    title="VHectorLab 3D API",
     description="Backend API for 3D Vector Arithmetic & Semantic Embedding Visualizer",
-    version="0.1.0",
+    version="2.1.1",
     lifespan=lifespan,
 )
 

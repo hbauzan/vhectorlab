@@ -1,8 +1,8 @@
-# Architecture Specification - VectorLab 3D
+# Architecture Specification - VHectorLab 3D
 
 ## System Architecture
 
-VectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
+VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 
 ### Backend Tier (`backend/`)
 - **Framework**: FastAPI with Uvicorn.

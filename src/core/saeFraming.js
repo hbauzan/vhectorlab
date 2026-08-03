@@ -2,7 +2,7 @@
  * Helpers for SAE ON framing: keep visual dim-span similar to RAW 768.
  */
 
-/** Canonical raw embedding dim for VectorLab (all-mpnet-base-v2). */
+/** Canonical raw embedding dim for VHectorLab (all-mpnet-base-v2). */
 export const RAW_EMBEDDING_DIM = 768;
 
 /**
