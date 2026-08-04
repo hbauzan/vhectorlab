@@ -343,3 +343,11 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **Problema**: el working copy histórico se llamaba `lsv2` mientras el producto, `package.json`, `manifest.json` y el remoto GitHub ya eran VHectorLab 3D / `VHectorLab-3D`.
 - **Solución Obligatoria**: carpeta local canónica **`VHectorLab-3D`** (kebab-case, alineada al repo). README: `git clone …/VHectorLab-3D.git` + `cd VHectorLab-3D`. No renombrar `vl3d.*` localStorage ni packages npm solo por el folder.
 - **Invariante**: `roadmap/` puede seguir mencionando `lsv2` / VectorLab como historia; no reescribir archivo salvo necesidad.
+
+### 8.6. Renaming the repo folder breaks `backend/.venv` shebangs
+- **Problema**: Tras `mv lsv2 → VHectorLab-3D`, `uv sync` reporta OK pero `uv run pytest` falla: `Failed to spawn: pytest` / `No such file or directory`. Los entrypoints en `.venv/bin/*` siguen con shebang absoluto a la ruta vieja (`…/lsv2/backend/.venv/bin/python3`).
+- **Solución Obligatoria**:
+  1. En `setup.sh` `ensure_project_deps`: si `backend/.venv/bin/pytest` existe y su intérprete shebang **no existe**, `rm -rf backend/.venv` y re-sync.
+  2. Invocar tests como `uv run python -m pytest` (menos frágil que el script `pytest` con shebang roto).
+  3. Recuperación manual: `rm -rf backend/.venv && cd backend && uv sync --extra dev`.
+- **Invariante**: un rename/move del working copy **implica** recrear el venv; `uv sync` solo no reescribe shebangs rotos.
