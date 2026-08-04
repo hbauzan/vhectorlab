@@ -15,21 +15,148 @@ RED="\033[1;31m"
 DIM="\033[2m"
 
 LOG_FILE="vhectorlab_dev.log"
+# Created & tested on macOS 26.5.1 (Darwin 25.5.0, arm64). Not prepared for Windows/Linux.
+SUPPORTED_OS_LABEL="macOS 26.5.1 (Darwin 25.5.0)"
+
+refresh_path() {
+    # uv installer lands in ~/.local/bin; Homebrew on Apple Silicon uses /opt/homebrew.
+    export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+    # shellcheck disable=SC1090
+    [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+}
+
+warn_if_unsupported_platform() {
+    local os_name
+    os_name="$(uname -s 2>/dev/null || echo unknown)"
+    if [ "$os_name" != "Darwin" ]; then
+        echo -e "${YELLOW}${BOLD}⚠️  Unsupported platform: ${os_name}${RESET}"
+        echo -e "${YELLOW}   This project was created and tested on ${SUPPORTED_OS_LABEL}.${RESET}"
+        echo -e "${YELLOW}   It was not prepared for Windows or Linux. Small adaptations may make it work.${RESET}"
+        echo -e "${YELLOW}   Auto-install of missing tools is macOS-only (Homebrew + official uv installer).${RESET}"
+        return 1
+    fi
+    return 0
+}
+
+ensure_homebrew() {
+    if command -v brew &> /dev/null; then
+        echo -e "  ${GREEN}✓ Homebrew detected.${RESET}"
+        return 0
+    fi
+    echo -e "${YELLOW}▶ Homebrew not found. Installing Homebrew (may ask for your password)...${RESET}"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [ -x /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -x /usr/local/bin/brew ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    refresh_path
+    if ! command -v brew &> /dev/null; then
+        echo -e "${RED}❌ Failed to install Homebrew. Install it from https://brew.sh and re-run.${RESET}"
+        return 1
+    fi
+    echo -e "  ${GREEN}✓ Homebrew installed.${RESET}"
+    return 0
+}
+
+ensure_uv() {
+    refresh_path
+    if command -v uv &> /dev/null; then
+        echo -e "  ${GREEN}✓ Python package manager 'uv' detected ($(uv --version 2>/dev/null | head -1)).${RESET}"
+        return 0
+    fi
+    echo -e "${YELLOW}▶ 'uv' not found. Installing via official installer...${RESET}"
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    refresh_path
+    if ! command -v uv &> /dev/null; then
+        echo -e "${RED}❌ Failed to install 'uv'. See https://docs.astral.sh/uv/getting-started/installation/${RESET}"
+        return 1
+    fi
+    echo -e "  ${GREEN}✓ 'uv' installed ($(uv --version 2>/dev/null | head -1)).${RESET}"
+    return 0
+}
+
+ensure_node_npm() {
+    refresh_path
+    if command -v npm &> /dev/null && command -v node &> /dev/null; then
+        echo -e "  ${GREEN}✓ Node.js $(node --version) / npm $(npm --version) detected.${RESET}"
+        return 0
+    fi
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo -e "${RED}❌ Node.js/npm missing. On this unsupported OS, install Node.js LTS yourself, then re-run.${RESET}"
+        return 1
+    fi
+    ensure_homebrew || return 1
+    echo -e "${YELLOW}▶ Node.js/npm not found. Installing Node via Homebrew...${RESET}"
+    brew install node
+    refresh_path
+    if ! command -v npm &> /dev/null || ! command -v node &> /dev/null; then
+        echo -e "${RED}❌ Failed to install Node.js/npm. Install the LTS from https://nodejs.org and re-run.${RESET}"
+        return 1
+    fi
+    echo -e "  ${GREEN}✓ Node.js $(node --version) / npm $(npm --version) installed.${RESET}"
+    return 0
+}
+
+ensure_project_deps() {
+    if [ ! -f .env ] && [ -f .env.example ]; then
+        echo -e "${YELLOW}▶ Creating .env from .env.example...${RESET}"
+        cp .env.example .env
+        echo -e "  ${GREEN}✓ .env created (edit values if needed).${RESET}"
+    elif [ -f .env ]; then
+        echo -e "  ${GREEN}✓ .env present.${RESET}"
+    fi
+
+    echo -e "${BLUE}▶ Syncing backend Python deps (uv sync --extra dev)...${RESET}"
+    (cd backend && uv sync --extra dev) || {
+        echo -e "${RED}❌ Backend dependency sync failed.${RESET}"
+        return 1
+    }
+    echo -e "  ${GREEN}✓ Backend deps ready.${RESET}"
+
+    if [ ! -d node_modules ]; then
+        echo -e "${YELLOW}▶ Frontend node_modules missing. Running npm install...${RESET}"
+        npm install || {
+            echo -e "${RED}❌ npm install failed.${RESET}"
+            return 1
+        }
+        echo -e "  ${GREEN}✓ Frontend deps installed.${RESET}"
+    else
+        echo -e "  ${GREEN}✓ Frontend node_modules present.${RESET}"
+    fi
+    return 0
+}
+
+ensure_prerequisites() {
+    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
+    echo -e "${CYAN}${BOLD}🔍 CHECKING / INSTALLING PREREQUISITES...${RESET}"
+    echo -e "${CYAN}${BOLD}====================================================${RESET}"
+    echo -e "  ${DIM}Supported / tested on: ${SUPPORTED_OS_LABEL}${RESET}"
+
+    warn_if_unsupported_platform
+    # On macOS, missing tools are installed automatically. Elsewhere, require them preinstalled.
+
+    ensure_uv || return 1
+    ensure_node_npm || return 1
+    ensure_project_deps || return 1
+    return 0
+}
 
 show_menu() {
     clear
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     echo -e "${CYAN}${BOLD}       🌐 VHectorLab 3D - CONTROL PANEL${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
-    echo -e " ${GREEN}${BOLD}1. 🚀 Desplegar / Iniciar Herramienta${RESET} ${DIM}(Verifica, Testea, Inicia y Abre Browser)${RESET}"
-    echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI en 127.0.0.1:8000)${RESET}"
+    echo -e " ${DIM}Tested on ${SUPPORTED_OS_LABEL} · macOS only (Windows/Linux unsupported)${RESET}"
+    echo -e " ${GREEN}${BOLD}1. 🚀 Deploy / Start Tool${RESET} ${DIM}(Check/Install, Test, Start, Open Browser)${RESET}"
+    echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI on 127.0.0.1:8000)${RESET}"
     echo -e " ${BLUE}3.${RESET} ${BOLD}Run System Heartbeat${RESET} ${DIM}(Health Check & Arithmetic)${RESET}"
     echo -e " ${BLUE}4.${RESET} ${BOLD}Run Frontend Unit Tests${RESET} ${DIM}(Vitest)${RESET}"
     echo -e " ${BLUE}5.${RESET} ${BOLD}Run Backend Unit Tests${RESET} ${DIM}(pytest)${RESET}"
-    echo -e " ${MAGENTA}6.${RESET} ${BOLD}Manage Vocabulary${RESET} ${DIM}(Cargar propio vocab.txt / N Palabras)${RESET}"
-    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(Puerto 7860)${RESET}"
-    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(Wizard interactivo HF Hub)${RESET}"
-    echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Ver logs en vivo)${RESET}"
+    echo -e " ${MAGENTA}6.${RESET} ${BOLD}Manage Vocabulary${RESET} ${DIM}(Custom vocab.txt / N words)${RESET}"
+    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(Port 7860)${RESET}"
+    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(Interactive HF Hub wizard)${RESET}"
+    echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
     echo -e " ${DIM}0. Exit${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
@@ -37,59 +164,48 @@ show_menu() {
 
 deploy_and_start() {
     echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🔍 1/4 VERIFICANDO ENTORNO Y REQUISITOS...${RESET}"
+    echo -e "${CYAN}${BOLD}🔍 1/4 VERIFYING ENVIRONMENT & REQUIREMENTS...${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 
-    # 1. Check Python / uv
-    if ! command -v uv &> /dev/null; then
-        echo -e "${RED}❌ Error: 'uv' no está instalado. Por favor instalalo antes de continuar.${RESET}"
-        read -p "Presioná Enter..."
+    if ! ensure_prerequisites; then
+        read -p "Press Enter..."
         return
     fi
-    echo -e "  ${GREEN}✓ Gestor Python 'uv' detectado.${RESET}"
 
-    # 2. Check Node / npm
-    if ! command -v npm &> /dev/null; then
-        echo -e "${RED}❌ Error: 'npm' no está instalado. Por favor instalalo antes de continuar.${RESET}"
-        read -p "Presioná Enter..."
-        return
-    fi
-    echo -e "  ${GREEN}✓ Gestor Node 'npm' detectado.${RESET}"
-
-    # 3. Check vocabulary file
+    # Vocabulary file
     if [ ! -f "public/vocab.txt" ]; then
-        echo -e "${YELLOW}⚠️ Vocabulario no detectado en public/vocab.txt. Generando 10,000 palabras por defecto...${RESET}"
+        echo -e "${YELLOW}⚠️ Vocabulary missing at public/vocab.txt. Generating 10,000 words...${RESET}"
         python3 scripts/generate_vocab.py --count 10000
     fi
-    echo -e "  ${GREEN}✓ Archivo public/vocab.txt OK ($(wc -l < public/vocab.txt | tr -d ' ') palabras).${RESET}"
+    echo -e "  ${GREEN}✓ public/vocab.txt OK ($(wc -l < public/vocab.txt | tr -d ' ') words).${RESET}"
 
     echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🧪 2/4 EJECUTANDO SUITE COMPLETA DE TESTS (CON PROGRESO)...${RESET}"
+    echo -e "${CYAN}${BOLD}🧪 2/4 RUNNING FULL TEST SUITE...${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 
     # Run Backend pytest with verbose streaming output
-    echo -e "${BLUE}${BOLD}▶ [1/2] Ejecutando pruebas unitarias de backend (pytest)...${RESET}"
-    echo -e "${DIM}Cargando modelo PyTorch SentenceTransformer en memoria...${RESET}"
+    echo -e "${BLUE}${BOLD}▶ [1/2] Backend unit tests (pytest)...${RESET}"
+    echo -e "${DIM}Loading PyTorch SentenceTransformer model into memory...${RESET}"
     (cd backend && uv run pytest -v -s)
     if [ $? -ne 0 ]; then
-        echo -e "${RED}${BOLD}❌ ERROR: Las pruebas de backend fallaron. Corrige los errores antes de desplegar.${RESET}"
-        read -p "Presioná Enter..."
+        echo -e "${RED}${BOLD}❌ ERROR: Backend tests failed. Fix them before deploying.${RESET}"
+        read -p "Press Enter..."
         return
     fi
-    echo -e "  ${GREEN}${BOLD}✓ Pruebas de Backend 100% EN VERDE.${RESET}"
+    echo -e "  ${GREEN}${BOLD}✓ Backend tests GREEN.${RESET}"
 
     # Run Frontend vitest with verbose output
-    echo -e "\n${BLUE}${BOLD}▶ [2/2] Ejecutando pruebas unitarias de matemática 3D (Vitest)...${RESET}"
+    echo -e "\n${BLUE}${BOLD}▶ [2/2] Frontend unit tests (Vitest)...${RESET}"
     npx vitest run --reporter=verbose
     if [ $? -ne 0 ]; then
-        echo -e "${RED}${BOLD}❌ ERROR: Las pruebas de frontend fallaron. Corrige los errores antes de desplegar.${RESET}"
-        read -p "Presioná Enter..."
+        echo -e "${RED}${BOLD}❌ ERROR: Frontend tests failed. Fix them before deploying.${RESET}"
+        read -p "Press Enter..."
         return
     fi
-    echo -e "  ${GREEN}${BOLD}✓ Pruebas de Frontend 100% EN VERDE.${RESET}"
+    echo -e "  ${GREEN}${BOLD}✓ Frontend tests GREEN.${RESET}"
 
     echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🚀 3/4 INICIANDO SERVICIOS (BACKEND + FRONTEND)...${RESET}"
+    echo -e "${CYAN}${BOLD}🚀 3/4 STARTING SERVICES (BACKEND + FRONTEND)...${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 
     # Stop any previous instance
@@ -97,15 +213,15 @@ deploy_and_start() {
     pkill -f "vite" 2>/dev/null
 
     # Launch Backend FastAPI
-    echo -e "${BLUE}▶ Arrancando Backend FastAPI (http://127.0.0.1:8000)...${RESET}"
+    echo -e "${BLUE}▶ Starting Backend FastAPI (http://127.0.0.1:8000)...${RESET}"
     (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
     BACKEND_PID=$!
 
     # Wait for backend health check with progress indicators
-    echo -n "  Cargando modelo en backend [esperando respuesta /health]"
+    echo -n "  Loading model [waiting for /health]"
     for i in {1..30}; do
         if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
-            echo -e " ${GREEN}${BOLD}¡MODELO CARGADO OK!${RESET}"
+            echo -e " ${GREEN}${BOLD}MODEL LOADED OK!${RESET}"
             break
         fi
         echo -n " ⏳"
@@ -113,7 +229,7 @@ deploy_and_start() {
     done
 
     # Launch Frontend Vite Server
-    echo -e "${BLUE}▶ Arrancando Frontend WebGL (Vite Dev Server)...${RESET}"
+    echo -e "${BLUE}▶ Starting Frontend WebGL (Vite Dev Server)...${RESET}"
     npx vite --port 5173 --host 127.0.0.1 > /dev/null 2>&1 &
     FRONTEND_PID=$!
     sleep 2
@@ -121,13 +237,13 @@ deploy_and_start() {
     APP_URL="http://127.0.0.1:5173"
 
     echo -e "\n${GREEN}${BOLD}====================================================${RESET}"
-    echo -e "${GREEN}${BOLD}        🎉 vamo arriba nomá' !!!${RESET}"
+    echo -e "${GREEN}${BOLD}        🎉 Ready to go!${RESET}"
     echo -e "${GREEN}${BOLD}====================================================${RESET}"
-    echo -e " ${BOLD}La herramienta está lista y corriendo en:${RESET}"
+    echo -e " ${BOLD}The tool is running at:${RESET}"
     echo -e " ${CYAN}${BOLD}👉 ${APP_URL}${RESET}\n"
 
     # Open Browser on macOS / OS
-    echo -e "${YELLOW}🌐 Abriendo navegador en ${APP_URL}...${RESET}"
+    echo -e "${YELLOW}🌐 Opening browser at ${APP_URL}...${RESET}"
     if command -v open &> /dev/null; then
         open "$APP_URL"
     elif command -v xdg-open &> /dev/null; then
@@ -135,7 +251,7 @@ deploy_and_start() {
     fi
 
     echo -e "\n${MAGENTA}${BOLD}====================================================${RESET}"
-    echo -e "${MAGENTA}${BOLD}📜 MOSTRANDO LOGS EN VIVO DEL BACKEND (Presioná Ctrl+C para salir)${RESET}"
+    echo -e "${MAGENTA}${BOLD}📜 LIVE BACKEND LOGS (Ctrl+C to exit)${RESET}"
     echo -e "${MAGENTA}${BOLD}====================================================${RESET}\n"
 
     # Pretty colorized tail log

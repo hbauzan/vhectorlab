@@ -308,3 +308,26 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 | **CI build only in debug HUD** | Debug without product inflation | Fine as *optional* `VITE_SHOW_BUILD` — not the public version |
 
 **Decision**: product version stays **three-part SemVer**. History of capability = `CHANGELOG`. Optional CI/git SHA belongs in a debug overlay (like cam pose), **not** in the brand version tag. Build numbers do **not** replace PATCH/MINOR discipline.
+
+---
+
+## 8. Local onboarding / `setup.sh` (macOS)
+
+### 8.1. README must describe the control panel, not a backend-only path
+- **Problema**: Un README que solo documenta `cd backend && uv sync && uv run …` deja a juniors sin el flujo real (`./setup.sh` opción 1: deps, tests, backend+frontend, browser).
+- **Solución Obligatoria**: README en **inglés**, centrado en `./setup.sh` opción **1** como camino recomendado. Documentar qué hace cada opción del menú.
+
+### 8.2. Prerequisites: check **and install** on macOS (do not only fail)
+- **Problema**: “Verificar que estén instalados” y abortar con “instalalo vos” frena onboarding; el panel debe cerrar el gap.
+- **Solución Obligatoria** en `setup.sh` (opción 1 / `ensure_prerequisites`):
+  - Si falta **`uv`** → instalar con el installer oficial Astral; refrescar `PATH` (`~/.local/bin`, Homebrew).
+  - Si falta **Node/`npm`** → asegurar Homebrew y `brew install node`.
+  - Si falta **`.env`** → copiar desde `.env.example`.
+  - Sync backend: `uv sync --extra dev`; frontend: `npm install` si no hay `node_modules`.
+- **Invariante**: en Darwin, option 1 no debe pedir instalación manual de `uv`/Node salvo fallo de red/permisos.
+
+### 8.3. Platform scope is macOS-only until explicitly ported
+- **Problema**: Scripts con `open`, Homebrew paths y bash asumen Mac; documentar “multiplataforma” sin pruebas miente.
+- **Hecho / soportado**: creado y probado en **macOS 26.5.1 (Darwin 25.5.0, arm64)**.
+- **No preparado**: Windows ni Linux (aunque con pocos ajustes de package manager / PATH / process control suele ser viable).
+- **Invariante**: README + banner de `setup.sh` deben declarar esa versión de SO y el estado unsupported; auto-install de Node vía Brew es **macOS-only**. En no-Darwin: warn claro; no fingir soporte.
