@@ -32,7 +32,7 @@ That option will:
 
 2. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
 3. **If both healthy**: skip install/sync, tests, and start; open the browser
-4. **If either is sick** (port/process/health mismatch): warn and exit — does **not** kill or relaunch (use option **10** to Stop first)
+4. **If either is sick** (port/process/health mismatch, e.g. frozen Vite): recycle both (stop + start after tests)
 5. **If only one is healthy**: restart **both** services after prereqs + tests
 6. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
 7. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
@@ -131,7 +131,7 @@ npx vite --port 5173 --host 127.0.0.1
 | `uv` / `npm` still missing after option 1 | Open a **new** terminal (PATH refresh), then re-run `./setup.sh` |
 | Backend tests slow / fail on first run | Model download needs network; wait and retry |
 | Browser does not open | Open http://127.0.0.1:5173 manually |
-| Port already in use | If option 1 reports **sick**, fix the holder or use option `10`, then start again |
+| Port already in use / option 1 says **sick** | Option 1 now recycles automatically. Or use option `10`, then start again |
 | Option 1 restarts everything every time | It should not when both are healthy — report a bug if it still kills/relaunches a healthy stack |
 | Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
 | `Failed to spawn: pytest` / No such file | Stale `backend/.venv` after renaming the folder. Option 1 now recreates it; or run `rm -rf backend/.venv && cd backend && uv sync --extra dev` |
