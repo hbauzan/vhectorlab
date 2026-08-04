@@ -1,100 +1,108 @@
 # VHectorLab 3D
 
-Visualización 3D (WebGL/Three.js) y aritmética vectorial sobre embeddings semánticos (`A − B + C`).
+3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`).
 
 ---
 
-## Requisitos (una sola vez)
+## Platform support
 
-Antes de arrancar, necesitás estas herramientas instaladas en tu máquina:
+**Created and tested on macOS 26.5.1 (Darwin 25.5.0, Apple Silicon).**
 
-| Herramienta | Para qué | Cómo instalar |
-| :--- | :--- | :--- |
-| **[uv](https://docs.astral.sh/uv/)** | Backend Python | [Instrucciones oficiales](https://docs.astral.sh/uv/getting-started/installation/) |
-| **[Node.js](https://nodejs.org/)** (incluye `npm`) | Frontend Vite | Descargá el LTS desde [nodejs.org](https://nodejs.org/) |
-
-Comprobá que están disponibles:
-
-```bash
-uv --version
-npm --version
-```
+This project was **not** prepared or validated for Windows or Linux. It may work there with a few adjustments (package managers, paths, process control), but that is unsupported. Prefer a Mac matching the versions above.
 
 ---
 
-## Arranque rápido (recomendado)
+## Quick start (recommended)
 
-Todo el flujo diario pasa por el panel `setup.sh`. Desde la raíz del repo:
+Everything goes through `./setup.sh`. On macOS, **option 1 installs missing tools for you** when needed.
 
 ```bash
-# 1. Clonar (si todavía no lo hiciste)
-git clone <url-del-repo>
+# 1. Clone the repo
+git clone <repo-url>
 cd lsv2
 
-# 2. Configurar entorno (opcional pero recomendado)
-cp .env.example .env
-
-# 3. Instalar dependencias del frontend (primera vez)
-npm install
-
-# 4. Abrir el panel de control
+# 2. Open the control panel
+chmod +x setup.sh   # first time only, if needed
 ./setup.sh
 ```
 
-En el menú, elegí la **opción `1`** (`Desplegar / Iniciar Herramienta`).
+Choose **option `1`** (`Deploy / Start Tool`).
 
-Esa opción hace todo sola:
+That option will:
 
-1. Verifica que `uv` y `npm` estén instalados
-2. Genera `public/vocab.txt` si no existe
-3. Corre los tests de backend y frontend
-4. Levanta backend (`http://127.0.0.1:8000`) + frontend (`http://127.0.0.1:5173`)
-5. Abre el navegador en la app
+1. Detect the OS and warn if you are not on macOS
+2. **Check and install** missing prerequisites on macOS:
+   - `uv` (official installer) if missing
+   - Homebrew (if needed) + Node.js/`npm` if missing
+   - Create `.env` from `.env.example` if missing
+   - Sync backend deps (`uv sync --extra dev`)
+   - Run `npm install` if `node_modules` is missing
+3. Generate `public/vocab.txt` if missing
+4. Run backend + frontend tests
+5. Start backend (`http://127.0.0.1:8000`) + frontend (`http://127.0.0.1:5173`)
+6. Open the browser
 
-Cuando termine, la app queda en:
+App URL when ready:
 
 👉 **http://127.0.0.1:5173**
 
-Para salir de los logs en vivo: `Ctrl+C`.  
-Para apagar servicios: volvé a `./setup.sh` y elegí la **opción `10`**.
+- Leave live logs: `Ctrl+C`
+- Stop services: run `./setup.sh` again → option **`10`**
+
+> First run can take a while: it may download Homebrew/Node/`uv`, Python packages, and the embedding model.
 
 ---
 
-## Menú de `setup.sh` (resumen)
+## What `setup.sh` expects (and installs on Mac)
 
-| Opción | Qué hace |
-| :--- | :--- |
-| **1** | Flujo completo: verificar → testear → iniciar → abrir browser |
-| **2** | Solo backend FastAPI en `:8000` |
-| **3** | Heartbeat / health check del sistema |
-| **4** | Tests del frontend (Vitest) |
-| **5** | Tests del backend (pytest) |
-| **6** | Vocabulario: cargar archivo propio o generar N palabras |
-| **7** | Build de imagen Docker para Hugging Face Spaces |
-| **8** | Publicar Space en Hugging Face |
-| **9** | Ver logs del backend |
-| **10** | Parar / limpiar servicios |
-| **0** | Salir |
-
----
-
-## Variables de entorno
-
-Copiá `.env.example` → `.env` y editá solo lo que necesites. Las más comunes:
-
-| Variable | Default | Descripción |
+| Tool | Role | If missing on macOS |
 | :--- | :--- | :--- |
-| `HOST` / `PORT` | `127.0.0.1` / `8000` | Dónde escucha el backend |
-| `MODEL_NAME` | `all-mpnet-base-v2` | Modelo de embeddings |
-| `VOCAB_PATH` | `public/vocab.txt` | Vocabulario de la app |
-| `VITE_API_BASE_URL` | `/api` | Base URL del API para el browser |
-| `VITE_SHOW_CAM_POSE` | `false` | Overlay de cámara (debug de vista) |
+| **uv** | Python deps / run backend | Installed via [official uv installer](https://docs.astral.sh/uv/) |
+| **Node.js + npm** | Frontend (Vite / Vitest) | Installed via Homebrew (`brew install node`) |
+| **Homebrew** | Used only to install Node if needed | Installed from [brew.sh](https://brew.sh) |
+| **`.env`** | Runtime config | Copied from `.env.example` |
+| **Backend deps** | FastAPI / PyTorch stack | `uv sync --extra dev` in `backend/` |
+| **Frontend deps** | Three.js / Vite | `npm install` when `node_modules` is absent |
+
+You do **not** need to install `uv` or Node by hand on a typical Mac — option 1 handles that. You *do* need network access and (for Homebrew) permission to install software.
 
 ---
 
-## Arranque manual (sin panel)
+## `setup.sh` menu
 
-Solo si preferís no usar `setup.sh`:
+| Option | What it does |
+| :--- | :--- |
+| **1** | Full flow: check/install → test → start → open browser |
+| **2** | Backend only (FastAPI on `:8000`) |
+| **3** | System heartbeat / health check |
+| **4** | Frontend unit tests (Vitest) |
+| **5** | Backend unit tests (pytest) |
+| **6** | Vocabulary: load a custom file or generate N words |
+| **7** | Build Hugging Face Spaces Docker image |
+| **8** | Publish to Hugging Face Space |
+| **9** | View backend logs |
+| **10** | Stop / clean services |
+| **0** | Exit |
+
+---
+
+## Environment variables
+
+Copy `.env.example` → `.env` (option 1 does this if `.env` is missing). Common keys:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `HOST` / `PORT` | `127.0.0.1` / `8000` | Backend listen address |
+| `MODEL_NAME` | `all-mpnet-base-v2` | Embedding model |
+| `VOCAB_PATH` | `public/vocab.txt` | App vocabulary file |
+| `VITE_API_BASE_URL` | `/api` | Browser API base URL |
+| `VITE_SHOW_CAM_POSE` | `false` | Live camera POS/ROT overlay (debug) |
+
+---
+
+## Manual start (without the panel)
+
+Only if you prefer not to use `setup.sh` (still assumes macOS + tools already available):
 
 ```bash
 # Backend
@@ -102,19 +110,20 @@ cd backend
 uv sync --extra dev
 uv run python -m server
 
-# Frontend (otra terminal, desde la raíz del repo)
+# Frontend (another terminal, repo root)
 npm install
 npx vite --port 5173 --host 127.0.0.1
 ```
 
 ---
 
-## Problemas frecuentes
+## Troubleshooting
 
-| Sintoma | Qué revisar |
+| Symptom | What to check |
 | :--- | :--- |
-| `uv: command not found` | Instalá `uv` (tabla de requisitos) |
-| `npm: command not found` | Instalá Node.js LTS |
-| Tests de backend fallan / tarda mucho | La primera vez descarga el modelo; necesitás red |
-| El browser no abre la app | Entrá a mano a http://127.0.0.1:5173 |
-| Puerto ocupado | Opción `10` en `setup.sh`, o cerrá procesos viejos de Vite/backend |
+| Unsupported platform warning | You are not on Darwin/macOS — unsupported; adapt paths/package managers yourself |
+| Homebrew install asks for a password | Normal on first install; approve locally |
+| `uv` / `npm` still missing after option 1 | Open a **new** terminal (PATH refresh), then re-run `./setup.sh` |
+| Backend tests slow / fail on first run | Model download needs network; wait and retry |
+| Browser does not open | Open http://127.0.0.1:5173 manually |
+| Port already in use | Option `10` in `setup.sh`, then start again |
