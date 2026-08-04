@@ -17,9 +17,9 @@ This project was **not** prepared or validated for Windows or Linux. It may work
 Everything goes through `./setup.sh`. On macOS, **option 1 installs missing tools for you** when needed.
 
 ```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd lsv2
+# 1. Clone the repo (folder name matches the GitHub repo)
+git clone https://github.com/hbauzan/VHectorLab-3D.git
+cd VHectorLab-3D
 
 # 2. Open the control panel
 chmod +x setup.sh   # first time only, if needed
@@ -63,8 +63,17 @@ App URL when ready:
 | **`.env`** | Runtime config | Copied from `.env.example` |
 | **Backend deps** | FastAPI / PyTorch stack | `uv sync --extra dev` in `backend/` |
 | **Frontend deps** | Three.js / Vite | `npm install` when `node_modules` is absent |
+| **Docker Desktop** | **Optional** — only for option **7** (HF Spaces image build) | Not installed by option 1. Option 7 checks Docker; on macOS it can install the Docker Desktop cask via Homebrew and asks you to start the app |
+
+**Daily local use (option 1) does not need Docker Desktop** — only `uv` + Node/`npm` (+ network).
 
 You do **not** need to install `uv` or Node by hand on a typical Mac — option 1 handles that. You *do* need network access and (for Homebrew) permission to install software.
+
+### Optional: Docker Desktop (options 7 only)
+
+Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) if you want to build the Hugging Face Spaces image locally. After install, open Docker Desktop and wait until the engine is running (whale icon steady), then use option **7**.
+
+Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space — it does **not** require Docker.
 
 ---
 
@@ -72,14 +81,14 @@ You do **not** need to install `uv` or Node by hand on a typical Mac — option 
 
 | Option | What it does |
 | :--- | :--- |
-| **1** | Full flow: check/install → test → start → open browser |
+| **1** | Full flow: check/install → test → start → open browser (**no Docker**) |
 | **2** | Backend only (FastAPI on `:8000`) |
 | **3** | System heartbeat / health check |
 | **4** | Frontend unit tests (Vitest) |
 | **5** | Backend unit tests (pytest) |
 | **6** | Vocabulary: load a custom file or generate N words |
-| **7** | Build Hugging Face Spaces Docker image |
-| **8** | Publish to Hugging Face Space |
+| **7** | Build Hugging Face Spaces Docker image (**requires Docker Desktop**) |
+| **8** | Publish to Hugging Face Space (git sync; no Docker) |
 | **9** | View backend logs |
 | **10** | Stop / clean services |
 | **0** | Exit |
@@ -127,3 +136,4 @@ npx vite --port 5173 --host 127.0.0.1
 | Backend tests slow / fail on first run | Model download needs network; wait and retry |
 | Browser does not open | Open http://127.0.0.1:5173 manually |
 | Port already in use | Option `10` in `setup.sh`, then start again |
+| Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
