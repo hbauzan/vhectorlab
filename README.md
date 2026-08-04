@@ -30,12 +30,12 @@ Choose **option `1`** (`Deploy / Start Tool`).
 
 That option will:
 
-1. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
-2. **If both healthy**: skip install/sync and skip start; still run tests; open the browser
-3. **If either is sick** (port/process/health mismatch): warn and exit — does **not** kill or relaunch (use option **10** to Stop first)
-4. **If only one is healthy**: restart **both** services after prereqs + tests
-5. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
-6. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
+2. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
+3. **If both healthy**: skip install/sync, tests, and start; open the browser
+4. **If either is sick** (port/process/health mismatch): warn and exit — does **not** kill or relaunch (use option **10** to Stop first)
+5. **If only one is healthy**: restart **both** services after prereqs + tests
+6. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
+7. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
 
 App URL when ready:
 
@@ -45,7 +45,7 @@ App URL when ready:
 - Stop services: option **`10`** only (Ctrl+C never stops the stack)
 
 > First run can take a while: it may download Homebrew/Node/`uv`, Python packages, and the embedding model.
-> Re-running option **1** while the stack is already healthy will **not** bounce the servers.
+> Re-running option **1** while the stack is already healthy will **not** bounce the servers or re-run tests.
 
 ---
 
@@ -77,7 +77,7 @@ Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space 
 
 | Option | What it does |
 | :--- | :--- |
-| **1** | Deploy/start: **idempotent** — skip prereqs+start if both healthy; tests always; open browser (**no Docker**) |
+| **1** | Deploy/start: **idempotent** — if both healthy, only open browser; else prereqs→tests→start (**no Docker**) |
 | **2** | Backend only (`:8000`) — **skip if already healthy**; refuse if sick |
 | **3** | System heartbeat / health check |
 | **4** | Frontend unit tests (Vitest) |

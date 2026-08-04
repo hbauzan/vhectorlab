@@ -3,6 +3,10 @@
 # VHectorLab 3D - CONTROL PANEL & CLI SETUP
 # ==========================================
 
+# Job control ON: background jobs get their own process group.
+# Without this, Ctrl+C (SIGINT to the panel's PGID) also kills backend/vite.
+set -m
+
 # ANSI Color Palette
 RESET="\033[0m"
 BOLD="\033[1m"
@@ -324,6 +328,7 @@ wait_backend_healthy() {
 
 start_backend() {
     echo -e "${BLUE}▶ Starting Backend FastAPI (${BACKEND_URL})...${RESET}"
+    # Background + disown under `set -m` → own PGID, immune to panel Ctrl+C / SIGHUP.
     (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
     disown $! 2>/dev/null || true
     wait_backend_healthy
@@ -421,16 +426,12 @@ deploy_and_start() {
         return
     fi
 
-    # Both already healthy: skip prereqs + start; still run tests; open browser.
+    # Both already healthy: skip prereqs, tests, and start — just open the app.
     if [ "$be_state" = "healthy" ] && [ "$fe_state" = "healthy" ]; then
-        echo -e "\n${GREEN}${BOLD}✓ Stack already up — skipping prerequisites and start.${RESET}"
-        if ! run_full_test_suite; then
-            read -p "Press Enter..."
-            return
-        fi
+        echo -e "\n${GREEN}${BOLD}✓ Stack already up — skipping prerequisites, tests, and start.${RESET}"
         print_ready_banner
         open_app_browser
-        echo -e "${DIM}Services left running as-is. Use option 9 for logs, option 10 to stop.${RESET}"
+        echo -e "${DIM}Services left running as-is. Use options 4/5 for tests, 9 for logs, 10 to stop.${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
