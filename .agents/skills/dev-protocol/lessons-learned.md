@@ -362,4 +362,5 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
   - Ambos down → flujo normal (prereqs → tests → start).
   - Opción **2** (backend only): skip si healthy; refuse si sick.
   - Opción **10** siempre hace stop real (`kill_stack`), no no-op.
-- **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy.
+  - **Ctrl+C** nunca baja servicios: en live logs pausa → Enter vuelve al menú; segundo Ctrl+C sale del panel. `disown` tras start para que el exit del shell no mande SIGHUP.
+- **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy. Solo opción **10** detiene el stack.
