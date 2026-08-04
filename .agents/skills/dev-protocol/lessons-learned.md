@@ -331,3 +331,15 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **Hecho / soportado**: creado y probado en **macOS 26.5.1 (Darwin 25.5.0, arm64)**.
 - **No preparado**: Windows ni Linux (aunque con pocos ajustes de package manager / PATH / process control suele ser viable).
 - **Invariante**: README + banner de `setup.sh` deben declarar esa versión de SO y el estado unsupported; auto-install de Node vía Brew es **macOS-only**. En no-Darwin: warn claro; no fingir soporte.
+
+### 8.4. Docker Desktop is optional (HF image only)
+- **Problema**: Juniors asumen que hace falta Docker Desktop para correr la app; o al revés, option 7 falla sin explicación.
+- **Hecho**: el flujo diario (opción **1**) es bare-metal (`uv` + Vite) — **no** requiere Docker.
+- **Cuándo sí**: opción **7** (`docker build` de la imagen HF Spaces). Opción **8** publica por git/`npm run build` — tampoco necesita Docker.
+- **Solución Obligatoria**: README debe marcar Docker como **optional**; menú etiqueta option 7 con “needs Docker Desktop”; `ensure_docker` antes del build (detectar CLI, daemon caído → abrir Docker Desktop; si falta en macOS → `brew install --cask docker` + pedir arrancar la app).
+- **Invariante**: no meter Docker en `ensure_prerequisites` de option 1.
+
+### 8.5. Local folder / clone name = `VHectorLab-3D`
+- **Problema**: el working copy histórico se llamaba `lsv2` mientras el producto, `package.json`, `manifest.json` y el remoto GitHub ya eran VHectorLab 3D / `VHectorLab-3D`.
+- **Solución Obligatoria**: carpeta local canónica **`VHectorLab-3D`** (kebab-case, alineada al repo). README: `git clone …/VHectorLab-3D.git` + `cd VHectorLab-3D`. No renombrar `vl3d.*` localStorage ni packages npm solo por el folder.
+- **Invariante**: `roadmap/` puede seguir mencionando `lsv2` / VectorLab como historia; no reescribir archivo salvo necesidad.
