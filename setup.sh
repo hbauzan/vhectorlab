@@ -154,14 +154,202 @@ ensure_prerequisites() {
     return 0
 }
 
+# --- Idempotent service probes (process + health; ports detect "sick") ---
+# healthy = matching process AND health OK
+# down    = no process, no health, port free
+# sick    = anything else (partial / port held / health failing)
+
+BACKEND_URL="http://127.0.0.1:8000"
+FRONTEND_URL="http://127.0.0.1:5173"
+BACKEND_PORT=8000
+FRONTEND_PORT=5173
+
+port_listening() {
+    local port="$1"
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+backend_process_running() {
+    pgrep -f "server:app|python -m server" >/dev/null 2>&1
+}
+
+frontend_process_running() {
+    # Prefer the launch signature from this script; avoid bare "vite" (matches vitest).
+    pgrep -f "vite --port ${FRONTEND_PORT}" >/dev/null 2>&1
+}
+
+backend_health_ok() {
+    local body
+    body="$(curl -sf --max-time 2 "${BACKEND_URL}/health" 2>/dev/null)" || return 1
+    echo "$body" | grep -q '"status"[[:space:]]*:[[:space:]]*"ok"'
+}
+
+frontend_health_ok() {
+    curl -sf --max-time 2 -o /dev/null "${FRONTEND_URL}/" 2>/dev/null
+}
+
+# Prints: healthy | sick | down
+probe_backend() {
+    local proc=0 health=0 port=0
+    backend_process_running && proc=1
+    backend_health_ok && health=1
+    port_listening "$BACKEND_PORT" && port=1
+    if [ "$proc" -eq 1 ] && [ "$health" -eq 1 ]; then
+        echo "healthy"
+    elif [ "$proc" -eq 0 ] && [ "$health" -eq 0 ] && [ "$port" -eq 0 ]; then
+        echo "down"
+    else
+        echo "sick"
+    fi
+}
+
+# Prints: healthy | sick | down
+probe_frontend() {
+    local proc=0 health=0 port=0
+    frontend_process_running && proc=1
+    frontend_health_ok && health=1
+    port_listening "$FRONTEND_PORT" && port=1
+    if [ "$proc" -eq 1 ] && [ "$health" -eq 1 ]; then
+        echo "healthy"
+    elif [ "$proc" -eq 0 ] && [ "$health" -eq 0 ] && [ "$port" -eq 0 ]; then
+        echo "down"
+    else
+        echo "sick"
+    fi
+}
+
+describe_service_state() {
+    local name="$1"
+    local state="$2"
+    local port="$3"
+    case "$state" in
+        healthy) echo -e "  ${GREEN}✓ ${name}: healthy (process + health OK on :${port})${RESET}" ;;
+        down)    echo -e "  ${DIM}· ${name}: down${RESET}" ;;
+        sick)    echo -e "  ${YELLOW}⚠ ${name}: sick (process/port/health mismatch on :${port})${RESET}" ;;
+        *)       echo -e "  ${RED}? ${name}: unknown (${state})${RESET}" ;;
+    esac
+}
+
+warn_sick_and_abort() {
+    local be_state="$1"
+    local fe_state="$2"
+    echo -e "\n${RED}${BOLD}❌ Services look unhealthy — refusing to start or restart.${RESET}"
+    describe_service_state "Backend " "$be_state" "$BACKEND_PORT"
+    describe_service_state "Frontend" "$fe_state" "$FRONTEND_PORT"
+    echo -e "${YELLOW}Fix the stuck process/port (or use option 10 to Stop), then retry.${RESET}"
+    echo -e "${DIM}Healthy requires both: matching process (pgrep) AND a passing health check.${RESET}"
+}
+
+ensure_vocab() {
+    if [ ! -f "public/vocab.txt" ]; then
+        echo -e "${YELLOW}⚠️ Vocabulary missing at public/vocab.txt. Generating 10,000 words...${RESET}"
+        python3 scripts/generate_vocab.py --count 10000
+    fi
+    echo -e "  ${GREEN}✓ public/vocab.txt OK ($(wc -l < public/vocab.txt | tr -d ' ') words).${RESET}"
+}
+
+run_full_test_suite() {
+    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
+    echo -e "${CYAN}${BOLD}🧪 RUNNING FULL TEST SUITE...${RESET}"
+    echo -e "${CYAN}${BOLD}====================================================${RESET}"
+
+    echo -e "${BLUE}${BOLD}▶ [1/2] Backend unit tests (pytest)...${RESET}"
+    echo -e "${DIM}Loading PyTorch SentenceTransformer model into memory...${RESET}"
+    (cd backend && uv run python -m pytest -v -s)
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}${BOLD}❌ ERROR: Backend tests failed. Fix them before deploying.${RESET}"
+        return 1
+    fi
+    echo -e "  ${GREEN}${BOLD}✓ Backend tests GREEN.${RESET}"
+
+    echo -e "\n${BLUE}${BOLD}▶ [2/2] Frontend unit tests (Vitest)...${RESET}"
+    npx vitest run --reporter=verbose
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}${BOLD}❌ ERROR: Frontend tests failed. Fix them before deploying.${RESET}"
+        return 1
+    fi
+    echo -e "  ${GREEN}${BOLD}✓ Frontend tests GREEN.${RESET}"
+    return 0
+}
+
+kill_stack() {
+    pkill -f "server:app|python -m server" 2>/dev/null
+    pkill -f "vite --port ${FRONTEND_PORT}" 2>/dev/null
+    # Fallback for older/manual vite launches on the same port
+    pkill -f "vite" 2>/dev/null
+    sleep 1
+}
+
+wait_backend_healthy() {
+    echo -n "  Loading model [waiting for /health status=ok]"
+    local i
+    for i in {1..60}; do
+        if backend_health_ok; then
+            echo -e " ${GREEN}${BOLD}MODEL LOADED OK!${RESET}"
+            return 0
+        fi
+        echo -n " ⏳"
+        sleep 1
+    done
+    echo -e " ${RED}${BOLD}TIMEOUT${RESET}"
+    return 1
+}
+
+start_backend() {
+    echo -e "${BLUE}▶ Starting Backend FastAPI (${BACKEND_URL})...${RESET}"
+    (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
+    wait_backend_healthy
+}
+
+start_frontend() {
+    echo -e "${BLUE}▶ Starting Frontend WebGL (Vite Dev Server)...${RESET}"
+    npx vite --port "$FRONTEND_PORT" --host 127.0.0.1 > /dev/null 2>&1 &
+    sleep 2
+    if ! frontend_health_ok; then
+        echo -e "${YELLOW}  Frontend started but not responding yet on ${FRONTEND_URL}${RESET}"
+    else
+        echo -e "  ${GREEN}✓ Frontend responding on ${FRONTEND_URL}${RESET}"
+    fi
+}
+
+open_app_browser() {
+    echo -e "${YELLOW}🌐 Opening browser at ${FRONTEND_URL}...${RESET}"
+    if command -v open &> /dev/null; then
+        open "$FRONTEND_URL"
+    elif command -v xdg-open &> /dev/null; then
+        xdg-open "$FRONTEND_URL"
+    fi
+}
+
+follow_backend_logs() {
+    echo -e "\n${MAGENTA}${BOLD}====================================================${RESET}"
+    echo -e "${MAGENTA}${BOLD}📜 LIVE BACKEND LOGS (Ctrl+C to exit)${RESET}"
+    echo -e "${MAGENTA}${BOLD}====================================================${RESET}\n"
+    tail -f "$LOG_FILE" | sed \
+        -e "s/INFO/${GREEN}INFO${RESET}/g" \
+        -e "s/WARNING/${YELLOW}WARNING${RESET}/g" \
+        -e "s/ERROR/${RED}ERROR${RESET}/g" \
+        -e "s/200 OK/${GREEN}200 OK${RESET}/g" \
+        -e "s/POST /${CYAN}POST ${RESET}/g" \
+        -e "s/GET /${CYAN}GET ${RESET}/g"
+}
+
+print_ready_banner() {
+    echo -e "\n${GREEN}${BOLD}====================================================${RESET}"
+    echo -e "${GREEN}${BOLD}        🎉 Ready to go!${RESET}"
+    echo -e "${GREEN}${BOLD}====================================================${RESET}"
+    echo -e " ${BOLD}The tool is running at:${RESET}"
+    echo -e " ${CYAN}${BOLD}👉 ${FRONTEND_URL}${RESET}\n"
+}
+
 show_menu() {
     clear
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     echo -e "${CYAN}${BOLD}       🌐 VHectorLab 3D - CONTROL PANEL${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     echo -e " ${DIM}Tested on ${SUPPORTED_OS_LABEL} · macOS only (Windows/Linux unsupported)${RESET}"
-    echo -e " ${GREEN}${BOLD}1. 🚀 Deploy / Start Tool${RESET} ${DIM}(Check/Install, Test, Start, Open Browser)${RESET}"
-    echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI on 127.0.0.1:8000)${RESET}"
+    echo -e " ${GREEN}${BOLD}1. 🚀 Deploy / Start Tool${RESET} ${DIM}(Idempotent: skip start if already healthy)${RESET}"
+    echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI on 127.0.0.1:8000 · skip if healthy)${RESET}"
     echo -e " ${BLUE}3.${RESET} ${BOLD}Run System Heartbeat${RESET} ${DIM}(Health Check & Arithmetic)${RESET}"
     echo -e " ${BLUE}4.${RESET} ${BOLD}Run Frontend Unit Tests${RESET} ${DIM}(Vitest)${RESET}"
     echo -e " ${BLUE}5.${RESET} ${BOLD}Run Backend Unit Tests${RESET} ${DIM}(pytest)${RESET}"
@@ -175,8 +363,46 @@ show_menu() {
 }
 
 deploy_and_start() {
+    local be_state fe_state
+    be_state="$(probe_backend)"
+    fe_state="$(probe_frontend)"
+
     echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🔍 1/4 VERIFYING ENVIRONMENT & REQUIREMENTS...${RESET}"
+    echo -e "${CYAN}${BOLD}📡 SERVICE STATUS${RESET}"
+    echo -e "${CYAN}${BOLD}====================================================${RESET}"
+    describe_service_state "Backend " "$be_state" "$BACKEND_PORT"
+    describe_service_state "Frontend" "$fe_state" "$FRONTEND_PORT"
+
+    if [ "$be_state" = "sick" ] || [ "$fe_state" = "sick" ]; then
+        warn_sick_and_abort "$be_state" "$fe_state"
+        read -p "Press Enter..."
+        return
+    fi
+
+    # Both already healthy: skip prereqs + start; still run tests; open browser.
+    if [ "$be_state" = "healthy" ] && [ "$fe_state" = "healthy" ]; then
+        echo -e "\n${GREEN}${BOLD}✓ Stack already up — skipping prerequisites and start.${RESET}"
+        if ! run_full_test_suite; then
+            read -p "Press Enter..."
+            return
+        fi
+        print_ready_banner
+        open_app_browser
+        echo -e "${DIM}Services left running as-is. Use option 9 for logs, option 10 to stop.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+
+    # One healthy + one down → force restart of both (inconsistent stack).
+    local force_restart=0
+    if { [ "$be_state" = "healthy" ] && [ "$fe_state" = "down" ]; } || \
+       { [ "$be_state" = "down" ] && [ "$fe_state" = "healthy" ]; }; then
+        force_restart=1
+        echo -e "\n${YELLOW}${BOLD}⚠ Partial stack detected — restarting BOTH services.${RESET}"
+    fi
+
+    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
+    echo -e "${CYAN}${BOLD}🔍 VERIFYING ENVIRONMENT & REQUIREMENTS...${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 
     if ! ensure_prerequisites; then
@@ -184,96 +410,60 @@ deploy_and_start() {
         return
     fi
 
-    # Vocabulary file
-    if [ ! -f "public/vocab.txt" ]; then
-        echo -e "${YELLOW}⚠️ Vocabulary missing at public/vocab.txt. Generating 10,000 words...${RESET}"
-        python3 scripts/generate_vocab.py --count 10000
-    fi
-    echo -e "  ${GREEN}✓ public/vocab.txt OK ($(wc -l < public/vocab.txt | tr -d ' ') words).${RESET}"
+    ensure_vocab
 
-    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🧪 2/4 RUNNING FULL TEST SUITE...${RESET}"
-    echo -e "${CYAN}${BOLD}====================================================${RESET}"
-
-    # Run Backend pytest with verbose streaming output
-    echo -e "${BLUE}${BOLD}▶ [1/2] Backend unit tests (pytest)...${RESET}"
-    echo -e "${DIM}Loading PyTorch SentenceTransformer model into memory...${RESET}"
-    (cd backend && uv run python -m pytest -v -s)
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}${BOLD}❌ ERROR: Backend tests failed. Fix them before deploying.${RESET}"
+    if ! run_full_test_suite; then
         read -p "Press Enter..."
         return
     fi
-    echo -e "  ${GREEN}${BOLD}✓ Backend tests GREEN.${RESET}"
 
-    # Run Frontend vitest with verbose output
-    echo -e "\n${BLUE}${BOLD}▶ [2/2] Frontend unit tests (Vitest)...${RESET}"
-    npx vitest run --reporter=verbose
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}${BOLD}❌ ERROR: Frontend tests failed. Fix them before deploying.${RESET}"
+    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
+    echo -e "${CYAN}${BOLD}🚀 STARTING SERVICES (BACKEND + FRONTEND)...${RESET}"
+    echo -e "${CYAN}${BOLD}====================================================${RESET}"
+
+    if [ "$force_restart" -eq 1 ]; then
+        echo -e "${YELLOW}▶ Stopping existing services before full restart...${RESET}"
+    fi
+    kill_stack
+
+    if ! start_backend; then
+        echo -e "${RED}${BOLD}❌ Backend failed to become healthy. Check ${LOG_FILE}.${RESET}"
         read -p "Press Enter..."
         return
     fi
-    echo -e "  ${GREEN}${BOLD}✓ Frontend tests GREEN.${RESET}"
+    start_frontend
 
-    echo -e "\n${CYAN}${BOLD}====================================================${RESET}"
-    echo -e "${CYAN}${BOLD}🚀 3/4 STARTING SERVICES (BACKEND + FRONTEND)...${RESET}"
-    echo -e "${CYAN}${BOLD}====================================================${RESET}"
+    print_ready_banner
+    open_app_browser
+    follow_backend_logs
+}
 
-    # Stop any previous instance
-    pkill -f "server:app|python -m server" 2>/dev/null
-    pkill -f "vite" 2>/dev/null
+start_bare_metal_backend() {
+    local be_state
+    be_state="$(probe_backend)"
+    describe_service_state "Backend " "$be_state" "$BACKEND_PORT"
 
-    # Launch Backend FastAPI
-    echo -e "${BLUE}▶ Starting Backend FastAPI (http://127.0.0.1:8000)...${RESET}"
-    (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
-    BACKEND_PID=$!
-
-    # Wait for backend health check with progress indicators
-    echo -n "  Loading model [waiting for /health]"
-    for i in {1..30}; do
-        if curl -s http://127.0.0.1:8000/health | grep -q "status"; then
-            echo -e " ${GREEN}${BOLD}MODEL LOADED OK!${RESET}"
-            break
-        fi
-        echo -n " ⏳"
-        sleep 1
-    done
-
-    # Launch Frontend Vite Server
-    echo -e "${BLUE}▶ Starting Frontend WebGL (Vite Dev Server)...${RESET}"
-    npx vite --port 5173 --host 127.0.0.1 > /dev/null 2>&1 &
-    FRONTEND_PID=$!
-    sleep 2
-
-    APP_URL="http://127.0.0.1:5173"
-
-    echo -e "\n${GREEN}${BOLD}====================================================${RESET}"
-    echo -e "${GREEN}${BOLD}        🎉 Ready to go!${RESET}"
-    echo -e "${GREEN}${BOLD}====================================================${RESET}"
-    echo -e " ${BOLD}The tool is running at:${RESET}"
-    echo -e " ${CYAN}${BOLD}👉 ${APP_URL}${RESET}\n"
-
-    # Open Browser on macOS / OS
-    echo -e "${YELLOW}🌐 Opening browser at ${APP_URL}...${RESET}"
-    if command -v open &> /dev/null; then
-        open "$APP_URL"
-    elif command -v xdg-open &> /dev/null; then
-        xdg-open "$APP_URL"
+    if [ "$be_state" = "healthy" ]; then
+        echo -e "${GREEN}${BOLD}✓ Backend already healthy — skipping start.${RESET}"
+        read -p "Press Enter..."
+        return
     fi
 
-    echo -e "\n${MAGENTA}${BOLD}====================================================${RESET}"
-    echo -e "${MAGENTA}${BOLD}📜 LIVE BACKEND LOGS (Ctrl+C to exit)${RESET}"
-    echo -e "${MAGENTA}${BOLD}====================================================${RESET}\n"
+    if [ "$be_state" = "sick" ]; then
+        echo -e "\n${RED}${BOLD}❌ Backend looks unhealthy — refusing to start another instance.${RESET}"
+        echo -e "${YELLOW}Fix the stuck process/port (or use option 10 to Stop), then retry.${RESET}"
+        read -p "Press Enter..."
+        return
+    fi
 
-    # Pretty colorized tail log
-    tail -f "$LOG_FILE" | sed \
-        -e "s/INFO/${GREEN}INFO${RESET}/g" \
-        -e "s/WARNING/${YELLOW}WARNING${RESET}/g" \
-        -e "s/ERROR/${RED}ERROR${RESET}/g" \
-        -e "s/200 OK/${GREEN}200 OK${RESET}/g" \
-        -e "s/POST /${CYAN}POST ${RESET}/g" \
-        -e "s/GET /${CYAN}GET ${RESET}/g"
+    echo -e "${GREEN}Starting Bare-metal Backend...${RESET}"
+    if ! ensure_prerequisites; then
+        read -p "Press Enter..."
+        return
+    fi
+    start_backend
+    echo -e "${GREEN}Backend started in background (Logs: $LOG_FILE)${RESET}"
+    read -p "Press Enter..."
 }
 
 manage_vocab() {
@@ -376,8 +566,7 @@ publish_hf_space() {
 
 stop_services() {
     echo -e "${RED}${BOLD}Stopping background services...${RESET}"
-    pkill -f "server:app|python -m server" 2>/dev/null
-    pkill -f "vite" 2>/dev/null
+    kill_stack
     echo -e "${GREEN}✅ Services stopped.${RESET}"
     read -p "Press Enter to return to menu..."
 }
@@ -405,10 +594,7 @@ while true; do
             deploy_and_start
             ;;
         2)
-            echo -e "${GREEN}Starting Bare-metal Backend...${RESET}"
-            (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
-            echo -e "${GREEN}Backend started in background (Logs: $LOG_FILE)${RESET}"
-            read -p "Press Enter..."
+            start_bare_metal_backend
             ;;
         3)
             (cd backend && uv run python perform_tests.py)

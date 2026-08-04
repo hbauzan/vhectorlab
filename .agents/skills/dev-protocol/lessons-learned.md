@@ -351,3 +351,15 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
   2. Invocar tests como `uv run python -m pytest` (menos frágil que el script `pytest` con shebang roto).
   3. Recuperación manual: `rm -rf backend/.venv && cd backend && uv sync --extra dev`.
 - **Invariante**: un rename/move del working copy **implica** recrear el venv; `uv sync` solo no reescribe shebangs rotos.
+
+### 8.7. Idempotent start — never bounce a healthy stack
+- **Problema**: Opción 1 hacía `pkill` + relaunch siempre, aunque backend/frontend ya estuvieran healthy → pérdida de estado, re-carga del modelo, downtime innecesario.
+- **Solución Obligatoria** en `setup.sh` (opciones que arrancan servicios):
+  - **healthy** = proceso matching (`pgrep`) **y** health OK (`/health` con `"status":"ok"` en `:8000`; HTTP OK en `:5173`). Puerto ocupado sin ese combo = **sick**.
+  - Ambos healthy → **skip** prerequisites y **skip** start; igual correr tests; abrir browser.
+  - Cualquier **sick** → avisar y **salir** (no matar ni relanzar). Stop es opción **10**.
+  - Solo uno healthy / uno down → **restart de ambos** (stack inconsistente).
+  - Ambos down → flujo normal (prereqs → tests → start).
+  - Opción **2** (backend only): skip si healthy; refuse si sick.
+  - Opción **10** siempre hace stop real (`kill_stack`), no no-op.
+- **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy.

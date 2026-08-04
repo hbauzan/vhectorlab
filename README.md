@@ -30,26 +30,22 @@ Choose **option `1`** (`Deploy / Start Tool`).
 
 That option will:
 
-1. Detect the OS and warn if you are not on macOS
-2. **Check and install** missing prerequisites on macOS:
-   - `uv` (official installer) if missing
-   - Homebrew (if needed) + Node.js/`npm` if missing
-   - Create `.env` from `.env.example` if missing
-   - Sync backend deps (`uv sync --extra dev`)
-   - Run `npm install` if `node_modules` is missing
-3. Generate `public/vocab.txt` if missing
-4. Run backend + frontend tests
-5. Start backend (`http://127.0.0.1:8000`) + frontend (`http://127.0.0.1:5173`)
-6. Open the browser
+1. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
+2. **If both healthy**: skip install/sync and skip start; still run tests; open the browser
+3. **If either is sick** (port/process/health mismatch): warn and exit — does **not** kill or relaunch (use option **10** to Stop first)
+4. **If only one is healthy**: restart **both** services after prereqs + tests
+5. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
+6. After a fresh start: stream live backend logs (`Ctrl+C` leaves the tail; services stay up)
 
 App URL when ready:
 
 👉 **http://127.0.0.1:5173**
 
-- Leave live logs: `Ctrl+C`
-- Stop services: run `./setup.sh` again → option **`10`**
+- Leave live logs (after a fresh start): `Ctrl+C`
+- Stop services: run `./setup.sh` again → option **`10`** (always stops; not a soft/no-op)
 
 > First run can take a while: it may download Homebrew/Node/`uv`, Python packages, and the embedding model.
+> Re-running option **1** while the stack is already healthy will **not** bounce the servers.
 
 ---
 
@@ -81,8 +77,8 @@ Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space 
 
 | Option | What it does |
 | :--- | :--- |
-| **1** | Full flow: check/install → test → start → open browser (**no Docker**) |
-| **2** | Backend only (FastAPI on `:8000`) |
+| **1** | Deploy/start: **idempotent** — skip prereqs+start if both healthy; tests always; open browser (**no Docker**) |
+| **2** | Backend only (`:8000`) — **skip if already healthy**; refuse if sick |
 | **3** | System heartbeat / health check |
 | **4** | Frontend unit tests (Vitest) |
 | **5** | Backend unit tests (pytest) |
@@ -90,7 +86,7 @@ Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space 
 | **7** | Build Hugging Face Spaces Docker image (**requires Docker Desktop**) |
 | **8** | Publish to Hugging Face Space (git sync; no Docker) |
 | **9** | View backend logs |
-| **10** | Stop / clean services |
+| **10** | **Stop** / clean services (always kills; not idempotent) |
 | **0** | Exit |
 
 ---
@@ -135,6 +131,7 @@ npx vite --port 5173 --host 127.0.0.1
 | `uv` / `npm` still missing after option 1 | Open a **new** terminal (PATH refresh), then re-run `./setup.sh` |
 | Backend tests slow / fail on first run | Model download needs network; wait and retry |
 | Browser does not open | Open http://127.0.0.1:5173 manually |
-| Port already in use | Option `10` in `setup.sh`, then start again |
+| Port already in use | If option 1 reports **sick**, fix the holder or use option `10`, then start again |
+| Option 1 restarts everything every time | It should not when both are healthy — report a bug if it still kills/relaunches a healthy stack |
 | Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
 | `Failed to spawn: pytest` / No such file | Stale `backend/.venv` after renaming the folder. Option 1 now recreates it; or run `rm -rf backend/.venv && cd backend && uv sync --extra dev` |
