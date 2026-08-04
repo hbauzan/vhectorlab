@@ -354,13 +354,15 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 
 ### 8.7. Idempotent start — never bounce a healthy stack
 - **Problema**: Opción 1 hacía `pkill` + relaunch siempre, aunque backend/frontend ya estuvieran healthy → pérdida de estado, re-carga del modelo, downtime innecesario.
+- **Problema 2 (Ctrl+C)**: sin job control (`set -m`), backend/vite quedaban en el **mismo PGID** que el panel → SIGINT de Ctrl+C en `tail -f` mataba todo el stack. Al reabrir opción 1 el probe veía `down` y recargaba todo.
 - **Solución Obligatoria** en `setup.sh` (opciones que arrancan servicios):
+  - **`set -m`** al inicio + `disown` tras start → servicios en PGID propio, inmunes a Ctrl+C / SIGHUP del panel.
   - **healthy** = proceso matching (`pgrep`) **y** health OK (`/health` con `"status":"ok"` en `:8000`; HTTP OK en `:5173`). Puerto ocupado sin ese combo = **sick**.
-  - Ambos healthy → **skip** prerequisites y **skip** start; igual correr tests; abrir browser.
+  - Ambos healthy → **skip** prerequisites, **skip** tests y **skip** start; abrir browser. Tests explícitos = opciones **4/5**.
   - Cualquier **sick** → avisar y **salir** (no matar ni relanzar). Stop es opción **10**.
   - Solo uno healthy / uno down → **restart de ambos** (stack inconsistente).
   - Ambos down → flujo normal (prereqs → tests → start).
   - Opción **2** (backend only): skip si healthy; refuse si sick.
   - Opción **10** siempre hace stop real (`kill_stack`), no no-op.
-  - **Ctrl+C** nunca baja servicios: en live logs pausa → Enter vuelve al menú; segundo Ctrl+C sale del panel. `disown` tras start para que el exit del shell no mande SIGHUP.
-- **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy. Solo opción **10** detiene el stack.
+  - **Ctrl+C** nunca baja servicios: en live logs pausa → Enter vuelve al menú; segundo Ctrl+C sale del panel.
+- **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy. Solo opción **10** detiene el stack. Servicios NUNCA comparten PGID con el panel.
