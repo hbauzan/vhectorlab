@@ -3,10 +3,6 @@
 # VHectorLab 3D - CONTROL PANEL & CLI SETUP
 # ==========================================
 
-# Job control ON: background jobs get their own process group.
-# Without this, Ctrl+C (SIGINT to the panel's PGID) also kills backend/vite.
-set -m
-
 # ANSI Color Palette
 RESET="\033[0m"
 BOLD="\033[1m"
@@ -48,6 +44,42 @@ handle_sigint() {
 }
 
 trap 'handle_sigint' INT
+
+# Launch a command in a new session (no controlling TTY).
+# Avoids: (1) panel Ctrl+C SIGINT killing services, (2) SIGTTOU stop (STAT T) from set -m/job control.
+# Usage: launch_detached <workdir> <logfile|-> <cmd...>   ("-" logfile → /dev/null)
+launch_detached() {
+    local workdir="$1"
+    local logfile="$2"
+    shift 2
+    if [ "$logfile" = "-" ]; then
+        logfile="/dev/null"
+    fi
+    case "$workdir" in
+        /*) ;;
+        *) workdir="$(pwd)/$workdir" ;;
+    esac
+    case "$logfile" in
+        /*) ;;
+        *) logfile="$(pwd)/$logfile" ;;
+    esac
+
+    python3 - "$workdir" "$logfile" "$@" <<'PY'
+import os, sys, subprocess
+
+workdir, logfile, *cmd = sys.argv[1:]
+os.chdir(workdir)
+log = open(logfile, "a", buffering=1)
+subprocess.Popen(
+    cmd,
+    stdin=subprocess.DEVNULL,
+    stdout=log,
+    stderr=subprocess.STDOUT,
+    start_new_session=True,
+    close_fds=True,
+)
+PY
+}
 
 refresh_path() {
     # uv installer lands in ~/.local/bin; Homebrew on Apple Silicon uses /opt/homebrew.
@@ -261,16 +293,6 @@ describe_service_state() {
     esac
 }
 
-warn_sick_and_abort() {
-    local be_state="$1"
-    local fe_state="$2"
-    echo -e "\n${RED}${BOLD}❌ Services look unhealthy — refusing to start or restart.${RESET}"
-    describe_service_state "Backend " "$be_state" "$BACKEND_PORT"
-    describe_service_state "Frontend" "$fe_state" "$FRONTEND_PORT"
-    echo -e "${YELLOW}Fix the stuck process/port (or use option 10 to Stop), then retry.${RESET}"
-    echo -e "${DIM}Healthy requires both: matching process (pgrep) AND a passing health check.${RESET}"
-}
-
 ensure_vocab() {
     if [ ! -f "public/vocab.txt" ]; then
         echo -e "${YELLOW}⚠️ Vocabulary missing at public/vocab.txt. Generating 10,000 words...${RESET}"
@@ -328,22 +350,23 @@ wait_backend_healthy() {
 
 start_backend() {
     echo -e "${BLUE}▶ Starting Backend FastAPI (${BACKEND_URL})...${RESET}"
-    # Background + disown under `set -m` → own PGID, immune to panel Ctrl+C / SIGHUP.
-    (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
-    disown $! 2>/dev/null || true
+    launch_detached "backend" "$LOG_FILE" uv run python -m server
     wait_backend_healthy
 }
 
 start_frontend() {
     echo -e "${BLUE}▶ Starting Frontend WebGL (Vite Dev Server)...${RESET}"
-    npx vite --port "$FRONTEND_PORT" --host 127.0.0.1 > /dev/null 2>&1 &
-    disown $! 2>/dev/null || true
-    sleep 2
-    if ! frontend_health_ok; then
-        echo -e "${YELLOW}  Frontend started but not responding yet on ${FRONTEND_URL}${RESET}"
-    else
-        echo -e "  ${GREEN}✓ Frontend responding on ${FRONTEND_URL}${RESET}"
-    fi
+    launch_detached "." "-" npx vite --port "$FRONTEND_PORT" --host 127.0.0.1
+    local i
+    for i in {1..20}; do
+        if frontend_health_ok; then
+            echo -e "  ${GREEN}✓ Frontend responding on ${FRONTEND_URL}${RESET}"
+            return 0
+        fi
+        sleep 0.5
+    done
+    echo -e "${YELLOW}  Frontend started but not responding yet on ${FRONTEND_URL}${RESET}"
+    return 1
 }
 
 open_app_browser() {
@@ -410,7 +433,7 @@ show_menu() {
 }
 
 deploy_and_start() {
-    local be_state fe_state
+    local be_state fe_state force_restart=0
     be_state="$(probe_backend)"
     fe_state="$(probe_frontend)"
 
@@ -419,12 +442,6 @@ deploy_and_start() {
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     describe_service_state "Backend " "$be_state" "$BACKEND_PORT"
     describe_service_state "Frontend" "$fe_state" "$FRONTEND_PORT"
-
-    if [ "$be_state" = "sick" ] || [ "$fe_state" = "sick" ]; then
-        warn_sick_and_abort "$be_state" "$fe_state"
-        read -p "Press Enter..."
-        return
-    fi
 
     # Both already healthy: skip prereqs, tests, and start — just open the app.
     if [ "$be_state" = "healthy" ] && [ "$fe_state" = "healthy" ]; then
@@ -436,10 +453,12 @@ deploy_and_start() {
         return
     fi
 
-    # One healthy + one down → force restart of both (inconsistent stack).
-    local force_restart=0
-    if { [ "$be_state" = "healthy" ] && [ "$fe_state" = "down" ]; } || \
-       { [ "$be_state" = "down" ] && [ "$fe_state" = "healthy" ]; }; then
+    # Sick or partial → recycle both (don't leave the user stuck on a frozen port).
+    if [ "$be_state" = "sick" ] || [ "$fe_state" = "sick" ]; then
+        force_restart=1
+        echo -e "\n${YELLOW}${BOLD}⚠ Sick stack detected (e.g. frozen process on a live port). Recycling BOTH services.${RESET}"
+    elif { [ "$be_state" = "healthy" ] && [ "$fe_state" = "down" ]; } || \
+         { [ "$be_state" = "down" ] && [ "$fe_state" = "healthy" ]; }; then
         force_restart=1
         echo -e "\n${YELLOW}${BOLD}⚠ Partial stack detected — restarting BOTH services.${RESET}"
     fi
@@ -493,10 +512,9 @@ start_bare_metal_backend() {
     fi
 
     if [ "$be_state" = "sick" ]; then
-        echo -e "\n${RED}${BOLD}❌ Backend looks unhealthy — refusing to start another instance.${RESET}"
-        echo -e "${YELLOW}Fix the stuck process/port (or use option 10 to Stop), then retry.${RESET}"
-        read -p "Press Enter..."
-        return
+        echo -e "\n${YELLOW}${BOLD}⚠ Backend sick — stopping and restarting.${RESET}"
+        pkill -f "server:app|python -m server" 2>/dev/null
+        sleep 1
     fi
 
     echo -e "${GREEN}Starting Bare-metal Backend...${RESET}"
