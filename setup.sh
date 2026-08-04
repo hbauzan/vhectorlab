@@ -154,8 +154,8 @@ show_menu() {
     echo -e " ${BLUE}4.${RESET} ${BOLD}Run Frontend Unit Tests${RESET} ${DIM}(Vitest)${RESET}"
     echo -e " ${BLUE}5.${RESET} ${BOLD}Run Backend Unit Tests${RESET} ${DIM}(pytest)${RESET}"
     echo -e " ${MAGENTA}6.${RESET} ${BOLD}Manage Vocabulary${RESET} ${DIM}(Custom vocab.txt / N words)${RESET}"
-    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(Port 7860)${RESET}"
-    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(Interactive HF Hub wizard)${RESET}"
+    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(needs Docker Desktop · port 7860)${RESET}"
+    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(Interactive HF Hub wizard · no Docker)${RESET}"
     echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
     echo -e " ${DIM}0. Exit${RESET}"
@@ -292,10 +292,55 @@ manage_vocab() {
     read -p "Press Enter to return to menu..."
 }
 
+ensure_docker() {
+    refresh_path
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        echo -e "  ${GREEN}✓ Docker is available ($(docker --version 2>/dev/null)).${RESET}"
+        return 0
+    fi
+
+    if command -v docker &> /dev/null && ! docker info &> /dev/null; then
+        echo -e "${YELLOW}▶ Docker CLI found but the daemon is not running.${RESET}"
+        if [ "$(uname -s)" = "Darwin" ]; then
+            echo -e "${YELLOW}  Opening Docker Desktop — wait until it says running, then retry option 7.${RESET}"
+            open -a Docker 2>/dev/null || true
+        fi
+        echo -e "${RED}❌ Start Docker Desktop (whale icon in the menu bar), then re-run option 7.${RESET}"
+        return 1
+    fi
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo -e "${RED}❌ Docker is required for this option but is not installed.${RESET}"
+        echo -e "${RED}   Local daily use (option 1) does not need Docker. Install Docker yourself on this OS.${RESET}"
+        return 1
+    fi
+
+    ensure_homebrew || return 1
+    echo -e "${YELLOW}▶ Docker not found. Installing Docker Desktop via Homebrew (cask)...${RESET}"
+    echo -e "${DIM}  Note: Docker Desktop is optional — only needed for HF Space image builds (option 7).${RESET}"
+    brew install --cask docker || {
+        echo -e "${RED}❌ Failed to install Docker Desktop. Install from https://www.docker.com/products/docker-desktop/${RESET}"
+        return 1
+    }
+    echo -e "${YELLOW}  Opening Docker Desktop for first-time setup...${RESET}"
+    open -a Docker 2>/dev/null || true
+    echo -e "${YELLOW}  Wait until Docker Desktop finishes starting, then re-run option 7.${RESET}"
+    return 1
+}
+
 build_hf_docker() {
     echo -e "${YELLOW}${BOLD}Compiling Hugging Face Spaces Monolithic Docker Image...${RESET}"
+    if ! ensure_docker; then
+        read -p "Press Enter to return to menu..."
+        return
+    fi
     docker build -t vhectorlab-3d:latest .
-    echo -e "${GREEN}${BOLD}✅ Docker build complete! Container ready on port 7860.${RESET}"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}${BOLD}❌ Docker build failed.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+    echo -e "${GREEN}${BOLD}✅ Docker build complete! Image tagged vhectorlab-3d:latest (HF Spaces port 7860).${RESET}"
     read -p "Press Enter to return to menu..."
 }
 
