@@ -2,6 +2,11 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **`setup.sh` idempotent start**: options 1/2 probe process + health before launch; skip bounce when already healthy; refuse when sick; restart both only on partial stack. README + lessons §8.7.
+
 ## [2.1.1] - 2026-08-03
 
 ### Changed
