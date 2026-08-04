@@ -137,3 +137,4 @@ npx vite --port 5173 --host 127.0.0.1
 | Browser does not open | Open http://127.0.0.1:5173 manually |
 | Port already in use | Option `10` in `setup.sh`, then start again |
 | Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
+| `Failed to spawn: pytest` / No such file | Stale `backend/.venv` after renaming the folder. Option 1 now recreates it; or run `rm -rf backend/.venv && cd backend && uv sync --extra dev` |

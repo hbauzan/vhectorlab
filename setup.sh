@@ -107,6 +107,18 @@ ensure_project_deps() {
         echo -e "  ${GREEN}✓ .env present.${RESET}"
     fi
 
+    # After renaming/moving the repo folder, entrypoint scripts in .venv keep absolute
+    # shebangs to the old path → `uv run pytest` fails with "No such file or directory".
+    if [ -f backend/.venv/bin/pytest ]; then
+        local pytest_python
+        pytest_python="$(head -1 backend/.venv/bin/pytest | sed 's/^#![[:space:]]*//')"
+        if [ -n "$pytest_python" ] && [ ! -e "$pytest_python" ]; then
+            echo -e "${YELLOW}▶ Backend .venv is stale (scripts still point to a missing path).${RESET}"
+            echo -e "${YELLOW}  Recreating virtualenv after folder move/rename...${RESET}"
+            rm -rf backend/.venv
+        fi
+    fi
+
     echo -e "${BLUE}▶ Syncing backend Python deps (uv sync --extra dev)...${RESET}"
     (cd backend && uv sync --extra dev) || {
         echo -e "${RED}❌ Backend dependency sync failed.${RESET}"
@@ -186,7 +198,7 @@ deploy_and_start() {
     # Run Backend pytest with verbose streaming output
     echo -e "${BLUE}${BOLD}▶ [1/2] Backend unit tests (pytest)...${RESET}"
     echo -e "${DIM}Loading PyTorch SentenceTransformer model into memory...${RESET}"
-    (cd backend && uv run pytest -v -s)
+    (cd backend && uv run python -m pytest -v -s)
     if [ $? -ne 0 ]; then
         echo -e "${RED}${BOLD}❌ ERROR: Backend tests failed. Fix them before deploying.${RESET}"
         read -p "Press Enter..."
@@ -407,7 +419,7 @@ while true; do
             read -p "Press Enter..."
             ;;
         5)
-            (cd backend && uv run pytest -v -s)
+            (cd backend && uv run python -m pytest -v -s)
             read -p "Press Enter..."
             ;;
         6)
