@@ -35,14 +35,14 @@ That option will:
 3. **If either is sick** (port/process/health mismatch): warn and exit — does **not** kill or relaunch (use option **10** to Stop first)
 4. **If only one is healthy**: restart **both** services after prereqs + tests
 5. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
-6. After a fresh start: stream live backend logs (`Ctrl+C` leaves the tail; services stay up)
+6. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
 
 App URL when ready:
 
 👉 **http://127.0.0.1:5173**
 
-- Leave live logs (after a fresh start): `Ctrl+C`
-- Stop services: run `./setup.sh` again → option **`10`** (always stops; not a soft/no-op)
+- Pause live logs: `Ctrl+C` → **Enter** returns to the menu; **Ctrl+C** again exits the panel (services keep running)
+- Stop services: option **`10`** only (Ctrl+C never stops the stack)
 
 > First run can take a while: it may download Homebrew/Node/`uv`, Python packages, and the embedding model.
 > Re-running option **1** while the stack is already healthy will **not** bounce the servers.

@@ -18,6 +18,33 @@ LOG_FILE="vhectorlab_dev.log"
 # Created & tested on macOS 26.5.1 (Darwin 25.5.0, arm64). Not prepared for Windows/Linux.
 SUPPORTED_OS_LABEL="macOS 26.5.1 (Darwin 25.5.0)"
 
+# Panel phase for SIGINT: menu | logs | confirm
+# Ctrl+C must NEVER stop backend/frontend — only option 10 does that.
+PANEL_PHASE="menu"
+
+exit_panel_keep_services() {
+    echo -e "\n${CYAN}${BOLD}Goodbye! Services keep running (use option 10 to stop).${RESET}"
+    exit 0
+}
+
+handle_sigint() {
+    case "$PANEL_PHASE" in
+        logs)
+            # Interrupt tail -f only; follow_backend_logs continues to the confirm prompt.
+            echo -e "\n${YELLOW}${BOLD}⏸ Log follow paused. Services still running.${RESET}"
+            PANEL_PHASE="confirm"
+            ;;
+        confirm)
+            exit_panel_keep_services
+            ;;
+        *)
+            exit_panel_keep_services
+            ;;
+    esac
+}
+
+trap 'handle_sigint' INT
+
 refresh_path() {
     # uv installer lands in ~/.local/bin; Homebrew on Apple Silicon uses /opt/homebrew.
     export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -298,12 +325,14 @@ wait_backend_healthy() {
 start_backend() {
     echo -e "${BLUE}▶ Starting Backend FastAPI (${BACKEND_URL})...${RESET}"
     (cd backend && uv run python -m server) > "$LOG_FILE" 2>&1 &
+    disown $! 2>/dev/null || true
     wait_backend_healthy
 }
 
 start_frontend() {
     echo -e "${BLUE}▶ Starting Frontend WebGL (Vite Dev Server)...${RESET}"
     npx vite --port "$FRONTEND_PORT" --host 127.0.0.1 > /dev/null 2>&1 &
+    disown $! 2>/dev/null || true
     sleep 2
     if ! frontend_health_ok; then
         echo -e "${YELLOW}  Frontend started but not responding yet on ${FRONTEND_URL}${RESET}"
@@ -323,15 +352,29 @@ open_app_browser() {
 
 follow_backend_logs() {
     echo -e "\n${MAGENTA}${BOLD}====================================================${RESET}"
-    echo -e "${MAGENTA}${BOLD}📜 LIVE BACKEND LOGS (Ctrl+C to exit)${RESET}"
-    echo -e "${MAGENTA}${BOLD}====================================================${RESET}\n"
-    tail -f "$LOG_FILE" | sed \
+    echo -e "${MAGENTA}${BOLD}📜 LIVE BACKEND LOGS${RESET}"
+    echo -e "${MAGENTA}${BOLD}====================================================${RESET}"
+    echo -e " ${DIM}Ctrl+C pauses logs (does NOT stop services).${RESET}\n"
+
+    PANEL_PHASE="logs"
+    # SIGINT interrupts this pipeline; handle_sigint keeps the panel alive.
+    tail -f "$LOG_FILE" 2>/dev/null | sed \
         -e "s/INFO/${GREEN}INFO${RESET}/g" \
         -e "s/WARNING/${YELLOW}WARNING${RESET}/g" \
         -e "s/ERROR/${RED}ERROR${RESET}/g" \
         -e "s/200 OK/${GREEN}200 OK${RESET}/g" \
         -e "s/POST /${CYAN}POST ${RESET}/g" \
-        -e "s/GET /${CYAN}GET ${RESET}/g"
+        -e "s/GET /${CYAN}GET ${RESET}/g" \
+        || true
+
+    PANEL_PHASE="confirm"
+    echo -e "\n${YELLOW}${BOLD}Press Enter to return to the menu, or Ctrl+C again to exit the panel.${RESET}"
+    echo -e "${DIM}Services stay up either way. Use option 10 to stop them.${RESET}"
+    if read -r _; then
+        PANEL_PHASE="menu"
+        return 0
+    fi
+    exit_panel_keep_services
 }
 
 print_ready_banner() {
@@ -347,7 +390,6 @@ show_menu() {
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
     echo -e "${CYAN}${BOLD}       🌐 VHectorLab 3D - CONTROL PANEL${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
-    echo -e " ${DIM}Tested on ${SUPPORTED_OS_LABEL} · macOS only (Windows/Linux unsupported)${RESET}"
     echo -e " ${GREEN}${BOLD}1. 🚀 Deploy / Start Tool${RESET} ${DIM}(Idempotent: skip start if already healthy)${RESET}"
     echo -e " ${GREEN}2.${RESET} ${BOLD}Start Bare-metal Backend${RESET} ${DIM}(FastAPI on 127.0.0.1:8000 · skip if healthy)${RESET}"
     echo -e " ${BLUE}3.${RESET} ${BOLD}Run System Heartbeat${RESET} ${DIM}(Health Check & Arithmetic)${RESET}"
@@ -624,8 +666,7 @@ while true; do
             stop_services
             ;;
         0)
-            echo -e "${CYAN}${BOLD}Goodbye!${RESET}"
-            exit 0
+            exit_panel_keep_services
             ;;
         *)
             echo -e "${RED}Invalid choice.${RESET}"

@@ -6,6 +6,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ### Fixed
 - **`setup.sh` idempotent start**: options 1/2 probe process + health before launch; skip bounce when already healthy; refuse when sick; restart both only on partial stack. README + lessons §8.7.
+- **`setup.sh` Ctrl+C**: pauses log follow / exits panel without stopping services; only option 10 stops. Menu banner OS line removed.
 
 ## [2.1.1] - 2026-08-03
 
