@@ -1,11 +1,13 @@
 /**
- * VHectorLab-3D `/v25/` bootstrap — Fase 9: spatial sliders → live canvas layout.
+ * VHectorLab-3D `/v25/` bootstrap — Fase 10: Compare MODE + cosine list.
  */
 import { RemoteProvider } from '../core/RemoteProvider.js';
 import { fetchArithmeticResults } from './arithmeticWire.js';
 import { canvasStartupContext, mountCanvasHost } from './canvasHost.js';
+import { fetchCompareResults } from './compareWire.js';
 import './style.css';
 import { mountArithmeticPanel } from './ui/arithmeticPanel.js';
+import { mountComparePanel } from './ui/comparePanel.js';
 import { mountFooterHud } from './ui/footerHud.js';
 import { mountHeader } from './ui/header.js';
 import { createLabModal } from './ui/labModal.js';
@@ -19,10 +21,23 @@ if (app) {
 
   mountShell(app);
   const zones = queryShellZones(app);
-  const header = mountHeader(zones.header);
 
-  /** @type {{ updateResults: Function, setLoading: Function, getValues: Function } | null} */
+  // Left host: Arithmetic XOR Compare (both mounted; MODE toggles visibility).
+  zones.left.innerHTML = `
+    <div class="lab-left-host">
+      <div data-panel="arithmetic"></div>
+      <div data-panel="compare" hidden></div>
+    </div>
+  `;
+  const arithmeticSlot = zones.left.querySelector('[data-panel="arithmetic"]');
+  const compareSlot = zones.left.querySelector('[data-panel="compare"]');
+
+  /** @type {{ updateResults: Function, setLoading: Function, getValues: Function, setVisible?: Function } | null} */
   let arithmetic = null;
+  /** @type {ReturnType<typeof mountComparePanel> | null} */
+  let compare = null;
+  /** @type {'ARITHMETIC'|'COMPARE'} */
+  let workspaceMode = 'ARITHMETIC';
 
   const footer = mountFooterHud(zones.footer);
   const canvas = mountCanvasHost(zones.canvas, {
@@ -36,12 +51,31 @@ if (app) {
     },
   });
 
-  mountRightDock(zones.right, {
+  const rightDock = mountRightDock(zones.right, {
     spatialContext: canvasStartupContext(),
     onSpatialChange(values) {
       canvas.setSpatialConfig(values);
     },
   });
+
+  const applyModeToLeft = (mode) => {
+    const isCompare = mode === 'COMPARE';
+    if (arithmeticSlot) arithmeticSlot.hidden = isCompare;
+    if (compareSlot) compareSlot.hidden = !isCompare;
+    arithmetic?.root?.classList?.toggle('is-hidden', isCompare);
+    // arithmetic panel root id
+    const arithRoot = zones.left.querySelector('#lab-arithmetic-panel');
+    if (arithRoot) {
+      arithRoot.hidden = isCompare;
+      arithRoot.classList.toggle('is-hidden', isCompare);
+    }
+    compare?.setVisible(isCompare);
+  };
+
+  const syncSpatialUiFromCanvas = (spatial) => {
+    rightDock.setSpatialContext(canvas.context);
+    rightDock.syncSpatial(spatial);
+  };
 
   const runCalculate = async (words) => {
     if (!arithmetic) return;
@@ -60,9 +94,81 @@ if (app) {
     }
   };
 
-  arithmetic = mountArithmeticPanel(zones.left, {
+  const runCompare = async (tokens, tokenMeta) => {
+    try {
+      compare?.setLoading(true);
+      const { data } = await fetchCompareResults(provider, tokens, tokenMeta);
+      compare?.updateCompareResults(data);
+      canvas.renderCompare(data);
+    } catch (err) {
+      const message =
+        err?.message ||
+        'Compare request failed. Check that the backend is running.';
+      modal.show('COMPARE ERROR', message);
+    } finally {
+      compare?.setLoading(false);
+    }
+  };
+
+  const runCompareReorder = async (payload) => {
+    try {
+      await canvas.reorderCompare(payload);
+    } catch (err) {
+      modal.show(
+        'COMPARE ERROR',
+        err?.message || 'Could not reorder compare threads.',
+      );
+    }
+  };
+
+  const handleWorkspaceMode = async (mode) => {
+    const next = mode === 'COMPARE' ? 'COMPARE' : 'ARITHMETIC';
+    if (next === workspaceMode && canvas.getWorkspaceMode() === next) {
+      applyModeToLeft(next);
+      return;
+    }
+    workspaceMode = next;
+    applyModeToLeft(next);
+    const { spatial } = canvas.setWorkspaceMode(next);
+    syncSpatialUiFromCanvas(spatial);
+
+    if (next === 'COMPARE') {
+      if (!canvas.hasCompareData()) {
+        await compare?.runBootstrapVisualize();
+      } else {
+        canvas.refreshGeometry();
+        const items = compare?.getItems();
+        if (items) {
+          compare.updateCompareResults({
+            count: items.length,
+            anchor: items[0]
+              ? { index: 0, text: items[0].text }
+              : null,
+            items,
+          });
+        }
+      }
+    } else if (canvas.hasArithmeticData()) {
+      canvas.refreshGeometry();
+    }
+  };
+
+  const header = mountHeader(zones.header, {
+    onChange(state) {
+      if (state.workspace === 'COMPARE' || state.workspace === 'ARITHMETIC') {
+        handleWorkspaceMode(state.workspace);
+      }
+    },
+  });
+
+  arithmetic = mountArithmeticPanel(arithmeticSlot, {
     onCalculate: runCalculate,
   });
+  compare = mountComparePanel(compareSlot, {
+    onCalculate: runCompare,
+    onReorder: runCompareReorder,
+  });
+  applyModeToLeft('ARITHMETIC');
 
   provider.checkHealth().then(async (health) => {
     header.setOnline(Boolean(health?.ok));
