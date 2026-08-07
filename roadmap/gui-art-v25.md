@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 4 merged — siguiente: Arithmetic chrome)  
+**Estado:** en curso (Fase 5 merged — siguiente: Right + HUD)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -241,6 +241,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** scroll area no “corta” lista en mobile MQ; botón pressable.
 - **Branch:** `feat/v25-arithmetic-chrome`.
 
+#### Hand-off — Fase 5
+- **Branch / commit:** `feat/v25-arithmetic-chrome` → `main` (after ship).
+- **Cómo probar:** `/v25/` left dock — king/man/woman, CALCULATE VECTOR pressable (no API yet), Top-10 empty host with §4.1 scroll. Short height ≤560px: panel scrolls. Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25ArithmeticChrome.test.js`).
+- **Hecho:** `ui/arithmeticPanel.js` + `arithmetic.css`; scroll formulas from `ARITHMETIC_TOP10_SCROLL`.
+- **NO hecho (siguiente fase):** Right + HUD chrome (`feat/v25-right-hud-chrome`); API wire → Fase 7.
+- **Lecciones:** ninguna nueva (reuso §4.1).
+- **Riesgos abiertos:** Calculate aún no-op sin callback; tips “i” → Fase 12.
+- **Archivos tocados (alto nivel):** `src/v25/ui/arithmeticPanel.js`, `arithmetic.css`, `main.js`, tests + roadmap/CHANGELOG.
+
 ### Fase 6 — Right + HUD chrome
 - **Hacer:** sliders skin (thumb fluo, track “fluido”), viz settings chrome, footer coords placeholders.
 - **DoD:** sliders operable nativo; look lab; footer pegado/safe-area.
@@ -313,7 +323,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 2 | ✅ merged | `feat/v25-tokens` → `main` | 2026-08-07 | tokens + skin utilities |
 | 3 | ✅ merged | `feat/v25-shell` → `main` | 2026-08-07 | 5-zone grid + mobile stack |
 | 4 | ✅ merged | `feat/v25-header` → `main` | 2026-08-07 | brand + MODE/VIEW/RENDER UI + ONLINE |
-| 5 | ☐ | | | |
+| 5 | ✅ merged | `feat/v25-arithmetic-chrome` → `main` | 2026-08-07 | form A/B/C + Top-10 scroll host |
 | 6 | ☐ | | | |
 | 7 | ☐ | | | |
 | 8 | ☐ | | | |
