@@ -5,7 +5,7 @@
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ `30fc841` (Arithmetic Top-10 visibility fix inclusive)
+**HEAD tip (ops):** `main` @ `8a7c853` (Fase 7 hand-off docs; code tip includes `30fc841` visibility fix)
 
 ---
 
