@@ -4,6 +4,9 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
+
 ## [2.2.1] - 2026-08-07
 
 ### Added
