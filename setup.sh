@@ -611,14 +611,16 @@ ensure_hf_cli() {
 }
 
 ensure_hf_auth() {
-    if ! hf auth whoami &> /dev/null; then
-        echo -e "${RED}❌ Not logged in to Hugging Face. Run: hf auth login${RESET}"
-        echo -e "${DIM}  Create a write token at https://huggingface.co/settings/tokens${RESET}"
+    local out ec=0
+    out="$(hf auth whoami 2>&1)" || ec=$?
+    if [ "$ec" -ne 0 ] || echo "$out" | grep -qiE 'invalid user token|not logged in|no token|unauthorized|401|error:'; then
+        echo -e "${RED}❌ Hugging Face auth failed.${RESET}"
+        echo -e "${DIM}$(echo "$out" | head -4)${RESET}"
+        echo -e "${YELLOW}  Fix: hf auth login --force --add-to-git-credential${RESET}"
+        echo -e "${DIM}  Create a Write token at https://huggingface.co/settings/tokens${RESET}"
         return 1
     fi
-    local who
-    who="$(hf auth whoami 2>/dev/null | head -5 || true)"
-    echo -e "  ${GREEN}✓ HF auth OK${RESET} ${DIM}${who}${RESET}"
+    echo -e "  ${GREEN}✓ HF auth OK${RESET} ${DIM}$(echo "$out" | head -3 | tr '\n' ' ')${RESET}"
     return 0
 }
 
