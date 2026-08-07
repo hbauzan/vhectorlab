@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 1 merged — siguiente: tokens)  
+**Estado:** en curso (Fase 2 tokens — pending review)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -194,6 +194,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **Branch:** `feat/v25-tokens`.
 - **TDD:** helper puro opcional `contrastRatio` / token map snapshot si aporta; si no, CSS review checklist en hand-off.
 
+#### Hand-off — Fase 2
+- **Branch / commit:** `feat/v25-tokens` (tip after commit).
+- **Cómo probar:** reiniciar Vite → `http://127.0.0.1:5173/v25/` (o `/v25` → redirect). Debe verse brand, panel chapa, swatches triad, botones pressable. Legado `/` intacto.
+- **Tests:** `npm test` (incl. `tests/v25Tokens.test.js` WCAG contrast); `npm run build`.
+- **Hecho:** `tokens.css` + `style.css`; Oxanium + IBM Plex Mono; `.lab-panel` / `.lab-btn` / focus; contrast helper + token hex snapshot.
+- **NO hecho (siguiente fase):** layout shell 5 zonas (`feat/v25-shell`).
+- **Lecciones:** (ninguna nueva de runtime; contrast sync `tokenValues.js` ↔ CSS).
+- **Riesgos abiertos:** fonts Google CDN (offline = fallback system); SemVer PATCH opcional al merge.
+- **Archivos tocados (alto nivel):** `src/v25/tokens.css`, `style.css`, `main.js`, `contrast.js`, `tokenValues.js`, `v25/index.html`, tests + roadmap.
+
 ### Fase 3 — Layout shell
 - **Hacer:** grid/flex 5 regiones; mobile: stack o docks *placeholders* (pueden ser `div` fijos sin collapse aún).
 - **DoD:** resize desktop + phone DevTools: las 5 zonas visibles/accesibles; canvas host `flex:1` / full-bleed área central.
@@ -279,8 +289,8 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | Fase | Estado | Branch | Fecha | Notas |
 | :---: | :--- | :--- | :--- | :--- |
 | 0 | ✅ docs | `main` `2d79175` | 2026-08-07 | Plan inicial |
-| 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1` |
-| 2 | ☐ | | | |
+| 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1`; slash fix `019bdbe` |
+| 2 | ✅ tokens (pending merge) | `feat/v25-tokens` | 2026-08-07 | tokens + skin demo; ver hand-off |
 | 3 | ☐ | | | |
 | 4 | ☐ | | | |
 | 5 | ☐ | | | |
