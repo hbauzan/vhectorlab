@@ -1,9 +1,6 @@
 /**
- * Soft portrait overlay for phone viewports (roadmap D13 / Etapa B).
- *
- * Landscape = recommended. Portrait shows a dismissible overlay; after dismiss,
- * sessionStorage prevents re-spam until a new session. Does not lock orientation
- * and does not pause the render loop.
+ * Landscape gate (retired): portrait overlay was removed — phone portrait is the
+ * preferred mobile layout. Helpers remain for tests / TouchControls selectors.
  */
 
 import { MOBILE_MQ, isMobileViewport } from './CollapsibleDock.js';
@@ -42,16 +39,16 @@ export function dismissLandscapeGate(session, key = LANDSCAPE_DISMISS_KEY) {
 }
 
 /**
- * Pure visibility decision for tests / wiring.
- * @param {{ isPortrait: boolean, dismissed: boolean, isMobile: boolean }} state
+ * Always false — landscape nudge overlay retired (portrait is preferred on phone).
+ * @param {{ isPortrait?: boolean, dismissed?: boolean, isMobile?: boolean }} [_state]
  */
-export function shouldShowLandscapeGate(state) {
-  if (!state.isMobile) return false;
-  if (!state.isPortrait) return false;
-  if (state.dismissed) return false;
-  return true;
+export function shouldShowLandscapeGate(_state) {
+  return false;
 }
 
+/**
+ * No-op mount kept so callers/tests stay stable; never shows overlay.
+ */
 export class LandscapeGate {
   /**
    * @param {object} options
@@ -66,80 +63,36 @@ export class LandscapeGate {
       throw new Error('LandscapeGate requires options.parent');
     }
     this._doc = options.doc || document;
-    this._session = options.sessionStorage !== undefined
-      ? options.sessionStorage
-      : (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
-    this._isMobile = typeof options.isMobile === 'function'
-      ? options.isMobile
-      : () => isMobileViewport();
-    this._isPortrait = typeof options.isPortrait === 'function'
-      ? options.isPortrait
-      : () => isPhonePortrait();
-
     this.overlay = this._doc.createElement('div');
     this.overlay.id = 'landscape-gate';
     this.overlay.className = 'landscape-gate hidden';
-    this.overlay.setAttribute('role', 'dialog');
-    this.overlay.setAttribute('aria-modal', 'false');
-    this.overlay.setAttribute('aria-labelledby', 'landscape-gate-title');
-    this.overlay.innerHTML = `
-      <div class="landscape-gate-card">
-        <div class="landscape-gate-icon" aria-hidden="true">↻</div>
-        <h2 id="landscape-gate-title">Better in landscape</h2>
-        <p class="landscape-gate-copy">Rotate your phone for a better experience. You can stay in portrait if you prefer.</p>
-        <button type="button" class="btn-primary landscape-gate-dismiss">Got it</button>
-      </div>
-    `;
-
+    this.overlay.setAttribute('hidden', '');
+    this.overlay.setAttribute('aria-hidden', 'true');
+    // Intentionally empty — no cartel/copy.
+    this.overlay.innerHTML = '';
     options.parent.appendChild(this.overlay);
-
-    this._dismissBtn = this.overlay.querySelector('.landscape-gate-dismiss');
-    this._onDismiss = () => this.dismiss();
-    this._onBackdrop = (e) => {
-      if (e.target === this.overlay) this.dismiss();
-    };
-    this._onResize = () => this.refresh();
-
-    this._dismissBtn.addEventListener('click', this._onDismiss);
-    this.overlay.addEventListener('click', this._onBackdrop);
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', this._onResize);
-      window.addEventListener('orientationchange', this._onResize);
-    }
-
-    this.refresh();
+    this._dismissBtn = null;
   }
 
   /** @returns {boolean} */
   get isVisible() {
-    return !this.overlay.classList.contains('hidden');
+    return false;
   }
 
   refresh() {
-    const show = shouldShowLandscapeGate({
-      isMobile: this._isMobile(),
-      isPortrait: this._isPortrait(),
-      dismissed: wasLandscapeGateDismissed(this._session),
-    });
-    this.overlay.classList.toggle('hidden', !show);
+    this.overlay.classList.add('hidden');
+    this.overlay.setAttribute('hidden', '');
   }
 
   dismiss() {
-    dismissLandscapeGate(this._session);
-    this.overlay.classList.add('hidden');
+    this.refresh();
   }
 
   destroy() {
-    this._dismissBtn.removeEventListener('click', this._onDismiss);
-    this.overlay.removeEventListener('click', this._onBackdrop);
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('resize', this._onResize);
-      window.removeEventListener('orientationchange', this._onResize);
-    }
     if (this.overlay.parentNode) {
       this.overlay.parentNode.removeChild(this.overlay);
     }
   }
 }
 
-export { MOBILE_MQ };
+export { MOBILE_MQ, isMobileViewport };

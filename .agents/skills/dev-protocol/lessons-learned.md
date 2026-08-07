@@ -187,10 +187,11 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Solución Obligatoria**: `createWideRibbonMesh` (quad strip a lo largo del centerline). Sin Points. Sin montar plano base en Instancer.
 - **Invariante**: RIBBONS ≠ POINTS; no reintroducir base plane bajo ribbons sin opacificar/`depthWrite` conscientes.
 
-### 4.4. Landscape Gate suave (portrait phone) — no lock, no pause
-- **Problema**: Forzar `orientation.lock('landscape')` falla en iOS Safari; un blocker duro atrapa al usuario en portrait.
-- **Solución Obligatoria**: Overlay soft solo en phone portrait (`width ≤ 768` y `height > width`); dismiss escribe `sessionStorage` y no re-spamea en la sesión; tablet = desktop (sin overlay). El render loop **nunca** se pausa por portrait.
-- **Invariante**: landscape-first sugerido, nunca bloqueante.
+### 4.4. Landscape Gate — RETIRED (portrait preferred)
+- **Antes**: Soft overlay en phone portrait (“Better in landscape”).
+- **Decisión**: Retirado — en producto real se ve **mejor en portrait** que de costado; el cartel era mentira UX.
+- **Solución Obligatoria**: `shouldShowLandscapeGate` → siempre `false`; clase no monta copy. No reintroducir nudge landscape sin pedido explícito.
+- **Invariante**: phone = portrait-first; no orientation lock; render loop nunca pausa por orientación.
 
 ---
 
@@ -252,6 +253,13 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Problema**: `ACTIVATION` siempre `0.0000` — `Interaction` pasaba `userData` del mesh (`{ pointsData }`), y el HUD leía `userData.val` / `data.activation` (inexistentes).
 - **Solución Obligatoria**: Resolver vía `resolveHoverTelemetry` → `pointsData[index].activation` (POINTS) o `userData.activations` + face/`index` (RIBBONS / continuity). Formatear con `formatActivationValue` (hasta 32 decimales, shrink + scientific si el slot es angosto; label `ACT:` en mobile). `title` tooltip con valor completo.
 - **Invariante**: telemetría de hover ≠ normalización de color; mostrar valor **crudo** del embedding/activación en ese índice.
+
+---
+
+### 4.13. Field-info tips ("i") — tap, not hover-only
+- **Problema**: Native `title=` tooltips fail on phone (long-press unreliable); editable fields had almost no per-control help.
+- **Solución Obligatoria**: Deep module `fieldInfo.js` — `FIELD_INFO` short EN catalog (≤28 chars), `infoTipMarkup`, `wireFieldInfo` (one tip at a time, outside/Escape closes, viewport-clamped). Wire on Arithmetic / Compare / SAE params / Spatial sliders / Visualization. Touch: `.field-info-btn` / `.field-info-tip` in `isUiTouchTarget`.
+- **Invariante**: help copy = English, short, mobile-first; do not rely on hover-only `title` for field meaning.
 
 ---
 

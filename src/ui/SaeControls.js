@@ -7,6 +7,7 @@ import {
   saveSaeSettings,
   resolveSaeSettings,
 } from './saeControlsDefaults.js';
+import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 /**
  * @param {string} idPrefix  unique prefix so Arithmetic/Compare don't clash on ids
@@ -20,9 +21,12 @@ export function saeControlsMarkup(idPrefix) {
           <button type="submit" id="${p}-btn-primary" class="btn-primary sae-cta-main">
             PRIMARY
           </button>
-          <button type="button" id="${p}-btn-sae-toggle" class="btn-sae-toggle" aria-pressed="false">
-            Clean/Denoise (SAE)
-          </button>
+          <div class="sae-toggle-with-info">
+            <button type="button" id="${p}-btn-sae-toggle" class="btn-sae-toggle" aria-pressed="false">
+              Clean/Denoise (SAE)
+            </button>
+            ${infoTipMarkup(FIELD_INFO.saeToggle)}
+          </div>
         </div>
 
         <div class="sae-train-row">
@@ -31,11 +35,11 @@ export function saeControlsMarkup(idPrefix) {
         </div>
 
         <div id="${p}-sae-params" class="sae-params-panel hidden" hidden>
-          <label>hidden_dim (cap) <input type="number" id="${p}-sae-hidden" min="32" max="32768" step="1" /></label>
-          <label>k (cap) <input type="number" id="${p}-sae-k" min="1" max="4096" step="1" /></label>
-          <label>epochs <input type="number" id="${p}-sae-epochs" min="1" max="500" step="1" /></label>
-          <label>lr <input type="number" id="${p}-sae-lr" min="0.00001" max="1" step="0.0001" /></label>
-          <label>batch_size <input type="number" id="${p}-sae-batch" min="1" max="2048" step="1" /></label>
+          <label><span class="field-label-text">hidden_dim (cap) ${infoTipMarkup(FIELD_INFO.saeHidden)}</span><input type="number" id="${p}-sae-hidden" min="32" max="32768" step="1" /></label>
+          <label><span class="field-label-text">k (cap) ${infoTipMarkup(FIELD_INFO.saeK)}</span><input type="number" id="${p}-sae-k" min="1" max="4096" step="1" /></label>
+          <label><span class="field-label-text">epochs ${infoTipMarkup(FIELD_INFO.saeEpochs)}</span><input type="number" id="${p}-sae-epochs" min="1" max="500" step="1" /></label>
+          <label><span class="field-label-text">lr ${infoTipMarkup(FIELD_INFO.saeLr)}</span><input type="number" id="${p}-sae-lr" min="0.00001" max="1" step="0.0001" /></label>
+          <label><span class="field-label-text">batch_size ${infoTipMarkup(FIELD_INFO.saeBatch)}</span><input type="number" id="${p}-sae-batch" min="1" max="2048" step="1" /></label>
           <p class="sae-params-hint">Trains on current Visualize scope. Dims/epochs auto-scale for speed (MPS/CUDA when available).</p>
         </div>
 

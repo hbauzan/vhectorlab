@@ -21,6 +21,7 @@ import {
   writeCollapsedPreference,
   isMobileViewport,
 } from './CollapsibleDock.js';
+import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -113,7 +114,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
     <h3 class="sliders-title">Visualization</h3>
 
     <div class="viz-filter-group">
-      <span class="viz-filter-label">Show:</span>
+      <span class="viz-filter-label"><span class="field-label-text">Show:</span>${infoTipMarkup(FIELD_INFO.vizFilter)}</span>
       <div class="viz-segmented" role="radiogroup" aria-label="Sign filter">
         <label class="viz-seg-option">
           <input type="radio" name="viz-filter-mode" value="all" ${checked('all')}>
@@ -133,17 +134,17 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
     <div class="viz-colors-section">
       <div class="viz-colors-title">Colors</div>
       <div class="viz-color-row">
-        <label for="viz-color-positive-hex">+1</label>
+        <label for="viz-color-positive-hex"><span class="field-label-text">+1</span>${infoTipMarkup(FIELD_INFO.colorPos)}</label>
         <input type="color" id="viz-color-positive-swatch" class="viz-color-swatch" value="${s.colorPositive}" title="Positive (+1)" aria-label="Positive color swatch">
         <input type="text" id="viz-color-positive-hex" class="viz-color-hex" value="${s.colorPositive}" maxlength="7" spellcheck="false" placeholder="#FFE600" title="Positive (+1) hex">
       </div>
       <div class="viz-color-row">
-        <label for="viz-color-zero-hex">0</label>
+        <label for="viz-color-zero-hex"><span class="field-label-text">0</span>${infoTipMarkup(FIELD_INFO.colorZero)}</label>
         <input type="color" id="viz-color-zero-swatch" class="viz-color-swatch" value="${s.colorZero}" title="Zero (0)" aria-label="Zero color swatch">
         <input type="text" id="viz-color-zero-hex" class="viz-color-hex" value="${s.colorZero}" maxlength="7" spellcheck="false" placeholder="#000000" title="Zero (0) hex">
       </div>
       <div class="viz-color-row">
-        <label for="viz-color-negative-hex">−1</label>
+        <label for="viz-color-negative-hex"><span class="field-label-text">−1</span>${infoTipMarkup(FIELD_INFO.colorNeg)}</label>
         <input type="color" id="viz-color-negative-swatch" class="viz-color-swatch" value="${s.colorNegative}" title="Negative (−1)" aria-label="Negative color swatch">
         <input type="text" id="viz-color-negative-hex" class="viz-color-hex" value="${s.colorNegative}" maxlength="7" spellcheck="false" placeholder="#9900E6" title="Negative (−1) hex">
       </div>
@@ -151,15 +152,18 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
 
     <div class="viz-coverage-row slider-group">
       <div class="slider-header">
-        <label for="viz-zero-coverage-slider">Zero coverage:</label>
+        <label for="viz-zero-coverage-slider"><span class="field-label-text">Zero coverage:</span>${infoTipMarkup(FIELD_INFO.zeroCoverage)}</label>
         <span id="viz-zero-coverage-val" class="slider-val">${s.zeroCoverage}%</span>
       </div>
       <input type="range" id="viz-zero-coverage-slider" min="${ZERO_COVERAGE_MIN}" max="${ZERO_COVERAGE_MAX}" step="1" value="${s.zeroCoverage}" title="How much of ± range stays at the zero color before blending to +1/−1">
     </div>
 
-    <button type="button" id="viz-labels-toggle" class="viz-labels-toggle" aria-pressed="${s.labelsVisible ? 'true' : 'false'}" title="Show or hide floating thread labels">
-      ${labelsToggleButtonText(s.labelsVisible)}
-    </button>
+    <div class="viz-labels-row">
+      <button type="button" id="viz-labels-toggle" class="viz-labels-toggle" aria-pressed="${s.labelsVisible ? 'true' : 'false'}" title="Show or hide floating thread labels">
+        ${labelsToggleButtonText(s.labelsVisible)}
+      </button>
+      ${infoTipMarkup(FIELD_INFO.labelsToggle)}
+    </div>
 
     <button type="button" id="viz-reset-btn" class="viz-reset-btn">Reset</button>
   </div>
