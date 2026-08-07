@@ -129,12 +129,20 @@ export function rightDockMarkup(spatial, viz) {
 
 /**
  * @param {HTMLElement} container
- * @param {{ onSpatialChange?: (values: object) => void, onVizChange?: (values: object) => void }} [options]
+ * @param {{
+ *   onSpatialChange?: (values: object) => void,
+ *   onVizChange?: (values: object) => void,
+ *   spatialContext?: { workspaceMode?: string, viewMode?: string, renderMode?: string },
+ *   initialSpatial?: object,
+ * }} [options]
  */
 export function mountRightDock(container, options = {}) {
   if (!container) throw new Error('mountRightDock requires a container');
 
-  const spatial = resolveSpatialDefaults({});
+  const spatialContext = options.spatialContext || {};
+  const defaults = resolveSpatialDefaults(spatialContext);
+  const spatial = { ...defaults, ...(options.initialSpatial || {}) };
+  spatial.threadSpacingY = spatial.threadVectorDistance;
   let viz = { ...DEFAULT_VISUALIZATION_SETTINGS };
   container.innerHTML = rightDockMarkup(spatial, viz);
 
@@ -143,14 +151,31 @@ export function mountRightDock(container, options = {}) {
     typeof options.onSpatialChange === 'function' ? options.onSpatialChange : null;
   const onVizChange = typeof options.onVizChange === 'function' ? options.onVizChange : null;
 
-  for (const def of SPATIAL_SLIDER_DEFS) {
+  const emitSpatial = () => {
+    spatialState.threadSpacingY = spatialState.threadVectorDistance;
+    if (onSpatialChange) onSpatialChange({ ...spatialState });
+  };
+
+  const applySliderValue = (def, value) => {
     const input = container.querySelector(`#${def.id}`);
     const label = container.querySelector(`#${def.id}-val`);
+    const n = Number(value);
+    if (!Number.isFinite(n)) return;
+    spatialState[def.key] = n;
+    if (input) input.value = String(n);
+    if (label) label.textContent = n.toFixed(def.decimals);
+  };
+
+  for (const def of SPATIAL_SLIDER_DEFS) {
+    const input = container.querySelector(`#${def.id}`);
     input?.addEventListener('input', () => {
-      const value = Number(input.value);
-      spatialState[def.key] = value;
-      if (label) label.textContent = value.toFixed(def.decimals);
-      if (onSpatialChange) onSpatialChange({ ...spatialState });
+      applySliderValue(def, input.value);
+      emitSpatial();
+    });
+    // Double-click restores context default (lessons §4.5).
+    input?.addEventListener('dblclick', () => {
+      applySliderValue(def, defaults[def.key]);
+      emitSpatial();
     });
   }
 

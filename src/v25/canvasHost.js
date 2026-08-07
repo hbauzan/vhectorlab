@@ -22,7 +22,7 @@ import { DEFAULT_VISUALIZATION_SETTINGS } from '../ui/visualizationControlsDefau
 import { Instancer } from '../visualizer/Instancer.js';
 
 /**
- * Fixed startup context for Fase 8 (header tabs remain UI-only).
+ * Fixed startup context (header tabs remain UI-only until later phases).
  * @returns {{ workspaceMode: string, viewMode: string, renderMode: string }}
  */
 export function canvasStartupContext() {
@@ -68,6 +68,35 @@ export function formatHoverForFooter(hoverData) {
 }
 
 /**
+ * Merge slider patch into spatial config (known keys only).
+ * Keeps `threadSpacingY` alias in sync for LayoutEngine callers.
+ * @param {object} current
+ * @param {object|null|undefined} patch
+ * @returns {object}
+ */
+export function mergeSpatialConfig(current, patch) {
+  const out = { ...(current || {}) };
+  if (!patch || typeof patch !== 'object') {
+    out.threadSpacingY = out.threadVectorDistance;
+    return out;
+  }
+  const keys = [
+    'threadSpacing',
+    'threadVectorDistance',
+    'threadAmplitudeY',
+    'threadWidth',
+    'threadThickness',
+  ];
+  for (const key of keys) {
+    if (patch[key] !== undefined && Number.isFinite(Number(patch[key]))) {
+      out[key] = Number(patch[key]);
+    }
+  }
+  out.threadSpacingY = out.threadVectorDistance;
+  return out;
+}
+
+/**
  * @param {HTMLElement} container  `[data-zone="canvas"]`
  * @param {{ onHover?: (payload: ReturnType<typeof formatHoverForFooter>) => void }} [options]
  */
@@ -78,8 +107,11 @@ export function mountCanvasHost(container, options = {}) {
   container.classList.add('lab-canvas-host');
 
   const ctx = canvasStartupContext();
-  const spatialConfig = resolveSpatialDefaults(ctx);
+  /** @type {ReturnType<typeof resolveSpatialDefaults>} */
+  let spatialConfig = resolveSpatialDefaults(ctx);
   const vizConfig = { ...DEFAULT_VISUALIZATION_SETTINGS };
+  /** @type {object|null} */
+  let lastArithmetic = null;
 
   const sceneSetup = new SceneSetup(container);
   sceneSetup.setFogForRenderMode(ctx.renderMode);
@@ -120,6 +152,18 @@ export function mountCanvasHost(container, options = {}) {
   let rafId = 0;
   let disposed = false;
 
+  const paintArithmetic = (payload) => {
+    const labels = instancer.renderArithmeticData(
+      payload,
+      ctx.renderMode,
+      spatialConfig,
+      ctx.viewMode,
+      vizConfig,
+    );
+    threadLabels.setLabels(labels);
+    return labels;
+  };
+
   const animate = () => {
     if (disposed) return;
     rafId = requestAnimationFrame(animate);
@@ -141,24 +185,31 @@ export function mountCanvasHost(container, options = {}) {
 
   return {
     context: ctx,
+    getSpatial: () => ({ ...spatialConfig }),
     /**
      * @param {object} arithmeticPayload  full `/api/arithmetic` body (needs vector_res)
      */
     renderArithmetic(arithmeticPayload) {
       if (!arithmeticPayload?.vector_res) return null;
-      const payload = {
+      lastArithmetic = {
         ...arithmeticPayload,
         featureSpace: arithmeticPayload.featureSpace || 'RAW',
       };
-      const labels = instancer.renderArithmeticData(
-        payload,
-        ctx.renderMode,
-        spatialConfig,
-        ctx.viewMode,
-        vizConfig,
-      );
-      threadLabels.setLabels(labels);
-      return labels;
+      return paintArithmetic(lastArithmetic);
+    },
+    /**
+     * Apply live spatial slider values and rebuild threads from last payload
+     * (same pattern as legado `refreshRender` — no new API call).
+     * @param {object} patch
+     */
+    setSpatialConfig(patch) {
+      spatialConfig = mergeSpatialConfig(spatialConfig, patch);
+      if (!lastArithmetic) return null;
+      return paintArithmetic(lastArithmetic);
+    },
+    refreshGeometry() {
+      if (!lastArithmetic) return null;
+      return paintArithmetic(lastArithmetic);
     },
     resize: resizeToHost,
     dispose() {

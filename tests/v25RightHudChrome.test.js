@@ -22,11 +22,16 @@ describe('v25 right + HUD chrome', () => {
   });
 
   it('markup includes operable ranges and viz chrome', () => {
-    const html = rightDockMarkup(resolveSpatialDefaults({}), {
+    const html = rightDockMarkup(resolveSpatialDefaults({
+      workspaceMode: 'ARITHMETIC',
+      viewMode: 'ANALYSIS',
+      renderMode: 'POINTS',
+    }), {
       ...DEFAULT_VISUALIZATION_SETTINGS,
     });
     expect(html).toContain('type="range"');
     expect(html).toContain('id="lab-spacing"');
+    expect(html).toContain('value="40"'); // ANALYSIS amplitude override
     expect(html).toContain('name="lab-viz-filter"');
     expect(html).toContain('id="lab-color-pos"');
     expect(html).toContain('id="lab-labels-toggle"');
