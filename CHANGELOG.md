@@ -11,6 +11,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **Repo / local folder slug**: GitHub + working copy **`vhectorlab`** (was `VHectorLab-3D`). Product name **VHectorLab 3D** unchanged; npm/manifest id stays `vhectorlab-3d`.
 
 ### Fixed
+- **`setup.sh` option 8**: defaults from `.env` (`HF_SPACE_ID`, `HF_SPACE_FORCE_PUSH=1`); skip create if Space exists; force-push to Space remote only (not GitHub) so Enter×N publishes over divergent predecessor history.
 - **`setup.sh` idempotent start**: options 1/2 probe process + health before launch; skip bounce when already healthy; refuse when sick; restart both only on partial stack. README + lessons §8.7.
 - **`setup.sh` Ctrl+C**: pauses log follow / exits panel without stopping services; only option 10 stops. Menu banner OS line removed.
 - **`setup.sh` process group**: enable `set -m` so backend/vite are not in the panel PGID (Ctrl+C was killing the stack). Healthy path also skips tests.
