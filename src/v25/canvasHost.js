@@ -24,16 +24,21 @@ import { resolveSpatialDefaults } from '../ui/spatialSliderDefaults.js';
 import { ThreadLabels } from '../ui/ThreadLabels.js';
 import { DEFAULT_VISUALIZATION_SETTINGS } from '../ui/visualizationControlsDefaults.js';
 import { Instancer } from '../visualizer/Instancer.js';
+import { preferredViewForWorkspace } from './leftPanelMode.js';
 
 /**
- * Startup context (VIEW/RENDER fixed until later phases; MODE can switch).
- * @param {{ workspaceMode?: string }} [overrides]
+ * Startup context (VIEW follows preferred framing for workspace; RENDER fixed).
+ * @param {{ workspaceMode?: string, viewMode?: string }} [overrides]
  * @returns {{ workspaceMode: string, viewMode: string, renderMode: string }}
  */
 export function canvasStartupContext(overrides = {}) {
+  const workspaceMode = overrides.workspaceMode || DEFAULT_WORKSPACE_MODE;
   return {
-    workspaceMode: overrides.workspaceMode || DEFAULT_WORKSPACE_MODE,
-    viewMode: DEFAULT_VIEW_MODE,
+    workspaceMode,
+    viewMode:
+      overrides.viewMode ||
+      preferredViewForWorkspace(workspaceMode) ||
+      DEFAULT_VIEW_MODE,
     renderMode: DEFAULT_RENDER_MODE,
   };
 }
@@ -234,11 +239,13 @@ export function mountCanvasHost(container, options = {}) {
       const next =
         mode === 'COMPARE' ? 'COMPARE' : DEFAULT_WORKSPACE_MODE;
       ctx.workspaceMode = next;
+      // Compare + many threads needs NAVIGATION framing; Arithmetic keeps ANALYSIS.
+      ctx.viewMode = preferredViewForWorkspace(next);
       spatialConfig = resolveSpatialDefaults(ctx);
       navigation.setContextView(ctx);
       sceneSetup.setFogForRenderMode(ctx.renderMode);
       const labels = paintActive();
-      return { spatial: { ...spatialConfig }, labels };
+      return { spatial: { ...spatialConfig }, labels, viewMode: ctx.viewMode };
     },
     /**
      * @param {object} arithmeticPayload  full `/api/arithmetic` body (needs vector_res)
