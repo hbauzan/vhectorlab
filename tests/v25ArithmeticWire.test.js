@@ -46,6 +46,17 @@ describe('arithmeticWire', () => {
     expect(out.results[0].word).toBe('queen');
   });
 
+  it('normalizeArithmeticResults accepts score aliases', async () => {
+    const { normalizeArithmeticResults } = await import(
+      '../src/v25/arithmeticWire.js'
+    );
+    expect(
+      normalizeArithmeticResults({
+        results: [{ token: 'queen', cosine: 0.5 }],
+      }),
+    ).toEqual([{ word: 'queen', score: 0.5 }]);
+  });
+
   it('rejects empty words without calling provider', async () => {
     const provider = { computeArithmetic: vi.fn() };
     await expect(
