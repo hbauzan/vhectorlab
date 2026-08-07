@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 5 merged — siguiente: Right + HUD)  
+**Estado:** en curso (Fase 6 merged — chrome 1–6 done; siguiente: Arithmetic wire)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -256,6 +256,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** sliders operable nativo; look lab; footer pegado/safe-area.
 - **Branch:** `feat/v25-right-hud-chrome`.
 
+#### Hand-off — Fase 6
+- **Branch / commit:** `feat/v25-right-hud-chrome` → `main` (after ship).
+- **Cómo probar:** `/v25/` right dock — 5 spatial sliders update labels; viz filter/colors/labels UI-only; footer COORDS/TELEMETRY/TOKEN placeholders + safe-area. Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25RightHudChrome.test.js`).
+- **Hecho:** `ui/rightDock.js`, `ui/footerHud.js`, `rightHud.css`; defaults from `resolveSpatialDefaults` + `DEFAULT_VISUALIZATION_SETTINGS`.
+- **NO hecho (siguiente fase):** Wire Arithmetic → API (`feat/v25-arithmetic-wire`). Chrome 1–6 complete.
+- **Lecciones:** ninguna nueva.
+- **Riesgos abiertos:** sliders/viz no mutan scene aún (Fase 8–9); SAE chrome no en right aún.
+- **Archivos tocados (alto nivel):** `rightDock.js`, `footerHud.js`, `rightHud.css`, `main.js`, tests + roadmap/CHANGELOG.
+
 ### Fase 7 — Wire Arithmetic API
 - **Hacer:** reusar `RemoteProvider` (import desde `src/core`); wire Calculate → resultados Top-10 reales; errores vía modal v25 o reusar `CustomModal` adaptado.
 - **DoD:** mismo flujo happy-path que legado Arithmetic **sin** exigir canvas.
@@ -324,7 +334,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 3 | ✅ merged | `feat/v25-shell` → `main` | 2026-08-07 | 5-zone grid + mobile stack |
 | 4 | ✅ merged | `feat/v25-header` → `main` | 2026-08-07 | brand + MODE/VIEW/RENDER UI + ONLINE |
 | 5 | ✅ merged | `feat/v25-arithmetic-chrome` → `main` | 2026-08-07 | form A/B/C + Top-10 scroll host |
-| 6 | ☐ | | | |
+| 6 | ✅ merged | `feat/v25-right-hud-chrome` → `main` | 2026-08-07 | spatial sliders + viz + footer HUD |
 | 7 | ☐ | | | |
 | 8 | ☐ | | | |
 | 9 | ☐ | | | |
