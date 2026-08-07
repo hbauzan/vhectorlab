@@ -1,9 +1,11 @@
 /**
- * VHectorLab-3D v25 right dock chrome — spatial sliders + viz settings (UI-only).
+ * VHectorLab-3D v25 right dock chrome — spatial sliders + viz settings.
  */
 import { resolveSpatialDefaults } from '../../ui/spatialSliderDefaults.js';
 import {
   DEFAULT_VISUALIZATION_SETTINGS,
+  loadVisualizationSettings,
+  saveVisualizationSettings,
 } from '../../ui/visualizationControlsDefaults.js';
 
 export const SPATIAL_SLIDER_DEFS = Object.freeze([
@@ -134,6 +136,8 @@ export function rightDockMarkup(spatial, viz) {
  *   onVizChange?: (values: object) => void,
  *   spatialContext?: { workspaceMode?: string, viewMode?: string, renderMode?: string },
  *   initialSpatial?: object,
+ *   initialViz?: object,
+ *   persistViz?: boolean,
  * }} [options]
  */
 export function mountRightDock(container, options = {}) {
@@ -143,7 +147,11 @@ export function mountRightDock(container, options = {}) {
   const defaults = resolveSpatialDefaults(spatialContext);
   const spatial = { ...defaults, ...(options.initialSpatial || {}) };
   spatial.threadSpacingY = spatial.threadVectorDistance;
-  let viz = { ...DEFAULT_VISUALIZATION_SETTINGS };
+  let viz = {
+    ...loadVisualizationSettings(),
+    ...(options.initialViz || {}),
+  };
+  const persistViz = options.persistViz !== false;
   container.innerHTML = rightDockMarkup(spatial, viz);
 
   const spatialState = { ...spatial };
@@ -154,6 +162,11 @@ export function mountRightDock(container, options = {}) {
   const emitSpatial = () => {
     spatialState.threadSpacingY = spatialState.threadVectorDistance;
     if (onSpatialChange) onSpatialChange({ ...spatialState });
+  };
+
+  const emitViz = () => {
+    if (persistViz) saveVisualizationSettings(viz);
+    if (onVizChange) onVizChange({ ...viz });
   };
 
   const applySliderValue = (def, value) => {
@@ -172,7 +185,6 @@ export function mountRightDock(container, options = {}) {
       applySliderValue(def, input.value);
       emitSpatial();
     });
-    // Double-click restores context default (lessons §4.5).
     input?.addEventListener('dblclick', () => {
       applySliderValue(def, defaults[def.key]);
       emitSpatial();
@@ -183,7 +195,7 @@ export function mountRightDock(container, options = {}) {
     radio.addEventListener('change', () => {
       if (!radio.checked) return;
       viz = { ...viz, vizFilterMode: radio.value };
-      if (onVizChange) onVizChange({ ...viz });
+      emitViz();
     });
   });
 
@@ -191,7 +203,7 @@ export function mountRightDock(container, options = {}) {
     const el = container.querySelector(`#${id}`);
     el?.addEventListener('input', () => {
       viz = { ...viz, [key]: el.value };
-      if (onVizChange) onVizChange({ ...viz });
+      emitViz();
     });
   };
   bindColor('lab-color-pos', 'colorPositive');
@@ -203,17 +215,12 @@ export function mountRightDock(container, options = {}) {
     viz = { ...viz, labelsVisible: !viz.labelsVisible };
     labelsBtn.setAttribute('aria-pressed', viz.labelsVisible ? 'true' : 'false');
     labelsBtn.textContent = viz.labelsVisible ? 'Hide labels' : 'Show labels';
-    if (onVizChange) onVizChange({ ...viz });
+    emitViz();
   });
 
   return {
     getSpatial: () => ({ ...spatialState }),
     getViz: () => ({ ...viz }),
-    /**
-     * Push values into range inputs (e.g. after MODE default resolve).
-     * @param {object} values
-     * @param {{ emit?: boolean }} [opts]
-     */
     syncSpatial(values, opts = {}) {
       if (!values) return;
       for (const def of SPATIAL_SLIDER_DEFS) {
@@ -223,13 +230,34 @@ export function mountRightDock(container, options = {}) {
       spatialState.threadSpacingY = spatialState.threadVectorDistance;
       if (opts.emit) emitSpatial();
     },
-    /**
-     * Update dblclick restore defaults (MODE context change).
-     * @param {{ workspaceMode?: string, viewMode?: string, renderMode?: string }} ctx
-     */
     setSpatialContext(ctx) {
       const next = resolveSpatialDefaults(ctx || {});
       Object.assign(defaults, next);
+    },
+    /**
+     * Sync viz chrome from external override (e.g. SAE forces + filter).
+     * @param {object} values
+     * @param {{ emit?: boolean, persist?: boolean }} [opts]
+     */
+    syncViz(values, opts = {}) {
+      if (!values) return;
+      viz = { ...viz, ...values };
+      const filter = viz.vizFilterMode || 'all';
+      container.querySelectorAll('input[name="lab-viz-filter"]').forEach((radio) => {
+        radio.checked = radio.value === filter;
+      });
+      const pos = container.querySelector('#lab-color-pos');
+      const zero = container.querySelector('#lab-color-zero');
+      const neg = container.querySelector('#lab-color-neg');
+      if (pos && viz.colorPositive) pos.value = viz.colorPositive;
+      if (zero && viz.colorZero) zero.value = viz.colorZero;
+      if (neg && viz.colorNegative) neg.value = viz.colorNegative;
+      if (labelsBtn && viz.labelsVisible !== undefined) {
+        labelsBtn.setAttribute('aria-pressed', viz.labelsVisible ? 'true' : 'false');
+        labelsBtn.textContent = viz.labelsVisible ? 'Hide labels' : 'Show labels';
+      }
+      if (opts.persist !== false && persistViz) saveVisualizationSettings(viz);
+      if (opts.emit) emitViz();
     },
   };
 }

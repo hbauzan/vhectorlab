@@ -107,8 +107,31 @@ export function mergeSpatialConfig(current, patch) {
 }
 
 /**
+ * Merge viz settings patch (known keys only).
+ * @param {object} current
+ * @param {object|null|undefined} patch
+ * @returns {object}
+ */
+export function mergeVizConfig(current, patch) {
+  const out = { ...(current || {}) };
+  if (!patch || typeof patch !== 'object') return out;
+  if (patch.vizFilterMode != null) out.vizFilterMode = String(patch.vizFilterMode);
+  if (patch.colorPositive != null) out.colorPositive = String(patch.colorPositive);
+  if (patch.colorZero != null) out.colorZero = String(patch.colorZero);
+  if (patch.colorNegative != null) out.colorNegative = String(patch.colorNegative);
+  if (patch.zeroCoverage != null && Number.isFinite(Number(patch.zeroCoverage))) {
+    out.zeroCoverage = Number(patch.zeroCoverage);
+  }
+  if (patch.labelsVisible !== undefined) out.labelsVisible = Boolean(patch.labelsVisible);
+  return out;
+}
+
+/**
  * @param {HTMLElement} container  `[data-zone="canvas"]`
- * @param {{ onHover?: (payload: ReturnType<typeof formatHoverForFooter>) => void }} [options]
+ * @param {{
+ *   onHover?: (payload: ReturnType<typeof formatHoverForFooter>) => void,
+ *   initialViz?: object,
+ * }} [options]
  */
 export function mountCanvasHost(container, options = {}) {
   if (!container) throw new Error('mountCanvasHost requires a container');
@@ -119,7 +142,11 @@ export function mountCanvasHost(container, options = {}) {
   const ctx = canvasStartupContext();
   /** @type {ReturnType<typeof resolveSpatialDefaults>} */
   let spatialConfig = resolveSpatialDefaults(ctx);
-  const vizConfig = { ...DEFAULT_VISUALIZATION_SETTINGS };
+  /** @type {object} */
+  let vizConfig = {
+    ...DEFAULT_VISUALIZATION_SETTINGS,
+    ...(options.initialViz || {}),
+  };
   /** @type {object|null} */
   let lastArithmetic = null;
   /** @type {object|null} */
@@ -227,13 +254,21 @@ export function mountCanvasHost(container, options = {}) {
       return { ...ctx };
     },
     getSpatial: () => ({ ...spatialConfig }),
+    getViz: () => ({ ...vizConfig }),
     getWorkspaceMode: () => ctx.workspaceMode,
     hasCompareData: () => !!lastCompare,
     hasArithmeticData: () => !!lastArithmetic,
+    getLastCompare: () => (lastCompare ? { ...lastCompare, items: lastCompare.items?.slice() } : null),
+    /**
+     * @param {number} scale
+     */
+    setDimSpanScale(scale) {
+      instancer.setDimSpanScale(scale);
+    },
     /**
      * Switch MODE; re-resolve spatial defaults + camera; repaint active cache.
      * @param {'ARITHMETIC'|'COMPARE'} mode
-     * @returns {{ spatial: object, labels: * }}
+     * @returns {{ spatial: object, labels: *, viewMode: string }}
      */
     setWorkspaceMode(mode) {
       const next =
@@ -316,6 +351,15 @@ export function mountCanvasHost(container, options = {}) {
      */
     replaceSpatialConfig(values) {
       spatialConfig = mergeSpatialConfig({}, values);
+      return paintActive();
+    },
+    /**
+     * Apply viz filter / colors / labels and repaint active cache.
+     * @param {object} patch
+     */
+    setVizConfig(patch) {
+      vizConfig = mergeVizConfig(vizConfig, patch);
+      threadLabels.setVisible(vizConfig.labelsVisible);
       return paintActive();
     },
     refreshGeometry() {

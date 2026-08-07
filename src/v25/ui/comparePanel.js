@@ -1,5 +1,5 @@
 /**
- * VHectorLab-3D v25 Compare chrome — sequence + cosine list (no SAE).
+ * VHectorLab-3D v25 Compare chrome — sequence + cosine list + SAE.
  */
 import {
   COMPARE_AUTO_PRESETS,
@@ -9,12 +9,15 @@ import {
   reorderCompareItems,
   sortCompareItemsByCosine,
 } from '../../ui/compareCosine.js';
+import { saeControlsMarkup, wireSaeControls } from '../../ui/SaeControls.js';
 import {
   cosineListHtml,
   groupLegendHtml,
   hasMultipleGroups,
   parseCompareText,
 } from '../compareWire.js';
+
+const SAE_PREFIX = 'lab';
 
 export const COMPARE_COPY = Object.freeze({
   title: 'COMPARE SEQUENCE',
@@ -61,9 +64,9 @@ export function comparePanelMarkup(textareaValue = '') {
         ).join('')}
       </div>
 
-      <button type="button" id="lab-btn-visualize" class="lab-btn lab-btn--primary lab-compare__submit">
-        ${c.visualize}
-      </button>
+      <div class="lab-compare__sae">
+        ${saeControlsMarkup(SAE_PREFIX)}
+      </div>
 
       <div class="lab-compare__metrics">
         <span class="lab-muted">${c.loaded}</span>
@@ -90,6 +93,10 @@ export function comparePanelMarkup(textareaValue = '') {
  * @param {{
  *   onCalculate?: (tokens: string[], tokenMeta: Array) => void|Promise<void>,
  *   onReorder?: (payload: object) => void|Promise<void>,
+ *   onSaeToggle?: (enabled: boolean) => void|Promise<void>,
+ *   onSaeTrain?: (settings: object) => void|Promise<void>,
+ *   getSaeSettings?: () => object,
+ *   setSaeSettings?: (s: object) => void,
  * }} [options]
  */
 export function mountComparePanel(container, options = {}) {
@@ -100,7 +107,6 @@ export function mountComparePanel(container, options = {}) {
 
   const root = container.querySelector('#lab-compare-panel');
   const textarea = container.querySelector('#lab-compare-tokens');
-  const btnVisualize = container.querySelector('#lab-btn-visualize');
   const listEl = container.querySelector('#lab-compare-list');
   const countEl = container.querySelector('#lab-compare-count');
   const legendEl = container.querySelector('#lab-compare-legend');
@@ -117,12 +123,17 @@ export function mountComparePanel(container, options = {}) {
   const onReorder =
     typeof options.onReorder === 'function' ? options.onReorder : null;
 
+  const saeUi = wireSaeControls(root, SAE_PREFIX, {
+    primaryLabel: COMPARE_COPY.visualize,
+    primaryLoadingLabel: COMPARE_COPY.visualizing,
+    onToggle: options.onSaeToggle,
+    onTrain: options.onSaeTrain,
+    getSettings: options.getSaeSettings,
+    setSettings: options.setSaeSettings,
+  });
+
   const setLoading = (loading) => {
-    if (!btnVisualize) return;
-    btnVisualize.disabled = !!loading;
-    btnVisualize.textContent = loading
-      ? COMPARE_COPY.visualizing
-      : COMPARE_COPY.visualize;
+    saeUi.setPrimaryLoading(loading);
   };
 
   const syncSortButtons = () => {
@@ -237,7 +248,8 @@ export function mountComparePanel(container, options = {}) {
     }
   };
 
-  btnVisualize?.addEventListener('click', () => {
+  saeUi.btnPrimary?.addEventListener('click', (e) => {
+    e.preventDefault();
     runVisualize();
   });
 
@@ -273,6 +285,7 @@ export function mountComparePanel(container, options = {}) {
 
   return {
     root,
+    saeUi,
     setLoading,
     updateCompareResults,
     getItems: () => (items ? items.slice() : null),

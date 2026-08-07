@@ -17,6 +17,7 @@ export function createLabModal(doc = document) {
         <p class="lab-modal__message" id="lab-modal-message"></p>
       </div>
       <footer class="lab-modal__footer">
+        <button type="button" class="lab-btn lab-btn--ghost lab-modal__cancel is-hidden">Cancel</button>
         <button type="button" class="lab-btn lab-btn--primary lab-modal__ok">OK</button>
       </footer>
     </div>
@@ -24,20 +25,56 @@ export function createLabModal(doc = document) {
 
   const titleEl = overlay.querySelector('#lab-modal-title');
   const msgEl = overlay.querySelector('#lab-modal-message');
-  const hide = () => overlay.classList.add('is-hidden');
+  const okBtn = overlay.querySelector('.lab-modal__ok');
+  const cancelBtn = overlay.querySelector('.lab-modal__cancel');
+  /** @type {((v: boolean) => void)|null} */
+  let pendingResolve = null;
+
+  const hide = () => {
+    overlay.classList.add('is-hidden');
+    cancelBtn?.classList.add('is-hidden');
+    if (okBtn) okBtn.textContent = 'OK';
+  };
+
+  const finish = (value) => {
+    const resolve = pendingResolve;
+    pendingResolve = null;
+    hide();
+    if (resolve) resolve(value);
+  };
+
   const show = (title, message) => {
+    pendingResolve = null;
+    cancelBtn?.classList.add('is-hidden');
+    if (okBtn) okBtn.textContent = 'OK';
     if (titleEl) titleEl.textContent = title || 'NOTICE';
     if (msgEl) msgEl.textContent = message || '';
     overlay.classList.remove('is-hidden');
   };
 
-  overlay.querySelector('.lab-modal__close')?.addEventListener('click', hide);
-  overlay.querySelector('.lab-modal__ok')?.addEventListener('click', hide);
+  /**
+   * @param {string} title
+   * @param {string} message
+   * @returns {Promise<boolean>}
+   */
+  const confirm = (title, message) =>
+    new Promise((resolve) => {
+      pendingResolve = resolve;
+      cancelBtn?.classList.remove('is-hidden');
+      if (okBtn) okBtn.textContent = 'Confirm';
+      if (titleEl) titleEl.textContent = title || 'CONFIRM';
+      if (msgEl) msgEl.textContent = message || '';
+      overlay.classList.remove('is-hidden');
+    });
+
+  overlay.querySelector('.lab-modal__close')?.addEventListener('click', () => finish(false));
+  okBtn?.addEventListener('click', () => finish(true));
+  cancelBtn?.addEventListener('click', () => finish(false));
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) hide();
+    if (e.target === overlay) finish(false);
   });
 
   doc.body.appendChild(overlay);
 
-  return { show, hide, element: overlay };
+  return { show, hide, confirm, element: overlay };
 }
