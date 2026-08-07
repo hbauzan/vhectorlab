@@ -4,6 +4,8 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-08-07
+
 ### Added
 - **`/v25/` MPA scaffold** (Fase 1): `v25/index.html` + `src/v25/main.js` hello shell; Vite multi-page via `getViteInputs()`; FastAPI `resolve_dist_file` serves nested `dist/v25/index.html` (directory index). Legacy `/` unchanged.
 - **GUI & Art v25 plan** (`roadmap/gui-art-v25.md` + `PROMPT-gui-art-v25.md`); epic index `gui-art.md` points agents at `/v25/` phases.

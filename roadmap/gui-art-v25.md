@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 1 scaffold lista para review)  
+**Estado:** en curso (Fase 1 merged — siguiente: tokens)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -184,7 +184,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **Hecho:** MPA Vite (main + v25); hello shell; static helper MPA-aware; sin tokens/layout/engine.
 - **NO hecho (siguiente fase):** tokens + skin base (`feat/v25-tokens`).
 - **Lecciones:** `v25:` MPA inputs + directory index en lessons-learned.
-- **Riesgos abiertos:** SemVer PATCH `2.2.1` al merge (humano); `main` local ahead 1 (Fase 0) aún sin push.
+- **Riesgos abiertos:** ninguno para Fase 1; SemVer `2.2.1` cortado en el ship.
 - **Archivos tocados (alto nivel):** `v25/index.html`, `src/v25/main.js`, `vite.mpa.js`, `vite.config.js`, `backend/static_dist.py`, `backend/server.py`, tests + roadmap/CHANGELOG/lessons.
 
 ### Fase 2 — Tokens + skin base
@@ -279,7 +279,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | Fase | Estado | Branch | Fecha | Notas |
 | :---: | :--- | :--- | :--- | :--- |
 | 0 | ✅ docs | `main` `2d79175` | 2026-08-07 | Plan inicial |
-| 1 | ✅ scaffold (pending merge) | `feat/v25-scaffold` | 2026-08-07 | MPA `/v25/` hello; ver hand-off abajo |
+| 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1` |
 | 2 | ☐ | | | |
 | 3 | ☐ | | | |
 | 4 | ☐ | | | |
