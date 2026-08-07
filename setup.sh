@@ -702,15 +702,23 @@ publish_hf_space() {
         echo -e "${CYAN}  Normalized to: ${BOLD}${space_id}${RESET}"
     fi
 
-    echo -e "${CYAN}▶ Ensuring Space exists (sdk=docker, flavor=cpu-basic)…${RESET}"
-    if ! hf repos create "$space_id" --type space --space-sdk docker --flavor cpu-basic --exist-ok; then
-        # Older CLI fallback without --flavor
-        if ! hf repos create "$space_id" --type space --space-sdk docker --exist-ok; then
-            echo -e "${RED}❌ Failed to create/ensure Space. Check the id and token scopes.${RESET}"
-            read -p "Press Enter..."
-            return
+    # Prefer reusing an existing Space. `hf repos create` now returns 402 without PRO
+    # even with --exist-ok, so never call create when the Space is already there.
+    if hf spaces info "$space_id" &> /dev/null; then
+        echo -e "  ${GREEN}✓ Space exists — skipping create (push-only).${RESET}"
+        echo -e "${DIM}  https://huggingface.co/spaces/${space_id}${RESET}"
+    else
+        echo -e "${CYAN}▶ Space not found. Creating (sdk=docker, flavor=cpu-basic)…${RESET}"
+        echo -e "${DIM}  Note: new Gradio/Docker Spaces require HF PRO since mid-2026.${RESET}"
+        if ! hf repos create "$space_id" --type space --space-sdk docker --flavor cpu-basic --exist-ok; then
+            if ! hf repos create "$space_id" --type space --space-sdk docker --exist-ok; then
+                echo -e "${RED}❌ Cannot create Space (often HTTP 402 without PRO).${RESET}"
+                echo -e "${YELLOW}  Reuse an existing Docker Space id, or subscribe: https://huggingface.co/pro${RESET}"
+                read -p "Press Enter..."
+                return
+            fi
+            echo -e "${YELLOW}⚠ Created without --flavor; set hardware to cpu-basic in Space Settings if needed.${RESET}"
         fi
-        echo -e "${YELLOW}⚠ Created without --flavor; set hardware to cpu-basic in Space Settings if needed.${RESET}"
     fi
 
     echo -e "${CYAN}Building production frontend bundle…${RESET}"
@@ -724,7 +732,7 @@ publish_hf_space() {
     echo -e "${DIM}  HF builds the Docker image from this repo (Dockerfile + README sdk: docker).${RESET}"
     if ! git push "https://huggingface.co/spaces/${space_id}" HEAD:main; then
         echo -e "${RED}❌ git push to Space failed. Ensure the remote accepts the commit and you have write access.${RESET}"
-        echo -e "${DIM}  Tip: commit local changes first if the Space is empty, or check hf auth token has write.${RESET}"
+        echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
         read -p "Press Enter..."
         return
     fi
