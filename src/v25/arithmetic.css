@@ -104,16 +104,28 @@
   color: var(--lab-text-dim);
 }
 
+.lab-arithmetic__status {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+.lab-arithmetic__status.is-live {
+  color: var(--lab-accent);
+}
+
 /* Tall: list scrolls; floor 120px (legacy contract) */
 #lab-arithmetic-panel .lab-results-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  min-height: 120px;
   overflow-y: auto;
   max-height: max(120px, min(280px, 40dvh));
-  border: var(--lab-border-width) solid var(--lab-border);
+  border: var(--lab-border-width) solid var(--lab-border-strong);
   border-radius: var(--lab-radius);
-  background: var(--lab-panel-inset);
+  background: #0c1612;
   box-shadow: var(--lab-inset);
 }
 

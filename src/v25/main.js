@@ -19,29 +19,42 @@ if (app) {
   mountShell(app);
   const zones = queryShellZones(app);
   const header = mountHeader(zones.header);
-  const arithmetic = mountArithmeticPanel(zones.left, {
-    async onCalculate(words) {
-      try {
-        const { results } = await fetchArithmeticResults(provider, words);
-        arithmetic.updateResults(results);
-      } catch (err) {
-        const message =
-          err?.message ||
-          'Arithmetic request failed. Check that the backend is running.';
-        modal.show('ARITHMETIC ERROR', message);
-      }
-    },
+
+  /** @type {{ updateResults: Function, setLoading: Function, getValues: Function } | null} */
+  let arithmetic = null;
+
+  const runCalculate = async (words) => {
+    if (!arithmetic) return;
+    try {
+      arithmetic.setLoading(true);
+      const { results } = await fetchArithmeticResults(provider, words);
+      arithmetic.updateResults(results);
+    } catch (err) {
+      const message =
+        err?.message ||
+        'Arithmetic request failed. Check that the backend is running.';
+      modal.show('ARITHMETIC ERROR', message);
+    } finally {
+      arithmetic.setLoading(false);
+    }
+  };
+
+  arithmetic = mountArithmeticPanel(zones.left, {
+    onCalculate: runCalculate,
   });
   mountRightDock(zones.right);
   mountFooterHud(zones.footer);
 
-  provider.checkHealth().then((health) => {
+  provider.checkHealth().then(async (health) => {
     header.setOnline(Boolean(health?.ok));
     if (!health?.ok) {
       modal.show(
         'BACKEND OFFLINE',
         'The FastAPI backend is not reachable. Start the stack with ./setup.sh (option 1), or open this app from a running Hugging Face Space.',
       );
+      return;
     }
+    // Same happy-path as legado: populate Top-10 on boot (canvas still stub).
+    await runCalculate(arithmetic.getValues());
   });
 }
