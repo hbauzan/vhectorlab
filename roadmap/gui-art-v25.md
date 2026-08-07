@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 3 merged — siguiente: header)  
+**Estado:** en curso (Fase 4 merged — siguiente: Arithmetic chrome)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -226,6 +226,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** tabs usables visualmente; pressable; no rompen layout mobile.
 - **Branch:** `feat/v25-header`.
 
+#### Hand-off — Fase 4
+- **Branch / commit:** `feat/v25-header` → `main` (after ship).
+- **Cómo probar:** `/v25/` — brand + `v2.2.1`, tabs MODE/VIEW/RENDER pressable (UI state only), badge ONLINE. Mobile: tabs scroll/wrap. Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25Header.test.js`).
+- **Hecho:** `ui/header.js` + `header.css` + `version.js`; defaults from `appViewDefaults`.
+- **NO hecho (siguiente fase):** Left Arithmetic chrome (`feat/v25-arithmetic-chrome`).
+- **Lecciones:** ninguna nueva.
+- **Riesgos abiertos:** ONLINE aún no pega `/api/health` (wire después); engine no escucha tabs.
+- **Archivos tocados (alto nivel):** `src/v25/ui/header.js`, `header.css`, `version.js`, `main.js`, tests + roadmap/CHANGELOG.
+
 ### Fase 5 — Left Arithmetic chrome
 - **Hacer:** form Word A/B/C, CTA “Calculate” (o copy EN actual del legado — **no inventar nombres de producto**), tabla Top-10 vacía con scroll container preparado (contrato lessons §4.1).
 - **DoD:** scroll area no “corta” lista en mobile MQ; botón pressable.
@@ -302,7 +312,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1`; slash fix `019bdbe` |
 | 2 | ✅ merged | `feat/v25-tokens` → `main` | 2026-08-07 | tokens + skin utilities |
 | 3 | ✅ merged | `feat/v25-shell` → `main` | 2026-08-07 | 5-zone grid + mobile stack |
-| 4 | ☐ | | | |
+| 4 | ✅ merged | `feat/v25-header` → `main` | 2026-08-07 | brand + MODE/VIEW/RENDER UI + ONLINE |
 | 5 | ☐ | | | |
 | 6 | ☐ | | | |
 | 7 | ☐ | | | |
