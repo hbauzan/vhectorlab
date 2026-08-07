@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
-import { getViteInputs } from './vite.mpa.js';
+import { getViteInputs, mpaTrailingSlashRedirect } from './vite.mpa.js';
 
 /**
  * Dev access via ngrok (phone):
@@ -32,6 +32,9 @@ const apiProxy = {
 };
 
 export default defineConfig({
+  // Avoid SPA fallback masking missing MPA paths as legacy `/`.
+  appType: 'mpa',
+  plugins: [mpaTrailingSlashRedirect()],
   build: {
     // Three.js + app UI naturally exceeds Vite's default 500 kB advisory.
     chunkSizeWarningLimit: 700,
