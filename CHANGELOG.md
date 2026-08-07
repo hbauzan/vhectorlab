@@ -4,6 +4,9 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **v25 Compare left layout**: `[data-panel]{display:flex}` overrode `[hidden]` and left a black flex gap above Compare; force-hide inactive slot. COMPARE now prefers NAVIGATION framing (usable with ~130 group tokens).
+
 ### Added
 - **v25 Compare MODE** (Fase 10): header MODE switches Arithmetic↔Compare; Visualize → `/compare`; cosine-vs-REF list with reorder/sort; GROUP_* parse + legend + 3D group badges; bootstrap groups demo. No SAE.
 - **v25 spatial sliders live** (Fase 9): Spacing/Distance/Amplitude/Length/Thickness rebuild canvas threads from cached Arithmetic payload (no new API); dblclick restores context defaults.
