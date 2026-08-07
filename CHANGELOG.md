@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **v25 Arithmetic chrome** (Fase 5): Word A/B/C form, CALCULATE VECTOR CTA, Top-10 list host with §4.1 scroll floor (no API yet).
 - **v25 header chrome** (Fase 4): brand VHectorLab-3D, version tag, MODE/VIEW/RENDER UI tabs, ONLINE badge (local state only).
 - **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
 - **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
