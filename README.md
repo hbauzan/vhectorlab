@@ -6,11 +6,32 @@ colorTo: blue
 sdk: docker
 app_port: 7860
 pinned: false
+license: mit
 ---
 
 # VHectorLab 3D
 
-3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`).
+**A local study / laboratory tool for exploring semantic embeddings in 3D (WebGL). Not a production SaaS.**
+
+3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`), plus compare sequences and related lab experiments.
+
+| | |
+| :--- | :--- |
+| **License** | [MIT](./LICENSE) © 2026 Hector Bauzan |
+| **Public demo** | [Hugging Face Space](https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer) |
+| **Local (macOS)** | `./setup.sh` → option `1` → http://127.0.0.1:5173 |
+
+---
+
+## Public demo (no install)
+
+Try the hosted **cpu-basic** demo:
+
+👉 **https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer**
+
+That Space is a shared study sandbox (Docker, CPU). Expect cold starts, variable latency, and soft resource limits. There is **no SLA**, no multi-tenant isolation, and no auth — please be gentle (avoid automated flooding of `/embed`, `/compare`, `/arithmetic`).
+
+For serious work or heavier SAE/training experiments, run **locally** on macOS (below).
 
 ---
 
@@ -19,6 +40,8 @@ pinned: false
 **Created and tested on macOS 26.5.1 (Darwin 25.5.0, Apple Silicon).**
 
 This project was **not** prepared or validated for Windows or Linux. It may work there with a few adjustments (package managers, paths, process control), but that is unsupported. Prefer a Mac matching the versions above.
+
+The Hugging Face Space image runs on Linux CPU inside HF’s Docker runtime — that path is supported for the **demo**, not as a general Linux desktop install guide.
 
 ---
 
@@ -147,3 +170,9 @@ npx vite --port 5173 --host 127.0.0.1
 | Option 1 restarts everything every time | It should not when both are healthy — report a bug if it still kills/relaunches a healthy stack |
 | Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
 | `Failed to spawn: pytest` / No such file | Stale `backend/.venv` after renaming the folder. Option 1 now recreates it; or run `rm -rf backend/.venv && cd backend && uv sync --extra dev` |
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
