@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** planificado (sin código aún)  
+**Estado:** en curso (Fase 1 scaffold lista para review)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -177,6 +177,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** `/` idéntico en smoke manual; `/v25/` carga.
 - **Branch:** `feat/v25-scaffold`.
 
+#### Hand-off — Fase 1
+- **Branch / commit:** `feat/v25-scaffold` (commit al cerrar; main docs Fase 0 = `2d79175`).
+- **Cómo probar:** `npm run dev` → `http://localhost:5173/` legado; `http://localhost:5173/v25/` texto `VHectorLab-3D v25`. Prod-like: `npm run build && npm run preview` → mismos paths. Con `dist/` presente, FastAPI `resolve_dist_file` sirve `/v25` y `/v25/`.
+- **Tests:** `npm test` (incl. `tests/viteMpaInputs.test.js`); `cd backend && uv run pytest tests/test_static_dist.py`; `npm run build` → `dist/v25/index.html`.
+- **Hecho:** MPA Vite (main + v25); hello shell; static helper MPA-aware; sin tokens/layout/engine.
+- **NO hecho (siguiente fase):** tokens + skin base (`feat/v25-tokens`).
+- **Lecciones:** `v25:` MPA inputs + directory index en lessons-learned.
+- **Riesgos abiertos:** SemVer PATCH `2.2.1` al merge (humano); `main` local ahead 1 (Fase 0) aún sin push.
+- **Archivos tocados (alto nivel):** `v25/index.html`, `src/v25/main.js`, `vite.mpa.js`, `vite.config.js`, `backend/static_dist.py`, `backend/server.py`, tests + roadmap/CHANGELOG/lessons.
+
 ### Fase 2 — Tokens + skin base
 - **Hacer:** `src/v25/tokens.css` (+ import en `style.css` v25) con paleta adaptada (§1 Q5), tipografía (load font display + mono), utilities: `.lab-panel`, `.lab-btn`, focus states.
 - **No hacer:** componentes de feature.
@@ -268,8 +278,8 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 
 | Fase | Estado | Branch | Fecha | Notas |
 | :---: | :--- | :--- | :--- | :--- |
-| 0 | ✅ docs | — | 2026-08-07 | Plan inicial |
-| 1 | ☐ | | | |
+| 0 | ✅ docs | `main` `2d79175` | 2026-08-07 | Plan inicial |
+| 1 | ✅ scaffold (pending merge) | `feat/v25-scaffold` | 2026-08-07 | MPA `/v25/` hello; ver hand-off abajo |
 | 2 | ☐ | | | |
 | 3 | ☐ | | | |
 | 4 | ☐ | | | |

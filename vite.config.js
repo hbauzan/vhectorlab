@@ -1,4 +1,7 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+import { getViteInputs } from './vite.mpa.js';
 
 /**
  * Dev access via ngrok (phone):
@@ -11,6 +14,7 @@ import { defineConfig } from 'vite';
  * gives one public host per agent; two agents need two different URLs.
  */
 const NGROK_HOST = 'obsessed-landfall-irritable.ngrok-free.dev';
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 const allowedHosts = [
   NGROK_HOST,
@@ -31,6 +35,9 @@ export default defineConfig({
   build: {
     // Three.js + app UI naturally exceeds Vite's default 500 kB advisory.
     chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      input: getViteInputs(rootDir),
+    },
   },
   server: {
     host: true,
