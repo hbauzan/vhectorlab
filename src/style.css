@@ -280,6 +280,15 @@ canvas {
   flex-shrink: 0;
 }
 
+.compare-dim-sort .field-label-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.compare-dim-sort .field-info-btn {
+  margin-left: auto;
+}
+
 /* COMPARE: cosine-vs-anchor list — scroll only inside the list (§4.1 panel invariant) */
 #compare-panel .compare-results {
   flex: 1 1 auto;
@@ -492,9 +501,64 @@ canvas {
 }
 
 .input-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+.field-label-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.field-info-btn {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.field-info-btn:hover,
+.field-info-btn[aria-expanded="true"] {
+  color: var(--accent-cyan);
+  border-color: rgba(0, 204, 255, 0.55);
+  background: rgba(0, 200, 255, 0.12);
+}
+
+.field-info-tip {
+  position: fixed;
+  z-index: 120;
+  max-width: min(200px, calc(100vw - 16px));
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: rgba(12, 16, 24, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-main);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.3;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  word-break: break-word;
 }
 
 .input-group.positive label .op { color: var(--accent-cyan); }
@@ -560,6 +624,17 @@ canvas {
   padding: 10px 6px;
   font-size: 0.72rem;
   line-height: 1.2;
+}
+
+.sae-toggle-with-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sae-toggle-with-info .btn-sae-toggle {
+  flex: 1 1 auto;
 }
 
 .btn-sae-toggle {
@@ -637,6 +712,13 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.sae-params-panel .field-label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 1 auto;
 }
 
 .sae-params-panel input {
@@ -1227,7 +1309,7 @@ canvas {
 
 #visualization-controls-container .viz-color-row label {
   font-size: 0.72rem;
-  min-width: 1.4rem;
+  min-width: 2.4rem;
 }
 
 #visualization-controls-container .viz-color-hex {
@@ -1278,6 +1360,17 @@ canvas {
   color: var(--text-muted);
 }
 
+.slider-header label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.slider-header .field-label-text {
+  flex: 0 1 auto;
+}
+
 .slider-val {
   font-family: monospace;
   color: var(--accent-gold);
@@ -1298,9 +1391,16 @@ canvas {
 }
 
 .viz-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+.viz-filter-label .field-label-text {
+  flex: 0 1 auto;
 }
 
 .viz-segmented {
@@ -1369,10 +1469,30 @@ canvas {
 }
 
 .viz-color-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--accent-gold);
   font-family: monospace;
+}
+
+.viz-color-row label .field-label-text {
+  flex: 0 0 auto;
+}
+
+.viz-labels-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.viz-labels-row .viz-labels-toggle {
+  flex: 1 1 auto;
+  margin-top: 0;
+  align-self: auto;
 }
 
 .viz-color-swatch {
@@ -1960,6 +2080,18 @@ canvas {
 
   #compare-panel .compare-cosine-list {
     max-height: min(180px, 32dvh);
+  }
+
+  .field-info-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+
+  .field-info-tip {
+    max-width: min(180px, calc(100vw - 12px));
+    font-size: 0.64rem;
+    padding: 5px 7px;
   }
 }
 

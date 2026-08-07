@@ -116,8 +116,8 @@ describe('isPhonePortrait', () => {
 });
 
 describe('shouldShowLandscapeGate', () => {
-  it('shows only for mobile portrait not yet dismissed', () => {
-    expect(shouldShowLandscapeGate({ isMobile: true, isPortrait: true, dismissed: false })).toBe(true);
+  it('never shows — landscape cartel retired (portrait preferred)', () => {
+    expect(shouldShowLandscapeGate({ isMobile: true, isPortrait: true, dismissed: false })).toBe(false);
     expect(shouldShowLandscapeGate({ isMobile: true, isPortrait: true, dismissed: true })).toBe(false);
     expect(shouldShowLandscapeGate({ isMobile: true, isPortrait: false, dismissed: false })).toBe(false);
     expect(shouldShowLandscapeGate({ isMobile: false, isPortrait: true, dismissed: false })).toBe(false);
@@ -143,7 +143,7 @@ describe('LandscapeGate', () => {
     session = memorySession();
   });
 
-  it('shows overlay in phone portrait and dismisses without trapping', () => {
+  it('never shows overlay even in phone portrait', () => {
     const gate = new LandscapeGate({
       parent,
       doc: mockDoc,
@@ -152,13 +152,10 @@ describe('LandscapeGate', () => {
       isPortrait: () => true,
     });
 
-    expect(gate.isVisible).toBe(true);
-    gate._dismissBtn.click();
     expect(gate.isVisible).toBe(false);
-    expect(wasLandscapeGateDismissed(session)).toBe(true);
-
     gate.refresh();
     expect(gate.isVisible).toBe(false);
+    expect(gate.overlay.classList.contains('hidden')).toBe(true);
   });
 
   it('stays hidden on tablet/desktop and landscape phone', () => {

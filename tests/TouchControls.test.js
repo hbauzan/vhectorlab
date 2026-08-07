@@ -37,6 +37,15 @@ describe('isUiTouchTarget', () => {
     expect(isUiTouchTarget(child)).toBe(true);
   });
 
+  it('treats field-info tip as UI', () => {
+    const tip = {
+      className: 'field-info-tip',
+      tagName: 'DIV',
+      closest: (sel) => (sel.includes('.field-info-tip') ? tip : null),
+    };
+    expect(isUiTouchTarget(tip)).toBe(true);
+  });
+
   it('allows bare canvas', () => {
     const canvas = { tagName: 'CANVAS', closest: () => null };
     expect(isUiTouchTarget(canvas)).toBe(false);

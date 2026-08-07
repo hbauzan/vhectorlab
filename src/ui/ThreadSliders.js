@@ -4,6 +4,7 @@ import {
   resolveSpatialDefaults,
   SPATIAL_SLIDER_BINDINGS,
 } from './spatialSliderDefaults.js';
+import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 /**
  * Returns HTML markup for the spatial sliders control panel.
@@ -25,7 +26,7 @@ export function threadSlidersMarkup(config = {}) {
   <!-- Slider 1: Spacing X -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-spacing-slider">Spacing (X):</label>
+      <label for="thread-spacing-slider"><span class="field-label-text">Spacing (X):</span>${infoTipMarkup(FIELD_INFO.spacingX)}</label>
       <span id="thread-spacing-val" class="slider-val">${spacing.toFixed(2)}</span>
     </div>
     <input type="range" id="thread-spacing-slider" min="0.4" max="2.0" step="0.05" value="${spacing}" title="Double-click: restore default">
@@ -34,7 +35,7 @@ export function threadSlidersMarkup(config = {}) {
   <!-- Slider 2: Vector Distance Y -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-vector-dist-slider">Vector Distance (Y):</label>
+      <label for="thread-vector-dist-slider"><span class="field-label-text">Vector Distance (Y):</span>${infoTipMarkup(FIELD_INFO.vectorDistY)}</label>
       <span id="thread-vector-dist-val" class="slider-val">${vectorDist.toFixed(1)}</span>
     </div>
     <input type="range" id="thread-vector-dist-slider" min="1.0" max="19.0" step="0.1" value="${vectorDist}" title="Double-click: restore default">
@@ -43,7 +44,7 @@ export function threadSlidersMarkup(config = {}) {
   <!-- Slider 3: Amplitude Y -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-amplitude-y-slider">Amplitude (Y):</label>
+      <label for="thread-amplitude-y-slider"><span class="field-label-text">Amplitude (Y):</span>${infoTipMarkup(FIELD_INFO.amplitudeY)}</label>
       <span id="thread-amplitude-y-val" class="slider-val">${amplitudeY.toFixed(1)}</span>
     </div>
     <input type="range" id="thread-amplitude-y-slider" min="1.0" max="40.0" step="0.1" value="${amplitudeY}" title="Double-click: restore default">
@@ -52,7 +53,7 @@ export function threadSlidersMarkup(config = {}) {
   <!-- Slider 4: Width Z -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-width-slider">Length (Z):</label>
+      <label for="thread-width-slider"><span class="field-label-text">Length (Z):</span>${infoTipMarkup(FIELD_INFO.lengthZ)}</label>
       <span id="thread-width-val" class="slider-val">${width.toFixed(3)}</span>
     </div>
     <input type="range" id="thread-width-slider" min="0.001" max="0.2" step="0.001" value="${width}" title="Double-click: restore default">
@@ -61,7 +62,7 @@ export function threadSlidersMarkup(config = {}) {
   <!-- Slider 5: Thickness -->
   <div class="slider-group">
     <div class="slider-header">
-      <label for="thread-thickness-slider">Point Thickness:</label>
+      <label for="thread-thickness-slider"><span class="field-label-text">Point Thickness:</span>${infoTipMarkup(FIELD_INFO.thickness)}</label>
       <span id="thread-thickness-val" class="slider-val">${thickness.toFixed(2)}</span>
     </div>
     <input type="range" id="thread-thickness-slider" min="0.01" max="0.09" step="0.01" value="${thickness}" title="Double-click: restore default">

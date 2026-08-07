@@ -1,6 +1,7 @@
 import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
 import { parseCompareInput } from './parseCompareGroups.js';
 import { saeControlsMarkup, wireSaeControls } from './SaeControls.js';
+import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 /**
  * Typical auto-manual lexicon in English (parts, fluids, systems).
@@ -124,7 +125,7 @@ export class ComparePanel {
 
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
-          <label for="compare-tokens">Tokens / Words, or GROUP_name = tokens (comma, space, or newline)</label>
+          <label for="compare-tokens"><span class="field-label-text">Tokens / Words, or GROUP_name = tokens (comma, space, or newline)</span>${infoTipMarkup(FIELD_INFO.compareTokens)}</label>
           <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine… or GROUP_1 = car, truck&#10;GROUP_2 = grace, hope" required></textarea>
         </div>
 
@@ -146,7 +147,7 @@ export class ComparePanel {
         <div id="compare-groups-legend" class="compare-groups-legend" hidden></div>
         <label id="compare-dim-sort-row" class="compare-dim-sort" hidden title="Reorder X axis by |mean_G1 − mean_G2| so group differences cluster on the left">
           <input type="checkbox" id="compare-dim-sort-toggle">
-          <span>Sort dims by group contrast</span>
+          <span class="field-label-text">Sort dims by group contrast</span>${infoTipMarkup(FIELD_INFO.dimSort)}
         </label>
 
         <div class="compare-cosine-header">

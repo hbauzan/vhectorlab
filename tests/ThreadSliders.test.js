@@ -82,6 +82,13 @@ describe('threadSlidersMarkup — ranges centered on defaults', () => {
     }
   });
 
+  it('markup includes field-info tips on each slider label', () => {
+    const html = threadSlidersMarkup();
+    expect(html.match(/class="field-info-btn"/g)?.length).toBe(5);
+    expect(html).toContain('data-field-info="Gap between threads."');
+    expect(html).toContain('data-field-info="Peak height."');
+  });
+
   it('places COMPARE|NAVIGATION|POINTS Spacing 0.7 within [0.4, 2.0]', () => {
     const html = threadSlidersMarkup({
       threadSpacing: 0.7,
