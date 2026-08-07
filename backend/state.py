@@ -4,12 +4,44 @@ Manages lazy-loaded SentenceTransformer model and pre-computed vocabulary embedd
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_path(vocab_path: str) -> Path | None:
+    path = Path(vocab_path)
+    if path.exists():
+        return path
+    alt_path = Path(__file__).resolve().parent.parent / vocab_path
+    if alt_path.exists():
+        return alt_path
+    return None
+
+
+def load_vocab_embeddings_npz(npz_path: Path) -> tuple[list[str], np.ndarray, str | None]:
+    """
+    Load precomputed vocab embeddings NPZ.
+    Returns (words, embeddings float32 L2-normalized, model_name or None).
+    """
+    data = np.load(npz_path, allow_pickle=True)
+    if "words" not in data or "embeddings" not in data:
+        raise ValueError(f"Invalid vocab embeddings file (missing keys): {npz_path}")
+    words = [str(w).strip().lower() for w in data["words"].tolist()]
+    embeddings = np.asarray(data["embeddings"], dtype=np.float32)
+    if embeddings.ndim != 2 or len(words) != embeddings.shape[0]:
+        raise ValueError(
+            f"Vocab NPZ shape mismatch: words={len(words)} embeddings={embeddings.shape}"
+        )
+    model_name = None
+    if "model_name" in data:
+        raw = data["model_name"]
+        model_name = str(raw.item() if hasattr(raw, "item") else raw)
+    return words, embeddings, model_name
 
 
 class AppState:
@@ -19,53 +51,84 @@ class AppState:
         self.vocab_words: list[str] = []
         self.vocab_embeddings: np.ndarray | None = None  # Normalized (N, D)
         self.is_loaded: bool = False
+        self.device: str = "cpu"
 
     def load_model_and_vocab(
         self,
         model_name: str = "all-mpnet-base-v2",
         vocab_path: str = "public/vocab.txt",
+        vocab_embeddings_path: str | None = None,
+        device_env: str | None = None,
     ) -> None:
         """
-        Lazy loads PyTorch SentenceTransformer model and computes normalized vocabulary embeddings.
+        Lazy loads PyTorch SentenceTransformer model and vocabulary embeddings.
+        Prefer VOCAB_EMBEDDINGS_PATH NPZ when present (Docker / HF Space fast path).
         MUST ONLY be called inside lifespan context or explicit initialization, NEVER at top level.
         """
         if self.is_loaded:
             logger.info("AppState is already loaded.")
             return
 
-        logger.info(f"Loading SentenceTransformer model: {model_name}...")
+        from backend.device import get_optimal_device
         from sentence_transformers import SentenceTransformer
 
+        env_device = device_env if device_env is not None else os.getenv("SAE_DEVICE", "AUTO")
+        self.device = get_optimal_device(env_device)
+
+        logger.info(
+            "Loading SentenceTransformer model: %s (device=%s)...",
+            model_name,
+            self.device,
+        )
         self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(model_name, device=self.device)
 
-        # Load vocab words
-        path = Path(vocab_path)
-        if not path.exists():
-            # Fallback to root or default location if relative path differs
-            alt_path = Path(__file__).resolve().parent.parent / vocab_path
-            if alt_path.exists():
-                path = alt_path
-            else:
-                logger.warning(
-                    f"Vocab file not found at {vocab_path}, using empty vocab."
-                )
-                self.vocab_words = []
-                self.vocab_embeddings = None
+        embeddings_env = (
+            vocab_embeddings_path
+            if vocab_embeddings_path is not None
+            else os.getenv("VOCAB_EMBEDDINGS_PATH", "public/vocab_embeddings.npz")
+        )
+        npz_path = _resolve_path(embeddings_env) if embeddings_env else None
+
+        if npz_path is not None:
+            try:
+                words, embeddings, cached_model = load_vocab_embeddings_npz(npz_path)
+                if cached_model and cached_model != model_name:
+                    logger.warning(
+                        "Vocab NPZ model_name=%r differs from MODEL_NAME=%r — using NPZ vectors anyway.",
+                        cached_model,
+                        model_name,
+                    )
+                self.vocab_words = words
+                self.vocab_embeddings = embeddings
                 self.is_loaded = True
+                logger.info(
+                    "AppState loading complete (vocab from NPZ: %s words, %s).",
+                    len(words),
+                    npz_path,
+                )
                 return
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Failed to load vocab NPZ %s (%s); encoding from text.", npz_path, exc)
 
-        with open(path, "r", encoding="utf-8") as f:
+        path = _resolve_path(vocab_path)
+        if path is None:
+            logger.warning("Vocab file not found at %s, using empty vocab.", vocab_path)
+            self.vocab_words = []
+            self.vocab_embeddings = None
+            self.is_loaded = True
+            return
+
+        with open(path, encoding="utf-8") as f:
             words = [line.strip().lower() for line in f if line.strip()]
 
         self.vocab_words = words
-        logger.info(f"Encoding {len(words)} vocabulary words into embeddings...")
+        logger.info("Encoding %s vocabulary words into embeddings...", len(words))
 
         if words:
             raw_embeddings = self.model.encode(
                 words, show_progress_bar=False, convert_to_numpy=True
             )
-            # L2 Normalize for cosine similarity via dot product: Sim(A, B) = A_norm . B_norm^T
             norms = np.linalg.norm(raw_embeddings, axis=1, keepdims=True)
             norms[norms == 0] = 1e-9
             self.vocab_embeddings = raw_embeddings / norms

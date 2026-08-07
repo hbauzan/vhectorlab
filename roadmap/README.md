@@ -4,6 +4,7 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
+| [`hf-space-cpu-demo.md`](./hf-space-cpu-demo.md) | HF Space Docker cpu-basic: packaging, setup 7+8, badge CPU/GPU, ARITHMETIC persistente | **Implementado / approval gate** |
 | [`compare-group-contrast-viz.md`](./compare-group-contrast-viz.md) | Legibilidad contraste GROUP_* (Amplitude, SAE z-score dust, dim sort) | **Activo / planned** |
 | [`PROMPT-compare-group-contrast-viz.md`](./PROMPT-compare-group-contrast-viz.md) | Prompt para agente (pregunta D1–D12 → implementa) | **Activo** |
 | [`english-ui-i18n.md`](./english-ui-i18n.md) | English-only UI / product strings (audit → glossary gate → apply) | **Activo** |
