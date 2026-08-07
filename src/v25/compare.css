@@ -82,6 +82,140 @@
   flex-shrink: 0;
 }
 
+/* SAE controls (reuse SaeControls markup, lab skin) */
+.lab-compare__sae {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lab-space-2);
+}
+
+.lab-compare__sae .sae-cta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--lab-space-2);
+}
+
+.lab-compare__sae .sae-cta-main,
+.lab-compare__sae .btn-primary {
+  width: 100%;
+  appearance: none;
+  border: var(--lab-border-width) solid var(--lab-border-strong);
+  border-radius: var(--lab-radius);
+  background: linear-gradient(180deg, var(--lab-accent-hot) 0%, var(--lab-accent) 100%);
+  color: #04140c;
+  font-family: var(--lab-font-ui);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  box-shadow: var(--lab-inset);
+}
+
+.lab-compare__sae .btn-sae-toggle {
+  width: 100%;
+  appearance: none;
+  border: var(--lab-border-width) solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-panel-inset);
+  color: var(--lab-text);
+  font-family: var(--lab-font-ui);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.55rem 0.5rem;
+  cursor: pointer;
+}
+
+.lab-compare__sae .btn-sae-toggle.is-active,
+.lab-compare__sae .btn-sae-toggle[aria-pressed='true'] {
+  border-color: var(--lab-accent);
+  color: var(--lab-accent-hot);
+}
+
+.lab-compare__sae .sae-train-row {
+  display: flex;
+  gap: var(--lab-space-2);
+}
+
+.lab-compare__sae .btn-sae-train,
+.lab-compare__sae .btn-sae-params {
+  appearance: none;
+  border: var(--lab-border-width) solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-panel);
+  color: var(--lab-text);
+  font-family: var(--lab-font-ui);
+  font-size: 0.7rem;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+}
+
+.lab-compare__sae .btn-sae-train {
+  flex: 1;
+}
+
+.lab-compare__sae .sae-params-panel {
+  display: grid;
+  gap: var(--lab-space-2);
+  padding: var(--lab-space-2);
+  border: var(--lab-border-width) solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-panel-inset);
+  font-size: 0.7rem;
+}
+
+.lab-compare__sae .sae-params-panel.hidden,
+.lab-compare__sae .sae-progress.hidden,
+.lab-compare__sae .sae-metrics-strip.hidden {
+  display: none !important;
+}
+
+.lab-compare__sae .sae-params-panel input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.2rem;
+  background: var(--lab-bg);
+  color: var(--lab-text);
+  border: 1px solid var(--lab-border);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--lab-font-mono);
+}
+
+.lab-compare__sae .sae-status-line {
+  font-size: 0.68rem;
+  color: var(--lab-text-muted);
+  font-family: var(--lab-font-mono);
+}
+
+.lab-compare__sae .sae-progress {
+  font-size: 0.68rem;
+  color: var(--lab-text-muted);
+}
+
+.lab-compare__sae .sae-progress-bar {
+  height: 4px;
+  background: var(--lab-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+
+.lab-compare__sae .sae-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--lab-accent);
+}
+
+.lab-compare__sae .sae-metrics-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-2);
+  font-size: 0.65rem;
+  color: var(--lab-text-muted);
+}
+
 .lab-compare__metrics {
   display: flex;
   justify-content: space-between;

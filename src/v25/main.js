@@ -1,10 +1,17 @@
 /**
- * VHectorLab-3D `/v25/` bootstrap — Fase 10: Compare MODE + cosine list.
+ * VHectorLab-3D `/v25/` bootstrap — Fase 11: viz filters live + SAE on Compare.
  */
 import { RemoteProvider } from '../core/RemoteProvider.js';
+import {
+  loadSaeSettings,
+  saveSaeSettings,
+} from '../ui/saeControlsDefaults.js';
+import { loadVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
 import { fetchArithmeticResults } from './arithmeticWire.js';
 import { canvasStartupContext, mountCanvasHost } from './canvasHost.js';
 import { fetchCompareResults } from './compareWire.js';
+import { leftPanelVisibility } from './leftPanelMode.js';
+import { createSaeController } from './saeController.js';
 import './style.css';
 import { mountArithmeticPanel } from './ui/arithmeticPanel.js';
 import { mountComparePanel } from './ui/comparePanel.js';
@@ -13,17 +20,16 @@ import { mountHeader } from './ui/header.js';
 import { createLabModal } from './ui/labModal.js';
 import { mountRightDock } from './ui/rightDock.js';
 import { mountShell, queryShellZones } from './ui/shell.js';
-import { leftPanelVisibility } from './leftPanelMode.js';
 
 const app = document.getElementById('app');
 if (app) {
   const provider = new RemoteProvider();
   const modal = createLabModal();
+  const initialViz = loadVisualizationSettings();
 
   mountShell(app);
   const zones = queryShellZones(app);
 
-  // Left host: Arithmetic XOR Compare (both mounted; MODE toggles visibility).
   zones.left.innerHTML = `
     <div class="lab-left-host">
       <div data-panel="arithmetic"></div>
@@ -33,7 +39,7 @@ if (app) {
   const arithmeticSlot = zones.left.querySelector('[data-panel="arithmetic"]');
   const compareSlot = zones.left.querySelector('[data-panel="compare"]');
 
-  /** @type {{ updateResults: Function, setLoading: Function, getValues: Function, setVisible?: Function } | null} */
+  /** @type {{ updateResults: Function, setLoading: Function, getValues: Function } | null} */
   let arithmetic = null;
   /** @type {ReturnType<typeof mountComparePanel> | null} */
   let compare = null;
@@ -42,6 +48,7 @@ if (app) {
 
   const footer = mountFooterHud(zones.footer);
   const canvas = mountCanvasHost(zones.canvas, {
+    initialViz,
     onHover(payload) {
       footer.setCoords(payload.coords);
       footer.setTelemetry({
@@ -54,10 +61,17 @@ if (app) {
 
   const rightDock = mountRightDock(zones.right, {
     spatialContext: canvasStartupContext(),
+    initialViz,
     onSpatialChange(values) {
       canvas.setSpatialConfig(values);
     },
+    onVizChange(values) {
+      canvas.setVizConfig(values);
+    },
   });
+
+  /** @type {ReturnType<typeof createSaeController> | null} */
+  let sae = null;
 
   const applyModeToLeft = (mode) => {
     const vis = leftPanelVisibility(mode);
@@ -90,10 +104,10 @@ if (app) {
       arithmetic.updateResults(results);
       canvas.renderArithmetic(raw);
     } catch (err) {
-      const message =
-        err?.message ||
-        'Arithmetic request failed. Check that the backend is running.';
-      modal.show('ARITHMETIC ERROR', message);
+      modal.show(
+        'ARITHMETIC ERROR',
+        err?.message || 'Arithmetic request failed. Check that the backend is running.',
+      );
     } finally {
       arithmetic.setLoading(false);
     }
@@ -105,11 +119,16 @@ if (app) {
       const { data } = await fetchCompareResults(provider, tokens, tokenMeta);
       compare?.updateCompareResults(data);
       canvas.renderCompare(data);
+      sae?.rememberRawCompare(data);
+      // Fresh Visualize leaves SAE OFF visually if it was encoding a prior scope.
+      if (sae?.getSettings()?.enabled) {
+        sae.forceDisable();
+      }
     } catch (err) {
-      const message =
-        err?.message ||
-        'Compare request failed. Check that the backend is running.';
-      modal.show('COMPARE ERROR', message);
+      modal.show(
+        'COMPARE ERROR',
+        err?.message || 'Compare request failed. Check that the backend is running.',
+      );
     } finally {
       compare?.setLoading(false);
     }
@@ -132,10 +151,12 @@ if (app) {
       applyModeToLeft(next);
       return;
     }
+    if (next === 'ARITHMETIC' && sae?.getSettings()?.enabled) {
+      sae.forceDisable();
+    }
     workspaceMode = next;
     applyModeToLeft(next);
     const { spatial, viewMode } = canvas.setWorkspaceMode(next);
-    // Keep header VIEW tab in sync with preferred framing (no re-entry: workspace unchanged).
     header.setSelection('view', viewMode);
     syncSpatialUiFromCanvas(spatial);
 
@@ -148,13 +169,12 @@ if (app) {
         if (items) {
           compare.updateCompareResults({
             count: items.length,
-            anchor: items[0]
-              ? { index: 0, text: items[0].text }
-              : null,
+            anchor: items[0] ? { index: 0, text: items[0].text } : null,
             items,
           });
         }
       }
+      sae?.refreshStatus();
     } else if (canvas.hasArithmeticData()) {
       canvas.refreshGeometry();
     }
@@ -162,7 +182,6 @@ if (app) {
 
   const header = mountHeader(zones.header, {
     onChange(state) {
-      // Only react to MODE changes — VIEW/RENDER sync from setSelection must not re-enter.
       if (
         (state.workspace === 'COMPARE' || state.workspace === 'ARITHMETIC') &&
         state.workspace !== workspaceMode
@@ -175,10 +194,30 @@ if (app) {
   arithmetic = mountArithmeticPanel(arithmeticSlot, {
     onCalculate: runCalculate,
   });
+
+  // Mount Compare first so saeUi exists, then wire controller.
   compare = mountComparePanel(compareSlot, {
     onCalculate: runCompare,
     onReorder: runCompareReorder,
+    onSaeToggle: (enabled) => sae?.onToggle(enabled),
+    onSaeTrain: (settings) => sae?.onTrain(settings),
+    getSaeSettings: () => (sae ? sae.getSettings() : loadSaeSettings()),
+    setSaeSettings: (s) => {
+      if (sae) sae.setSettings(s);
+      else saveSaeSettings(s);
+    },
   });
+
+  sae = createSaeController({
+    provider,
+    canvas,
+    compare,
+    rightDock,
+    modal,
+    getWorkspaceMode: () => workspaceMode,
+  });
+  compare.saeUi?.syncFromSettings();
+
   applyModeToLeft('ARITHMETIC');
 
   provider.checkHealth().then(async (health) => {
