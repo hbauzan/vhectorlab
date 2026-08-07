@@ -269,6 +269,11 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Solución Obligatoria**: Deep module `fieldInfo.js` — `FIELD_INFO` short EN catalog (≤28 chars), `infoTipMarkup`, `wireFieldInfo` (one tip at a time, outside/Escape closes, viewport-clamped). Wire on Arithmetic / Compare / SAE params / Spatial sliders / Visualization. Touch: `.field-info-btn` / `.field-info-tip` in `isUiTouchTarget`.
 - **Invariante**: help copy = English, short, mobile-first; do not rely on hover-only `title` for field meaning.
 
+### 4.14. GUI & Art epic (post-2.2.0)
+- **Norte**: canvas 3D = héroe; chrome glass fino; EN copy; portrait-first; no landscape-gate; tips tap (§4.13).
+- **Roadmap**: `roadmap/gui-art.md` + prompt `roadmap/PROMPT-gui-art.md` — cerrar A1–A6 (tipo, glass, emoji, rampa, motion, scope) **antes** de codear.
+- **Invariante**: polish visual no puede romper §4.1 Top-10, §4.1b mobile MQ, §3.4 startup ANALYSIS, ni WebGL §1.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas

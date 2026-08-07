@@ -38,7 +38,10 @@ Edge-hosted UI host that slides off-screen via CSS `transform` while keeping chi
 _Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounting panel DOM to “hide” it.
 
 ### Landscape Gate
-Soft, dismissible portrait-phone overlay that suggests rotating to landscape without locking orientation or pausing the 3D render loop.
+_Retired._ Former soft portrait overlay that suggested landscape; product prefers phone portrait. Do not reintroduce without an explicit ask.
+
+### Field Info Tip
+Compact tap “i” control next to an editable field; shows a short English popover (mobile-safe, not hover-only `title`). Catalog lives in `fieldInfo.js`.
 
 ### Wide Ribbon
 Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS`. Distinct from 1px WebGL lines.
