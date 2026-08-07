@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="VHectorLab 3D API",
     description="Backend API for 3D Vector Arithmetic & Semantic Embedding Visualizer",
-    version="2.2.0",
+    version="2.2.1",
     lifespan=lifespan,
 )
 
@@ -70,10 +70,10 @@ app.include_router(core_router)  # Also expose without /api prefix for convenien
 app.include_router(sae_router)
 
 # Mount static frontend files if dist/ exists (Docker / Production mode)
-from pathlib import Path
-
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+
+from backend.static_dist import resolve_dist_file
 
 dist_path = Path(__file__).resolve().parent.parent / "dist"
 if dist_path.exists():
@@ -82,10 +82,7 @@ if dist_path.exists():
 
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        file_path = dist_path / full_path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
-        return FileResponse(dist_path / "index.html")
+        return FileResponse(resolve_dist_file(dist_path, full_path))
 
 
 def _want_reload(host: str) -> bool:
