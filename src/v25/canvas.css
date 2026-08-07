@@ -1,0 +1,64 @@
+/* =============================================================================
+   VHectorLab-3D v25 — canvas host (WebGL hero in center zone)
+   ============================================================================= */
+
+.lab-shell__canvas.lab-canvas-host,
+.lab-canvas-host {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.lab-canvas-host canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Thread labels scoped to host (not full viewport — unlike legado) */
+.lab-canvas-host #thread-labels-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.lab-canvas-host #thread-labels-container.is-hidden {
+  display: none;
+}
+
+.lab-canvas-host .thread-label-card {
+  position: absolute;
+  transform: translate(-100%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(8, 14, 12, 0.88);
+  border: 1px solid rgba(62, 207, 142, 0.45);
+  border-radius: var(--lab-radius, 6px);
+  padding: 4px 10px;
+  color: var(--lab-text, #e8f5ef);
+  font-family: var(--lab-font-ui, Oxanium, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+}
+
+.lab-canvas-host .thread-label-card.res-label {
+  border-color: #ffe600;
+}
+
+.lab-canvas-host .thread-label-card.top1-label {
+  border-color: #00ccff;
+}
+
+.lab-canvas-host .thread-label-text {
+  color: inherit;
+  white-space: nowrap;
+}

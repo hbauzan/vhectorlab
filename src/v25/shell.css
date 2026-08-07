@@ -72,12 +72,13 @@ body {
 
 .lab-shell__canvas {
   flex: 1;
-  background: #050a08;
+  background: #050505;
   border: var(--lab-border-width) solid var(--lab-border-strong);
   border-radius: var(--lab-radius);
   box-shadow: var(--lab-inset);
   /* Full-bleed hero host within the center cell */
   min-height: 12rem;
+  overflow: hidden;
 }
 
 .lab-shell__placeholder {
