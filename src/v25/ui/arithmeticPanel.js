@@ -1,8 +1,10 @@
 /**
- * VHectorLab-3D v25 left Arithmetic chrome — form + Top-10 host (no API wire yet).
+ * VHectorLab-3D v25 left Arithmetic chrome — form + Top-10 host.
  * Scroll contract reuses legacy `ARITHMETIC_TOP10_SCROLL` formulas (lessons §4.1).
+ * API wire via `onCalculate` + `updateResults` (Fase 7).
  */
 import { ARITHMETIC_TOP10_SCROLL } from '../../ui/arithmeticResultsScroll.js';
+import { resultsListHtml } from '../arithmeticWire.js';
 
 export const ARITHMETIC_DEFAULTS = Object.freeze({
   wordA: 'king',
@@ -85,12 +87,18 @@ export function mountArithmeticPanel(container, options = {}) {
 
   const form = container.querySelector('#lab-arithmetic-form');
   const btn = container.querySelector('#lab-btn-calculate');
+  const list = container.querySelector('#lab-results-list');
   const onCalculate = typeof options.onCalculate === 'function' ? options.onCalculate : null;
 
   const setLoading = (loading) => {
     if (!btn) return;
     btn.disabled = loading;
     btn.textContent = loading ? ARITHMETIC_COPY.calculating : ARITHMETIC_COPY.calculate;
+  };
+
+  const updateResults = (results) => {
+    if (!list) return;
+    list.innerHTML = resultsListHtml(results);
   };
 
   form?.addEventListener('submit', (e) => {
@@ -115,5 +123,6 @@ export function mountArithmeticPanel(container, options = {}) {
       };
     },
     setLoading,
+    updateResults,
   };
 }
