@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 2 tokens — pending review)  
+**Estado:** en curso (Fase 3 shell — shipping)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -210,6 +210,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **Branch:** `feat/v25-shell`.
 - **No:** lógica de negocio.
 
+#### Hand-off — Fase 3
+- **Branch / commit:** `feat/v25-shell` (tip after commit).
+- **Cómo probar:** `http://127.0.0.1:5173/v25/` — desktop: header / left / canvas / right / footer. DevTools phone: stack header→canvas→left→right→footer; canvas min ~40vh. Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25Shell.test.js`); `npm run build`.
+- **Hecho:** `ui/shell.js` + `shell.css`; MQ alineado a `MOBILE_MQ` legado; placeholders vacíos.
+- **NO hecho (siguiente fase):** Header chrome real (`feat/v25-header`).
+- **Lecciones:** ninguna nueva.
+- **Riesgos abiertos:** docks colapsables → Fase 12; header content → Fase 4.
+- **Archivos tocados (alto nivel):** `src/v25/ui/shell.js`, `shell.css`, `main.js`, `style.css`, tests + roadmap/CHANGELOG.
+
 ### Fase 4 — Header
 - **Hacer:** brand **VHectorLab-3D**, version-tag (leer manifest o constante sync luego), selectors MODE/VIEW/RENDER como UI state (pueden no conectar engine), badge ONLINE.
 - **Invariante copy:** EN.
@@ -290,8 +300,8 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | :---: | :--- | :--- | :--- | :--- |
 | 0 | ✅ docs | `main` `2d79175` | 2026-08-07 | Plan inicial |
 | 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1`; slash fix `019bdbe` |
-| 2 | ✅ tokens (pending merge) | `feat/v25-tokens` | 2026-08-07 | tokens + skin demo; ver hand-off |
-| 3 | ☐ | | | |
+| 2 | ✅ merged | `feat/v25-tokens` → `main` | 2026-08-07 | tokens + skin utilities |
+| 3 | ✅ shell (pending merge) | `feat/v25-shell` | 2026-08-07 | 5-zone grid; ver hand-off |
 | 4 | ☐ | | | |
 | 5 | ☐ | | | |
 | 6 | ☐ | | | |
