@@ -152,6 +152,9 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Zero coverage');
     expect(html).toContain('viz-labels-toggle');
     expect(html).toContain('Hide labels');
+    expect(html).toContain('field-info-btn');
+    expect(html).toContain('data-field-info="Which signs show."');
+    expect(html).toContain('data-field-info="% held at zero."');
   });
 
   it('collapse tab is a sibling of viz-panel-body (outside card chrome)', () => {

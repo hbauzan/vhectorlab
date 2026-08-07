@@ -16,6 +16,8 @@ const UI_BLOCK_SELECTOR = [
   '#touch-controls',
   '.glass-modal',
   '.modal-overlay',
+  '.field-info-tip',
+  '.field-info-btn',
 ].join(',');
 
 /**
