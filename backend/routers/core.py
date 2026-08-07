@@ -49,6 +49,7 @@ def health_check() -> dict[str, Any]:
         "model": state.model_name,
         "vocab_size": len(state.vocab_words),
         "is_loaded": state.is_loaded,
+        "device": getattr(state, "device", "cpu"),
     }
 
 

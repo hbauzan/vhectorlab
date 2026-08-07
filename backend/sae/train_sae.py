@@ -13,31 +13,15 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
+from backend.device import get_optimal_device
 from backend.sae.sae_model import TopKSAE
 
 logger = logging.getLogger("train_sae")
 
 ProgressCb = Callable[..., None]
 
-
-def get_optimal_device(env_device: str = "AUTO") -> str:
-    """Resolve SAE_DEVICE / train device: AUTO|CPU|CUDA|MPS|GPU."""
-    env_device = (env_device or "AUTO").upper().strip()
-    if env_device == "CPU":
-        return "cpu"
-    if env_device in ("GPU", "AUTO", "CUDA", "MPS"):
-        if env_device == "CUDA" and torch.cuda.is_available():
-            return "cuda"
-        if env_device == "MPS" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            return "mps"
-        if env_device in ("GPU", "AUTO"):
-            if torch.cuda.is_available():
-                return "cuda"
-            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-                return "mps"
-            return "cpu"
-        return "cpu"
-    return "cpu"
+# Re-export for callers that imported get_optimal_device from this module.
+__all__ = ["get_optimal_device", "train_sae"]
 
 
 def _device_type(device: torch.device | str) -> str:

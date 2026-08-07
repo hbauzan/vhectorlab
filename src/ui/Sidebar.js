@@ -73,6 +73,15 @@ export class Sidebar {
     });
   }
 
+  setInputs(wordA, wordB, wordC) {
+    const a = this.element.querySelector('#word-a');
+    const b = this.element.querySelector('#word-b');
+    const c = this.element.querySelector('#word-c');
+    if (a) a.value = wordA ?? '';
+    if (b) b.value = wordB ?? '';
+    if (c) c.value = wordC ?? '';
+  }
+
   setLoading(loading) {
     this.btnCalculate.disabled = loading;
     this.btnCalculate.textContent = loading

@@ -183,13 +183,24 @@ export class Navbar {
     });
   }
 
-  setStatus(online, modelName = '') {
+  setStatus(online, modelName = '', device = '') {
     if (online) {
       this.statusDot.className = 'status-dot online';
-      this.statusText.textContent = modelName ? `ONLINE (${modelName})` : 'ONLINE';
+      // Inline format keeps Navbar free of circular imports with arithmeticDefaults
+      const model = String(modelName || '').trim();
+      const dev = String(device || '').trim().toLowerCase();
+      let label = 'ONLINE';
+      if (model && dev) label = `ONLINE (${model} · ${dev})`;
+      else if (model) label = `ONLINE (${model})`;
+      else if (dev) label = `ONLINE (${dev})`;
+      this.statusText.textContent = label;
+      this.statusDot.title = label;
+      this.statusText.title = label;
     } else {
       this.statusDot.className = 'status-dot offline';
       this.statusText.textContent = 'OFFLINE';
+      this.statusDot.title = 'OFFLINE';
+      this.statusText.title = 'OFFLINE';
     }
   }
 }

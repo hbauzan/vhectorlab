@@ -23,6 +23,8 @@ def test_app_endpoints():
         assert data["status"] == "ok"
         assert data["is_loaded"] is True
         assert data["vocab_size"] > 0
+        assert "device" in data
+        assert data["device"] in ("cpu", "cuda", "mps")
 
         # 2. Embed endpoint
         res = client.post("/embed", json={"text": "hello world"})

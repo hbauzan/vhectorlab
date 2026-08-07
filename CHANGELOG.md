@@ -4,6 +4,9 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **HF Space cpu-basic demo path** (`feat/hf-space-cpu-demo`): Docker torch CPU (`UV_TORCH_BACKEND=cpu`), vocab embeddings NPZ at image build, `/health.device`, navbar `ONLINE (model · device)`, ARITHMETIC `localStorage` persistence (`vl3d.arithmetic.*`), setup option 7 smoke-run + option 8 `hf` create Space (docker / cpu-basic) + push, README Space YAML frontmatter.
+
 ### Changed
 - **Repo / local folder slug**: GitHub + working copy **`vhectorlab`** (was `VHectorLab-3D`). Product name **VHectorLab 3D** unchanged; npm/manifest id stays `vhectorlab-3d`.
 
@@ -12,6 +15,8 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **`setup.sh` Ctrl+C**: pauses log follow / exits panel without stopping services; only option 10 stops. Menu banner OS line removed.
 - **`setup.sh` process group**: enable `set -m` so backend/vite are not in the panel PGID (Ctrl+C was killing the stack). Healthy path also skips tests.
 - **`setup.sh` detached session**: replace `set -m` with `start_new_session` launch (Vite was freezing at STAT T / sick). Option 1 recycles sick stacks instead of aborting.
+- **Offline modal**: no longer hardcodes `127.0.0.1:8000` (works for local setup + HF Space).
+- **Uvicorn reload**: off by default when `HOST=0.0.0.0` or `UVICORN_RELOAD=0` (Docker/HF).
 
 ## [2.1.1] - 2026-08-03
 

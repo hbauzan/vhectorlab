@@ -424,8 +424,8 @@ show_menu() {
     echo -e " ${BLUE}4.${RESET} ${BOLD}Run Frontend Unit Tests${RESET} ${DIM}(Vitest)${RESET}"
     echo -e " ${BLUE}5.${RESET} ${BOLD}Run Backend Unit Tests${RESET} ${DIM}(pytest)${RESET}"
     echo -e " ${MAGENTA}6.${RESET} ${BOLD}Manage Vocabulary${RESET} ${DIM}(Custom vocab.txt / N words)${RESET}"
-    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(needs Docker Desktop · port 7860)${RESET}"
-    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(Interactive HF Hub wizard · no Docker)${RESET}"
+    echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(Docker Desktop · torch CPU · :7860)${RESET}"
+    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(hf CLI · docker sdk · cpu-basic)${RESET}"
     echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
     echo -e " ${DIM}0. Exit${RESET}"
@@ -591,37 +591,145 @@ ensure_docker() {
     return 1
 }
 
+ensure_hf_cli() {
+    refresh_path
+    if command -v hf &> /dev/null; then
+        echo -e "  ${GREEN}✓ Hugging Face CLI available ($(hf version 2>/dev/null | head -1 || echo hf)).${RESET}"
+        return 0
+    fi
+    echo -e "${YELLOW}▶ Installing Hugging Face Hub CLI via uv…${RESET}"
+    uv tool install huggingface_hub[cli] 2>/dev/null || uv pip install --system 'huggingface_hub[cli]' 2>/dev/null || {
+        echo -e "${RED}❌ Could not install hf CLI. Run: uv tool install 'huggingface_hub[cli]' then hf auth login${RESET}"
+        return 1
+    }
+    refresh_path
+    if ! command -v hf &> /dev/null; then
+        echo -e "${RED}❌ hf not on PATH after install. Open a new terminal or run: uv tool update-shell${RESET}"
+        return 1
+    fi
+    return 0
+}
+
+ensure_hf_auth() {
+    if ! hf auth whoami &> /dev/null; then
+        echo -e "${RED}❌ Not logged in to Hugging Face. Run: hf auth login${RESET}"
+        echo -e "${DIM}  Create a write token at https://huggingface.co/settings/tokens${RESET}"
+        return 1
+    fi
+    local who
+    who="$(hf auth whoami 2>/dev/null | head -5 || true)"
+    echo -e "  ${GREEN}✓ HF auth OK${RESET} ${DIM}${who}${RESET}"
+    return 0
+}
+
 build_hf_docker() {
-    echo -e "${YELLOW}${BOLD}Compiling Hugging Face Spaces Monolithic Docker Image...${RESET}"
+    echo -e "${YELLOW}${BOLD}Compiling Hugging Face Spaces Docker Image (cpu-basic / torch CPU)…${RESET}"
     if ! ensure_docker; then
         read -p "Press Enter to return to menu..."
         return
     fi
+    echo -e "${DIM}  UV_TORCH_BACKEND=cpu · port 7860 · precomputes vocab_embeddings.npz in-image${RESET}"
     docker build -t vhectorlab-3d:latest .
     if [ $? -ne 0 ]; then
         echo -e "${RED}${BOLD}❌ Docker build failed.${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
-    echo -e "${GREEN}${BOLD}✅ Docker build complete! Image tagged vhectorlab-3d:latest (HF Spaces port 7860).${RESET}"
+    echo -e "${GREEN}${BOLD}✅ Image tagged vhectorlab-3d:latest${RESET}"
+    read -p "Smoke-test locally on :7860 now? [y/N]: " smoke
+    if [[ "$smoke" =~ ^[Yy]$ ]]; then
+        echo -e "${CYAN}▶ docker run --rm -p 7860:7860 vhectorlab-3d:latest${RESET}"
+        echo -e "${DIM}  Open http://127.0.0.1:7860 — Ctrl+C stops the container.${RESET}"
+        docker run --rm -p 7860:7860 vhectorlab-3d:latest
+    fi
     read -p "Press Enter to return to menu..."
 }
 
+# Normalize user input to Hugging Face Space id: "namespace/name".
+# Accepts bare id, or URLs like https://huggingface.co/spaces/ns/name
+normalize_hf_space_id() {
+    local raw="$1"
+    raw="$(echo "$raw" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    # Strip common URL prefixes (order matters: spaces/ before bare hub host)
+    raw="$(echo "$raw" | sed -E \
+        -e 's#^https?://huggingface\.co/spaces/##' \
+        -e 's#^https?://hf\.co/spaces/##' \
+        -e 's#^https?://huggingface\.co/##' \
+        -e 's#^https?://hf\.co/##' \
+        -e 's#/$##')"
+    echo "$raw"
+}
+
+validate_hf_space_id() {
+    local id="$1"
+    if [[ ! "$id" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9._-]+$ ]]; then
+        return 1
+    fi
+    return 0
+}
+
 publish_hf_space() {
-    echo -e "${YELLOW}${BOLD}--- Hugging Face Spaces Publisher Wizard ---${RESET}"
-    read -p "Enter your Hugging Face Space repository ID (e.g. username/vhectorlab-3d): " space_id
+    echo -e "${YELLOW}${BOLD}--- Hugging Face Spaces Publisher (Docker · cpu-basic) ---${RESET}"
+    echo -e "${DIM}  Existing Docker Space? Reuse it (e.g. hbauzan/llm-semantic-visualizer).${RESET}"
+    echo -e "${DIM}  Format: namespace/name — not a profile URL.${RESET}"
+    if ! ensure_hf_cli; then
+        read -p "Press Enter..."
+        return
+    fi
+    if ! ensure_hf_auth; then
+        read -p "Press Enter..."
+        return
+    fi
+
+    read -p "Enter Space id (e.g. hbauzan/llm-semantic-visualizer): " space_raw
+    local space_id
+    space_id="$(normalize_hf_space_id "$space_raw")"
     if [ -z "$space_id" ]; then
         echo -e "${RED}Space ID required.${RESET}"
         read -p "Press Enter..."
         return
     fi
-    
-    echo -e "${CYAN}Building production frontend bundle...${RESET}"
-    npm run build
-    
-    echo -e "${CYAN}Initializing git sync to Hugging Face Hub (https://huggingface.co/spaces/$space_id)...${RESET}"
-    git push https://huggingface.co/spaces/$space_id main
-    echo -e "${GREEN}${BOLD}✅ Sync complete!${RESET}"
+    if ! validate_hf_space_id "$space_id"; then
+        echo -e "${RED}❌ Invalid Space id: ${space_raw}${RESET}"
+        echo -e "${RED}   Use namespace/name only, e.g. hbauzan/vhectorlab-3d${RESET}"
+        echo -e "${DIM}   (You pasted a profile/URL; that is not a Space repository.)${RESET}"
+        read -p "Press Enter..."
+        return
+    fi
+    if [ "$space_id" != "$space_raw" ]; then
+        echo -e "${CYAN}  Normalized to: ${BOLD}${space_id}${RESET}"
+    fi
+
+    echo -e "${CYAN}▶ Ensuring Space exists (sdk=docker, flavor=cpu-basic)…${RESET}"
+    if ! hf repos create "$space_id" --type space --space-sdk docker --flavor cpu-basic --exist-ok; then
+        # Older CLI fallback without --flavor
+        if ! hf repos create "$space_id" --type space --space-sdk docker --exist-ok; then
+            echo -e "${RED}❌ Failed to create/ensure Space. Check the id and token scopes.${RESET}"
+            read -p "Press Enter..."
+            return
+        fi
+        echo -e "${YELLOW}⚠ Created without --flavor; set hardware to cpu-basic in Space Settings if needed.${RESET}"
+    fi
+
+    echo -e "${CYAN}Building production frontend bundle…${RESET}"
+    npm run build || {
+        echo -e "${RED}❌ Frontend build failed.${RESET}"
+        read -p "Press Enter..."
+        return
+    }
+
+    echo -e "${CYAN}Pushing current branch to https://huggingface.co/spaces/${space_id} (main)…${RESET}"
+    echo -e "${DIM}  HF builds the Docker image from this repo (Dockerfile + README sdk: docker).${RESET}"
+    if ! git push "https://huggingface.co/spaces/${space_id}" HEAD:main; then
+        echo -e "${RED}❌ git push to Space failed. Ensure the remote accepts the commit and you have write access.${RESET}"
+        echo -e "${DIM}  Tip: commit local changes first if the Space is empty, or check hf auth token has write.${RESET}"
+        read -p "Press Enter..."
+        return
+    fi
+
+    echo -e "${GREEN}${BOLD}✅ Published.${RESET}"
+    echo -e "  Space URL: ${CYAN}https://huggingface.co/spaces/${space_id}${RESET}"
+    echo -e "${DIM}  First build downloads torch CPU + model and precomputes vocab — may take several minutes.${RESET}"
     read -p "Press Enter to return to menu..."
 }
 

@@ -28,6 +28,10 @@ const apiProxy = {
 };
 
 export default defineConfig({
+  build: {
+    // Three.js + app UI naturally exceeds Vite's default 500 kB advisory.
+    chunkSizeWarningLimit: 700,
+  },
   server: {
     host: true,
     port: 5173,
