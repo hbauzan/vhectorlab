@@ -2,8 +2,9 @@
 
 Epic de **pulido visual / arte de producto** sobre un stack ya funcional (embeddings, SAE, docks, mobile chrome, tips).
 
-**Estado:** activo (post `2.2.0`)  
-**Prompt agente:** [`PROMPT-gui-art.md`](./PROMPT-gui-art.md)
+**Estado:** activo (post `2.2.0`) — **ejecución operativa:** [`gui-art-v25.md`](./gui-art-v25.md) (`/v25/` bandera blanca)  
+**Prompt agente (fases):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
+**Prompt genérico (legado):** [`PROMPT-gui-art.md`](./PROMPT-gui-art.md)
 
 ---
 
@@ -30,16 +31,16 @@ La app debe sentirse como un **instrumento científico-cinemático**, no como un
 | Touch chrome | `TouchControls.js` | Joystick / Q-E |
 | Tips | `fieldInfo.js` | “i” popovers |
 
-## 2. Decisiones abiertas (el agente DEBE preguntar antes de codear)
+## 2. Decisiones (cerradas para epic v25 — ver `gui-art-v25.md` §1)
 
-| ID | Pregunta | Opciones sugeridas |
-| :--- | :--- | :--- |
-| A1 | Tipografía de producto | Mantener Inter / cambiar display (una sola familia expresiva) / split UI vs brand |
-| A2 | Intensidad glass | Más blur+borde / más sólido opaco / menos glass |
-| A3 | Emoji en CTAs (⚡🔍📐) | Quitar / reducir a iconos SVG / dejar |
-| A4 | Rampa de marca (±1) | Conservar `#FFE600`/`#000`/`#9900E6` / proponer nueva triad |
-| A5 | Motion budget | Solo docks+tips / + label fade / + thread entrance |
-| A6 | Scope del primer slice | Solo chrome 2D / solo look 3D POINTS / ambos en un MINOR |
+| ID | Decisión v25 |
+| :--- | :--- |
+| A1 | 1 familia display expresiva + mono en números |
+| A2 | Menos glass → chapa de lab |
+| A3 | Reducir emoji; botones 3D pressable |
+| A4 | Adaptar triad actual → dark/fluo portal (sin neón chillón) |
+| A5 | 2–3 gestos (press, dock, tip) |
+| A6 | Empezar chrome 2D en `/v25/`; 3D/wire en fases posteriores; legado `/` intacto |
 
 ## 3. Invariantes que NO romper
 
