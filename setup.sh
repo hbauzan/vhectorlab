@@ -670,10 +670,37 @@ validate_hf_space_id() {
     return 0
 }
 
+load_dotenv() {
+    # Export KEY=VAL from .env (ignore comments / blank lines). Used for option 8 defaults.
+    if [ ! -f .env ]; then
+        return 0
+    fi
+    local line key val
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ''|\#*) continue ;;
+        esac
+        if [[ "$line" != *=* ]]; then
+            continue
+        fi
+        key="${line%%=*}"
+        val="${line#*=}"
+        key="$(echo "$key" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        val="$(echo "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")"
+        if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+            export "$key=$val"
+        fi
+    done < .env
+}
+
 publish_hf_space() {
+    load_dotenv
+    local default_space="${HF_SPACE_ID:-hbauzan/llm-semantic-visualizer}"
+    local force_push="${HF_SPACE_FORCE_PUSH:-1}"
+
     echo -e "${YELLOW}${BOLD}--- Hugging Face Spaces Publisher (Docker · cpu-basic) ---${RESET}"
-    echo -e "${DIM}  Existing Docker Space? Reuse it (e.g. hbauzan/llm-semantic-visualizer).${RESET}"
-    echo -e "${DIM}  Format: namespace/name — not a profile URL.${RESET}"
+    echo -e "${DIM}  Defaults from .env — press Enter to accept.${RESET}"
+    echo -e "${DIM}  Space: ${default_space}  ·  force-push: ${force_push}${RESET}"
     if ! ensure_hf_cli; then
         read -p "Press Enter..."
         return
@@ -683,7 +710,9 @@ publish_hf_space() {
         return
     fi
 
-    read -p "Enter Space id (e.g. hbauzan/llm-semantic-visualizer): " space_raw
+    local space_raw
+    read -p "Enter Space id [${default_space}]: " space_raw
+    space_raw="${space_raw:-$default_space}"
     local space_id
     space_id="$(normalize_hf_space_id "$space_raw")"
     if [ -z "$space_id" ]; then
@@ -693,7 +722,7 @@ publish_hf_space() {
     fi
     if ! validate_hf_space_id "$space_id"; then
         echo -e "${RED}❌ Invalid Space id: ${space_raw}${RESET}"
-        echo -e "${RED}   Use namespace/name only, e.g. hbauzan/vhectorlab-3d${RESET}"
+        echo -e "${RED}   Use namespace/name only, e.g. hbauzan/llm-semantic-visualizer${RESET}"
         echo -e "${DIM}   (You pasted a profile/URL; that is not a Space repository.)${RESET}"
         read -p "Press Enter..."
         return
@@ -728,18 +757,32 @@ publish_hf_space() {
         return
     }
 
-    echo -e "${CYAN}Pushing current branch to https://huggingface.co/spaces/${space_id} (main)…${RESET}"
+    local space_url="https://huggingface.co/spaces/${space_id}"
+    echo -e "${CYAN}Pushing HEAD → ${space_url} (main)…${RESET}"
     echo -e "${DIM}  HF builds the Docker image from this repo (Dockerfile + README sdk: docker).${RESET}"
-    if ! git push "https://huggingface.co/spaces/${space_id}" HEAD:main; then
-        echo -e "${RED}❌ git push to Space failed. Ensure the remote accepts the commit and you have write access.${RESET}"
-        echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
-        read -p "Press Enter..."
-        return
+
+    # Space git history is independent of GitHub. Default force-push replaces the old
+    # Space tree (e.g. predecessor app) with this repo — does NOT touch origin/main.
+    if [ "$force_push" = "1" ] || [ "$force_push" = "true" ] || [ "$force_push" = "yes" ]; then
+        echo -e "${DIM}  Using --force (HF_SPACE_FORCE_PUSH=${force_push}); GitHub main is untouched.${RESET}"
+        if ! git push --force "$space_url" HEAD:main; then
+            echo -e "${RED}❌ git push --force to Space failed.${RESET}"
+            echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
+            read -p "Press Enter..."
+            return
+        fi
+    else
+        if ! git push "$space_url" HEAD:main; then
+            echo -e "${RED}❌ git push to Space failed (divergent history?).${RESET}"
+            echo -e "${DIM}  Set HF_SPACE_FORCE_PUSH=1 in .env to overwrite the Space remote.${RESET}"
+            read -p "Press Enter..."
+            return
+        fi
     fi
 
     echo -e "${GREEN}${BOLD}✅ Published.${RESET}"
-    echo -e "  Space URL: ${CYAN}https://huggingface.co/spaces/${space_id}${RESET}"
-    echo -e "${DIM}  First build downloads torch CPU + model and precomputes vocab — may take several minutes.${RESET}"
+    echo -e "  Space URL: ${CYAN}${space_url}${RESET}"
+    echo -e "${DIM}  Build may take several minutes (torch CPU + model + vocab NPZ).${RESET}"
     read -p "Press Enter to return to menu..."
 }
 
