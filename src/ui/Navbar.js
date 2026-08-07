@@ -3,6 +3,11 @@
  * Mobile: overflow tab strip gets ◀ ▶ scroll arrows.
  */
 import { getTabsScrollState, nextTabsScrollLeft } from './navbarTabsScroll.js';
+import {
+  DEFAULT_RENDER_MODE,
+  DEFAULT_VIEW_MODE,
+  DEFAULT_WORKSPACE_MODE,
+} from './appViewDefaults.js';
 
 export class Navbar {
   constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
@@ -10,6 +15,10 @@ export class Navbar {
     this.onRenderModeChange = onRenderModeChangeCallback;
     this.onViewModeChange = onViewModeChangeCallback;
     this.onWorkspaceModeChange = onWorkspaceModeChangeCallback;
+
+    const workspaceActive = (mode) => (mode === DEFAULT_WORKSPACE_MODE ? ' active' : '');
+    const viewActive = (mode) => (mode === DEFAULT_VIEW_MODE ? ' active' : '');
+    const renderActive = (mode) => (mode === DEFAULT_RENDER_MODE ? ' active' : '');
 
     this.element = document.createElement('header');
     this.element.id = 'top-navbar';
@@ -28,20 +37,20 @@ export class Navbar {
         <div class="navbar-center-controls">
           <div class="workspace-mode-tabs">
             <span class="tab-label">MODE:</span>
-            <button data-workspace="ARITHMETIC" class="workspace-tab active">ARITHMETIC</button>
-            <button data-workspace="COMPARE" class="workspace-tab">COMPARE</button>
+            <button data-workspace="ARITHMETIC" class="workspace-tab${workspaceActive('ARITHMETIC')}">ARITHMETIC</button>
+            <button data-workspace="COMPARE" class="workspace-tab${workspaceActive('COMPARE')}">COMPARE</button>
           </div>
 
           <div class="view-mode-tabs">
             <span class="tab-label">VIEW:</span>
-            <button data-view="ANALYSIS" class="view-tab">ANALYSIS</button>
-            <button data-view="NAVIGATION" class="view-tab active">NAVIGATION</button>
+            <button data-view="ANALYSIS" class="view-tab${viewActive('ANALYSIS')}">ANALYSIS</button>
+            <button data-view="NAVIGATION" class="view-tab${viewActive('NAVIGATION')}">NAVIGATION</button>
           </div>
 
           <div class="render-mode-tabs">
             <span class="tab-label">RENDER:</span>
-            <button data-mode="POINTS" class="mode-tab active">POINTS</button>
-            <button data-mode="RIBBONS" class="mode-tab">RIBBONS</button>
+            <button data-mode="POINTS" class="mode-tab${renderActive('POINTS')}">POINTS</button>
+            <button data-mode="RIBBONS" class="mode-tab${renderActive('RIBBONS')}">RIBBONS</button>
           </div>
         </div>
         <button type="button" class="navbar-tabs-arrow navbar-tabs-next" aria-label="Scroll tabs right" title="Next">▶</button>

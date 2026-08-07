@@ -1,3 +1,8 @@
+import {
+  DEFAULT_RENDER_MODE,
+  DEFAULT_WORKSPACE_MODE,
+} from '../ui/appViewDefaults.js';
+
 /**
  * Normalize render mode to the supported product surface.
  * Unknown / retired modes (e.g. legacy "MESH") fall back to POINTS.
@@ -17,8 +22,8 @@ export class AppState {
     this.wordB = "man";
     this.wordC = "woman";
     this.topK = 10;
-    this.renderMode = "POINTS"; // "POINTS" | "RIBBONS"
-    this.workspaceMode = "ARITHMETIC"; // "ARITHMETIC" | "COMPARE"
+    this.renderMode = DEFAULT_RENDER_MODE; // "POINTS" | "RIBBONS"
+    this.workspaceMode = DEFAULT_WORKSPACE_MODE; // "ARITHMETIC" | "COMPARE"
 
     this.backendConnected = false;
     this.arithmeticData = null;

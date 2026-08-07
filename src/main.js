@@ -50,6 +50,9 @@ import {
 } from './ui/saeControlsDefaults.js';
 import { wireFieldInfo } from './ui/fieldInfo.js';
 import {
+  DEFAULT_VIEW_MODE,
+} from './ui/appViewDefaults.js';
+import {
   loadArithmeticSettings,
   saveArithmeticSettings,
 } from './ui/arithmeticDefaults.js';
@@ -80,8 +83,8 @@ class VHectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. View Mode State ("NAVIGATION" by default | "ANALYSIS")
-    this.viewMode = 'NAVIGATION';
+    // 3. View Mode State — startup ARITHMETIC | ANALYSIS | POINTS
+    this.viewMode = DEFAULT_VIEW_MODE;
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
@@ -406,7 +409,7 @@ class VHectorLabApp {
   }
 
   async init() {
-    // Initial camera for startup ARITHMETIC|NAVIGATION|POINTS (corridor fallback)
+    // Initial camera for startup ARITHMETIC|ANALYSIS|POINTS
     this.navigation.setContextView({
       workspaceMode: state.workspaceMode,
       viewMode: this.viewMode,

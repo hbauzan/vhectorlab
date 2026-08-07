@@ -11,6 +11,8 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ### Changed
 - **Repo / local folder slug**: GitHub + working copy **`vhectorlab`** (was `VHectorLab-3D`). Product name **VHectorLab 3D** unchanged; npm/manifest id stays `vhectorlab-3d`.
 - **Landscape gate retired**: no more “Better in landscape” cartel — phone portrait is preferred.
+- **Arithmetic Top-10**: list scrolls with a **120px floor** (`max(120px, min(…, dvh))`); on short viewports (≤560px) the whole Arithmetic panel scrolls so neighbors stay reachable. Mobile MQ also matches short landscape phones (`max-height: 500px` + `hover: none`) so touch chrome does not drop off.
+- **Startup chrome**: default is **ARITHMETIC | ANALYSIS | POINTS** (was NAVIGATION).
 
 ### Fixed
 - **`setup.sh` option 8**: defaults from `.env` (`HF_SPACE_ID`, `HF_SPACE_FORCE_PUSH=1`); skip create if Space exists; force-push to Space remote only (not GitHub) so Enter×N publishes over divergent predecessor history.
