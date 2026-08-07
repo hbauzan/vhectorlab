@@ -61,7 +61,12 @@
 .lab-modal__footer {
   display: flex;
   justify-content: flex-end;
+  gap: var(--lab-space-2);
   border-top: 1px solid var(--lab-border);
+}
+
+.lab-modal__cancel.is-hidden {
+  display: none !important;
 }
 
 /* Top-10 result rows */
