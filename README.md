@@ -1,3 +1,13 @@
+---
+title: VHectorLab 3D
+emoji: 🧭
+colorFrom: gray
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # VHectorLab 3D
 
 3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`).
@@ -30,12 +40,12 @@ Choose **option `1`** (`Deploy / Start Tool`).
 
 That option will:
 
-2. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
-3. **If both healthy**: skip install/sync, tests, and start; open the browser
-4. **If either is sick** (port/process/health mismatch, e.g. frozen Vite): recycle both (stop + start after tests)
-5. **If only one is healthy**: restart **both** services after prereqs + tests
-6. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
-7. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
+1. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
+2. **If both healthy**: skip install/sync, tests, and start; open the browser
+3. **If either is sick** (port/process/health mismatch, e.g. frozen Vite): recycle both (stop + start after tests)
+4. **If only one is healthy**: restart **both** services after prereqs + tests
+5. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
+6. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
 
 App URL when ready:
 
@@ -65,11 +75,11 @@ App URL when ready:
 
 You do **not** need to install `uv` or Node by hand on a typical Mac — option 1 handles that. You *do* need network access and (for Homebrew) permission to install software.
 
-### Optional: Docker Desktop (options 7 only)
+### Optional: Docker Desktop (option 7)
 
 Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) if you want to build the Hugging Face Spaces image locally. After install, open Docker Desktop and wait until the engine is running (whale icon steady), then use option **7**.
 
-Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space — it does **not** require Docker.
+Option **8** creates/publishes a **Docker** Space on **cpu-basic** via the `hf` CLI + `git push` (Hub builds the image). It does **not** require Docker Desktop locally.
 
 ---
 
@@ -83,8 +93,8 @@ Option **8** (publish to HF Hub) uses `npm run build` + `git push` to the Space 
 | **4** | Frontend unit tests (Vitest) |
 | **5** | Backend unit tests (pytest) |
 | **6** | Vocabulary: load a custom file or generate N words |
-| **7** | Build Hugging Face Spaces Docker image (**requires Docker Desktop**) |
-| **8** | Publish to Hugging Face Space (git sync; no Docker) |
+| **7** | Build HF Spaces Docker image locally (torch CPU · optional :7860 smoke) |
+| **8** | Create/publish HF Space (`sdk: docker`, cpu-basic) via `hf` + git push |
 | **9** | View backend logs |
 | **10** | **Stop** / clean services (always kills; not idempotent) |
 | **0** | Exit |

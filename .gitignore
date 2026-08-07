@@ -29,6 +29,7 @@ htmlcov/
 # SAE / model weight binaries
 *.pt
 !backend/artifacts/.gitkeep
+public/vocab_embeddings.npz
 
 # Logs & temp
 *.log
