@@ -49,7 +49,9 @@ That option will:
 
 App URL when ready:
 
-👉 **http://127.0.0.1:5173**
+👉 **http://127.0.0.1:5173** (legacy UI)
+
+Parallel chrome work-in-progress: **http://127.0.0.1:5173/v25/** (scaffold; see `roadmap/gui-art-v25.md`).
 
 - Pause live logs: `Ctrl+C` → **Enter** returns to the menu; **Ctrl+C** again exits the panel (services keep running)
 - Stop services: option **`10`** only (Ctrl+C never stops the stack)
