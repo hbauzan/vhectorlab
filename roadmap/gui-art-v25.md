@@ -1,11 +1,11 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fases 1–10 en `main` — siguiente: **Fase 11 SAE + viz**)  
+**Estado:** en curso (Fases 1–11 en `main` — siguiente: **Fase 12 mobile**)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ `ebabbc3` (Fase 10 Compare)
+**HEAD tip (ops):** `main` @ Fase 11 SAE+viz (update tip after merge)
 
 ---
 
@@ -331,6 +331,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** Train/Clean parity razonable; sign filter + color anchors.
 - **Branch:** `feat/v25-sae-viz`.
 
+#### Hand-off — Fase 11
+- **Branch / commit:** `feat/v25-sae-viz` → `main` (after ship).
+- **Cómo probar:** `/v25/` — right dock Show All/+/- and color anchors change POINTS live (both MODEs); labels toggle; prefs persist. MODE COMPARE → Visualize → Train SAE → progress → Clean/Denoise ON (forces + filter, SAE embeddings) → OFF restores RAW. Arithmetic untouched. Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25VizWire.test.js`); `npm run build`.
+- **Hecho:** `setVizConfig` + LS persist; SAE chrome on Compare via `wireSaeControls`; `saeController` train/poll/encode/restore + dim-span; filter bridge D3/D4.
+- **NO hecho (siguiente fase):** mobile docks + tips + joystick (`feat/v25-mobile`); VIEW/RENDER engine tabs; dim-sort.
+- **Lecciones:** ninguna nueva de runtime (reuso SAE stack legado).
+- **Riesgos abiertos para Fase 12:** CollapsibleDock port; field-info tips; TouchControls; Top-10 scroll floors on short MQ.
+- **Archivos tocados (alto nivel):** `canvasHost.js`, `rightDock.js`, `saeController.js`, `comparePanel.js`, `main.js`, `compare.css`, `labModal.js`, tests + roadmap/CHANGELOG.
+
 ### Fase 12 — Mobile + tips + touch
 - **DoD:** docks colapsables; tips tap; joystick; no regress “lista cortada” / landscape corto.
 - **Branch:** `feat/v25-mobile`.
@@ -380,7 +390,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 8 | ✅ merged | `feat/v25-canvas-wire` → `main` | 2026-08-07 | engine in canvas; POINTS; hover→footer; tip `226ac65` |
 | 9 | ✅ merged | `feat/v25-spatial-wire` → `main` | 2026-08-07 | sliders → live geometry |
 | 10 | ✅ merged | `feat/v25-compare` → `main` | 2026-08-07 | Compare MODE + cosine + groups |
-| 11 | ☐ | | | |
+| 11 | ✅ merged | `feat/v25-sae-viz` → `main` | 2026-08-07 | viz live + SAE Train/Clean |
 | 12 | ☐ | | | |
 | 13 | ☐ | | | |
 | 99 | ☐ bloqueado | | | HF / cutover |
