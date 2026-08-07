@@ -1,6 +1,6 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 3 shell — shipping)  
+**Estado:** en curso (Fase 3 merged — siguiente: header)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
@@ -301,7 +301,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 0 | ✅ docs | `main` `2d79175` | 2026-08-07 | Plan inicial |
 | 1 | ✅ merged | `feat/v25-scaffold` → `main` | 2026-08-07 | MPA `/v25/` hello; PATCH `2.2.1`; slash fix `019bdbe` |
 | 2 | ✅ merged | `feat/v25-tokens` → `main` | 2026-08-07 | tokens + skin utilities |
-| 3 | ✅ shell (pending merge) | `feat/v25-shell` | 2026-08-07 | 5-zone grid; ver hand-off |
+| 3 | ✅ merged | `feat/v25-shell` → `main` | 2026-08-07 | 5-zone grid + mobile stack |
 | 4 | ☐ | | | |
 | 5 | ☐ | | | |
 | 6 | ☐ | | | |
