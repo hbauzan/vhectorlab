@@ -11,6 +11,12 @@
  *   "COMPARE|NAVIGATION|POINTS"
  */
 
+import {
+  DEFAULT_RENDER_MODE,
+  DEFAULT_VIEW_MODE,
+  DEFAULT_WORKSPACE_MODE,
+} from '../ui/appViewDefaults.js';
+
 /** @typedef {{ position: [number, number, number], rotationDeg: [number, number, number] }} CameraPose */
 
 /**
@@ -57,9 +63,10 @@ export const CAMERA_DEFAULT_OVERRIDES = {
  * @returns {CameraPose}
  */
 export function resolveCameraPose(ctx = {}) {
-  const workspaceMode = ctx.workspaceMode || 'ARITHMETIC';
-  const viewMode = ctx.viewMode === 'ANALYSIS' ? 'ANALYSIS' : 'NAVIGATION';
-  const renderMode = ctx.renderMode || 'POINTS';
+  const workspaceMode = ctx.workspaceMode || DEFAULT_WORKSPACE_MODE;
+  const rawView = ctx.viewMode || DEFAULT_VIEW_MODE;
+  const viewMode = rawView === 'ANALYSIS' ? 'ANALYSIS' : 'NAVIGATION';
+  const renderMode = ctx.renderMode || DEFAULT_RENDER_MODE;
 
   const fallback = VIEW_CAMERA_FALLBACKS[viewMode];
   /** @type {CameraPose} */
