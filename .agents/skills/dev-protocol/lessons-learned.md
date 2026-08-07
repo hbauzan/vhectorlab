@@ -285,6 +285,14 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
+### 6.0. `v25:` Vite MPA + FastAPI directory index
+- **Problema**: un solo `index.html` en la raíz no alcanza para la bandera blanca `/v25/`. En prod, el catch-all que solo chequea `is_file()` trata `dist/v25/` como miss y cae al SPA legado.
+- **Solución Obligatoria**:
+  - Vite `build.rollupOptions.input` vía `getViteInputs(root)` (`vite.mpa.js`) → `main` + `v25` → emite `dist/index.html` y `dist/v25/index.html`.
+  - FastAPI: `resolve_dist_file(dist, path)` → archivo exacto, si no `path/index.html`, si no root `index.html`.
+- **Invariante**: nuevas páginas MPA = agregar entry en `getViteInputs` **y** confiar en directory index; no hardcodear solo `/v25/index.html` en el cliente si `/v25/` debe funcionar.
+- **No hacer**: contaminar `src/style.css` / `src/main.js` legado desde v25.
+
 ### 6.1. Proxy `/api` en Vite: prefijo general, no ruta-a-ruta
 - **Problema**: Exponer frontend y backend con **el mismo** hostname ngrok (dos agentes → `:5173` y `:8000`) se pisa; el celu no puede llamar a `127.0.0.1:8000`.
 - **Solución Obligatoria**:
