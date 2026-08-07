@@ -1,11 +1,11 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fases 1–9 en `main` — siguiente: **Fase 10 Compare**)  
+**Estado:** en curso (Fases 1–10 en `main` — siguiente: **Fase 11 SAE + viz**)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ `3835d4d` (Fase 9 spatial wire)
+**HEAD tip (ops):** `main` @ Fase 10 Compare (update tip after merge)
 
 ---
 
@@ -317,6 +317,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** Compare sequence + cosine vs first; grupos si el legado los tiene.
 - **Branch:** `feat/v25-compare`.
 
+#### Hand-off — Fase 10
+- **Branch / commit:** `feat/v25-compare` → `main` (after ship).
+- **Cómo probar:** `/v25/` → MODE **COMPARE** → auto Visualize groups demo (GROUP_1/GROUP_2) → cosine list vs REF + group chips + 3D group badges. ▲/▼ reorder animates threads. Presets 5/20/50/Groups. MODE **ARITHMETIC** restores Top-10 + arithmetic threads. Sliders still live for active mode. Legado `/` OK. No SAE.
+- **Tests:** `npm test` (incl. `tests/v25CompareWire.test.js`, `v25ComparePanel.test.js`); `npm run build`.
+- **Hecho:** left host Arithmetic⊕Compare; header MODE wires panels + canvas `setWorkspaceMode`; `fetchCompareResults` + Instancer compare/reorder; groups parse/meta/legend/overlay.
+- **NO hecho (siguiente fase):** SAE + viz filters (`feat/v25-sae-viz`); VIEW/RENDER engine wire; dim-sort; mobile docks.
+- **Lecciones:** `v25:` MODE toggles visibility — never wipe left host (both panels stay mounted).
+- **Riesgos abiertos para Fase 11:** viz filter/colors → Instancer; SAE chrome on Compare only; keep Arithmetic path; no HF.
+- **Archivos tocados (alto nivel):** `compareWire.js`, `ui/comparePanel.js`, `compare.css`, `canvasHost.js`, `main.js`, `rightDock.js`, tests + roadmap/CHANGELOG/lessons.
+
 ### Fase 11 — SAE + viz filters
 - **DoD:** Train/Clean parity razonable; sign filter + color anchors.
 - **Branch:** `feat/v25-sae-viz`.
@@ -369,7 +379,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 7 | ✅ merged | `feat/v25-arithmetic-wire` → `main` | 2026-08-07 | Top-10 API + auto-boot; tip `30fc841`; canvas stub |
 | 8 | ✅ merged | `feat/v25-canvas-wire` → `main` | 2026-08-07 | engine in canvas; POINTS; hover→footer; tip `226ac65` |
 | 9 | ✅ merged | `feat/v25-spatial-wire` → `main` | 2026-08-07 | sliders → live geometry |
-| 10 | ☐ | | | |
+| 10 | ✅ merged | `feat/v25-compare` → `main` | 2026-08-07 | Compare MODE + cosine + groups |
 | 11 | ☐ | | | |
 | 12 | ☐ | | | |
 | 13 | ☐ | | | |

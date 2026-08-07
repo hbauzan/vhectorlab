@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **v25 Compare MODE** (Fase 10): header MODE switches Arithmetic↔Compare; Visualize → `/compare`; cosine-vs-REF list with reorder/sort; GROUP_* parse + legend + 3D group badges; bootstrap groups demo. No SAE.
 - **v25 spatial sliders live** (Fase 9): Spacing/Distance/Amplitude/Length/Thickness rebuild canvas threads from cached Arithmetic payload (no new API); dblclick restores context defaults.
 - **v25 canvas + engine wire** (Fase 8): mount existing `SceneSetup` / `Instancer` / `Navigation` / `Interaction` in `[data-zone="canvas"]`; startup `ARITHMETIC|ANALYSIS|POINTS`; threads after Calculate; hover → footer telemetry. Sliders still chrome-only (Fase 9).
 - **v25 Arithmetic API wire** (Fase 7): Calculate → `RemoteProvider` `/arithmetic`; Top-10 list live; lab modal errors; ONLINE from `/health` (canvas still stub).

@@ -58,6 +58,17 @@
   border-color: #00ccff;
 }
 
+.lab-canvas-host .thread-label-card.group-label {
+  border-color: rgba(255, 160, 40, 0.95);
+  border-width: 2px;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: rgba(28, 16, 6, 0.95);
+  color: #ffe0a8;
+}
+
 .lab-canvas-host .thread-label-text {
   color: inherit;
   white-space: nowrap;
