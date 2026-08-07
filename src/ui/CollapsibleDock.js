@@ -12,8 +12,8 @@
 
 export const DOCK_TRANSITION_MS = 250;
 
-/** Breakpoint aligned with roadmap D5 (phone). Tablet = desktop. */
-export const MOBILE_MQ = '(max-width: 768px)';
+/** Breakpoint: phone width, OR short landscape phone (hover:none) so touch chrome stays on. */
+export const MOBILE_MQ = '(max-width: 768px), ((max-height: 500px) and (hover: none))';
 
 /**
  * @param {((query: string) => { matches: boolean }) | undefined} matchMedia

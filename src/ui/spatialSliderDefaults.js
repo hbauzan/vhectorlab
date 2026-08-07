@@ -13,6 +13,12 @@
  *   "COMPARE|ANALYSIS|RIBBONS"
  */
 
+import {
+  DEFAULT_RENDER_MODE,
+  DEFAULT_VIEW_MODE,
+  DEFAULT_WORKSPACE_MODE,
+} from './appViewDefaults.js';
+
 /** @typedef {{ threadSpacing: number, threadVectorDistance: number, threadAmplitudeY: number, threadWidth: number, threadThickness: number }} SpatialSliderValues */
 
 /** @type {SpatialSliderValues} */
@@ -76,9 +82,9 @@ export const SPATIAL_DEFAULT_OVERRIDES = {
  * @returns {SpatialSliderValues}
  */
 export function resolveSpatialDefaults(ctx = {}) {
-  const workspaceMode = ctx.workspaceMode || 'ARITHMETIC';
-  const viewMode = ctx.viewMode || 'NAVIGATION';
-  const renderMode = ctx.renderMode || 'POINTS';
+  const workspaceMode = ctx.workspaceMode || DEFAULT_WORKSPACE_MODE;
+  const viewMode = ctx.viewMode || DEFAULT_VIEW_MODE;
+  const renderMode = ctx.renderMode || DEFAULT_RENDER_MODE;
 
   const layers = [
     workspaceMode,
