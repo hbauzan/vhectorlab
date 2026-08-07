@@ -29,10 +29,17 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing VHectorLab 3D backend lifespan...")
     model_name = os.getenv("MODEL_NAME", "all-mpnet-base-v2")
     vocab_path = os.getenv("VOCAB_PATH", "public/vocab.txt")
+    vocab_embeddings_path = os.getenv(
+        "VOCAB_EMBEDDINGS_PATH", "public/vocab_embeddings.npz"
+    )
 
     # Lazy load model and vocabulary into AppState
     try:
-        state.load_model_and_vocab(model_name=model_name, vocab_path=vocab_path)
+        state.load_model_and_vocab(
+            model_name=model_name,
+            vocab_path=vocab_path,
+            vocab_embeddings_path=vocab_embeddings_path,
+        )
     except Exception as e:  # noqa: BLE001
         logger.error(f"Error loading model/vocab in lifespan: {e}")
 
@@ -81,9 +88,19 @@ if dist_path.exists():
         return FileResponse(dist_path / "index.html")
 
 
+def _want_reload(host: str) -> bool:
+    """Local bare-metal defaults to reload; Docker/HF (0.0.0.0 or UVICORN_RELOAD=0) does not."""
+    env = os.getenv("UVICORN_RELOAD")
+    if env is not None:
+        return env.strip().lower() in ("1", "true", "yes")
+    return host in ("127.0.0.1", "localhost")
+
+
 if __name__ == "__main__":
     import uvicorn
 
     host = os.getenv("HOST", "127.0.0.1")
     port = int(os.getenv("PORT", "8000"))
-    uvicorn.run("backend.server:app", host=host, port=port, reload=True)
+    reload = _want_reload(host)
+    logger.info("Starting uvicorn host=%s port=%s reload=%s", host, port, reload)
+    uvicorn.run("backend.server:app", host=host, port=port, reload=reload)

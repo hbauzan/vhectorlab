@@ -48,6 +48,10 @@ import {
   computeActivationMetrics,
   formatSaeTrainProgress,
 } from './ui/saeControlsDefaults.js';
+import {
+  loadArithmeticSettings,
+  saveArithmeticSettings,
+} from './ui/arithmeticDefaults.js';
 import { ComparePanel, getCompareBootstrap } from './ui/ComparePanel.js';
 import { CollapsibleDock, isMobileViewport, MOBILE_MQ } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
@@ -405,25 +409,60 @@ class VHectorLabApp {
       renderMode: state.renderMode,
     });
 
+    const arithmeticPrefs = loadArithmeticSettings();
+    this.sidebar.setInputs(
+      arithmeticPrefs.wordA,
+      arithmeticPrefs.wordB,
+      arithmeticPrefs.wordC,
+    );
+
     // Check backend health status
     const health = await this.provider.checkHealth();
     if (health.ok) {
       state.setBackendConnected(true);
-      this.navbar.setStatus(true, health.data.model);
+      this.navbar.setStatus(true, health.data.model, health.data.device);
       await this.refreshSaeStatusUi();
-      // Run initial default vector calculation (king - man + woman)
-      await this.handleCalculateArithmetic("king", "man", "woman", 10);
+
+      if (arithmeticPrefs.lastResult) {
+        this.applyArithmeticResult(arithmeticPrefs.lastResult);
+      } else {
+        await this.handleCalculateArithmetic(
+          arithmeticPrefs.wordA,
+          arithmeticPrefs.wordB,
+          arithmeticPrefs.wordC,
+          arithmeticPrefs.topK,
+        );
+      }
     } else {
       state.setBackendConnected(false);
       this.navbar.setStatus(false);
       this.modal.show(
         "BACKEND OFFLINE",
-        "FastAPI backend is not running at http://127.0.0.1:8000. Please start the backend with `cd backend && uv run python -m server`."
+        "The FastAPI backend is not reachable. Start the stack with `./setup.sh` (option 1), or open this app from a running Hugging Face Space."
       );
     }
 
     // Start render animation loop
     this.animate();
+  }
+
+  /**
+   * Apply an arithmetic API payload to state + 3D + results list (no network).
+   * @param {object} data
+   */
+  applyArithmeticResult(data) {
+    if (!data || !data.vector_res) return;
+    const payload = { ...data, featureSpace: data.featureSpace || 'RAW' };
+    state.setArithmeticData(payload);
+    const labels = this.instancer.renderArithmeticData(
+      payload,
+      state.renderMode,
+      this.sliderConfig,
+      this.viewMode,
+      this.vizConfig
+    );
+    this.threadLabels.setLabels(labels);
+    this.sidebar.updateResults(payload.results || []);
   }
 
   /** Sync SAE status/metrics strip on Compare panel only. */
@@ -924,17 +963,14 @@ class VHectorLabApp {
     try {
       const data = await this.provider.computeArithmetic(wordA, wordB, wordC, topK);
       data.featureSpace = 'RAW';
-      state.setArithmeticData(data);
-
-      const labels = this.instancer.renderArithmeticData(
-        data,
-        state.renderMode,
-        this.sliderConfig,
-        this.viewMode,
-        this.vizConfig
-      );
-      this.threadLabels.setLabels(labels);
-      this.sidebar.updateResults(data.results);
+      this.applyArithmeticResult(data);
+      saveArithmeticSettings({
+        wordA,
+        wordB,
+        wordC,
+        topK: topK ?? 10,
+        lastResult: data,
+      });
     } catch (e) {
       this.modal.show("ARITHMETIC ERROR", e.message || "Could not compute vector arithmetic.");
     }

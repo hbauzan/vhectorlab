@@ -12,7 +12,7 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 - **CORS Policy**: `allow_origins=["*"]` with `allow_credentials=False` for cross-origin WebGL clients.
 
 ### API Surface
-- `GET /health`: Server status, model name, and vocabulary size.
+- `GET /health`: Server status, model name, vocabulary size, and runtime `device` (`cpu`|`cuda`|`mps`).
 - `POST /embed`: Computes embedding vector for input text.
 - `POST /tokenize`: Returns tokenization details.
 - `POST /arithmetic`: Computes $V_{res} = V_A - V_B + V_C$ and returns top-$K$ nearest vocabulary words and component vectors.
