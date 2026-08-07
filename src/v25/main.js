@@ -1,9 +1,9 @@
 /**
- * VHectorLab-3D `/v25/` bootstrap — Fase 8: canvas host + engine reuse.
+ * VHectorLab-3D `/v25/` bootstrap — Fase 9: spatial sliders → live canvas layout.
  */
 import { RemoteProvider } from '../core/RemoteProvider.js';
 import { fetchArithmeticResults } from './arithmeticWire.js';
-import { mountCanvasHost } from './canvasHost.js';
+import { canvasStartupContext, mountCanvasHost } from './canvasHost.js';
 import './style.css';
 import { mountArithmeticPanel } from './ui/arithmeticPanel.js';
 import { mountFooterHud } from './ui/footerHud.js';
@@ -36,6 +36,13 @@ if (app) {
     },
   });
 
+  mountRightDock(zones.right, {
+    spatialContext: canvasStartupContext(),
+    onSpatialChange(values) {
+      canvas.setSpatialConfig(values);
+    },
+  });
+
   const runCalculate = async (words) => {
     if (!arithmetic) return;
     try {
@@ -56,7 +63,6 @@ if (app) {
   arithmetic = mountArithmeticPanel(zones.left, {
     onCalculate: runCalculate,
   });
-  mountRightDock(zones.right);
 
   provider.checkHealth().then(async (health) => {
     header.setOnline(Boolean(health?.ok));
@@ -67,7 +73,6 @@ if (app) {
       );
       return;
     }
-    // Same happy-path as legado: Top-10 + threads on boot.
     await runCalculate(arithmetic.getValues());
   });
 }

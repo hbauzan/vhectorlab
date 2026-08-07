@@ -1,11 +1,11 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fases 1–8 en branch — siguiente: **Fase 9 spatial wire** tras merge)  
+**Estado:** en curso (Fases 1–9 en `main` — siguiente: **Fase 10 Compare**)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ `8a7c853` (Fase 7); work branch `feat/v25-canvas-wire` (Fase 8 pending merge)
+**HEAD tip (ops):** `main` @ Fase 9 spatial wire (update tip after merge)
 
 ---
 
@@ -303,6 +303,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** Spacing/Distance/Amplitude/Length/Thickness afectan geometría (in-situ buffers).
 - **Branch:** `feat/v25-spatial-wire`.
 
+#### Hand-off — Fase 9
+- **Branch / commit:** `feat/v25-spatial-wire` → `main` (after ship).
+- **Cómo probar:** `http://127.0.0.1:5173/v25/` → after auto-calc, drag **Spacing / Vector Distance / Amplitude / Length / Thickness** — threads rebuild live (no new API). Dblclick a slider → context default (Amp 40). Viz filter/colors still chrome-only (Fase 11). Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25SpatialWire.test.js`); `npm run build`.
+- **Hecho:** `onSpatialChange` → `canvas.setSpatialConfig` + cached arithmetic re-paint; right dock inits with `canvasStartupContext` defaults; dblclick reset §4.5.
+- **NO hecho (siguiente fase):** Compare panel port (`feat/v25-compare`); header MODE still UI-only; viz filter/colors → Fase 11.
+- **Lecciones:** ninguna nueva (reuso legado refresh pattern + §4.5 dblclick).
+- **Riesgos abiertos para Fase 10:** port Compare MODE + cosine list; keep Arithmetic path intact; do not wire SAE yet.
+- **Archivos tocados (alto nivel):** `canvasHost.js` (`mergeSpatialConfig` / `setSpatialConfig`), `rightDock.js`, `main.js`, tests + roadmap/CHANGELOG.
+
 ### Fase 10 — Compare
 - **DoD:** Compare sequence + cosine vs first; grupos si el legado los tiene.
 - **Branch:** `feat/v25-compare`.
@@ -357,8 +367,8 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 5 | ✅ merged | `feat/v25-arithmetic-chrome` → `main` | 2026-08-07 | form A/B/C + Top-10 scroll host |
 | 6 | ✅ merged | `feat/v25-right-hud-chrome` → `main` | 2026-08-07 | spatial sliders + viz + footer HUD |
 | 7 | ✅ merged | `feat/v25-arithmetic-wire` → `main` | 2026-08-07 | Top-10 API + auto-boot; tip `30fc841`; canvas stub |
-| 8 | ✅ merged | `feat/v25-canvas-wire` → `main` | 2026-08-07 | engine in canvas; POINTS; hover→footer |
-| 9 | ☐ | | | |
+| 8 | ✅ merged | `feat/v25-canvas-wire` → `main` | 2026-08-07 | engine in canvas; POINTS; hover→footer; tip `226ac65` |
+| 9 | ✅ merged | `feat/v25-spatial-wire` → `main` | 2026-08-07 | sliders → live geometry |
 | 10 | ☐ | | | |
 | 11 | ☐ | | | |
 | 12 | ☐ | | | |
