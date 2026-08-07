@@ -178,7 +178,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **Branch:** `feat/v25-scaffold`.
 
 #### Hand-off — Fase 1
-- **Branch / commit:** `feat/v25-scaffold` (commit al cerrar; main docs Fase 0 = `2d79175`).
+- **Branch / commit:** `feat/v25-scaffold` @ `603451f` (Fase 0 docs on `main` = `2d79175`, local ahead of origin).
 - **Cómo probar:** `npm run dev` → `http://localhost:5173/` legado; `http://localhost:5173/v25/` texto `VHectorLab-3D v25`. Prod-like: `npm run build && npm run preview` → mismos paths. Con `dist/` presente, FastAPI `resolve_dist_file` sirve `/v25` y `/v25/`.
 - **Tests:** `npm test` (incl. `tests/viteMpaInputs.test.js`); `cd backend && uv run pytest tests/test_static_dist.py`; `npm run build` → `dist/v25/index.html`.
 - **Hecho:** MPA Vite (main + v25); hello shell; static helper MPA-aware; sin tokens/layout/engine.
