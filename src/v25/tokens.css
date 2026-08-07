@@ -1,0 +1,52 @@
+/**
+ * VHectorLab-3D v25 design tokens — single visual language for `/v25/`.
+ * Soft dark/fluo lab plate (not glass, not neon garish).
+ * Hex samples mirrored in `tokenValues.js` for contrast tests.
+ */
+
+:root {
+  /* Surfaces */
+  --lab-bg: #0a1210;
+  --lab-bg-elevated: #0e1612;
+  --lab-panel: #121a16;
+  --lab-panel-inset: #0c1410;
+  --lab-border: #2a4a38;
+  --lab-border-strong: #3a6b52;
+
+  /* Text */
+  --lab-text: #e8ffe8;
+  --lab-text-muted: #8aab95;
+  --lab-text-dim: #5c7a68;
+
+  /* Triad adapted: portal green / teal / soft magenta-fluo */
+  --lab-accent: #3ecf8e;
+  --lab-accent-hot: #5dffb0;
+  --lab-teal: #2eb8a8;
+  --lab-magenta: #c45fd4;
+  --lab-warn: #d4c44a;
+  --lab-danger: #e05570;
+  --lab-on-accent: #07110c;
+
+  /* Type */
+  --lab-font-display: 'Oxanium', 'Segoe UI', sans-serif;
+  --lab-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --lab-font-ui: var(--lab-font-display);
+
+  /* Radius / depth — chapa, not pill glass */
+  --lab-radius: 4px;
+  --lab-border-width: 2px;
+  --lab-inset: inset 0 1px 0 rgba(94, 255, 176, 0.08),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.35);
+  --lab-press: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+
+  /* Focus */
+  --lab-focus-ring: 0 0 0 2px var(--lab-bg), 0 0 0 4px var(--lab-accent);
+
+  /* Space */
+  --lab-space-1: 0.25rem;
+  --lab-space-2: 0.5rem;
+  --lab-space-3: 0.75rem;
+  --lab-space-4: 1rem;
+  --lab-space-5: 1.5rem;
+  --lab-space-6: 2rem;
+}
