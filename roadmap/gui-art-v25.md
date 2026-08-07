@@ -1,10 +1,11 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fase 7 merged — siguiente: canvas wire)  
+**Estado:** en curso (Fases 1–7 en `main` — siguiente: **Fase 8 canvas wire**)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
-**Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)
+**Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
+**HEAD tip (ops):** `main` @ `30fc841` (Arithmetic Top-10 visibility fix inclusive)
 
 ---
 
@@ -273,14 +274,14 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **Branch:** `feat/v25-arithmetic-wire`.
 
 #### Hand-off — Fase 7
-- **Branch / commit:** `feat/v25-arithmetic-wire` → `main` (after ship).
-- **Cómo probar:** backend up + `npm run dev` → `/v25/` → CALCULATE VECTOR → Top-10 ranked scores. Offline → modal BACKEND OFFLINE / ARITHMETIC ERROR; ONLINE badge follows `/health`. Canvas still stub.
-- **Tests:** `npm test` (incl. `tests/v25ArithmeticWire.test.js` mocked provider).
-- **Hecho:** `arithmeticWire.js`, `labModal.js`, wire in `main.js`; reuses `RemoteProvider`.
-- **NO hecho (siguiente fase):** Canvas + engine (`feat/v25-canvas-wire`).
-- **Lecciones:** ninguna nueva.
-- **Riesgos abiertos:** no auto-calculate on load (legado sí); no `localStorage` arithmetic prefs yet.
-- **Archivos tocados (alto nivel):** `arithmeticWire.js`, `labModal.js`, `modal.css`, `arithmeticPanel.js`, `main.js`, tests + roadmap/CHANGELOG.
+- **Branch / commit:** `feat/v25-arithmetic-wire` + fix `fix/v25-arithmetic-results-visible` → `main` @ `30fc841`.
+- **Cómo probar:** backend up + `npm run dev` → `http://127.0.0.1:5173/v25/` → con ONLINE, el panel **izquierdo** auto-llena Top-10 (`10 neighbors from API`, p.ej. queen…). CALCULATE VECTOR refresca. Canvas centro sigue stub (placeholder). Legado `/` OK.
+- **Tests:** `npm test` (incl. `tests/v25ArithmeticWire.test.js`).
+- **Hecho:** `RemoteProvider` wire; Top-10 live; lab modal offline/error; auto-calc on healthy boot; status line visible.
+- **NO hecho (siguiente fase):** Canvas + engine reuse (`feat/v25-canvas-wire`) — montar Scene/Instancer en host `data-zone="canvas"`; threads tras calculate; hover→footer opcional sin scope creep.
+- **Lecciones:** `v25:` bare `/v25` redirect (§6.0); Top-10 vive en left dock, no en el canvas stub.
+- **Riesgos abiertos para Fase 8:** lessons §1 WebGL (`frustumCulled`, fog, POINTS); no fork math/shaders — import desde `src/engine/*` / `src/visualizer/*`; startup `ARITHMETIC|ANALYSIS|POINTS`; no wire sliders live aún (Fase 9). Preferencias `localStorage` arithmetic aún no portadas.
+- **Archivos tocados (alto nivel):** `src/v25/main.js`, `arithmeticWire.js`, `ui/arithmeticPanel.js`, `ui/labModal.js`, shell/header/right/footer chrome, tests + roadmap/CHANGELOG.
 
 ### Fase 8 — Canvas + engine
 - **Hacer:** montar engine existente en `MainVisualizationCanvas` host; startup `ARITHMETIC | ANALYSIS | POINTS` (`appViewDefaults`).
@@ -345,7 +346,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 4 | ✅ merged | `feat/v25-header` → `main` | 2026-08-07 | brand + MODE/VIEW/RENDER UI + ONLINE |
 | 5 | ✅ merged | `feat/v25-arithmetic-chrome` → `main` | 2026-08-07 | form A/B/C + Top-10 scroll host |
 | 6 | ✅ merged | `feat/v25-right-hud-chrome` → `main` | 2026-08-07 | spatial sliders + viz + footer HUD |
-| 7 | ✅ merged | `feat/v25-arithmetic-wire` → `main` | 2026-08-07 | Calculate → `/api`; Top-10 real; canvas stub |
+| 7 | ✅ merged | `feat/v25-arithmetic-wire` → `main` | 2026-08-07 | Top-10 API + auto-boot; tip `30fc841`; canvas stub |
 | 8 | ☐ | | | |
 | 9 | ☐ | | | |
 | 10 | ☐ | | | |
