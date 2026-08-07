@@ -48,6 +48,7 @@ import {
   computeActivationMetrics,
   formatSaeTrainProgress,
 } from './ui/saeControlsDefaults.js';
+import { wireFieldInfo } from './ui/fieldInfo.js';
 import {
   loadArithmeticSettings,
   saveArithmeticSettings,
@@ -116,6 +117,9 @@ class VHectorLabApp {
         this.handleWorkspaceModeChange(workspaceMode);
       }
     );
+
+    // Tap/click "i" tips on editable fields (mobile-friendly; one tip at a time).
+    wireFieldInfo(document);
 
     // Left dock hosts Arithmetic OR Compare (shared collapsed state across MODE).
     this.leftDock = new CollapsibleDock({

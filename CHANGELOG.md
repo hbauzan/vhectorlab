@@ -5,10 +5,12 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Field-info tips ("i")** on every editable control (Arithmetic, Compare, SAE params, Spatial sliders, Visualization): short English tap tips, mobile-safe popover (not hover-only `title`).
 - **HF Space cpu-basic demo path** (`feat/hf-space-cpu-demo`): Docker torch CPU (`UV_TORCH_BACKEND=cpu`), vocab embeddings NPZ at image build, `/health.device`, navbar `ONLINE (model · device)`, ARITHMETIC `localStorage` persistence (`vl3d.arithmetic.*`), setup option 7 smoke-run + option 8 `hf` create Space (docker / cpu-basic) + push, README Space YAML frontmatter.
 
 ### Changed
 - **Repo / local folder slug**: GitHub + working copy **`vhectorlab`** (was `VHectorLab-3D`). Product name **VHectorLab 3D** unchanged; npm/manifest id stays `vhectorlab-3d`.
+- **Landscape gate retired**: no more “Better in landscape” cartel — phone portrait is preferred.
 
 ### Fixed
 - **`setup.sh` option 8**: defaults from `.env` (`HF_SPACE_ID`, `HF_SPACE_FORCE_PUSH=1`); skip create if Space exists; force-push to Space remote only (not GitHub) so Enter×N publishes over divergent predecessor history.

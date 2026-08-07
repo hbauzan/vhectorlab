@@ -1,3 +1,5 @@
+import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
+
 /**
  * Left Sidebar Control Panel component for A - B + C Vector Arithmetic operations.
  */
@@ -21,17 +23,17 @@ export class Sidebar {
 
       <form id="arithmetic-form" class="sidebar-form">
         <div class="input-group positive">
-          <label for="word-a"><span class="op">+</span> Base Word A</label>
+          <label for="word-a"><span class="field-label-text"><span class="op">+</span> Base Word A</span>${infoTipMarkup(FIELD_INFO.wordA)}</label>
           <input type="text" id="word-a" value="king" required autocomplete="off" />
         </div>
 
         <div class="input-group negative">
-          <label for="word-b"><span class="op">-</span> Subtract Word B</label>
+          <label for="word-b"><span class="field-label-text"><span class="op">-</span> Subtract Word B</span>${infoTipMarkup(FIELD_INFO.wordB)}</label>
           <input type="text" id="word-b" value="man" required autocomplete="off" />
         </div>
 
         <div class="input-group positive">
-          <label for="word-c"><span class="op">+</span> Add Word C</label>
+          <label for="word-c"><span class="field-label-text"><span class="op">+</span> Add Word C</span>${infoTipMarkup(FIELD_INFO.wordC)}</label>
           <input type="text" id="word-c" value="woman" required autocomplete="off" />
         </div>
 
