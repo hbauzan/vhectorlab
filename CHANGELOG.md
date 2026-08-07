@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
 - **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
 
 ## [2.2.1] - 2026-08-07
