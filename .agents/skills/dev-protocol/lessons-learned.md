@@ -124,6 +124,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Invariante**: scroll en `.compare-cosine-list` no mueve cámara; touch UI ≠ look.
 
 ### 3.4. Default poses by MODE|VIEW|RENDER
+- **Startup default**: **ARITHMETIC | ANALYSIS | POINTS** (`appViewDefaults.js`). Navbar + `main.viewMode` + empty `resolveCameraPose` / `resolveSpatialDefaults` ctx follow that triad.
 - **Invariante**: Al cambiar MODE / VIEW / RENDER se reaplica cámara (`resolveCameraPose` → `Navigation.setContextView`) + sliders (`resolveSpatialDefaults` → sync UI). Claves `MODE`, `MODE|VIEW`, `MODE|VIEW|RENDER` (más específico gana).
 - **Fallbacks de VIEW** (sin override): NAVIGATION corridor `POS (-178.3, 13.5, 52.2)` / `ROT (-5.4°, -51.5°, 0°)`; ANALYSIS `POS (-75.2, -0.8, 62.5)` / `ROT (0°, 0°, 0°)`.
 - **Overrides capturados**:
@@ -137,16 +138,23 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 
 ## 4. UI Panels (Sidebar / Compare)
 
-### 4.1. Panel Arithmetic sin Scrollbar + Top-10 Compacto Read-Only
-- **Problema**: Expandir `.results-list` con `min-height` grande + `overflow-y: auto` en el panel y en la lista generaba una barra deslizante molesta en Vector Arithmetic.
-- **Solución Obligatoria**:
-  - `.glass-sidebar`: `height: fit-content`, `overflow: hidden` (sin scroll del panel).
-  - Top-10 compacto (padding/gap/font reducidos) para que los 10 resultados quepan sin overflow.
-  - Items del Top-10 **solo lectura**: sin `click`, sin hover interactivo, `pointer-events: none`, `cursor: default`. No re-enfocar la cámara al clicar un vecino.
-- **Invariante**: El Top-10 es métrica visible, no control de navegación 3D.
+### 4.1. Panel Arithmetic — Top-10 siempre alcanzable (scroll en la lista)
+- **Problema histórico**: scrollbar del panel entero era molesta; se comprimió el Top-10 con `overflow: hidden` en `.results-list` → en viewports bajos se **cortaban** vecinos sin forma de verlos. Fórmulas `calc(100vh - 380px)` podían dar **≤0** en landscape.
+- **Solución Obligatoria (actual)**:
+  - Tall: `#sidebar-panel` `overflow: hidden`; `#sidebar-panel .results-list` `overflow-y: auto` + `max(120px, min(280px|200px, 40dvh|36dvh))` — **floor 120px**, barrita al costado OK.
+  - Short (`max-height: 560px`): el **panel** scrollea (form + Top-10); lista sin max-height clip — escape hatch cuando el dock es chico.
+  - Dock body: `max-height` con `100dvh − navbar − HUD`, no magic `100vh - 160`.
+  - Contrato: `arithmeticResultsScroll.js` (`resolveResultsListMaxHeightPx`, `shouldScrollArithmeticPanel`).
+  - Items Top-10 **solo lectura** (`pointer-events: none`).
+- **Invariante**: Top-10 siempre alcanzable (lista o panel); no es control de navegación 3D.
+
+### 4.1b. Mobile chrome MQ — width OR short landscape phone
+- **Problema**: iPhone landscape suele tener `width > 768` → salía del path mobile (sin joystick, sin densidades, list heights desktop inútiles).
+- **Solución Obligatoria**: `MOBILE_MQ = (max-width: 768px), ((max-height: 500px) and (hover: none))` en CSS + `CollapsibleDock.isMobileViewport`. Compact form Arithmetic bajo `max-height: 500px`. `viewport-fit=cover` en `index.html` para safe-area.
+- **Invariante**: phone landscape short = mobile chrome; tablet portrait alto ≠ phone.
 
 ### 4.2. COMPARE Cosine-vs-Anchor: scroll interno + reorder 3D con tween in-situ
-- **Problema**: Listas largas (20/50/1024) en Compare rompen el invariante §4.1 si el scroll vive en el panel; un reorder con `clear()` + rebuild provoca flicker y desync lista↔3D.
+- **Problema**: Listas largas (20/50/1024) en Compare rompen el layout si el scroll vive en el panel; un reorder con `clear()` + rebuild provoca flicker y desync lista↔3D.
 - **Solución Obligatoria**:
   - Scroll **solo** en `#compare-panel .compare-cosine-list` (`overflow-y: auto` + `max-height`); el panel permanece `overflow: hidden` / `fit-content`.
   - Filas de similitud: `pointer-events: none` en la fila; solo ▲/▼ con `pointer-events: auto` (métrica + reorder, sin focus de cámara).
@@ -162,7 +170,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
   - **Dock izq. / MODE**: un solo flag collapsed (y una key `localStorage`) para Arithmetic|Compare; el cambio de MODE solo alterna `.hidden` del panel activo dentro del body — no toca collapse.
   - **Dock der.**: sliders + AxisGizmo viven en el mismo host; el HUD inferior de telemetría **nunca** entra al dock (siempre visible).
   - Desktop: persistir collapsed en `localStorage`. Mobile (`max-width: 768px`): default collapsed y no persistir (hook Etapa B).
-  - El dock host mantiene `overflow: hidden` / `fit-content` — no reintroducir scrollbar externa (§4.1 / §4.2).
+  - El dock host mantiene `overflow: hidden` / `fit-content` — scroll interno vive en listas (§4.1 Top-10 / §4.2 cosine), no en el dock.
 - **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
 
 ### 4.5. Control Espacial 3D — defaults = mid del rango + steps finos + dblclick reset
