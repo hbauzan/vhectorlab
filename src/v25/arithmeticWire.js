@@ -39,6 +39,25 @@ export function resultsListHtml(results) {
 }
 
 /**
+ * Normalize API payload → list items (defensive against shape drift).
+ * @param {unknown} raw
+ * @returns {Array<{ word: string, score: number }>}
+ */
+export function normalizeArithmeticResults(raw) {
+  const list = Array.isArray(raw?.results)
+    ? raw.results
+    : Array.isArray(raw)
+      ? raw
+      : [];
+  return list
+    .map((item) => ({
+      word: String(item?.word ?? item?.token ?? ''),
+      score: Number(item?.score ?? item?.cosine ?? item?.similarity),
+    }))
+    .filter((item) => item.word);
+}
+
+/**
  * @param {{ computeArithmetic: Function }} provider
  * @param {{ wordA: string, wordB: string, wordC: string, topK?: number }} words
  * @returns {Promise<{ results: Array, raw: object }>}
@@ -55,6 +74,6 @@ export async function fetchArithmeticResults(provider, words) {
     throw new Error('Words A, B, and C are required');
   }
   const raw = await provider.computeArithmetic(wordA, wordB, wordC, topK);
-  const results = Array.isArray(raw?.results) ? raw.results : [];
+  const results = normalizeArithmeticResults(raw);
   return { results, raw };
 }

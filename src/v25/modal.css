@@ -72,15 +72,17 @@
   align-items: center;
   padding: var(--lab-space-2) var(--lab-space-3);
   pointer-events: none;
+  color: var(--lab-text);
 }
 
 .lab-results-list__rank {
   font-size: 0.7rem;
-  color: var(--lab-text-dim);
+  color: var(--lab-text-muted);
 }
 
 .lab-results-list__word {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--lab-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,6 +90,6 @@
 }
 
 .lab-results-list__score {
-  font-size: 0.72rem;
-  color: var(--lab-accent);
+  font-size: 0.75rem;
+  color: var(--lab-accent-hot);
 }

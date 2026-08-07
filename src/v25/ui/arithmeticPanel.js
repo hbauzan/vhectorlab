@@ -23,6 +23,8 @@ export const ARITHMETIC_COPY = Object.freeze({
   calculating: 'CALCULATING…',
   resultsTitle: 'NEAREST COSINE RESULTS (TOP-10)',
   empty: 'Run calculation to explore 3D semantic neighbors…',
+  statusIdle: 'Waiting for Calculate…',
+  statusLoaded: (n) => `${n} neighbors from API`,
 });
 
 /**
@@ -69,6 +71,7 @@ export function arithmeticPanelMarkup() {
 
       <div class="lab-arithmetic__results">
         <h3 class="lab-arithmetic__results-title">${c.resultsTitle}</h3>
+        <p id="lab-results-status" class="lab-arithmetic__status lab-mono lab-muted">${c.statusIdle}</p>
         <ul id="lab-results-list" class="lab-results-list" aria-live="polite">
           <li class="lab-results-list__empty lab-muted">${c.empty}</li>
         </ul>
@@ -88,6 +91,7 @@ export function mountArithmeticPanel(container, options = {}) {
   const form = container.querySelector('#lab-arithmetic-form');
   const btn = container.querySelector('#lab-btn-calculate');
   const list = container.querySelector('#lab-results-list');
+  const statusEl = container.querySelector('#lab-results-status');
   const onCalculate = typeof options.onCalculate === 'function' ? options.onCalculate : null;
 
   const setLoading = (loading) => {
@@ -98,7 +102,17 @@ export function mountArithmeticPanel(container, options = {}) {
 
   const updateResults = (results) => {
     if (!list) return;
-    list.innerHTML = resultsListHtml(results);
+    const rows = Array.isArray(results) ? results : [];
+    list.innerHTML = resultsListHtml(rows);
+    if (statusEl) {
+      statusEl.textContent =
+        rows.length > 0
+          ? ARITHMETIC_COPY.statusLoaded(rows.length)
+          : ARITHMETIC_COPY.statusIdle;
+      statusEl.classList.toggle('is-live', rows.length > 0);
+    }
+    list.scrollTop = 0;
+    list.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
 
   form?.addEventListener('submit', (e) => {
