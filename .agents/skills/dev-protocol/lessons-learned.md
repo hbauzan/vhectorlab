@@ -285,6 +285,12 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
+### 6.0b. `v25:` canvas host size = container, not `window`
+- **Problema**: `SceneSetup` legado dimensiona el renderer con `window.innerWidth/Height` (fullscreen `#app`). En v25 el héroe vive en `[data-zone="canvas"]` (celda de grid) → buffer/aspect incorrectos y labels proyectados contra viewport entero.
+- **Solución Obligatoria**: en `mountCanvasHost`, override `sceneSetup.onWindowResize` → `clientWidth/Height` del host (floor 1×1); `ResizeObserver` en el host; `renderer.setSize(w, h, false)` + CSS `canvas { inset:0; width/height:100% }`. ThreadLabels overlay `width/height: 100%` del host (no `100vw/100vh`).
+- **Invariante**: no fork de `SceneSetup` solo por MPA; no contaminar `src/style.css` legado. Startup canvas = `ARITHMETIC|ANALYSIS|POINTS` (`canvasStartupContext` / `appViewDefaults`).
+- **No hacer en Fase 8+ inmediata**: wire live de sliders (Fase 9) ni MODE Compare (Fase 10) desde header tabs.
+
 ### 6.0. `v25:` Vite MPA + FastAPI directory index
 - **Problema**: un solo `index.html` en la raíz no alcanza para la bandera blanca `/v25/`. En prod, el catch-all que solo chequea `is_file()` trata `dist/v25/` como miss y cae al SPA legado. En **dev**, Vite SPA fallback sirve el legado en `/v25` **sin** trailing slash → canvas oscuro “vacío”.
 - **Solución Obligatoria**:

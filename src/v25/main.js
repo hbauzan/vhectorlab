@@ -1,8 +1,9 @@
 /**
- * VHectorLab-3D `/v25/` bootstrap — Fase 7: Arithmetic → RemoteProvider (canvas stub).
+ * VHectorLab-3D `/v25/` bootstrap — Fase 8: canvas host + engine reuse.
  */
 import { RemoteProvider } from '../core/RemoteProvider.js';
 import { fetchArithmeticResults } from './arithmeticWire.js';
+import { mountCanvasHost } from './canvasHost.js';
 import './style.css';
 import { mountArithmeticPanel } from './ui/arithmeticPanel.js';
 import { mountFooterHud } from './ui/footerHud.js';
@@ -23,12 +24,25 @@ if (app) {
   /** @type {{ updateResults: Function, setLoading: Function, getValues: Function } | null} */
   let arithmetic = null;
 
+  const footer = mountFooterHud(zones.footer);
+  const canvas = mountCanvasHost(zones.canvas, {
+    onHover(payload) {
+      footer.setCoords(payload.coords);
+      footer.setTelemetry({
+        segment: payload.segment,
+        activation: payload.activation,
+        token: payload.token,
+      });
+    },
+  });
+
   const runCalculate = async (words) => {
     if (!arithmetic) return;
     try {
       arithmetic.setLoading(true);
-      const { results } = await fetchArithmeticResults(provider, words);
+      const { results, raw } = await fetchArithmeticResults(provider, words);
       arithmetic.updateResults(results);
+      canvas.renderArithmetic(raw);
     } catch (err) {
       const message =
         err?.message ||
@@ -43,7 +57,6 @@ if (app) {
     onCalculate: runCalculate,
   });
   mountRightDock(zones.right);
-  mountFooterHud(zones.footer);
 
   provider.checkHealth().then(async (health) => {
     header.setOnline(Boolean(health?.ok));
@@ -54,7 +67,7 @@ if (app) {
       );
       return;
     }
-    // Same happy-path as legado: populate Top-10 on boot (canvas still stub).
+    // Same happy-path as legado: Top-10 + threads on boot.
     await runCalculate(arithmetic.getValues());
   });
 }

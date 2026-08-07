@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **v25 canvas + engine wire** (Fase 8): mount existing `SceneSetup` / `Instancer` / `Navigation` / `Interaction` in `[data-zone="canvas"]`; startup `ARITHMETIC|ANALYSIS|POINTS`; threads after Calculate; hover → footer telemetry. Sliders still chrome-only (Fase 9).
 - **v25 Arithmetic API wire** (Fase 7): Calculate → `RemoteProvider` `/arithmetic`; Top-10 list live; lab modal errors; ONLINE from `/health` (canvas still stub).
 - **v25 right + HUD chrome** (Fase 6): spatial sliders (fluo thumb), viz filter/colors/labels, footer telemetry placeholders with safe-area.
 - **v25 Arithmetic chrome** (Fase 5): Word A/B/C form, CALCULATE VECTOR CTA, Top-10 list host with §4.1 scroll floor (no API yet).
