@@ -286,9 +286,9 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
 ### 6.0c. `v25:` MODE switch = visibility toggle, never wipe left host
-- **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10).
-- **Solución Obligatoria**: host `.lab-left-host` con dos slots `[data-panel=arithmetic|compare]`; ambos paneles montados; MODE solo alterna `hidden` / `.is-hidden`. Canvas guarda `lastArithmetic` **y** `lastCompare`; `setWorkspaceMode` / `setSpatialConfig` pintan el cache activo.
-- **Invariante**: collapse/MODE ≠ unmount (alineado a lessons §4.3 docks). SAE no entra en Fase 10.
+- **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10). Además `display: flex` en `.lab-left-host > [data-panel]` **pisa** el UA `[hidden]{display:none}` → el slot Arithmetic oculto sigue ocupando flex y deja un **hueco negro** arriba del Compare (lista cosine aplastada abajo).
+- **Solución Obligatoria**: host `.lab-left-host` con dos slots; ambos paneles montados; MODE alterna `hidden` + `.is-hidden` **y** CSS `display: none !important` en `[data-panel][hidden]`. Canvas guarda `lastArithmetic` **y** `lastCompare`. Al entrar COMPARE, VIEW preferido = **NAVIGATION** (framing multi-thread); ARITHMETIC vuelve a **ANALYSIS**.
+- **Invariante**: collapse/MODE ≠ unmount; nunca asumir que `[hidden]` gana a una regla `display:` propia.
 
 ### 6.0b. `v25:` canvas host size = container, not `window`
 - **Problema**: `SceneSetup` legado dimensiona el renderer con `window.innerWidth/Height` (fullscreen `#app`). En v25 el héroe vive en `[data-zone="canvas"]` (celda de grid) → buffer/aspect incorrectos y labels proyectados contra viewport entero.

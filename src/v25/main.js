@@ -13,6 +13,7 @@ import { mountHeader } from './ui/header.js';
 import { createLabModal } from './ui/labModal.js';
 import { mountRightDock } from './ui/rightDock.js';
 import { mountShell, queryShellZones } from './ui/shell.js';
+import { leftPanelVisibility } from './leftPanelMode.js';
 
 const app = document.getElementById('app');
 if (app) {
@@ -59,17 +60,21 @@ if (app) {
   });
 
   const applyModeToLeft = (mode) => {
-    const isCompare = mode === 'COMPARE';
-    if (arithmeticSlot) arithmeticSlot.hidden = isCompare;
-    if (compareSlot) compareSlot.hidden = !isCompare;
-    arithmetic?.root?.classList?.toggle('is-hidden', isCompare);
-    // arithmetic panel root id
+    const vis = leftPanelVisibility(mode);
+    if (arithmeticSlot) {
+      arithmeticSlot.hidden = vis.arithmeticHidden;
+      arithmeticSlot.classList.toggle('is-hidden', vis.arithmeticHidden);
+    }
+    if (compareSlot) {
+      compareSlot.hidden = vis.compareHidden;
+      compareSlot.classList.toggle('is-hidden', vis.compareHidden);
+    }
     const arithRoot = zones.left.querySelector('#lab-arithmetic-panel');
     if (arithRoot) {
-      arithRoot.hidden = isCompare;
-      arithRoot.classList.toggle('is-hidden', isCompare);
+      arithRoot.hidden = vis.arithmeticHidden;
+      arithRoot.classList.toggle('is-hidden', vis.arithmeticHidden);
     }
-    compare?.setVisible(isCompare);
+    compare?.setVisible(!vis.compareHidden);
   };
 
   const syncSpatialUiFromCanvas = (spatial) => {
@@ -129,7 +134,9 @@ if (app) {
     }
     workspaceMode = next;
     applyModeToLeft(next);
-    const { spatial } = canvas.setWorkspaceMode(next);
+    const { spatial, viewMode } = canvas.setWorkspaceMode(next);
+    // Keep header VIEW tab in sync with preferred framing (no re-entry: workspace unchanged).
+    header.setSelection('view', viewMode);
     syncSpatialUiFromCanvas(spatial);
 
     if (next === 'COMPARE') {
@@ -155,7 +162,11 @@ if (app) {
 
   const header = mountHeader(zones.header, {
     onChange(state) {
-      if (state.workspace === 'COMPARE' || state.workspace === 'ARITHMETIC') {
+      // Only react to MODE changes — VIEW/RENDER sync from setSelection must not re-enter.
+      if (
+        (state.workspace === 'COMPARE' || state.workspace === 'ARITHMETIC') &&
+        state.workspace !== workspaceMode
+      ) {
         handleWorkspaceMode(state.workspace);
       }
     },
