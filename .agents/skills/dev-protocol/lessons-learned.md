@@ -285,6 +285,11 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
+### 6.0c. `v25:` MODE switch = visibility toggle, never wipe left host
+- **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10).
+- **Solución Obligatoria**: host `.lab-left-host` con dos slots `[data-panel=arithmetic|compare]`; ambos paneles montados; MODE solo alterna `hidden` / `.is-hidden`. Canvas guarda `lastArithmetic` **y** `lastCompare`; `setWorkspaceMode` / `setSpatialConfig` pintan el cache activo.
+- **Invariante**: collapse/MODE ≠ unmount (alineado a lessons §4.3 docks). SAE no entra en Fase 10.
+
 ### 6.0b. `v25:` canvas host size = container, not `window`
 - **Problema**: `SceneSetup` legado dimensiona el renderer con `window.innerWidth/Height` (fullscreen `#app`). En v25 el héroe vive en `[data-zone="canvas"]` (celda de grid) → buffer/aspect incorrectos y labels proyectados contra viewport entero.
 - **Solución Obligatoria**: en `mountCanvasHost`, override `sceneSetup.onWindowResize` → `clientWidth/Height` del host (floor 1×1); `ResizeObserver` en el host; `renderer.setSize(w, h, false)` + CSS `canvas { inset:0; width/height:100% }`. ThreadLabels overlay `width/height: 100%` del host (no `100vw/100vh`).

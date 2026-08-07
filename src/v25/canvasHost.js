@@ -13,6 +13,10 @@ import {
   DEFAULT_WORKSPACE_MODE,
 } from '../ui/appViewDefaults.js';
 import {
+  enrichLabelsWithGroupMeta,
+  mergeCompareOverlayLabels,
+} from '../ui/parseCompareGroups.js';
+import {
   formatActivationValue,
   resolveHoverTelemetry,
 } from '../ui/hoverTelemetry.js';
@@ -22,12 +26,13 @@ import { DEFAULT_VISUALIZATION_SETTINGS } from '../ui/visualizationControlsDefau
 import { Instancer } from '../visualizer/Instancer.js';
 
 /**
- * Fixed startup context (header tabs remain UI-only until later phases).
+ * Startup context (VIEW/RENDER fixed until later phases; MODE can switch).
+ * @param {{ workspaceMode?: string }} [overrides]
  * @returns {{ workspaceMode: string, viewMode: string, renderMode: string }}
  */
-export function canvasStartupContext() {
+export function canvasStartupContext(overrides = {}) {
   return {
-    workspaceMode: DEFAULT_WORKSPACE_MODE,
+    workspaceMode: overrides.workspaceMode || DEFAULT_WORKSPACE_MODE,
     viewMode: DEFAULT_VIEW_MODE,
     renderMode: DEFAULT_RENDER_MODE,
   };
@@ -112,6 +117,8 @@ export function mountCanvasHost(container, options = {}) {
   const vizConfig = { ...DEFAULT_VISUALIZATION_SETTINGS };
   /** @type {object|null} */
   let lastArithmetic = null;
+  /** @type {object|null} */
+  let lastCompare = null;
 
   const sceneSetup = new SceneSetup(container);
   sceneSetup.setFogForRenderMode(ctx.renderMode);
@@ -152,6 +159,12 @@ export function mountCanvasHost(container, options = {}) {
   let rafId = 0;
   let disposed = false;
 
+  const setCompareLabels = (tokenLabels) => {
+    const items = lastCompare?.items;
+    const enriched = enrichLabelsWithGroupMeta(tokenLabels, items);
+    threadLabels.setLabels(mergeCompareOverlayLabels(enriched));
+  };
+
   const paintArithmetic = (payload) => {
     const labels = instancer.renderArithmeticData(
       payload,
@@ -162,6 +175,27 @@ export function mountCanvasHost(container, options = {}) {
     );
     threadLabels.setLabels(labels);
     return labels;
+  };
+
+  const paintCompare = (payload) => {
+    const labels = instancer.renderCompareData(
+      payload,
+      ctx.renderMode,
+      spatialConfig,
+      ctx.viewMode,
+      vizConfig,
+    );
+    setCompareLabels(labels);
+    return labels;
+  };
+
+  const paintActive = () => {
+    if (ctx.workspaceMode === 'COMPARE') {
+      if (!lastCompare) return null;
+      return paintCompare(lastCompare);
+    }
+    if (!lastArithmetic) return null;
+    return paintArithmetic(lastArithmetic);
   };
 
   const animate = () => {
@@ -184,8 +218,28 @@ export function mountCanvasHost(container, options = {}) {
   animate();
 
   return {
-    context: ctx,
+    get context() {
+      return { ...ctx };
+    },
     getSpatial: () => ({ ...spatialConfig }),
+    getWorkspaceMode: () => ctx.workspaceMode,
+    hasCompareData: () => !!lastCompare,
+    hasArithmeticData: () => !!lastArithmetic,
+    /**
+     * Switch MODE; re-resolve spatial defaults + camera; repaint active cache.
+     * @param {'ARITHMETIC'|'COMPARE'} mode
+     * @returns {{ spatial: object, labels: * }}
+     */
+    setWorkspaceMode(mode) {
+      const next =
+        mode === 'COMPARE' ? 'COMPARE' : DEFAULT_WORKSPACE_MODE;
+      ctx.workspaceMode = next;
+      spatialConfig = resolveSpatialDefaults(ctx);
+      navigation.setContextView(ctx);
+      sceneSetup.setFogForRenderMode(ctx.renderMode);
+      const labels = paintActive();
+      return { spatial: { ...spatialConfig }, labels };
+    },
     /**
      * @param {object} arithmeticPayload  full `/api/arithmetic` body (needs vector_res)
      */
@@ -195,21 +249,70 @@ export function mountCanvasHost(container, options = {}) {
         ...arithmeticPayload,
         featureSpace: arithmeticPayload.featureSpace || 'RAW',
       };
+      ctx.workspaceMode = 'ARITHMETIC';
       return paintArithmetic(lastArithmetic);
     },
     /**
-     * Apply live spatial slider values and rebuild threads from last payload
+     * @param {object} comparePayload  `/compare` (+ group meta)
+     */
+    renderCompare(comparePayload) {
+      if (!comparePayload?.items?.length) return null;
+      lastCompare = {
+        ...comparePayload,
+        featureSpace: comparePayload.featureSpace || 'RAW',
+      };
+      ctx.workspaceMode = 'COMPARE';
+      return paintCompare(lastCompare);
+    },
+    /**
+     * Reorder compare threads in 3D (tween); updates lastCompare cache.
+     * @param {object} comparePayload
+     */
+    async reorderCompare(comparePayload) {
+      if (!comparePayload?.items?.length) return null;
+      lastCompare = {
+        ...comparePayload,
+        featureSpace: comparePayload.featureSpace || 'RAW',
+      };
+      const orderedIds = lastCompare.items.map((item) => item.id);
+      try {
+        const labels = await instancer.animateCompareReorder(orderedIds, {
+          duration: 320,
+          onFrame: (frameLabels) => {
+            const enriched = enrichLabelsWithGroupMeta(
+              frameLabels,
+              lastCompare.items,
+            );
+            threadLabels.updateOrigins(mergeCompareOverlayLabels(enriched));
+          },
+        });
+        if (labels?.length) {
+          setCompareLabels(labels);
+        }
+        return labels;
+      } catch {
+        return paintCompare(lastCompare);
+      }
+    },
+    /**
+     * Apply live spatial slider values and rebuild active threads
      * (same pattern as legado `refreshRender` — no new API call).
      * @param {object} patch
      */
     setSpatialConfig(patch) {
       spatialConfig = mergeSpatialConfig(spatialConfig, patch);
-      if (!lastArithmetic) return null;
-      return paintArithmetic(lastArithmetic);
+      return paintActive();
+    },
+    /**
+     * Replace spatial config entirely (e.g. after MODE default resolve).
+     * @param {object} values
+     */
+    replaceSpatialConfig(values) {
+      spatialConfig = mergeSpatialConfig({}, values);
+      return paintActive();
     },
     refreshGeometry() {
-      if (!lastArithmetic) return null;
-      return paintArithmetic(lastArithmetic);
+      return paintActive();
     },
     resize: resizeToHost,
     dispose() {

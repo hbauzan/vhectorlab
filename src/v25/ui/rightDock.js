@@ -209,5 +209,27 @@ export function mountRightDock(container, options = {}) {
   return {
     getSpatial: () => ({ ...spatialState }),
     getViz: () => ({ ...viz }),
+    /**
+     * Push values into range inputs (e.g. after MODE default resolve).
+     * @param {object} values
+     * @param {{ emit?: boolean }} [opts]
+     */
+    syncSpatial(values, opts = {}) {
+      if (!values) return;
+      for (const def of SPATIAL_SLIDER_DEFS) {
+        if (values[def.key] === undefined) continue;
+        applySliderValue(def, values[def.key]);
+      }
+      spatialState.threadSpacingY = spatialState.threadVectorDistance;
+      if (opts.emit) emitSpatial();
+    },
+    /**
+     * Update dblclick restore defaults (MODE context change).
+     * @param {{ workspaceMode?: string, viewMode?: string, renderMode?: string }} ctx
+     */
+    setSpatialContext(ctx) {
+      const next = resolveSpatialDefaults(ctx || {});
+      Object.assign(defaults, next);
+    },
   };
 }
