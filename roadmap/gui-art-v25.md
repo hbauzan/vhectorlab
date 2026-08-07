@@ -5,7 +5,7 @@
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ Fase 9 spatial wire (update tip after merge)
+**HEAD tip (ops):** `main` @ `3835d4d` (Fase 9 spatial wire)
 
 ---
 
