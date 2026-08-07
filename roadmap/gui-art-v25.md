@@ -1,11 +1,11 @@
 # GUI & Art v25 — VHectorLab-3D (parallel skin + layout)
 
-**Estado:** en curso (Fases 1–7 en `main` — siguiente: **Fase 8 canvas wire**)  
+**Estado:** en curso (Fases 1–8 en branch — siguiente: **Fase 9 spatial wire** tras merge)  
 **Marca:** siempre **VHectorLab-3D** (nunca “Quantum Vector Lab”)  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **HF Space:** **fuera de esta etapa** (otra entrega, con OK explícito)  
 **Prompt agente (fase a fase):** [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md)  
-**HEAD tip (ops):** `main` @ `8a7c853` (Fase 7 hand-off docs; code tip includes `30fc841` visibility fix)
+**HEAD tip (ops):** `main` @ `8a7c853` (Fase 7); work branch `feat/v25-canvas-wire` (Fase 8 pending merge)
 
 ---
 
@@ -289,6 +289,16 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 - **DoD:** threads visibles tras calculate; hover telemetría mínima al footer si el wiring lo permite sin scope creep.
 - **Branch:** `feat/v25-canvas-wire`.
 
+#### Hand-off — Fase 8
+- **Branch / commit:** `feat/v25-canvas-wire` → `main` (after ship).
+- **Cómo probar:** backend up + `npm run dev` → `http://127.0.0.1:5173/v25/` → ONLINE auto-calc: Top-10 left **and** POINTS threads in center canvas (ANALYSIS framing). Hover a point → footer COORDS / HOVER TELEMETRY / TOKEN. CALCULATE VECTOR refreshes both. Legado `/` OK (smoke). Prefer URL with trailing slash.
+- **Tests:** `npm test` (incl. `tests/v25CanvasWire.test.js`); `npm run build` → `dist/v25/index.html` + shared engine chunk.
+- **Hecho:** `mountCanvasHost` reuses `SceneSetup` / `Navigation` / `Instancer` / `Interaction` / `ThreadLabels`; resize from host (not window); startup triad; hover→footer via `resolveHoverTelemetry`.
+- **NO hecho (siguiente fase):** Spatial sliders → live layout (`feat/v25-spatial-wire`); header MODE/VIEW/RENDER still UI-only; Compare/SAE/mobile docks later.
+- **Lecciones:** `v25:` canvas size = container (§6.0b lessons-learned).
+- **Riesgos abiertos para Fase 9:** wire `mountRightDock` slider callbacks → `spatialConfig` + `instancer.renderArithmeticData` in-situ (reuse legado `wireThreadSliders` pattern); keep ANALYSIS|POINTS framing; do not fork LayoutEngine; header RENDER/VIEW still not wired (optional thin hook if needed for fog/RIBBONS — ask if scope creep).
+- **Archivos tocados (alto nivel):** `src/v25/canvasHost.js`, `canvas.css`, `main.js`, `style.css`, `shell.css`, tests + roadmap/CHANGELOG/lessons.
+
 ### Fase 9 — Sliders live
 - **DoD:** Spacing/Distance/Amplitude/Length/Thickness afectan geometría (in-situ buffers).
 - **Branch:** `feat/v25-spatial-wire`.
@@ -347,7 +357,7 @@ Fases **1–6** = chrome (alineado a “empezar con menos esfuerzo”).
 | 5 | ✅ merged | `feat/v25-arithmetic-chrome` → `main` | 2026-08-07 | form A/B/C + Top-10 scroll host |
 | 6 | ✅ merged | `feat/v25-right-hud-chrome` → `main` | 2026-08-07 | spatial sliders + viz + footer HUD |
 | 7 | ✅ merged | `feat/v25-arithmetic-wire` → `main` | 2026-08-07 | Top-10 API + auto-boot; tip `30fc841`; canvas stub |
-| 8 | ☐ | | | |
+| 8 | ✅ merged | `feat/v25-canvas-wire` → `main` | 2026-08-07 | engine in canvas; POINTS; hover→footer |
 | 9 | ☐ | | | |
 | 10 | ☐ | | | |
 | 11 | ☐ | | | |
