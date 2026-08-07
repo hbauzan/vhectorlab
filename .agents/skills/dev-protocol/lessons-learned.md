@@ -339,10 +339,10 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **Solución Obligatoria**: README debe marcar Docker como **optional**; menú etiqueta option 7 con “needs Docker Desktop”; `ensure_docker` antes del build (detectar CLI, daemon caído → abrir Docker Desktop; si falta en macOS → `brew install --cask docker` + pedir arrancar la app).
 - **Invariante**: no meter Docker en `ensure_prerequisites` de option 1.
 
-### 8.5. Local folder / clone name = `VHectorLab-3D`
-- **Problema**: el working copy histórico se llamaba `lsv2` mientras el producto, `package.json`, `manifest.json` y el remoto GitHub ya eran VHectorLab 3D / `VHectorLab-3D`.
-- **Solución Obligatoria**: carpeta local canónica **`VHectorLab-3D`** (kebab-case, alineada al repo). README: `git clone …/VHectorLab-3D.git` + `cd VHectorLab-3D`. No renombrar `vl3d.*` localStorage ni packages npm solo por el folder.
-- **Invariante**: `roadmap/` puede seguir mencionando `lsv2` / VectorLab como historia; no reescribir archivo salvo necesidad.
+### 8.5. Local folder / clone name = `vhectorlab`
+- **Problema**: el working copy histórico se llamaba `lsv2`, luego `VHectorLab-3D`, mientras el remoto GitHub pasó a **`vhectorlab`**.
+- **Solución Obligatoria**: carpeta local canónica **`vhectorlab`** (minúsculas, alineada al repo). README: `git clone …/vhectorlab.git` + `cd vhectorlab`. Producto UI sigue **VHectorLab 3D**. No renombrar `vl3d.*` localStorage ni packages npm (`vhectorlab-3d`) solo por el folder/repo slug.
+- **Invariante**: `roadmap/` puede seguir mencionando `lsv2` / VectorLab / `VHectorLab-3D` como historia; no reescribir archivo salvo necesidad.
 
 ### 8.6. Renaming the repo folder breaks `backend/.venv` shebangs
 - **Problema**: Tras `mv lsv2 → VHectorLab-3D`, `uv sync` reporta OK pero `uv run pytest` falla: `Failed to spawn: pytest` / `No such file or directory`. Los entrypoints en `.venv/bin/*` siguen con shebang absoluto a la ruta vieja (`…/lsv2/backend/.venv/bin/python3`).

@@ -18,8 +18,8 @@ Everything goes through `./setup.sh`. On macOS, **option 1 installs missing tool
 
 ```bash
 # 1. Clone the repo (folder name matches the GitHub repo)
-git clone https://github.com/hbauzan/VHectorLab-3D.git
-cd VHectorLab-3D
+git clone https://github.com/hbauzan/vhectorlab.git
+cd vhectorlab
 
 # 2. Open the control panel
 chmod +x setup.sh   # first time only, if needed
