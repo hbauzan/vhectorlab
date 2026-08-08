@@ -55,6 +55,11 @@ import {
   DEFAULT_VIEW_MODE,
 } from './ui/appViewDefaults.js';
 import {
+  enterGalaxyChrome,
+  isGalaxyView,
+  leaveGalaxyChrome,
+} from './ui/galaxyChrome.js';
+import {
   loadArithmeticSettings,
   saveArithmeticSettings,
 } from './ui/arithmeticDefaults.js';
@@ -87,6 +92,9 @@ class VHectorLabApp {
 
     // 3. View Mode State — startup ARITHMETIC | ANALYSIS | POINTS
     this.viewMode = DEFAULT_VIEW_MODE;
+    /** @type {{ workspaceMode: string, viewMode: string, renderMode: string }|null} */
+    this._preGalaxyTriad = null;
+    this.galaxyMethod = 'umap';
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
@@ -109,18 +117,22 @@ class VHectorLabApp {
     this.navbar = new Navbar(
       this.appContainer,
       (renderMode) => {
+        if (isGalaxyView(this.viewMode)) return;
         state.setRenderMode(renderMode);
         this.applyContextViewDefaults();
         this.refreshRender();
       },
       (viewMode) => {
-        this.viewMode = viewMode;
-        this.applyContextViewDefaults();
-        this.refreshRender();
+        this.handleViewModeChange(viewMode);
       },
       (workspaceMode) => {
+        if (isGalaxyView(this.viewMode)) return;
         this.handleWorkspaceModeChange(workspaceMode);
-      }
+      },
+      (method) => {
+        this.galaxyMethod = method;
+        // Projection pipeline wires in later Galaxy slices.
+      },
     );
 
     // Tap/click "i" tips on editable fields (mobile-friendly; one tip at a time).
@@ -343,6 +355,72 @@ class VHectorLabApp {
       this.sidebar.element.classList.remove('hidden');
       this.refreshRender();
     }
+  }
+
+  /**
+   * VIEW triad: Galaxy locks MODE=COMPARE + RENDER=POINTS; leaving restores snapshot.
+   * @param {string} nextView
+   */
+  handleViewModeChange(nextView) {
+    const wasGalaxy = isGalaxyView(this.viewMode);
+    const entering = isGalaxyView(nextView);
+
+    if (entering && !wasGalaxy) {
+      const entered = enterGalaxyChrome({
+        workspaceMode: state.workspaceMode,
+        viewMode: this.viewMode,
+        renderMode: state.renderMode,
+      });
+      this._preGalaxyTriad = entered.restore;
+      this.viewMode = entered.viewMode;
+      this.galaxyMethod = entered.method;
+      this.navbar.setModeRenderLocked(true);
+      this.navbar.setGalaxyMethod(entered.method);
+      this.navbar.setViewMode(entered.viewMode);
+
+      if (state.renderMode !== entered.renderMode) {
+        state.setRenderMode(entered.renderMode);
+      }
+      this.navbar.setRenderMode(entered.renderMode);
+
+      if (state.workspaceMode !== entered.workspaceMode) {
+        this.navbar.setWorkspaceMode(entered.workspaceMode);
+        this.handleWorkspaceModeChange(entered.workspaceMode);
+      } else {
+        this.navbar.setWorkspaceMode(entered.workspaceMode);
+        this.applyContextViewDefaults();
+        this.refreshRender();
+      }
+      return;
+    }
+
+    if (!entering && wasGalaxy) {
+      const left = leaveGalaxyChrome(this._preGalaxyTriad, nextView);
+      this._preGalaxyTriad = null;
+      this.viewMode = left.viewMode;
+      this.navbar.setModeRenderLocked(false);
+      this.navbar.setViewMode(left.viewMode);
+
+      if (state.renderMode !== left.renderMode) {
+        state.setRenderMode(left.renderMode);
+      }
+      this.navbar.setRenderMode(left.renderMode);
+
+      if (state.workspaceMode !== left.workspaceMode) {
+        this.navbar.setWorkspaceMode(left.workspaceMode);
+        this.handleWorkspaceModeChange(left.workspaceMode);
+      } else {
+        this.navbar.setWorkspaceMode(left.workspaceMode);
+        this.applyContextViewDefaults();
+        this.refreshRender();
+      }
+      return;
+    }
+
+    this.viewMode = nextView;
+    this.navbar.setViewMode(nextView);
+    this.applyContextViewDefaults();
+    this.refreshRender();
   }
 
   refreshRender() {
