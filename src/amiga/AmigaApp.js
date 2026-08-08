@@ -1,13 +1,12 @@
 /**
- * Amiga Workbench lab app — product wire reused from legacy `src/main.js`
- * (engine / ui / core / visualizer). Chrome host = `/amiga/` MagicWB shell.
- * Do not import from `src/v25/**`.
+ * Amiga Workbench lab — same fullscreen + floating-dock layout as legacy `/`
+ * (`src/main.js`), with MagicWB skin only.
+ * PROHIBIDO: v25 multi-zone / panel-grid shell. Do not import `src/v25/**`.
  */
 import {
   applyAmigaCssVars,
   resolveAmigaColors,
 } from './amigaEnvColors.js';
-import { mountShell, resolveCanvasSize } from './shell.js';
 import { PRODUCT_VERSION } from './version.js';
 
 import * as THREE from 'three';
@@ -94,23 +93,9 @@ class AmigaApp {
     document.body.classList.add('amiga-workbench');
 
     this.appContainer = document.getElementById('app');
-    this.zones = mountShell(this.appContainer);
-    this.canvasHost = this.zones.canvas;
 
-    // 1. Core 3D Scene Engine — sized to canvas zone (not window)
-    this.sceneSetup = new SceneSetup(this.canvasHost);
-    this.sceneSetup.onWindowResize = () => {
-      const { width, height } = resolveCanvasSize(this.canvasHost);
-      this.sceneSetup.camera.aspect = width / height;
-      this.sceneSetup.camera.updateProjectionMatrix();
-      this.sceneSetup.renderer.setSize(width, height, false);
-    };
-    this.sceneSetup.onWindowResize();
-    if (typeof ResizeObserver !== 'undefined') {
-      this._canvasRo = new ResizeObserver(() => this.sceneSetup.onWindowResize());
-      this._canvasRo.observe(this.canvasHost);
-    }
-
+    // 1. Core 3D Scene Engine (fullscreen #app — same as legacy, NOT a v25 zone grid)
+    this.sceneSetup = new SceneSetup(this.appContainer);
     this.navigation = new Navigation(this.sceneSetup.camera, this.sceneSetup.renderer.domElement);
     this.instancer = new Instancer(this.sceneSetup.scene);
     this.interaction = new Interaction(
@@ -134,23 +119,26 @@ class AmigaApp {
     /** @type {{ fingerprint: string, itemCount: number, rawData: object }|null} */
     this._galaxyCompareCache = null;
 
-    // 4. UI Components — zones: header / left / right / footer / canvas
+    // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
+    // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
     this.modal = new CustomModal();
-    this.hud = new HUD(this.zones.footer, {
+    this.hud = new HUD(this.appContainer, {
       showCamPose: import.meta.env.VITE_SHOW_CAM_POSE === 'true'
     });
-    this.threadLabels = new ThreadLabels(this.canvasHost);
+    this.threadLabels = new ThreadLabels(this.appContainer);
 
+    // Soft portrait overlay (Etapa B / D13) — never pauses the render loop.
     this.landscapeGate = new LandscapeGate({ parent: this.appContainer });
 
+    // Mobile joystick + look + Q/E (Etapa C). Hidden on desktop/tablet layout.
     this.touchControls = new TouchControls({
-      parent: this.canvasHost,
+      parent: this.appContainer,
       navigation: this.navigation,
       canvas: this.sceneSetup.renderer.domElement,
     });
 
     this.navbar = new Navbar(
-      this.zones.header,
+      this.appContainer,
       (renderMode) => {
         if (isGalaxyView(this.viewMode)) return;
         state.setRenderMode(renderMode);
@@ -182,7 +170,7 @@ class AmigaApp {
 
     // Left dock hosts Arithmetic OR Compare (shared collapsed state across MODE).
     this.leftDock = new CollapsibleDock({
-      parent: this.zones.left,
+      parent: this.appContainer,
       side: 'left',
       id: 'amiga-left-dock',
       storageKey: 'vl3d.amiga.dock.left.collapsed',
@@ -232,7 +220,7 @@ class AmigaApp {
 
     // Right dock: spatial sliders + AxisGizmo (roadmap D1).
     this.rightDock = new CollapsibleDock({
-      parent: this.zones.right,
+      parent: this.appContainer,
       side: 'right',
       id: 'amiga-right-dock',
       storageKey: 'vl3d.amiga.dock.right.collapsed',
@@ -1447,9 +1435,8 @@ class AmigaApp {
     // Update corner axis gizmo
     this.axisGizmo.update();
 
-    // Thread labels projected against canvas host (not full window)
-    const { width, height } = resolveCanvasSize(this.canvasHost);
-    this.threadLabels.update(this.sceneSetup.camera, width, height);
+    // Update floating Glassmorphic thread labels position
+    this.threadLabels.update(this.sceneSetup.camera, window.innerWidth, window.innerHeight);
 
     // Render 3D Scene
     this.sceneSetup.render();

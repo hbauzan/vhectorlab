@@ -20,10 +20,11 @@ Lecciones: `.agents/skills/dev-protocol/lessons-learned.md` — **§6.0e obligat
 
 ## AISLAMIENTO (NO negociable)
 1. **PROHIBIDO** tocar `src/v25/**`, `v25/**`, o “sync” a v25.
-2. Trabajo nuevo SOLO en `amiga/` + `src/amiga/**`.
-3. Legado `/` intacto salvo cambios MPA compartidos mínimos (`vite.mpa.js`, `vite.config.js`, tests MPA).
-4. Antes de approval: `git diff -- src/v25 v25` vacío.
-5. Este epic **NO** es gui-art / gui-art-v25. Cero dependencia de ese norte visual.
+2. **PROHIBIDO** copiar layout/shell de v25 (grid header|left|canvas|right|footer). Amiga = layout **legado** fullscreen + docks flotantes + skin MagicWB.
+3. Trabajo nuevo SOLO en `amiga/` + `src/amiga/**`.
+4. Legado `/` intacto salvo cambios MPA compartidos mínimos (`vite.mpa.js`, `vite.config.js`, tests MPA).
+5. Antes de approval: `git diff -- src/v25 v25` vacío; `src/amiga` sin `data-zone` / zone grid.
+6. Este epic **NO** es gui-art / gui-art-v25.
 
 ## Decisiones CERRADAS (no re-preguntar)
 - Bandera blanca `/amiga/`; Magic Workbench palette; Topaz self-host; CSS estático.

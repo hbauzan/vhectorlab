@@ -174,7 +174,7 @@ Cambios MPA compartidos permitidos (mínimos):
 | :---: | :--- | :--- | :---: | :--- |
 | **0** | Plan + prompt | Este doc + `PROMPT-amiga-workbench.md` + README roadmap + lesson §6.0e | — | ✅ 2026-08-08 |
 | **1** | Scaffold MPA + Topaz + tokens | `/amiga/` carga; Topaz self-host; serrucho; fondo MagicWB; `/` y `/v25/` intactos; bump **2.4.0**; tests MPA verdes | 0 | ✅ 2026-08-08 (branch `feat/amiga-scaffold`) |
-| **2** | Shell layout desktop+mobile | Zonas mínimas (header / left / canvas-host / right o equivalente) con tokens; responsive OK o pregunta si falla | 1 | ✅ 2026-08-08 |
+| **2** | Shell layout desktop+mobile | **Layout legado**: fullscreen `#app` + docks flotantes (NO grid left/canvas/right de v25); MagicWB skin; mobile MQ OK | 1 | ✅ 2026-08-08 (corregido: sin zone grid) |
 | **3** | Chrome 2D mínimo | Paneles legibles “WB-ish” **sin** cosplay Q2-C (bordes/contraste MagicWB, no icon packs) | 2 | ✅ 2026-08-08 |
 | **4** | Wire Arithmetic (o panel primario legado) | CTA real vía `/api`; lista resultados; canvas aún stub OK | 3 | ✅ 2026-08-08 |
 | **5** | Canvas host + engine reuse | Montar scene existente en host amiga; POINTS startup; **sin** retocar shaders/look 3D | 4 | ✅ 2026-08-08 |
@@ -233,12 +233,11 @@ Solo cuando Slices 1–6 cumplan DoD y el humano diga OK:
 
 ### Hand-off — Slices 2–6 (wire)
 - **Branch:** `feat/amiga-scaffold`
-- **Cómo probar:** `npm run dev` → `http://127.0.0.1:5173/amiga/` — lab completo MagicWB; Calculate / Compare / SAE; smoke `/` y `/v25/`
-- **Tests:** `npm test` (amigaShell, amigaTokens, amigaEnvColors, viteMpa…)
-- **Hecho:** shell 5 zonas; chrome MagicWB overrides; AmigaApp = legado wire en zonas; canvas host-sized; SemVer **2.4.1**
-- **NO hecho:** HF Space publish (Slice 7 — preguntar URL default)
-- **Verificación aislamiento:** sin tocar `src/v25/**`
-- **Nota:** UI modules reusan `src/ui/*` + `src/engine/*` (legado), no v25
+- **Cómo probar:** `npm run dev` → `http://127.0.0.1:5173/amiga/` — **mismo layout que `/`** (canvas fullscreen + docks flotantes) con skin MagicWB; NO paneles tipo v25
+- **Tests:** `npm test` (`amigaLayoutModel` = `fullscreen-floating-docks`)
+- **Hecho:** AmigaApp = legado wire + MagicWB chrome; SemVer **2.4.x**
+- **NO hecho:** HF Space (Slice 7)
+- **Invariante:** prohibido reintroducir shell multi-zona (lesson §6.0e)
 
 ### Hand-off — Slice 1
 - **Branch / commit:** `feat/amiga-scaffold` (local; approval gate)
