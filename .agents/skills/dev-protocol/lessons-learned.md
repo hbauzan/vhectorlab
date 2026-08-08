@@ -288,6 +288,12 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
+### 6.0d. `src/v25/**` — no tocar salvo pedido explícito del humano
+- **Regla**: el árbol `src/v25/` (y `v25/index.html` / assets MPA asociados) es un **proyecto aparte**. En roadmaps/epics del UI legado (`src/main.js`, `src/ui/*`, `src/visualizer/*`) está **prohibido** editar `src/v25/**`.
+- **Invariante**: no “sync de cortesía” (versión, copy, presets compartidos, imports) en v25 **a menos que el humano lo indique explícitamente** en el prompt (“tocá v25”, “sync version en v25”, “también en /v25/”, etc.). Silencio ≠ permiso.
+- **Verificación**: antes de approval gate / merge, `git diff -- src/v25` debe estar vacío si el epic no autorizó v25.
+- **Excepción**: solo cuando el humano lo pida; no inferir desde SemVer, CHANGELOG, o que v25 importe módulos de `src/ui/`.
+
 ### 6.0c. `v25:` MODE switch = visibility toggle, never wipe left host
 - **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10). Además `display: flex` en `.lab-left-host > [data-panel]` **pisa** el UA `[hidden]{display:none}` → el slot Arithmetic oculto sigue ocupando flex y deja un **hueco negro** arriba del Compare (lista cosine aplastada abajo).
 - **Solución Obligatoria**: host `.lab-left-host` con dos slots; ambos paneles montados; MODE alterna `hidden` + `.is-hidden` **y** CSS `display: none !important` en `[data-panel][hidden]`. Canvas guarda `lastArithmetic` **y** `lastCompare`. Al entrar COMPARE, VIEW preferido = **NAVIGATION** (framing multi-thread); ARITHMETIC vuelve a **ANALYSIS**.
@@ -326,7 +332,7 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 ### 7.0. Product name (2026-08-03)
 - Canonical product name: **VHectorLab 3D** (was VectorLab 3D / VECTORLAB). Keep `roadmap/` historical docs as-is.
 - Do **not** rename `localStorage` keys `vl3d.*` — technical prefix, not brand; renaming breaks persisted prefs.
-- Sync brand + SemVer: `manifest.json`, `package.json`, Navbar `version-tag`, FastAPI `app.version`, `CHANGELOG`.
+- Sync brand + SemVer: `manifest.json`, `package.json`, Navbar `version-tag`, FastAPI `app.version`, `CHANGELOG`. **`src/v25/version.js` solo si el humano pide sync v25** (ver §6.0d).
 
 ### 7.1. Diagnosis (why it felt broken)
 - **Too fast (Aug 2026 epic day)**: `1.1.0`→`1.5.0` burned a **MINOR per roadmap etapa** (docks / landscape / touch / MESH / RIBBONS) on the same calendar day. Semantically each etapa *was* a capability, but the Navbar tag looked like five releases without five ship moments.
