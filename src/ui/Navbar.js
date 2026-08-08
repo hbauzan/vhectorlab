@@ -1,5 +1,6 @@
 /**
- * Top Navbar component with title, status indicator, View Mode tabs (ANALYSIS | NAVIGATION), and Render Mode selector tabs (POINTS | RIBBONS).
+ * Top Navbar: MODE | VIEW (ANALYSIS | NAVIGATION | GALAXY) | RENDER.
+ * Galaxy: method chips (UMAP active; PCA/t-SNE disabled) + MODE/RENDER lock.
  * Mobile: overflow tab strip gets ◀ ▶ scroll arrows.
  */
 import { getTabsScrollState, nextTabsScrollLeft } from './navbarTabsScroll.js';
@@ -8,17 +9,41 @@ import {
   DEFAULT_VIEW_MODE,
   DEFAULT_WORKSPACE_MODE,
 } from './appViewDefaults.js';
+import {
+  DEFAULT_GALAXY_METHOD,
+  GALAXY_METHODS,
+  GALAXY_VIEW,
+  isGalaxyView,
+} from './galaxyChrome.js';
 
 export class Navbar {
-  constructor(containerElement, onRenderModeChangeCallback, onViewModeChangeCallback, onWorkspaceModeChangeCallback) {
+  constructor(
+    containerElement,
+    onRenderModeChangeCallback,
+    onViewModeChangeCallback,
+    onWorkspaceModeChangeCallback,
+    onGalaxyMethodChangeCallback,
+  ) {
     this.container = containerElement || document.body;
     this.onRenderModeChange = onRenderModeChangeCallback;
     this.onViewModeChange = onViewModeChangeCallback;
     this.onWorkspaceModeChange = onWorkspaceModeChangeCallback;
+    this.onGalaxyMethodChange = onGalaxyMethodChangeCallback;
+    this._modeRenderLocked = false;
+    this._galaxyMethod = DEFAULT_GALAXY_METHOD;
 
     const workspaceActive = (mode) => (mode === DEFAULT_WORKSPACE_MODE ? ' active' : '');
     const viewActive = (mode) => (mode === DEFAULT_VIEW_MODE ? ' active' : '');
     const renderActive = (mode) => (mode === DEFAULT_RENDER_MODE ? ' active' : '');
+
+    const methodChipsHtml = Object.values(GALAXY_METHODS)
+      .map((m) => {
+        const disabled = m.enabled ? '' : ' disabled';
+        const title = m.title ? ` title="${m.title}"` : '';
+        const active = m.id === DEFAULT_GALAXY_METHOD ? ' active' : '';
+        return `<button type="button" data-galaxy-method="${m.id}" class="galaxy-method-chip${active}"${disabled}${title}>${m.label}</button>`;
+      })
+      .join('');
 
     this.element = document.createElement('header');
     this.element.id = 'top-navbar';
@@ -45,6 +70,12 @@ export class Navbar {
             <span class="tab-label">VIEW:</span>
             <button data-view="ANALYSIS" class="view-tab${viewActive('ANALYSIS')}">ANALYSIS</button>
             <button data-view="NAVIGATION" class="view-tab${viewActive('NAVIGATION')}">NAVIGATION</button>
+            <div class="galaxy-view-cluster">
+              <button data-view="${GALAXY_VIEW}" class="view-tab${viewActive(GALAXY_VIEW)}">GALAXY</button>
+              <div class="galaxy-method-chips" hidden aria-label="Galaxy projection method">
+                ${methodChipsHtml}
+              </div>
+            </div>
           </div>
 
           <div class="render-mode-tabs">
@@ -67,6 +98,8 @@ export class Navbar {
     this.renderTabs = this.element.querySelectorAll('.mode-tab');
     this.viewTabs = this.element.querySelectorAll('.view-tab');
     this.workspaceTabs = this.element.querySelectorAll('.workspace-tab');
+    this.galaxyMethodChips = this.element.querySelector('.galaxy-method-chips');
+    this.galaxyMethodButtons = this.element.querySelectorAll('[data-galaxy-method]');
     this.statusDot = this.element.querySelector('#backend-status-dot');
     this.statusText = this.element.querySelector('#backend-status-text');
     this.tabsTrack = this.element.querySelector('.navbar-center-controls');
@@ -79,38 +112,45 @@ export class Navbar {
   }
 
   initEventListeners() {
-    this.workspaceTabs.forEach(tab => {
+    this.workspaceTabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {
-        const mode = e.target.getAttribute('data-workspace');
-        this.workspaceTabs.forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-
+        if (this._modeRenderLocked || tab.disabled) return;
+        const mode = e.currentTarget.getAttribute('data-workspace');
+        this.setWorkspaceMode(mode);
         if (this.onWorkspaceModeChange) {
           this.onWorkspaceModeChange(mode);
         }
       });
     });
 
-    this.renderTabs.forEach(tab => {
+    this.renderTabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {
-        const mode = e.target.getAttribute('data-mode');
-        this.renderTabs.forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-
+        if (this._modeRenderLocked || tab.disabled) return;
+        const mode = e.currentTarget.getAttribute('data-mode');
+        this.setRenderMode(mode);
         if (this.onRenderModeChange) {
           this.onRenderModeChange(mode);
         }
       });
     });
 
-    this.viewTabs.forEach(tab => {
+    this.viewTabs.forEach((tab) => {
       tab.addEventListener('click', (e) => {
-        const view = e.target.getAttribute('data-view');
-        this.viewTabs.forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-
+        const view = e.currentTarget.getAttribute('data-view');
+        this.setViewMode(view);
         if (this.onViewModeChange) {
           this.onViewModeChange(view);
+        }
+      });
+    });
+
+    this.galaxyMethodButtons.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        if (btn.disabled) return;
+        const method = e.currentTarget.getAttribute('data-galaxy-method');
+        this.setGalaxyMethod(method);
+        if (this.onGalaxyMethodChange) {
+          this.onGalaxyMethodChange(method);
         }
       });
     });
@@ -137,7 +177,6 @@ export class Navbar {
       this._tabsResizeObserver.observe(this.tabsScroller);
     }
 
-    // Layout may settle after fonts / first paint
     requestAnimationFrame(sync);
     window.addEventListener('resize', sync);
     this._tabsResizeHandler = sync;
@@ -173,17 +212,18 @@ export class Navbar {
   }
 
   setViewMode(viewMode) {
-    this.viewTabs.forEach(t => {
+    this.viewTabs.forEach((t) => {
       if (t.getAttribute('data-view') === viewMode) {
         t.classList.add('active');
       } else {
         t.classList.remove('active');
       }
     });
+    this.setGalaxyMethodChipsVisible(isGalaxyView(viewMode));
   }
 
   setWorkspaceMode(workspaceMode) {
-    this.workspaceTabs.forEach(t => {
+    this.workspaceTabs.forEach((t) => {
       if (t.getAttribute('data-workspace') === workspaceMode) {
         t.classList.add('active');
       } else {
@@ -192,10 +232,54 @@ export class Navbar {
     });
   }
 
+  setRenderMode(renderMode) {
+    this.renderTabs.forEach((t) => {
+      if (t.getAttribute('data-mode') === renderMode) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+  }
+
+  /**
+   * Lock MODE + RENDER while in Galaxy (COMPARE + POINTS forced).
+   * @param {boolean} locked
+   */
+  setModeRenderLocked(locked) {
+    this._modeRenderLocked = !!locked;
+    this.workspaceTabs.forEach((t) => {
+      t.disabled = this._modeRenderLocked;
+      t.classList.toggle('tab-locked', this._modeRenderLocked);
+      t.setAttribute('aria-disabled', this._modeRenderLocked ? 'true' : 'false');
+    });
+    this.renderTabs.forEach((t) => {
+      t.disabled = this._modeRenderLocked;
+      t.classList.toggle('tab-locked', this._modeRenderLocked);
+      t.setAttribute('aria-disabled', this._modeRenderLocked ? 'true' : 'false');
+    });
+  }
+
+  setGalaxyMethodChipsVisible(visible) {
+    if (!this.galaxyMethodChips) return;
+    if (visible) {
+      this.galaxyMethodChips.removeAttribute('hidden');
+    } else {
+      this.galaxyMethodChips.setAttribute('hidden', '');
+    }
+  }
+
+  setGalaxyMethod(method) {
+    this._galaxyMethod = method || DEFAULT_GALAXY_METHOD;
+    this.galaxyMethodButtons.forEach((btn) => {
+      const id = btn.getAttribute('data-galaxy-method');
+      btn.classList.toggle('active', id === this._galaxyMethod);
+    });
+  }
+
   setStatus(online, modelName = '', device = '') {
     if (online) {
       this.statusDot.className = 'status-dot online';
-      // Inline format keeps Navbar free of circular imports with arithmeticDefaults
       const model = String(modelName || '').trim();
       const dev = String(device || '').trim().toLowerCase();
       let label = 'ONLINE';
