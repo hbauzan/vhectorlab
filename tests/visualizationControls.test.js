@@ -14,6 +14,14 @@ import {
   anchorsFromSettings,
   remapAbsTWithZeroCoverage,
   normalizeZeroCoverage,
+  normalizeHighCoverage,
+  highCoverageFromSlider,
+  highCoverageToSlider,
+  formatHighCoverage,
+  effectiveZeroCoveragePercent,
+  HIGH_COVERAGE_MIN,
+  HIGH_COVERAGE_MAX,
+  HIGH_COVERAGE_SLIDER_MAX,
 } from '../src/ui/visualizationControlsDefaults.js';
 import {
   visualizationControlsMarkup,
@@ -53,8 +61,15 @@ describe('visualizationControlsDefaults', () => {
       colorPositive: '#FFE600',
       colorZero: '#000000',
       colorNegative: '#9900E6',
-      zeroCoverage: 0,
+      zeroCoverageEnabled: false,
+      zeroCoverage: 30,
       labelsVisible: true,
+      sameSignCancelEnabled: false,
+      sameSignCancelCoverage: 30,
+      oppositeHighlightEnabled: false,
+      oppositeHighlightColor: '#00E5FF',
+      oppositeHighlightStrength: 70,
+      oppositeCancelCoverage: 0,
     });
   });
 
@@ -149,12 +164,18 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('▼');
     expect(html).toContain('viz-zero-coverage-slider');
+    expect(html).toContain('viz-zero-coverage-enabled');
     expect(html).toContain('Zero coverage');
+    expect(html).toContain('viz-group-contrast');
+    expect(html).toContain('Group contrast');
+    expect(html).toContain('viz-same-sign-enabled');
+    expect(html).toContain('viz-opposite-enabled');
     expect(html).toContain('viz-labels-toggle');
     expect(html).toContain('Hide labels');
     expect(html).toContain('field-info-btn');
     expect(html).toContain('data-field-info="Which signs show."');
-    expect(html).toContain('data-field-info="% held at zero."');
+    expect(html).toContain('data-field-info="Hold range at zero."');
+    expect(html).toContain('data-field-info="Groups only (G1↔G2)."');
   });
 
   it('collapse tab is a sibling of viz-panel-body (outside card chrome)', () => {
@@ -365,9 +386,34 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(remapAbsTWithZeroCoverage(1, 0.5)).toBeCloseTo(1, 5);
   });
 
-  it('normalizeZeroCoverage clamps', () => {
+  it('supports near-100% coverage', () => {
+    const c = HIGH_COVERAGE_MAX / 100;
+    expect(remapAbsTWithZeroCoverage(0.99, c)).toBe(0);
+    expect(remapAbsTWithZeroCoverage(1, c)).toBeCloseTo(1, 5);
+  });
+
+  it('normalizeZeroCoverage clamps conflict cover 0–90', () => {
     expect(normalizeZeroCoverage(150)).toBe(90);
     expect(normalizeZeroCoverage(-3)).toBe(0);
     expect(normalizeZeroCoverage('40')).toBe(40);
+  });
+
+  it('normalizeHighCoverage clamps 30…99.9999', () => {
+    expect(normalizeHighCoverage(10)).toBe(HIGH_COVERAGE_MIN);
+    expect(normalizeHighCoverage(100)).toBe(HIGH_COVERAGE_MAX);
+    expect(normalizeHighCoverage(50.12345)).toBeCloseTo(50.1235, 4);
+  });
+
+  it('highCoverage slider maps endpoints', () => {
+    expect(highCoverageFromSlider(0)).toBe(HIGH_COVERAGE_MIN);
+    expect(highCoverageFromSlider(HIGH_COVERAGE_SLIDER_MAX)).toBe(HIGH_COVERAGE_MAX);
+    expect(highCoverageToSlider(HIGH_COVERAGE_MIN)).toBe(0);
+    expect(highCoverageToSlider(HIGH_COVERAGE_MAX)).toBe(HIGH_COVERAGE_SLIDER_MAX);
+    expect(formatHighCoverage(HIGH_COVERAGE_MAX)).toBe('99.9999%');
+  });
+
+  it('effectiveZeroCoveragePercent is 0 when Off', () => {
+    expect(effectiveZeroCoveragePercent({ zeroCoverageEnabled: false, zeroCoverage: 80 })).toBe(0);
+    expect(effectiveZeroCoveragePercent({ zeroCoverageEnabled: true, zeroCoverage: 80 })).toBe(80);
   });
 });

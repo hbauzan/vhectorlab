@@ -14,7 +14,9 @@ describe('FIELD_INFO catalog', () => {
       'compareTokens', 'dimSort',
       'saeToggle', 'saeHidden', 'saeK', 'saeEpochs', 'saeLr', 'saeBatch',
       'spacingX', 'vectorDistY', 'amplitudeY', 'lengthZ', 'thickness',
-      'vizFilter', 'colorPos', 'colorZero', 'colorNeg', 'zeroCoverage', 'labelsToggle',
+      'vizFilter', 'colorPos', 'colorZero', 'colorNeg', 'zeroCoverage', 'zeroCoverageAmount', 'labelsToggle',
+      'groupContrast', 'sameSignCancel', 'sameSignCoverage',
+      'oppositeHighlight', 'oppositeColor', 'oppositeStrength', 'oppositeCancel',
     ];
     for (const key of required) {
       expect(FIELD_INFO[key], key).toBeTruthy();

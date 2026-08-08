@@ -255,7 +255,10 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 | Expectation vs math | RAW G1↔G2 centroid cosine ~0.55 (not antipodal); SAE can improve (~0.22) but paint still hides it | Fix paint/order first; wider SAE train is L3, not required for readability |
 | Layout axes (ANALYSIS) | X=dim, Y=thread stack + val×amp, Z=0 | Soft Y gap between `GROUP_*` blocks (+1× spacing) aids domain reading |
 
-**Modules shipped (reference):** `saeFilterBridge.js`, `groupStackLayout.js`, `dimContrastSort.js`; wiring in Compare panel + Instancer layout. Diagnosis: `scripts/diagnose_group_separation.py`. Roadmap: `roadmap/compare-group-contrast-viz.md`.
+### 4.11b. Group contrast paint (shared noise / sign conflict)
+- **Problema**: En Compare con ≥2 `GROUP_*`, dims del mismo signo en ambos grupos son ruido compartido; dims de signo opuesto son señal — sin controles de paint dedicados.
+- **Solución**: Deep module `groupDimContrast.js` — means raw G1↔G2; `sim = 1−|Δ|/(|a|+|b|)`; cancel ZC-style sobre metric alta → negro; opposite → highlight color × strength×diff + conflict coverage independiente. Solo paint (Y intacto). UI gated (`setGroupContrastControlsEnabled`) hasta ≥2 grupos.
+- **Invariante**: Zero coverage global y Group contrast son independientes; On habilita sliders (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`.
 
 ### 4.12. Bottom HUD hover activation (POINTS / RIBBONS)
 - **Problema**: `ACTIVATION` siempre `0.0000` — `Interaction` pasaba `userData` del mesh (`{ pointsData }`), y el HUD leía `userData.val` / `data.activation` (inexistentes).

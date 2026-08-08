@@ -5,6 +5,7 @@
 export const HUD_PLACEHOLDERS = Object.freeze({
   coords: 'X: 0 | Y: 0 | Z: 0',
   segment: 'RESULT VECTOR',
+  dim: 'DIM: --',
   activation: 'ACTIVATION: --',
   token: '--',
 });
@@ -19,6 +20,7 @@ export function footerHudMarkup() {
       <div class="lab-hud__block lab-hud__block--center">
         <span class="lab-hud__label">HOVER TELEMETRY</span>
         <span id="lab-hud-segment" class="lab-hud__badge">${HUD_PLACEHOLDERS.segment}</span>
+        <span id="lab-hud-dim" class="lab-hud__val lab-mono">${HUD_PLACEHOLDERS.dim}</span>
         <span id="lab-hud-activation" class="lab-hud__val lab-mono">${HUD_PLACEHOLDERS.activation}</span>
       </div>
       <div class="lab-hud__block">
@@ -40,11 +42,13 @@ export function mountFooterHud(container) {
       const el = container.querySelector('#lab-hud-coords');
       if (el) el.textContent = text;
     },
-    setTelemetry({ segment, activation, token } = {}) {
+    setTelemetry({ segment, dim, activation, token } = {}) {
       const seg = container.querySelector('#lab-hud-segment');
+      const dimEl = container.querySelector('#lab-hud-dim');
       const act = container.querySelector('#lab-hud-activation');
       const tok = container.querySelector('#lab-hud-token');
       if (seg && segment != null) seg.textContent = segment;
+      if (dimEl && dim != null) dimEl.textContent = dim;
       if (act && activation != null) act.textContent = activation;
       if (tok && token != null) tok.textContent = token;
     },

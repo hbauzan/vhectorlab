@@ -29,6 +29,7 @@ export class HUD {
       <div class="hud-center">
         <span class="hud-label">HOVER TELEMETRY:</span>
         <span id="hud-segment" class="hud-badge">RESULT VECTOR</span>
+        <span id="hud-dim" class="hud-val">DIM: --</span>
         <span id="hud-activation" class="hud-highlight">ACTIVATION: --</span>
       </div>
       <div class="hud-right">
@@ -41,11 +42,13 @@ export class HUD {
 
     this.coordsEl = this.element.querySelector('#hud-coords');
     this.segmentEl = this.element.querySelector('#hud-segment');
+    this.dimEl = this.element.querySelector('#hud-dim');
     this.activationEl = this.element.querySelector('#hud-activation');
     this.tokenEl = this.element.querySelector('#hud-token');
     this.centerEl = this.element.querySelector('.hud-center');
 
     this._lastActivation = null;
+    this._lastDim = null;
     this._resizeObserver = null;
 
     if (typeof ResizeObserver !== 'undefined' && this.centerEl) {
@@ -53,6 +56,7 @@ export class HUD {
         if (this._lastActivation != null) {
           this._renderActivation(this._lastActivation);
         }
+        this._renderDim(this._lastDim);
       });
       this._resizeObserver.observe(this.centerEl);
     }
@@ -108,8 +112,10 @@ export class HUD {
     const t = resolveHoverTelemetry(data);
     if (!t) {
       this._lastActivation = null;
+      this._lastDim = null;
       this.coordsEl.textContent = 'X: -- | Y: -- | Z: --';
       this.segmentEl.textContent = 'NEUTRAL SPACE';
+      this._renderDim(null);
       this.activationEl.textContent = 'ACTIVATION: --';
       this.activationEl.style.color = '#888888';
       this.activationEl.removeAttribute('title');
@@ -121,10 +127,28 @@ export class HUD {
     this.coordsEl.textContent = `X: ${Math.round(pos.x)} | Y: ${Math.round(pos.y)} | Z: ${Math.round(pos.z)}`;
 
     this._lastActivation = t.activation;
+    this._lastDim = t.dim;
+    this._renderDim(t.dim);
     this._renderActivation(t.activation);
 
     this.segmentEl.textContent = t.type;
     this.tokenEl.textContent = t.token;
+  }
+
+  /**
+   * @param {number|null|undefined} dim
+   * @private
+   */
+  _renderDim(dim) {
+    if (!this.dimEl) return;
+    if (dim == null || !Number.isFinite(dim)) {
+      this.dimEl.textContent = 'DIM: --';
+      this.dimEl.removeAttribute?.('title');
+      return;
+    }
+    const n = Math.trunc(dim);
+    this.dimEl.textContent = `DIM: ${n}`;
+    this.dimEl.title = `dim: ${n}`;
   }
 
   /**
@@ -149,11 +173,12 @@ export class HUD {
     const centerW = this.centerEl.clientWidth || 160;
     const labelW = this.centerEl.querySelector('.hud-label')?.offsetWidth || 0;
     const badgeW = this.segmentEl?.offsetWidth || 0;
-    const gap = 16;
-    const available = centerW - labelW - badgeW - gap;
+    const dimW = this.dimEl?.offsetWidth || 0;
+    const gap = 20;
+    const available = centerW - labelW - badgeW - dimW - gap;
     // Mobile wrap: if center is tight, allow activation to use most of the bar
     if (available < 64 && this.element?.clientWidth) {
-      return Math.max(72, Math.floor(this.element.clientWidth * 0.45));
+      return Math.max(72, Math.floor(this.element.clientWidth * 0.4));
     }
     return Math.max(64, available);
   }

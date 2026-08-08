@@ -32,6 +32,23 @@ describe('resolveHoverTelemetry', () => {
     expect(t.point).toEqual({ x: 10, y: 2, z: 0 });
   });
 
+  it('maps ribbon actIdx through sourceDims when present', () => {
+    const data = {
+      index: 4,
+      face: { a: 6, b: 7, c: 8 },
+      userData: {
+        kind: 'wideRibbon',
+        activations: [0.1, 0.2, 0.3, 0.4],
+        sourceDims: [10, 20, 30, 40],
+        token: 'dog',
+        type: 'compare',
+      },
+    };
+    const t = resolveHoverTelemetry(data);
+    expect(t.activation).toBe(0.4);
+    expect(t.dim).toBe(40);
+  });
+
   it('does not fall back to 0 when pointsData has a real value (regression)', () => {
     // Legacy HUD read userData.val / data.activation — both missing on Points meshes
     const data = {

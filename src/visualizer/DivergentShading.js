@@ -132,11 +132,17 @@ export function getDivergentColor(val, absMax = 1.0, anchors = null, zeroCoverag
  */
 export const divergentVertexShader = `
 attribute float intensity;
+attribute float aCancel;
+attribute float aHighlight;
 varying float vIntensity;
+varying float vCancel;
+varying float vHighlight;
 uniform float pointSize;
 
 void main() {
     vIntensity = intensity;
+    vCancel = aCancel;
+    vHighlight = aHighlight;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     float dist = length(mvPosition.xyz);
     gl_PointSize = clamp(pointSize * (300.0 / max(dist, 0.01)), 4.0, 80.0);
@@ -148,13 +154,17 @@ void main() {
  * GLSL Fragment Shader: three color anchors via uniforms + optional sign filter.
  * Filter modes: 0=all, 1=positive only, 2=negative only (ε = uNearZeroEps).
  * uZeroCoverage: fraction of |t| held at zero color before lerp to ±1.
+ * aCancel / aHighlight: group-dim paint (shared-noise cancel + opposite highlight).
  */
 export const divergentFragmentShader = `
 varying float vIntensity;
+varying float vCancel;
+varying float vHighlight;
 uniform float baseOpacity;
 uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
 uniform vec3 uColorZero;
+uniform vec3 uColorHighlight;
 uniform int uFilterMode;
 uniform float uNearZeroEps;
 uniform float uZeroCoverage;
@@ -182,10 +192,10 @@ void main() {
         return;
     }
 
-    float c = clamp(uZeroCoverage, 0.0, 0.9);
+    float c = clamp(uZeroCoverage, 0.0, 0.999999);
     float k = absT;
-    if (c > 1e-5) {
-        k = absT <= c ? 0.0 : (absT - c) / max(1.0 - c, 1e-5);
+    if (c > 1e-8) {
+        k = absT <= c ? 0.0 : (absT - c) / max(1.0 - c, 1e-8);
     }
 
     float dynamicAlpha = clamp(pow(max(k, absT * 0.15), 1.1), 0.05, 1.0) * baseOpacity;
@@ -193,6 +203,12 @@ void main() {
     vec3 color = t > 0.0
         ? mix(uColorZero, uColorPos, k)
         : mix(uColorZero, uColorNeg, k);
+
+    float hi = clamp(vHighlight, 0.0, 1.0);
+    float cancel = clamp(vCancel, 0.0, 1.0);
+    color = mix(color, uColorHighlight, hi);
+    color = mix(color, uColorZero, cancel);
+    dynamicAlpha = max(0.05, dynamicAlpha * (1.0 - 0.85 * cancel));
 
     vec3 finalColor = color * solidEdge;
     float alpha = dynamicAlpha * solidEdge;
@@ -221,12 +237,21 @@ export function filterModeToUniform(mode) {
  *   anchors?: object,
  *   filterMode?: 'all'|'positive'|'negative',
  *   zeroCoverage?: number,
+ *   highlightColor?: {r:number,g:number,b:number}|string,
  * }} [options]
  * @returns {THREE.ShaderMaterial}
  */
 export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, options = {}) {
   const A = resolveColorAnchors(options.anchors ?? null);
   const coverage01 = resolveZeroCoverage01(options.anchors, options.zeroCoverage);
+  let hi = { r: 0, g: 229 / 255, b: 1 };
+  if (options.highlightColor) {
+    if (typeof options.highlightColor === 'string') {
+      hi = hexToRgb01(options.highlightColor) || hi;
+    } else if (options.highlightColor.r != null) {
+      hi = options.highlightColor;
+    }
+  }
   return new THREE.ShaderMaterial({
     uniforms: {
       pointSize: { value: pointSize },
@@ -234,6 +259,7 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       uColorPos: { value: new THREE.Vector3(A.positive.r, A.positive.g, A.positive.b) },
       uColorNeg: { value: new THREE.Vector3(A.negative.r, A.negative.g, A.negative.b) },
       uColorZero: { value: new THREE.Vector3(A.zero.r, A.zero.g, A.zero.b) },
+      uColorHighlight: { value: new THREE.Vector3(hi.r, hi.g, hi.b) },
       uFilterMode: { value: filterModeToUniform(options.filterMode) },
       uNearZeroEps: { value: NEAR_ZERO_EPS },
       uZeroCoverage: { value: coverage01 },
@@ -249,7 +275,7 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
 /**
  * Update live color/filter uniforms without rebuilding the shader string.
  * @param {THREE.ShaderMaterial} material
- * @param {{ anchors?: object, filterMode?: string, zeroCoverage?: number }} options
+ * @param {{ anchors?: object, filterMode?: string, zeroCoverage?: number, highlightColor?: object|string }} options
  */
 export function updateDivergentMaterialUniforms(material, options = {}) {
   if (!material?.uniforms) return;
@@ -264,6 +290,11 @@ export function updateDivergentMaterialUniforms(material, options = {}) {
   }
   if (options.zeroCoverage !== undefined || (options.anchors && options.anchors.zeroCoverage !== undefined)) {
     material.uniforms.uZeroCoverage.value = resolveZeroCoverage01(options.anchors, options.zeroCoverage);
+  }
+  if (options.highlightColor && material.uniforms.uColorHighlight) {
+    let hi = options.highlightColor;
+    if (typeof hi === 'string') hi = hexToRgb01(hi);
+    if (hi) material.uniforms.uColorHighlight.value.set(hi.r, hi.g, hi.b);
   }
 }
 
