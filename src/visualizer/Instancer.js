@@ -13,7 +13,7 @@ import {
   computeDimRelationMetrics,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
-import { layoutGalaxyPoints, resolveGalaxyWorldScale } from './galaxyLayout.js';
+import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -319,7 +319,8 @@ export class Instancer {
           position: p,
           activation: val,
           size: 10.0 * thicknessFactor,
-          meta: { type: "compare", token: item.text, dim: sourceDim, val }
+          groupId: item.groupId,
+          meta: { type: "compare", token: item.text, dim: sourceDim, val, groupId: item.groupId }
         });
         activations.push(val);
       });
@@ -329,6 +330,7 @@ export class Instancer {
       const vizOpts = {
         ...(vizConfig ? { vizConfig } : {}),
         ...(groupDimMetrics?.length ? { groupDimMetrics, sourceDims } : {}),
+        ...(item.groupId ? { groupId: item.groupId } : {}),
       };
       let ribbonMesh = null;
       if (renderMode === "RIBBONS") {
@@ -432,6 +434,7 @@ export class Instancer {
       ? spatialConfig.threadThickness
       : 0.3;
     const scale = resolveGalaxyWorldScale(spatialConfig);
+    const pointSize = resolveGalaxyPointSize(thicknessFactor);
 
     const { pointsData, labels } = layoutGalaxyPoints(
       compareResponse.items,
@@ -442,11 +445,12 @@ export class Instancer {
 
     const sized = pointsData.map((p) => ({
       ...p,
-      size: 14.0 * thicknessFactor,
+      size: pointSize * 0.75,
     }));
 
     const pointsMesh = MeshFactory.createPointsMesh(sized, {
-      pointSize: 18.0 * thicknessFactor,
+      pointSize,
+      galaxy: true,
       ...(vizConfig ? { vizConfig } : {}),
     });
     pointsMesh.userData = { pointsData: sized, galaxy: true };

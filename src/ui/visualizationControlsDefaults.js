@@ -19,6 +19,8 @@
  *   oppositeHighlightColor: string,
  *   oppositeHighlightStrength: number,
  *   oppositeCancelCoverage: number,
+ *   groupHueEnabled: boolean,
+ *   groupHueColors: Record<string, string>,
  * }} VisualizationSettings */
 
 export const VIZ_STORAGE_PREFIX = 'vl3d.viz.';
@@ -37,6 +39,8 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   oppositeHighlightColor: `${VIZ_STORAGE_PREFIX}oppositeHighlightColor`,
   oppositeHighlightStrength: `${VIZ_STORAGE_PREFIX}oppositeHighlightStrength`,
   oppositeCancelCoverage: `${VIZ_STORAGE_PREFIX}oppositeCancelCoverage`,
+  groupHueEnabled: `${VIZ_STORAGE_PREFIX}groupHueEnabled`,
+  groupHueColors: `${VIZ_STORAGE_PREFIX}groupHueColors`,
 });
 
 /** Default anchors match former ramp endpoints (§0.2). */
@@ -93,6 +97,8 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   oppositeHighlightColor: DEFAULT_OPPOSITE_HIGHLIGHT_COLOR,
   oppositeHighlightStrength: DEFAULT_OPPOSITE_HIGHLIGHT_STRENGTH,
   oppositeCancelCoverage: DEFAULT_CONFLICT_COVER,
+  groupHueEnabled: false,
+  groupHueColors: Object.freeze({}),
 });
 const HEX_RE = /^#([0-9A-Fa-f]{6})$/;
 
@@ -115,6 +121,59 @@ export function normalizeHex(value) {
   const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
   if (!isValidHex(withHash)) return null;
   return withHash.toUpperCase();
+}
+
+/** High-contrast cycling palette for new GROUP_* ids. */
+export const DEFAULT_GROUP_HUE_PALETTE = Object.freeze([
+  '#00E5FF',
+  '#FFB000',
+  '#FF2BD6',
+  '#7CFF3A',
+  '#FF5A36',
+  '#7B61FF',
+]);
+
+/**
+ * @param {number} i
+ * @returns {string} #RRGGBB
+ */
+export function defaultGroupHueHexAt(i) {
+  const n = DEFAULT_GROUP_HUE_PALETTE.length;
+  return DEFAULT_GROUP_HUE_PALETTE[((Number(i) || 0) % n + n) % n];
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {Record<string, string>}
+ */
+export function normalizeGroupHueColors(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const [id, hex] of Object.entries(raw)) {
+    if (!id || typeof id !== 'string') continue;
+    const n = normalizeHex(hex);
+    if (n) out[id] = n;
+  }
+  return out;
+}
+
+/**
+ * @param {string[]} groupIds
+ * @param {Record<string, string>} [colors]
+ * @returns {Record<string, string>}
+ */
+export function ensureGroupHueColors(groupIds, colors = {}) {
+  const map = normalizeGroupHueColors(colors);
+  const ids = [...new Set((groupIds || []).filter(Boolean))].sort();
+  let nextIdx = Object.keys(map).length;
+  for (const id of ids) {
+    if (!map[id]) {
+      map[id] = defaultGroupHueHexAt(nextIdx);
+      nextIdx += 1;
+    }
+  }
+  return map;
 }
 
 /**
@@ -352,6 +411,15 @@ export function resolveVisualizationSettings(partial = null) {
         ? src.oppositeCancelCoverage
         : DEFAULT_CONFLICT_COVER
     ),
+    groupHueEnabled: normalizeBoolFlag(
+      src.groupHueEnabled,
+      DEFAULT_VISUALIZATION_SETTINGS.groupHueEnabled
+    ),
+    groupHueColors: normalizeGroupHueColors(
+      src.groupHueColors !== undefined && src.groupHueColors !== null
+        ? src.groupHueColors
+        : {}
+    ),
   };
 }
 /**
@@ -375,6 +443,15 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
       oppositeHighlightColor: storage.getItem(VIZ_STORAGE_KEYS.oppositeHighlightColor),
       oppositeHighlightStrength: storage.getItem(VIZ_STORAGE_KEYS.oppositeHighlightStrength),
       oppositeCancelCoverage: storage.getItem(VIZ_STORAGE_KEYS.oppositeCancelCoverage),
+      groupHueEnabled: storage.getItem(VIZ_STORAGE_KEYS.groupHueEnabled),
+      groupHueColors: (() => {
+        try {
+          const raw = storage.getItem(VIZ_STORAGE_KEYS.groupHueColors);
+          return raw ? JSON.parse(raw) : {};
+        } catch {
+          return {};
+        }
+      })(),
     });
   } catch {
     return { ...DEFAULT_VISUALIZATION_SETTINGS };
@@ -401,6 +478,8 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.oppositeHighlightColor, resolved.oppositeHighlightColor);
     storage.setItem(VIZ_STORAGE_KEYS.oppositeHighlightStrength, String(resolved.oppositeHighlightStrength));
     storage.setItem(VIZ_STORAGE_KEYS.oppositeCancelCoverage, String(resolved.oppositeCancelCoverage));
+    storage.setItem(VIZ_STORAGE_KEYS.groupHueEnabled, String(resolved.groupHueEnabled));
+    storage.setItem(VIZ_STORAGE_KEYS.groupHueColors, JSON.stringify(resolved.groupHueColors || {}));
   } catch {
     // Quota / private mode — ignore
   }
@@ -411,9 +490,28 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
  * @returns {VisualizationSettings}
  */
 export function resetVisualizationSettings(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
-  const defaults = { ...DEFAULT_VISUALIZATION_SETTINGS };
+  const defaults = {
+    ...DEFAULT_VISUALIZATION_SETTINGS,
+    groupHueColors: {},
+  };
   saveVisualizationSettings(defaults, storage);
   return defaults;
+}
+
+/**
+ * Merge palette defaults for current group ids into settings (mutates colors map).
+ * @param {VisualizationSettings} settings
+ * @param {string[]} groupIds
+ * @returns {VisualizationSettings}
+ */
+export function syncGroupHueColorsForGroups(settings, groupIds) {
+  const resolved = resolveVisualizationSettings(settings);
+  resolved.groupHueColors = ensureGroupHueColors(groupIds, resolved.groupHueColors);
+  if (settings && typeof settings === 'object') {
+    settings.groupHueColors = { ...resolved.groupHueColors };
+    settings.groupHueEnabled = resolved.groupHueEnabled;
+  }
+  return resolved;
 }
 
 /**

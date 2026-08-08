@@ -41,6 +41,8 @@ export const FIELD_INFO = Object.freeze({
   oppositeColor: 'Conflict color.',
   oppositeStrength: 'Highlight × |Δ|.',
   oppositeCancel: 'Fade conflicts black.',
+  groupHue: 'Per group: black (−1) → color (+1).',
+  groupHueSwatch: 'This group’s +1 color.',
 });
 
 /**

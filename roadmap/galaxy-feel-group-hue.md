@@ -1,6 +1,6 @@
 # Roadmap — Galaxy feel + Group hue paint
 
-**Status:** Plan (ready to implement)  
+**Status:** Shipped (2.4.2)  
 **Date:** 2026-08-08  
 **Product:** VHectorLab 3D — **legacy UI only** (`/`, `src/main.js`). **Do not touch `src/v25/`.**  
 **Prompt companion:** [`PROMPT-galaxy-feel-group-hue.md`](./PROMPT-galaxy-feel-group-hue.md)  

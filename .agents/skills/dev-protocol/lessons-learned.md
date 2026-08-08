@@ -34,6 +34,11 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Invariante**: Si reaparece oscurecido al mover cámara en RIBBONS, revisar fog **antes** que normales/luces. PR aparte: solapamiento por `depthWrite: false` en ribbons.
 - **Seguimiento**: RIBBONS ya no monta `basePlane`. Compare+RIBBONS no monta POINTS (bug: `else if (pointsData.length)` atrapaba RIBBONS). `depthWrite` / opacidad de wide ribbons → si reaparece solapamiento al orbitar.
 
+### 1.3b. Galaxy soft-star POINTS (opt-in)
+- **Problema**: Square Chebyshev `gl_PointCoord` mask looks tiled when Galaxy points are dense/small.
+- **Solución**: Soft-star path (`resolvePointEdgeStyle` / `galaxy: true`) — solid circular core + soft halo; higher size attenuation with smaller clamp. ANALYSIS/NAV keep §1.3 / §1.5 squares.
+- **Invariante**: only Galaxy POINTS; `frustumCulled = false` unchanged.
+
 ### 1.3. Renderizado de Puntos Sólidos y Definidos (Sin Halos Esfumados)
 - **Problema**: Un gradiente suave amplio de `smoothstep(0.0, 0.5, dist)` genera puntos borrosos, translúcidos y "esfumados".
 - **Solución Obligatoria**: Renderizar discos sólidos con un borde de anti-aliasing ultra-definido de 1 píxel:
@@ -118,6 +123,8 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Patrón**: Proyectar los orígenes 3D ($X=0$) de los hilos vectoriales a coordenadas 2D de pantalla (`vector.project(camera)`) para renderizar cartelitos Glassmorphic anclados al inicio de cada hilo.
 - **Invariante**: En el modo **Análisis**, los hilos se apilan verticalmente a lo largo de $Y$ con encuadre frontal directo (`Z=360`), permitiendo visualizar todos los componentes y el resultado inmediatamente sin desplazamientos manuales.
 
+- **Invariante**: ANALYSIS/NAV flight numbers unchanged; no Spatial speed knobs in v1.
+
 ### 3.5. Touch mobile: joystick/look no roban eventos de docks/HUD
 - **Problema**: Pointers que empiezan en drawers/Compare/HUD mueven la cámara o pelean con scroll.
 - **Solución Obligatoria**: Look solo si `target` es `CANVAS` y no hace match de docks/HUD/joystick (`isUiTouchTarget`). Joystick y botones Q/E escriben ejes en `Navigation` (`setMoveAxes` / `setVertical`); el update sigue el mismo `lerp` §3.1. Desktop mouse/WASD intacto.
@@ -133,6 +140,11 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
   - `COMPARE|NAVIGATION|RIBBONS` — sliders Spacing `1.55`, Dist Y `10`, Amp `7`, Length `0.057`, Thickness `0.05`; cámara `POS (-575.8, 43.8, 237.9)` / `ROT (-22.4°, -35.7°, 0°)`; fog **off** en RIBBONS (`shouldEnableSceneFog`).
 - **Overlay de captura**: El HUD `CAM POSE` solo se monta si `VITE_SHOW_CAM_POSE=true` (default `false` en `.env.example`).
 - **Workflow de captura**: Activar overlay → navegar a la pose → screenshot POS/ROT → actualizar `CAMERA_DEFAULT_OVERRIDES` y/o `SPATIAL_DEFAULT_OVERRIDES` para la clave `MODE|VIEW|RENDER`.
+
+### 3.6. Galaxy flight profile (VIEW-only)
+- **Problema**: UMAP world + default `moveSpeed` 75 / look `0.003` felt cramped and twitchy in Galaxy.
+- **Solución**: `galaxyFlightProfile.js` — apply on enter Galaxy, restore defaults on leave. Calibrated: `moveSpeed` 56 (former Shift feel), `turboMultiplier` 2, `lookSensitivity` 0.0014. World scale via `resolveGalaxyWorldScale` (`GALAXY_DEFAULT_SCALE` 96, spacing×240).
+- **Invariante**: ANALYSIS/NAV flight numbers unchanged; no Spatial speed knobs in v1.
 
 ---
 
@@ -259,6 +271,11 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Problema**: En Compare con ≥2 `GROUP_*`, dims del mismo signo en ambos grupos son ruido compartido; dims de signo opuesto son señal — sin controles de paint dedicados.
 - **Solución**: Deep module `groupDimContrast.js` — means raw G1↔G2; `sim = 1−|Δ|/(|a|+|b|)`; cancel ZC-style sobre metric alta → negro; opposite → highlight color × strength×diff + conflict coverage independiente. Solo paint (Y intacto). UI gated (`setGroupContrastControlsEnabled`) hasta ≥2 grupos.
 - **Invariante**: Zero coverage global y Group contrast son independientes; On habilita sliders (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`.
+
+### 4.11c. Group hue (per-group black → color)
+- **Problema**: Rampa divergente global no distingue dominios `GROUP_*` en Galaxy/Compare.
+- **Solución**: Toggle `groupHueEnabled` + map `groupHueColors`; base = lerp(black, groupHex, remapped t) when ON (`groupHuePaint.js`); POINTS via `aBaseColor` + `uUseGroupHueBase`; RIBBONS via CPU `colorForActivationWithGroupHue`. Zero coverage remaps \|t\| then black↔color. Missing `groupId` → divergent fallback.
+- **Invariante**: Shared noise / Sign conflict still apply after base; default OFF; gate ≥2 groups; persist under `vl3d.viz.*`.
 
 ### 4.12. Bottom HUD hover activation (POINTS / RIBBONS)
 - **Problema**: `ACTIVATION` siempre `0.0000` — `Interaction` pasaba `userData` del mesh (`{ pointsData }`), y el HUD leía `userData.val` / `data.activation` (inexistentes).

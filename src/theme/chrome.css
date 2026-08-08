@@ -131,17 +131,25 @@ body.workbench-theme .dock-tab {
   border-radius: 0 !important;
 }
 
-body.workbench-theme input,
+/* Value fields — dark fills (white burned eyes on Workbench chrome) */
+body.workbench-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
 body.workbench-theme textarea,
 body.workbench-theme select {
-  background: var(--mwb-white) !important;
+  background: #1a1a1a !important;
   color: var(--amiga-fg) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
-  box-shadow: inset 2px 2px 0 var(--mwb-halfshadow) !important;
+  box-shadow: inset 2px 2px 0 #0d0d0d !important;
+  caret-color: #c8c8c8;
 }
 
-/* Compare token editor — black field, muted (darker) text */
+body.workbench-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"])::placeholder,
+body.workbench-theme textarea::placeholder {
+  color: #7a7a7a !important;
+  opacity: 1;
+}
+
+/* Compare token editor — pure black field, muted text */
 body.workbench-theme #compare-panel #compare-tokens {
   background: #000000 !important;
   color: #9a9a9a !important;
