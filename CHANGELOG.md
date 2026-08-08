@@ -8,14 +8,6 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **Group contrast (Visualization panel)**: Compare ≥2 groups — Shared noise (same-sign → black by similarity %, ZC-style) + Sign conflict (opposite-sign highlight color × |Δ|, plus conflict coverage to black). Paint-only; gated until groups exist. Panel densified (~300px).
 - **Public lab release hygiene**: MIT `LICENSE` (© 2026 Hector Bauzan); root README frames VHectorLab as a study/laboratory tool (not SaaS), links the live HF Space demo, and documents shared cpu-basic limits; `backend/README.md` aligned in English.
 
-## [2.3.0] - 2026-08-08
-
-### Added
-- **Galaxy VIEW** (in progress): new VIEW tab with UMAP/PCA/t-SNE chips (PCA/t-SNE grayed); entering Galaxy locks MODE=COMPARE + RENDER=POINTS.
-- **`POST /project`**: backend UMAP projection of precomputed embeddings (`umap-learn`); pca/tsne → 501.
-- **Bootstrap corpus**: `GROUP_it_core` (100 IT tokens) + existing `GROUP_1` / `GROUP_2` demos (REF inside IT core).
-- **Galaxy layout**: one point per token from UMAP positions; group badges at centroids; camera frames IT core; no dim-axis ribbons.
-
 ### Fixed
 - **v25 Compare left layout**: `[data-panel]{display:flex}` overrode `[hidden]` and left a black flex gap above Compare; force-hide inactive slot. COMPARE now prefers NAVIGATION framing (usable with ~130 group tokens).
 
@@ -30,6 +22,15 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **v25 header chrome** (Fase 4): brand VHectorLab-3D, version tag, MODE/VIEW/RENDER UI tabs, ONLINE badge (local state only).
 - **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
 - **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
+
+## [2.3.0] - 2026-08-08
+
+### Added
+- **Galaxy VIEW** (in progress): new VIEW tab with UMAP/PCA/t-SNE chips (PCA/t-SNE grayed); entering Galaxy locks MODE=COMPARE + RENDER=POINTS.
+- **`POST /project`**: backend UMAP projection of precomputed embeddings (`umap-learn`); pca/tsne → 501.
+- **Bootstrap corpus**: `GROUP_it_core` (100 IT tokens) + existing `GROUP_1` / `GROUP_2` demos (REF inside IT core).
+- **Galaxy layout**: one point per token from UMAP positions; group badges at centroids; camera frames IT core; no dim-axis ribbons.
+- **Galaxy pipeline + progress**: client-driven encode → SAE? → UMAP → build with status text, progress bar, and step **k/n**; Visualize + SAE toggle in Galaxy; reuse `/compare` cache when texts unchanged.
 
 ## [2.2.1] - 2026-08-07
 

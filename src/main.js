@@ -59,6 +59,7 @@ import {
   isGalaxyView,
   leaveGalaxyChrome,
 } from './ui/galaxyChrome.js';
+import { runGalaxyPipeline, compareTextsFingerprint } from './ui/galaxyPipeline.js';
 import { galaxyCameraTarget } from './visualizer/galaxyLayout.js';
 import {
   loadArithmeticSettings,
@@ -100,6 +101,8 @@ class VHectorLabApp {
     this.galaxyPositions = null;
     this._galaxyProjectBusy = false;
     this._galaxyFramePending = false;
+    /** @type {{ fingerprint: string, itemCount: number, rawData: object }|null} */
+    this._galaxyCompareCache = null;
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
@@ -404,6 +407,7 @@ class VHectorLabApp {
       this._preGalaxyTriad = null;
       this.galaxyPositions = null;
       this._galaxyFramePending = false;
+      this.comparePanel?.clearGalaxyProgress?.();
       this.viewMode = left.viewMode;
       this.navbar.setModeRenderLocked(false);
       this.navbar.setViewMode(left.viewMode);
@@ -470,8 +474,8 @@ class VHectorLabApp {
               this.frameGalaxyCamera(labels);
             }
           } else {
-            // Keep prior mesh; kick projection (progress UI lands in Slice 5).
-            void this.ensureGalaxyProjection(data);
+            // Keep prior mesh; kick client-driven pipeline with k/n progress.
+            void this.runGalaxyPipelineFromApp({ preferCache: true });
           }
           this.syncGroupContrastGate();
           return;
@@ -504,41 +508,113 @@ class VHectorLabApp {
   }
 
   /**
-   * Project compare embeddings → galaxy positions (UMAP). No progress UI yet (Slice 5).
-   * @param {object} data compare payload with embeddings
+   * Client-driven Galaxy pipeline: encode → SAE? → UMAP → build, with k/n progress.
+   * @param {{
+   *   texts?: string[]|null,
+   *   tokenMeta?: unknown,
+   *   preferCache?: boolean,
+   * }} [opts]
    */
-  async ensureGalaxyProjection(data) {
+  async runGalaxyPipelineFromApp({
+    texts = null,
+    tokenMeta = null,
+    preferCache = true,
+  } = {}) {
     if (!isGalaxyView(this.viewMode)) return;
     if (this._galaxyProjectBusy) return;
-    const items = data?.items || [];
-    if (!items.length) return;
-    if (
-      Array.isArray(this.galaxyPositions)
-      && this.galaxyPositions.length === items.length
-    ) {
-      return;
-    }
 
-    const vectors = items.map((it) => it.embedding).filter((v) => Array.isArray(v) && v.length);
-    if (vectors.length !== items.length) return;
+    const resolvedTexts = texts
+      || this.rawCompareData?.items?.map((it) => it.text)
+      || state.compareData?.items?.map((it) => it.text);
+    if (!resolvedTexts?.length) return;
 
     this._galaxyProjectBusy = true;
+    this.galaxyPositions = null;
+    this.comparePanel?.setLoading?.(true);
+
     try {
-      const res = await this.provider.projectEmbeddings(vectors, {
-        method: this.galaxyMethod || 'umap',
-        n_components: 3,
-        seed: 42,
+      const saeEnabled = !!(this.saeSettings.enabled && this.saeStatus?.is_trained);
+      let compareCache = preferCache ? this._galaxyCompareCache : null;
+      if (preferCache && !compareCache && this.rawCompareData?.items?.length) {
+        const rawFp = compareTextsFingerprint(
+          this.rawCompareData.items.map((it) => it.text),
+        );
+        const wantFp = compareTextsFingerprint(resolvedTexts);
+        if (rawFp === wantFp) {
+          compareCache = {
+            fingerprint: rawFp,
+            itemCount: this.rawCompareData.items.length,
+            rawData: this.rawCompareData,
+          };
+        }
+      }
+
+      const result = await runGalaxyPipeline({
+        texts: resolvedTexts,
+        tokenMeta,
+        saeEnabled,
+        compareCache,
+        fetchCompare: (toks) => this.provider.computeCompare(toks),
+        attachMeta: (data, meta) => {
+          const withMeta = attachCompareGroupMeta(data, meta);
+          withMeta.featureSpace = 'RAW';
+          return withMeta;
+        },
+        encodeSae: async (rawData) => {
+          const embeddings = collectCompareEmbeddings(rawData);
+          const encoded = await this.provider.saeEncode(embeddings);
+          const saeData = applySaeToCompare(rawData, encoded.activations);
+          if (rawData?.items) {
+            saeData.items = saeData.items.map((item, i) => {
+              const raw = rawData.items[i];
+              if (!raw) return item;
+              return {
+                ...item,
+                groupId: raw.groupId,
+                groupLabel: raw.groupLabel,
+              };
+            });
+          }
+          saeData.featureSpace = 'SAE';
+          const batch = encoded.batch_metrics || computeActivationMetrics(encoded.activations);
+          const trainMetrics = this.saeStatus?.metrics || {};
+          this.comparePanel.saeUi.setMetrics({
+            l0: batch.l0,
+            sparsity: batch.sparsity,
+            activeFeatures: batch.active_features ?? batch.activeFeatures,
+            trainMse: trainMetrics.mse,
+            deadFeaturesPct: trainMetrics.dead_features_pct,
+          });
+          this.applySaeOnFilterOverride();
+          return saeData;
+        },
+        project: async (vectors) => {
+          const res = await this.provider.projectEmbeddings(vectors, {
+            method: this.galaxyMethod || 'umap',
+            n_components: 3,
+            seed: 42,
+          });
+          return res.positions;
+        },
+        onProgress: (p) => this.comparePanel.setGalaxyProgress(p),
       });
-      this.galaxyPositions = res.positions;
+
+      this._galaxyCompareCache = result.compareCache;
+      this.rawCompareData = cloneCompareRaw(result.rawData);
+      state.setCompareData(result.displayData);
+      this.comparePanel.updateCompareResults(result.displayData);
+      this.galaxyPositions = result.positions;
       this._galaxyFramePending = true;
       if (isGalaxyView(this.viewMode)) {
         this.refreshRender();
       }
     } catch (err) {
-      console.error('Galaxy /project failed:', err);
+      console.error('Galaxy pipeline failed:', err);
       this.modal?.show?.('Galaxy projection failed', String(err?.message || err));
     } finally {
       this._galaxyProjectBusy = false;
+      this.comparePanel?.clearGalaxyProgress?.();
+      this.comparePanel?.setLoading?.(false);
     }
   }
 
@@ -949,6 +1025,17 @@ class VHectorLabApp {
     this.comparePanel.saeUi.syncFromSettings();
 
     if (!enabled) {
+      if (isGalaxyView(this.viewMode)) {
+        this.clearSaeFraming();
+        this.restoreSaeFilterOverride();
+        if (this.rawCompareData) {
+          state.setCompareData(cloneCompareRaw(this.rawCompareData));
+          this.comparePanel.updateCompareResults(state.compareData);
+        }
+        this.applySaeStatusToPanels();
+        await this.runGalaxyPipelineFromApp({ preferCache: true });
+        return;
+      }
       this.restoreRawWorkspace({ reframe: true });
       return;
     }
@@ -978,6 +1065,11 @@ class VHectorLabApp {
       this.saeSettings = { ...this.saeSettings, enabled: false };
       saveSaeSettings(this.saeSettings);
       this.comparePanel.saeUi.setToggleEnabled(false);
+      return;
+    }
+
+    if (isGalaxyView(this.viewMode)) {
+      await this.runGalaxyPipelineFromApp({ preferCache: true });
       return;
     }
 
@@ -1093,6 +1185,10 @@ class VHectorLabApp {
 
   async encodeCompareWithSae({ reframe = false } = {}) {
     if (!this.rawCompareData) return;
+    if (isGalaxyView(this.viewMode)) {
+      await this.runGalaxyPipelineFromApp({ preferCache: true });
+      return;
+    }
     try {
       const embeddings = collectCompareEmbeddings(this.rawCompareData);
       const n = embeddings.length;
@@ -1172,28 +1268,42 @@ class VHectorLabApp {
   }
 
   async handleCalculateCompare(tokens, tokenMeta = null) {
+    if (isGalaxyView(this.viewMode)) {
+      try {
+        await this.runGalaxyPipelineFromApp({
+          texts: tokens,
+          tokenMeta,
+          preferCache: true,
+        });
+      } catch (e) {
+        this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
+      }
+      return;
+    }
+
     try {
       const data = await this.provider.computeCompare(tokens);
       const withMeta = attachCompareGroupMeta(data, tokenMeta);
       this.rawCompareData = cloneCompareRaw(withMeta);
       withMeta.featureSpace = 'RAW';
       this.galaxyPositions = null;
+      this._galaxyCompareCache = {
+        fingerprint: compareTextsFingerprint(tokens),
+        itemCount: tokens.length,
+        rawData: this.rawCompareData,
+      };
       state.setCompareData(withMeta);
       this.comparePanel.updateCompareResults(withMeta);
 
-      if (isGalaxyView(this.viewMode)) {
-        this.refreshRender();
-      } else {
-        const labels = this.instancer.renderCompareData(
-          withMeta,
-          state.renderMode,
-          this.sliderConfig,
-          this.viewMode,
-          this.vizConfig,
-          { dimSortByContrast: this.dimSortByContrast }
-        );
-        this.setCompareOverlayLabels(labels);
-      }
+      const labels = this.instancer.renderCompareData(
+        withMeta,
+        state.renderMode,
+        this.sliderConfig,
+        this.viewMode,
+        this.vizConfig,
+        { dimSortByContrast: this.dimSortByContrast }
+      );
+      this.setCompareOverlayLabels(labels);
       await this.onCompareDataRefreshed();
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
