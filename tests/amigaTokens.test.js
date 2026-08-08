@@ -7,14 +7,14 @@ import {
 import { PRODUCT_VERSION } from '../src/amiga/version.js';
 
 describe('MagicWB pens', () => {
-  it('exposes the canonical 8-pen palette', () => {
+  it('exposes dark-gray palette defaults', () => {
     expect(MWB_PENS).toEqual({
-      0: '#959595',
+      0: '#2A2A2A',
       1: '#000000',
       2: '#FFFFFF',
       3: '#3B67A2',
-      4: '#7B7B7B',
-      5: '#AFAFAF',
+      4: '#1A1A1A',
+      5: '#3D3D3D',
       6: '#AA907C',
       7: '#FFA997',
     });
@@ -22,10 +22,10 @@ describe('MagicWB pens', () => {
 });
 
 describe('amiga semantic tokens', () => {
-  it('uses a 25%-darker gray for page background', () => {
+  it('uses very dark gray bg with light fg', () => {
     expect(AMIGA_TOKEN_HEX.bg).toBe(AMIGA_BG_DARKENED);
-    expect(AMIGA_BG_DARKENED).toBe('#707070');
-    expect(AMIGA_TOKEN_HEX.fg).toBe(MWB_PENS[1]);
+    expect(AMIGA_BG_DARKENED).toBe('#222222');
+    expect(AMIGA_TOKEN_HEX.fg).toBe('#F0F0F0');
     expect(AMIGA_TOKEN_HEX.accent).toBe(MWB_PENS[3]);
   });
 

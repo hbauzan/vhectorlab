@@ -3,19 +3,20 @@
  * Pure resolve + DOM apply — testable without Vite.
  */
 
-/** Canonical MagicWB 8-pen + semantic chrome defaults. */
+/** Canonical MagicWB 8-pen + semantic chrome defaults (dark gray surfaces). */
 export const DEFAULT_AMIGA_COLORS = Object.freeze({
-  pen0: '#959595',
+  pen0: '#2A2A2A',
   pen1: '#000000',
   pen2: '#FFFFFF',
   pen3: '#3B67A2',
-  pen4: '#7B7B7B',
-  pen5: '#AFAFAF',
+  pen4: '#1A1A1A',
+  pen5: '#3D3D3D',
   pen6: '#AA907C',
   pen7: '#FFA997',
-  /** MagicWB gray × 0.75 */
-  bg: '#707070',
-  fg: '#000000',
+  /** Page / panel background — very dark gray */
+  bg: '#222222',
+  /** Light text on dark gray surfaces */
+  fg: '#F0F0F0',
   accent: '#3B67A2',
 });
 
