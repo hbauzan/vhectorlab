@@ -14,8 +14,11 @@ export const MWB_PENS = Object.freeze({
   7: '#FFA997',
 });
 
+/** Background = MagicWB gray (#959595) × 0.75 → #707070 */
+export const AMIGA_BG_DARKENED = '#707070';
+
 export const AMIGA_TOKEN_HEX = Object.freeze({
-  bg: MWB_PENS[0],
+  bg: AMIGA_BG_DARKENED,
   fg: MWB_PENS[1],
   white: MWB_PENS[2],
   accent: MWB_PENS[3],
