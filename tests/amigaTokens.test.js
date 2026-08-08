@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AMIGA_TOKEN_HEX, MWB_PENS } from '../src/amiga/tokenValues.js';
+import {
+  AMIGA_BG_DARKENED,
+  AMIGA_TOKEN_HEX,
+  MWB_PENS,
+} from '../src/amiga/tokenValues.js';
 import { PRODUCT_VERSION } from '../src/amiga/version.js';
 
 describe('MagicWB pens', () => {
@@ -18,8 +22,9 @@ describe('MagicWB pens', () => {
 });
 
 describe('amiga semantic tokens', () => {
-  it('maps bg/fg/accent to MagicWB pens', () => {
-    expect(AMIGA_TOKEN_HEX.bg).toBe(MWB_PENS[0]);
+  it('uses a 25%-darker gray for page background', () => {
+    expect(AMIGA_TOKEN_HEX.bg).toBe(AMIGA_BG_DARKENED);
+    expect(AMIGA_BG_DARKENED).toBe('#707070');
     expect(AMIGA_TOKEN_HEX.fg).toBe(MWB_PENS[1]);
     expect(AMIGA_TOKEN_HEX.accent).toBe(MWB_PENS[3]);
   });

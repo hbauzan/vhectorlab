@@ -21,7 +21,8 @@
   --mwb-tan: #aa907c;
   --mwb-peach: #ffa997;
 
-  --amiga-bg: var(--mwb-gray);
+  /* Desktop bg: MagicWB gray (#959595) darkened 25% for contrast */
+  --amiga-bg: #707070;
   --amiga-fg: var(--mwb-black);
   --amiga-accent: var(--mwb-blue);
   --amiga-font: 'TopazNew', monospace;
