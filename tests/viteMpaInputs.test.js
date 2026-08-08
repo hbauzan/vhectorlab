@@ -3,28 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { getViteInputs, mpaTrailingSlashLocation } from '../vite.mpa.js';
 
 describe('getViteInputs', () => {
-  it('includes legacy root and v25 MPA HTML entries', () => {
+  it('includes only the legacy root HTML entry', () => {
     const root = path.resolve('/tmp/vhectorlab-fixture');
     const inputs = getViteInputs(root);
     expect(inputs).toEqual({
       main: path.resolve(root, 'index.html'),
-      v25: path.resolve(root, 'v25/index.html'),
     });
   });
 });
 
 describe('mpaTrailingSlashLocation', () => {
-  it('redirects bare /v25 to /v25/', () => {
-    expect(mpaTrailingSlashLocation('/v25')).toBe('/v25/');
-  });
-
-  it('preserves query string', () => {
-    expect(mpaTrailingSlashLocation('/v25?x=1')).toBe('/v25/?x=1');
-  });
-
-  it('leaves /v25/ and legacy / alone', () => {
-    expect(mpaTrailingSlashLocation('/v25/')).toBeNull();
+  it('does not redirect retired /v25 or /amiga by default', () => {
+    expect(mpaTrailingSlashLocation('/v25')).toBeNull();
+    expect(mpaTrailingSlashLocation('/amiga')).toBeNull();
     expect(mpaTrailingSlashLocation('/')).toBeNull();
-    expect(mpaTrailingSlashLocation('/v25/index.html')).toBeNull();
+  });
+
+  it('still redirects when dirs are passed explicitly', () => {
+    expect(mpaTrailingSlashLocation('/legacy', ['/legacy'])).toBe('/legacy/');
+    expect(mpaTrailingSlashLocation('/legacy?x=1', ['/legacy'])).toBe('/legacy/?x=1');
   });
 });
