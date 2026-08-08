@@ -53,6 +53,7 @@ if (app) {
       footer.setCoords(payload.coords);
       footer.setTelemetry({
         segment: payload.segment,
+        dim: payload.dim,
         activation: payload.activation,
         token: payload.token,
       });

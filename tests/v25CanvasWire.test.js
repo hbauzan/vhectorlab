@@ -40,6 +40,7 @@ describe('v25 canvasHost helpers', () => {
     const cleared = formatHoverForFooter(null);
     expect(cleared.coords).toContain('--');
     expect(cleared.segment).toBe('NEUTRAL SPACE');
+    expect(cleared.dim).toBe('DIM: --');
     expect(cleared.activation).toMatch(/ACTIVATION:\s*--/);
     expect(cleared.token).toBe('NONE');
   });
@@ -52,13 +53,14 @@ describe('v25 canvasHost helpers', () => {
         pointsData: [
           {
             activation: 0.55,
-            meta: { type: 'res', token: 'queen', dim: 0 },
+            meta: { type: 'res', token: 'queen', dim: 7 },
           },
         ],
       },
     });
     expect(formatted.coords).toBe('X: 12 | Y: -3 | Z: 91');
     expect(formatted.segment).toBe('RES');
+    expect(formatted.dim).toBe('DIM: 7');
     expect(formatted.token).toBe('queen');
     expect(formatted.activation).toMatch(/ACTIVATION:/);
     expect(formatted.activation).toContain('0.55');
