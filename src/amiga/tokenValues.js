@@ -1,31 +1,31 @@
 /**
- * Magic Workbench 8-pen palette + semantic aliases.
- * Keep hex in sync with `tokens.css`.
- * Source: MagicWB canonical RGB (Wikipedia / MagicWB docs).
+ * Magic Workbench palette defaults (mirrored by CSS fallbacks + `.env.example`).
+ * Runtime overrides: `resolveAmigaColors(import.meta.env)` via `VITE_AMIGA_*`.
  */
+import { DEFAULT_AMIGA_COLORS } from './amigaEnvColors.js';
+
 export const MWB_PENS = Object.freeze({
-  0: '#959595',
-  1: '#000000',
-  2: '#FFFFFF',
-  3: '#3B67A2',
-  4: '#7B7B7B',
-  5: '#AFAFAF',
-  6: '#AA907C',
-  7: '#FFA997',
+  0: DEFAULT_AMIGA_COLORS.pen0,
+  1: DEFAULT_AMIGA_COLORS.pen1,
+  2: DEFAULT_AMIGA_COLORS.pen2,
+  3: DEFAULT_AMIGA_COLORS.pen3,
+  4: DEFAULT_AMIGA_COLORS.pen4,
+  5: DEFAULT_AMIGA_COLORS.pen5,
+  6: DEFAULT_AMIGA_COLORS.pen6,
+  7: DEFAULT_AMIGA_COLORS.pen7,
 });
 
-/** Background = MagicWB gray (#959595) × 0.75 → #707070 */
-export const AMIGA_BG_DARKENED = '#707070';
+export const AMIGA_BG_DARKENED = DEFAULT_AMIGA_COLORS.bg;
 
 export const AMIGA_TOKEN_HEX = Object.freeze({
-  bg: AMIGA_BG_DARKENED,
-  fg: MWB_PENS[1],
-  white: MWB_PENS[2],
-  accent: MWB_PENS[3],
-  halfshadow: MWB_PENS[4],
-  halfshine: MWB_PENS[5],
-  tan: MWB_PENS[6],
-  peach: MWB_PENS[7],
+  bg: DEFAULT_AMIGA_COLORS.bg,
+  fg: DEFAULT_AMIGA_COLORS.fg,
+  white: DEFAULT_AMIGA_COLORS.pen2,
+  accent: DEFAULT_AMIGA_COLORS.accent,
+  halfshadow: DEFAULT_AMIGA_COLORS.pen4,
+  halfshine: DEFAULT_AMIGA_COLORS.pen5,
+  tan: DEFAULT_AMIGA_COLORS.pen6,
+  peach: DEFAULT_AMIGA_COLORS.pen7,
   fontSizePx: 16,
   lineHeightPx: 20,
 });

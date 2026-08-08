@@ -27,6 +27,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ### Added
 - **`/amiga/` MPA scaffold** (Slice 1): Magic Workbench skin — self-hosted Topaz (`Topaz_a1200`), serrucho (no AA), 8-pen MagicWB tokens; Vite MPA entry + `/amiga` → `/amiga/` redirect. Parallel to legacy `/` and `/v25/` (neither skin touched). Plan: `roadmap/amiga-workbench.md`.
+- **Amiga colors via `.env`**: `VITE_AMIGA_PEN_0`…`_7`, `VITE_AMIGA_BG` / `_FG` / `_ACCENT` override CSS vars at boot (`resolveAmigaColors`); documented in `.env.example`.
 
 ## [2.3.0] - 2026-08-08
 
