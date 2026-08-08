@@ -4,6 +4,9 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **License**: project relicensed from MIT to **Apache License 2.0** (`LICENSE` + `NOTICE`; README / HF Space card `license: apache-2.0`; `package.json` `license` field).
+
 ## [2.4.2] - 2026-08-08
 
 ### Added

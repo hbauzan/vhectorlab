@@ -6,7 +6,7 @@ colorTo: blue
 sdk: docker
 app_port: 7860
 pinned: false
-license: mit
+license: apache-2.0
 ---
 
 # VHectorLab 3D
@@ -17,7 +17,7 @@ license: mit
 
 | | |
 | :--- | :--- |
-| **License** | [MIT](./LICENSE) © 2026 Hector Bauzan |
+| **License** | [Apache-2.0](./LICENSE) © 2026 Hector Bauzan |
 | **Public demo** | [Hugging Face Space](https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer) |
 | **Local (macOS)** | `./setup.sh` → option `1` → http://127.0.0.1:5173 |
 
@@ -175,4 +175,4 @@ npx vite --port 5173 --host 127.0.0.1
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+Apache License 2.0 — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
