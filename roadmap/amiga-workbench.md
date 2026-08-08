@@ -53,15 +53,16 @@ Bandera blanca **`/amiga/`**: UI paralela con estética **Commodore Amiga Workbe
 amiga/index.html                 # entry MPA → /amiga/
 src/amiga/
   main.js                        # bootstrap solo amiga
-  style.css                      # importa tokens + skin
+  AmigaApp.js                    # wire de producto (layout = legado fullscreen)
+  style.css                      # importa tokens + shell fullscreen + chrome MagicWB
   tokens.css                     # :root MagicWB + Topaz
+  chrome.css                     # overrides visuales (NO layout de paneles v25)
   assets/fonts/                  # TopazNew self-hosted (+ LICENSE)
-  ui/                            # shell / paneles (crecer por slice)
-  …                              # copy-adapt desde legado si hace falta; NO editar legado para “arreglar” amiga
+  …                              # helpers amiga; reusar src/ui|engine|core; NUNCA src/v25
 ```
 
-Legado intacto: `index.html`, `src/main.js`, `src/ui/*`, `src/style.css`.  
-v25 intacto: `v25/**`, `src/v25/**`.
+**Layout:** igual que legado `/` — `#app` fullscreen + navbar/docks/HUD flotantes.  
+**PROHIBIDO:** shell multi-zona / grid left|canvas|right (patrón v25). Ver lessons §6.0e.
 
 ### 2.2 Vite / serve
 
