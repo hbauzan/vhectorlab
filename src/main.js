@@ -59,6 +59,7 @@ import {
   isGalaxyView,
   leaveGalaxyChrome,
 } from './ui/galaxyChrome.js';
+import { galaxyCameraTarget } from './visualizer/galaxyLayout.js';
 import {
   loadArithmeticSettings,
   saveArithmeticSettings,
@@ -95,6 +96,10 @@ class VHectorLabApp {
     /** @type {{ workspaceMode: string, viewMode: string, renderMode: string }|null} */
     this._preGalaxyTriad = null;
     this.galaxyMethod = 'umap';
+    /** @type {number[][]|null} UMAP positions aligned with compare items */
+    this.galaxyPositions = null;
+    this._galaxyProjectBusy = false;
+    this._galaxyFramePending = false;
 
     // 4. UI Components (Modal, HUD, Navbar, Sidebar, ComparePanel, ThreadLabels)
     // Bottom HUD is always visible (roadmap D3) — not hosted in a collapsible dock.
@@ -397,6 +402,8 @@ class VHectorLabApp {
     if (!entering && wasGalaxy) {
       const left = leaveGalaxyChrome(this._preGalaxyTriad, nextView);
       this._preGalaxyTriad = null;
+      this.galaxyPositions = null;
+      this._galaxyFramePending = false;
       this.viewMode = left.viewMode;
       this.navbar.setModeRenderLocked(false);
       this.navbar.setViewMode(left.viewMode);
@@ -443,6 +450,33 @@ class VHectorLabApp {
             }),
           };
         }
+
+        if (isGalaxyView(this.viewMode)) {
+          const n = data.items?.length || 0;
+          const ready = Array.isArray(this.galaxyPositions)
+            && this.galaxyPositions.length === n
+            && n > 0;
+          if (ready) {
+            const labels = this.instancer.renderGalaxyData(
+              data,
+              this.galaxyPositions,
+              this.sliderConfig,
+              this.vizConfig,
+            );
+            this.setCompareOverlayLabels(labels);
+            this.comparePanel.updateGroupLegend(data.items);
+            if (this._galaxyFramePending) {
+              this._galaxyFramePending = false;
+              this.frameGalaxyCamera(labels);
+            }
+          } else {
+            // Keep prior mesh; kick projection (progress UI lands in Slice 5).
+            void this.ensureGalaxyProjection(data);
+          }
+          this.syncGroupContrastGate();
+          return;
+        }
+
         const labels = this.instancer.renderCompareData(
           data,
           state.renderMode,
@@ -467,6 +501,67 @@ class VHectorLabApp {
       }
     }
     this.syncGroupContrastGate();
+  }
+
+  /**
+   * Project compare embeddings → galaxy positions (UMAP). No progress UI yet (Slice 5).
+   * @param {object} data compare payload with embeddings
+   */
+  async ensureGalaxyProjection(data) {
+    if (!isGalaxyView(this.viewMode)) return;
+    if (this._galaxyProjectBusy) return;
+    const items = data?.items || [];
+    if (!items.length) return;
+    if (
+      Array.isArray(this.galaxyPositions)
+      && this.galaxyPositions.length === items.length
+    ) {
+      return;
+    }
+
+    const vectors = items.map((it) => it.embedding).filter((v) => Array.isArray(v) && v.length);
+    if (vectors.length !== items.length) return;
+
+    this._galaxyProjectBusy = true;
+    try {
+      const res = await this.provider.projectEmbeddings(vectors, {
+        method: this.galaxyMethod || 'umap',
+        n_components: 3,
+        seed: 42,
+      });
+      this.galaxyPositions = res.positions;
+      this._galaxyFramePending = true;
+      if (isGalaxyView(this.viewMode)) {
+        this.refreshRender();
+      }
+    } catch (err) {
+      console.error('Galaxy /project failed:', err);
+      this.modal?.show?.('Galaxy projection failed', String(err?.message || err));
+    } finally {
+      this._galaxyProjectBusy = false;
+    }
+  }
+
+  /**
+   * Frame camera on GROUP_it_core centroid (fallback: all-points bbox).
+   * @param {Array} labels from renderGalaxyData
+   */
+  frameGalaxyCamera(labels) {
+    const target = galaxyCameraTarget(labels);
+    if (!target) return;
+    // Prefer fit-box so sparse cores stay readable; look-at is IT centroid when present.
+    const box = target.box.clone();
+    // Inflate slightly so focus isn't clipped
+    box.expandByScalar(8);
+    void this.navigation.animateToFitBox(box, {
+      viewMode: 'NAVIGATION',
+      durationMs: 550,
+    }).then(() => {
+      // Nudge look-at toward IT core centroid after fit
+      if (target.source !== 'all') {
+        this.navigation.focusPosition(target.lookAt, 0.45);
+      }
+    });
   }
 
   /**
@@ -1082,18 +1177,23 @@ class VHectorLabApp {
       const withMeta = attachCompareGroupMeta(data, tokenMeta);
       this.rawCompareData = cloneCompareRaw(withMeta);
       withMeta.featureSpace = 'RAW';
+      this.galaxyPositions = null;
       state.setCompareData(withMeta);
-
-      const labels = this.instancer.renderCompareData(
-        withMeta,
-        state.renderMode,
-        this.sliderConfig,
-        this.viewMode,
-        this.vizConfig,
-        { dimSortByContrast: this.dimSortByContrast }
-      );
-      this.setCompareOverlayLabels(labels);
       this.comparePanel.updateCompareResults(withMeta);
+
+      if (isGalaxyView(this.viewMode)) {
+        this.refreshRender();
+      } else {
+        const labels = this.instancer.renderCompareData(
+          withMeta,
+          state.renderMode,
+          this.sliderConfig,
+          this.viewMode,
+          this.vizConfig,
+          { dimSortByContrast: this.dimSortByContrast }
+        );
+        this.setCompareOverlayLabels(labels);
+      }
       await this.onCompareDataRefreshed();
     } catch (e) {
       this.modal.show("COMPARE ERROR", e.message || "Could not compute token sequence comparison.");
@@ -1107,6 +1207,18 @@ class VHectorLabApp {
    */
   async handleCompareReorder(payload) {
     if (!payload || !payload.items) return;
+
+    if (isGalaxyView(this.viewMode) && Array.isArray(this.galaxyPositions)) {
+      const oldItems = state.compareData?.items || [];
+      const posById = new Map();
+      oldItems.forEach((it, i) => {
+        if (this.galaxyPositions[i]) posById.set(it.id, this.galaxyPositions[i]);
+      });
+      const nextPos = payload.items.map((it) => posById.get(it.id)).filter(Boolean);
+      this.galaxyPositions = nextPos.length === payload.items.length
+        ? nextPos
+        : null;
+    }
 
     state.setCompareData({
       ...(state.compareData || {}),
@@ -1149,6 +1261,11 @@ class VHectorLabApp {
           }),
         };
       }
+    }
+
+    if (isGalaxyView(this.viewMode)) {
+      this.refreshRender();
+      return;
     }
 
     const orderedIds = payload.items.map((item) => item.id);

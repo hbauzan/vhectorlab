@@ -13,6 +13,7 @@ import {
   computeDimRelationMetrics,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
+import { GALAXY_DEFAULT_SCALE, layoutGalaxyPoints } from './galaxyLayout.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -409,6 +410,52 @@ export class Instancer {
     };
 
     return threadLabelItems;
+  }
+
+  /**
+   * Galaxy VIEW: one point per token from projected positions (no dim-threads / ribbons).
+   * @param {Object} compareResponse
+   * @param {number[][]} positions
+   * @param {Object} [spatialConfig]
+   * @param {Object} [vizConfig]
+   * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3, groupId?: string, groupLabel?: string }>}
+   */
+  renderGalaxyData(compareResponse, positions, spatialConfig = null, vizConfig = null) {
+    this.clear();
+    this.renderMode = 'POINTS';
+    this.currentData = compareResponse;
+    this.compareRuntime = null;
+
+    if (!compareResponse?.items?.length || !positions?.length) return [];
+
+    const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
+      ? spatialConfig.threadThickness
+      : 0.3;
+    // Prefer threadSpacing as global galaxy spread when present.
+    const scale = (spatialConfig && spatialConfig.threadSpacing !== undefined)
+      ? Math.max(8, Number(spatialConfig.threadSpacing) * 40)
+      : GALAXY_DEFAULT_SCALE;
+
+    const { pointsData, labels } = layoutGalaxyPoints(
+      compareResponse.items,
+      positions,
+      { scale },
+    );
+    if (!pointsData.length) return [];
+
+    const sized = pointsData.map((p) => ({
+      ...p,
+      size: 14.0 * thicknessFactor,
+    }));
+
+    const pointsMesh = MeshFactory.createPointsMesh(sized, {
+      pointSize: 18.0 * thicknessFactor,
+      ...(vizConfig ? { vizConfig } : {}),
+    });
+    pointsMesh.userData = { pointsData: sized, galaxy: true };
+    this.activeGroup.add(pointsMesh);
+
+    return labels;
   }
 
   /**
