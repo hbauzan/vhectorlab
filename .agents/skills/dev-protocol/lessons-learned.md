@@ -288,13 +288,18 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
-### 6.0e. `/amiga` (MagicWB) — proyecto aparte; v25 y legado off-limits
+### 6.0e. `/amiga` (MagicWB) — proyecto aparte; v25 off-limits (código Y layout)
 - **Regla**: el skin Amiga Workbench / MagicWB vive **solo** bajo `amiga/` + `src/amiga/**` (MPA `/amiga/`). Es un epic **independiente** de `gui-art` / `gui-art-v25` / `/v25/`.
-- **PROHIBIDO** en el epic Amiga: editar `src/v25/**`, `v25/**`, o “alinear” v25 (versión, tokens, copy). También evitar contaminar `src/style.css` / `src/main.js` / `src/ui/*` legado salvo cambios MPA compartidos mínimos (`vite.mpa.js`, redirect `/amiga`, tests MPA).
-- **Invariante**: SemVer de producto en este epic = línea **`2.4.x`** (MINOR `2.4.0` al primer scaffold demoable). HF Space público = **último** slice del roadmap, no en slices intermedios.
-- **Verificación**: antes de approval / merge Amiga → `git diff -- src/v25 v25` vacío; revisar que el diff legado no meta skin Amiga en `/`.
-- **Norte visual**: Topaz self-hosted + sin antialiasing (múltiplos de 8px) + paleta MagicWB 8 colores; CSS estático (no inyección `<style>` por JS). Cosplay full (iconos/drawers) = roadmap futuro, no este epic.
-- **Mobile**: desktop y mobile desde el inicio; si Topaz/density falla → preguntar al humano, no bajar de múltiplos de 8 “a ciegas”.
+- **PROHIBIDO** en el epic Amiga:
+  1. Editar `src/v25/**`, `v25/**`, o “alinear” v25 (versión, tokens, copy).
+  2. **Mirar / copiar / portar layout de v25** — en especial el shell de **paneles/zonas** (header | left | canvas | right | footer). Eso es v25, no Amiga.
+  3. Contaminar `src/style.css` / `src/main.js` / `src/ui/*` legado salvo MPA shared mínimo (`vite.mpa.js`, redirect `/amiga`, tests MPA).
+- **Layout canónico Amiga**: igual al **legado `/`** — canvas WebGL fullscreen en `#app` + navbar/docks/HUD **flotantes** (fixed). Amiga = **skin MagicWB** (Topaz, pens, biseles) encima de ese modelo. No reinventar un grid de 3/5 paneles.
+- **Invariante**: SemVer línea **`2.4.x`**. HF Space público = último slice del roadmap.
+- **Verificación**: `git diff -- src/v25 v25` vacío; en `src/amiga` no debe aparecer `data-zone` / `lab-shell` / grid left-canvas-right.
+- **Norte visual**: Topaz self-hosted + sin AA (múltiplos de 8px) + paleta MagicWB; CSS estático. Cosplay Q2-C = roadmap futuro.
+- **Mobile**: desktop y mobile; si Topaz/density falla → preguntar, no bajar de múltiplos de 8 a ciegas.
+- **Lección 2026-08-08**: un agente metió el shell multi-zona de v25 en `/amiga` por “parecerse a un lab moderno”. Revertido. **No volver a hacerlo.**
 
 ### 6.0d. `src/v25/**` — no tocar salvo pedido explícito del humano
 - **Regla**: el árbol `src/v25/` (y `v25/index.html` / assets MPA asociados) es un **proyecto aparte**. En roadmaps/epics del UI legado (`src/main.js`, `src/ui/*`, `src/visualizer/*`) está **prohibido** editar `src/v25/**`.

@@ -1,74 +1,24 @@
-/* Amiga 5-zone shell — desktop grid + mobile stack (legacy MOBILE_MQ). */
+/* Amiga host = fullscreen #app (legacy layout). No left|canvas|right zone grid. */
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
 
 #app {
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-}
-
-.amiga-shell {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  grid-template-columns: minmax(240px, 320px) 1fr minmax(200px, 280px);
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    'header header header'
-    'left   canvas right'
-    'footer footer footer';
-  gap: 0;
-  max-width: none;
-  margin: 0;
-}
-
-.amiga-shell__header { grid-area: header; min-height: 0; overflow: hidden; }
-.amiga-shell__left { grid-area: left; min-height: 0; overflow: hidden; position: relative; }
-.amiga-shell__canvas {
-  grid-area: canvas;
-  min-height: 0;
   position: relative;
   overflow: hidden;
-  background: #050505;
 }
-.amiga-shell__right { grid-area: right; min-height: 0; overflow: hidden; position: relative; }
-.amiga-shell__footer { grid-area: footer; min-height: 0; overflow: hidden; }
 
-.amiga-shell__canvas canvas {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
+#app > canvas {
   display: block;
-}
-
-#thread-labels-container {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-/* Phone + short landscape — same MQ as CollapsibleDock */
-@media (max-width: 768px), ((max-height: 500px) and (hover: none)) {
-  .amiga-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(40vh, 1fr) auto auto auto;
-    grid-template-areas:
-      'header'
-      'canvas'
-      'left'
-      'right'
-      'footer';
-  }
-
-  .amiga-shell__left,
-  .amiga-shell__right {
-    max-height: 36vh;
-  }
 }

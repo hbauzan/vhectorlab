@@ -26,7 +26,10 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [2.4.1] - 2026-08-08
 
 ### Added
-- **`/amiga/` full lab wire** (Slices 2–6): MagicWB 5-zone shell; Arithmetic / Compare / SAE / spatial / viz / canvas via legacy engine+UI modules hosted in Amiga zones (host-sized WebGL). Colors still from `VITE_AMIGA_*`. HF Space publish deferred to Slice 7 (needs explicit OK).
+- **`/amiga/` full lab wire** (Slices 2–6): MagicWB skin on **legacy fullscreen layout** (floating navbar/docks/HUD — not a v25 panel grid); Arithmetic / Compare / SAE / spatial / viz / canvas via legacy modules. Colors from `VITE_AMIGA_*`. HF Space deferred (Slice 7).
+
+### Fixed
+- **Amiga layout contamination**: removed mistaken left|canvas|right zone shell (v25 pattern); `/amiga/` matches legacy `/` chrome geometry again (lesson §6.0e).
 
 ## [2.4.0] - 2026-08-08
 
