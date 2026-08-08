@@ -11,10 +11,10 @@ body.amiga-workbench {
   letter-spacing: 0.5px;
   color: var(--amiga-fg) !important;
   background-color: var(--amiga-bg) !important;
-  -webkit-font-smoothing: none;
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeSpeed;
-  font-smooth: never;
+  text-rendering: optimizeLegibility;
+  font-smooth: always;
 }
 
 body.amiga-workbench,
