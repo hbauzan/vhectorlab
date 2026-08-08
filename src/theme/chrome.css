@@ -1,10 +1,10 @@
 /**
- * MagicWB chrome overrides for legacy UI modules under `/amiga/`.
+ * MagicWB chrome overrides for legacy UI modules as the default product chrome.
  * Layout stays legacy (fullscreen canvas + fixed docks/navbar/HUD).
- * Do NOT introduce v25-style zone grids here.
+ * Fullscreen + floating docks only.
  */
 
-body.amiga-workbench {
+body.workbench-theme {
   font-family: var(--amiga-font) !important;
   font-size: var(--amiga-font-size) !important;
   line-height: var(--amiga-line-height) !important;
@@ -17,18 +17,18 @@ body.amiga-workbench {
   font-smooth: always;
 }
 
-body.amiga-workbench,
-body.amiga-workbench button,
-body.amiga-workbench input,
-body.amiga-workbench textarea,
-body.amiga-workbench select {
+body.workbench-theme,
+body.workbench-theme button,
+body.workbench-theme input,
+body.workbench-theme textarea,
+body.workbench-theme select {
   font-family: var(--amiga-font) !important;
   font-size: 16px !important;
   line-height: 20px !important;
 }
 
 /* Titlebar / navbar */
-body.amiga-workbench .glass-navbar {
+body.workbench-theme .glass-navbar {
   background: var(--amiga-accent) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
@@ -37,18 +37,18 @@ body.amiga-workbench .glass-navbar {
   color: var(--mwb-white) !important;
 }
 
-body.amiga-workbench .glass-navbar h1,
-body.amiga-workbench .glass-navbar .version-tag,
-body.amiga-workbench .glass-navbar .tab-label,
-body.amiga-workbench .glass-navbar .connection-status {
+body.workbench-theme .glass-navbar h1,
+body.workbench-theme .glass-navbar .version-tag,
+body.workbench-theme .glass-navbar .tab-label,
+body.workbench-theme .glass-navbar .connection-status {
   color: var(--mwb-white) !important;
   text-shadow: none !important;
 }
 
-body.amiga-workbench .workspace-tab,
-body.amiga-workbench .view-tab,
-body.amiga-workbench .render-tab,
-body.amiga-workbench .galaxy-method-chip {
+body.workbench-theme .workspace-tab,
+body.workbench-theme .view-tab,
+body.workbench-theme .render-tab,
+body.workbench-theme .galaxy-method-chip {
   background: var(--mwb-halfshine) !important;
   color: var(--amiga-fg) !important;
   border: 2px solid var(--mwb-black) !important;
@@ -58,10 +58,10 @@ body.amiga-workbench .galaxy-method-chip {
     inset 2px 2px 0 var(--mwb-white) !important;
 }
 
-body.amiga-workbench .workspace-tab.active,
-body.amiga-workbench .view-tab.active,
-body.amiga-workbench .render-tab.active,
-body.amiga-workbench .galaxy-method-chip.active {
+body.workbench-theme .workspace-tab.active,
+body.workbench-theme .view-tab.active,
+body.workbench-theme .render-tab.active,
+body.workbench-theme .galaxy-method-chip.active {
   background: var(--mwb-peach) !important;
   box-shadow:
     inset 2px 2px 0 var(--mwb-halfshadow),
@@ -70,12 +70,12 @@ body.amiga-workbench .galaxy-method-chip.active {
 
 /* Floating panels — paint the cards, NOT the dock host (right dock-body is height:100%
    and would leave a MagicWB gray slab behind Spatial Controls + AxisGizmo). */
-body.amiga-workbench .glass-sidebar,
-body.amiga-workbench .compare-panel,
-body.amiga-workbench .glass-hud,
-body.amiga-workbench #thread-sliders-container,
-body.amiga-workbench #visualization-controls-container .viz-panel-body,
-body.amiga-workbench .visualization-controls {
+body.workbench-theme .glass-sidebar,
+body.workbench-theme .compare-panel,
+body.workbench-theme .glass-hud,
+body.workbench-theme #thread-sliders-container,
+body.workbench-theme #visualization-controls-container .viz-panel-body,
+body.workbench-theme .visualization-controls {
   background: var(--amiga-bg) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
@@ -91,8 +91,8 @@ body.amiga-workbench .visualization-controls {
   fixed max-height + overflow-y auto so presets (2 Groups / 3 Groups), SAE, etc.
   are reachable instead of being clipped by the dock.
 */
-body.amiga-workbench #compare-panel,
-body.amiga-workbench #sidebar-panel {
+body.workbench-theme #compare-panel,
+body.workbench-theme #sidebar-panel {
   max-height: min(56vh, 520px) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -101,39 +101,39 @@ body.amiga-workbench #sidebar-panel {
 }
 
 /* Preset row: wrap so Groups chips are not clipped horizontally */
-body.amiga-workbench #compare-panel .preset-buttons-row {
+body.workbench-theme #compare-panel .preset-buttons-row {
   flex-wrap: wrap;
 }
 
-body.amiga-workbench #compare-panel .btn-preset {
+body.workbench-theme #compare-panel .btn-preset {
   flex: 1 1 auto;
   min-width: calc(50% - 6px);
 }
 
 /* Dock chrome must stay clear so the 3D canvas shows through */
-body.amiga-workbench .collapsible-dock .dock-body {
+body.workbench-theme .collapsible-dock .dock-body {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
 
-body.amiga-workbench #axis-gizmo-container {
+body.workbench-theme #axis-gizmo-container {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 
-body.amiga-workbench .dock-tab {
+body.workbench-theme .dock-tab {
   background: var(--amiga-accent) !important;
   color: var(--mwb-white) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
 }
 
-body.amiga-workbench input,
-body.amiga-workbench textarea,
-body.amiga-workbench select {
+body.workbench-theme input,
+body.workbench-theme textarea,
+body.workbench-theme select {
   background: var(--mwb-white) !important;
   color: var(--amiga-fg) !important;
   border: 2px solid var(--mwb-black) !important;
@@ -142,17 +142,17 @@ body.amiga-workbench select {
 }
 
 /* Compare token editor — black field, muted (darker) text */
-body.amiga-workbench #compare-panel #compare-tokens {
+body.workbench-theme #compare-panel #compare-tokens {
   background: #000000 !important;
   color: #9a9a9a !important;
   caret-color: #c0c0c0;
   box-shadow: inset 2px 2px 0 #1a1a1a !important;
 }
 
-body.amiga-workbench .btn-primary,
-body.amiga-workbench button.lab-btn,
-body.amiga-workbench .sae-train-btn,
-body.amiga-workbench .compare-visualize-btn {
+body.workbench-theme .btn-primary,
+body.workbench-theme button.lab-btn,
+body.workbench-theme .sae-train-btn,
+body.workbench-theme .compare-visualize-btn {
   background: var(--mwb-halfshine) !important;
   color: var(--amiga-fg) !important;
   border: 2px solid var(--mwb-black) !important;
@@ -162,22 +162,22 @@ body.amiga-workbench .compare-visualize-btn {
     inset 2px 2px 0 var(--mwb-white) !important;
 }
 
-body.amiga-workbench .btn-primary:active,
-body.amiga-workbench button:active {
+body.workbench-theme .btn-primary:active,
+body.workbench-theme button:active {
   box-shadow:
     inset 2px 2px 0 var(--mwb-halfshadow),
     inset -2px -2px 0 var(--mwb-white) !important;
 }
 
-body.amiga-workbench .results-list,
-body.amiga-workbench .compare-cosine-list {
+body.workbench-theme .results-list,
+body.workbench-theme .compare-cosine-list {
   max-height: max(120px, min(280px, 40dvh));
   overflow-y: auto;
   border: 2px solid var(--mwb-black);
   background: var(--mwb-halfshine);
 }
 
-body.amiga-workbench .thread-label-card {
+body.workbench-theme .thread-label-card {
   background: var(--amiga-accent) !important;
   color: var(--mwb-white) !important;
   border: 2px solid var(--mwb-black) !important;
@@ -186,8 +186,8 @@ body.amiga-workbench .thread-label-card {
   font-family: var(--amiga-font) !important;
 }
 
-body.amiga-workbench .custom-modal-overlay .custom-modal,
-body.amiga-workbench .modal-content {
+body.workbench-theme .custom-modal-overlay .custom-modal,
+body.workbench-theme .modal-content {
   background: var(--amiga-bg) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;

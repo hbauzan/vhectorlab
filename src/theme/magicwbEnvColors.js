@@ -1,5 +1,5 @@
 /**
- * Amiga / MagicWB colors from Vite env (`VITE_AMIGA_*`) with built-in defaults.
+ * Workbench / MagicWB theme colors from Vite env (`VITE_AMIGA_*`) with built-in defaults.
  * Pure resolve + DOM apply — testable without Vite.
  */
 

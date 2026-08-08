@@ -288,46 +288,31 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
-### 6.0e. `/amiga` (MagicWB) — proyecto aparte; v25 off-limits (código Y layout)
-- **Regla**: el skin Amiga Workbench / MagicWB vive **solo** bajo `amiga/` + `src/amiga/**` (MPA `/amiga/`). Es un epic **independiente** de `gui-art` / `gui-art-v25` / `/v25/`.
-- **PROHIBIDO** en el epic Amiga:
-  1. Editar `src/v25/**`, `v25/**`, o “alinear” v25 (versión, tokens, copy).
-  2. **Mirar / copiar / portar layout de v25** — en especial el shell de **paneles/zonas** (header | left | canvas | right | footer). Eso es v25, no Amiga.
-  3. Contaminar `src/style.css` / `src/main.js` / `src/ui/*` legado salvo MPA shared mínimo (`vite.mpa.js`, redirect `/amiga`, tests MPA).
-- **Layout canónico Amiga**: igual al **legado `/`** — canvas WebGL fullscreen en `#app` + navbar/docks/HUD **flotantes** (fixed). Amiga = **skin MagicWB** (Topaz, pens, biseles) encima de ese modelo. No reinventar un grid de 3/5 paneles.
-- **Invariante**: SemVer línea **`2.4.x`**. HF Space público = último slice del roadmap.
-- **Verificación**: `git diff -- src/v25 v25` vacío; en `src/amiga` no debe aparecer `data-zone` / `lab-shell` / grid left-canvas-right.
-- **Norte visual**: Topaz self-hosted + sin AA (múltiplos de 8px) + paleta MagicWB; CSS estático. Cosplay Q2-C = roadmap futuro.
-- **Mobile**: desktop y mobile; si Topaz/density falla → preguntar, no bajar de múltiplos de 8 a ciegas.
-- **Lección 2026-08-08**: un agente metió el shell multi-zona de v25 en `/amiga` por “parecerse a un lab moderno”. Revertido. **No volver a hacerlo.**
+### 6.0e. Workbench theme is the default UI (2.4.1+) — parallel skins retired
+- **Regla**: el chrome Magic Workbench es la UI **default** en `/` (`src/theme/` + `body.workbench-theme`). Product name = **VHectorLab 3D** (sin la palabra “Amiga” en marca).
+- **Retirado en 2.4.1**: MPA `/v25/`, `/amiga/`, árboles `src/v25/**`, `v25/**`, `amiga/**`, `src/amiga/**`. No reintroducir skins paralelos sin pedido explícito.
+- **Layout**: fullscreen `#app` + navbar/docks/HUD flotantes. **PROHIBIDO** shell multi-zona left|canvas|right (patrón v25 histórico).
+- **Colores**: `VITE_AMIGA_*` en `.env` (nombre histórico de vars; documentadas como Workbench theme).
+- **Vite**: `getViteInputs` → solo `main` (`index.html`). Redirects MPA bare-dir vacíos por default.
+- **Lección**: no volver a forkear UI en `/v25` o `/amiga` “por si acaso”; un solo producto en `/`.
 
-### 6.0d. `src/v25/**` — no tocar salvo pedido explícito del humano
-- **Regla**: el árbol `src/v25/` (y `v25/index.html` / assets MPA asociados) es un **proyecto aparte**. En roadmaps/epics del UI legado (`src/main.js`, `src/ui/*`, `src/visualizer/*`) está **prohibido** editar `src/v25/**`.
-- **Invariante**: no “sync de cortesía” (versión, copy, presets compartidos, imports) en v25 **a menos que el humano lo indique explícitamente** en el prompt (“tocá v25”, “sync version en v25”, “también en /v25/”, etc.). Silencio ≠ permiso.
-- **Verificación**: antes de approval gate / merge, `git diff -- src/v25` debe estar vacío si el epic no autorizó v25.
-- **Excepción**: solo cuando el humano lo pida; no inferir desde SemVer, CHANGELOG, o que v25 importe módulos de `src/ui/`.
-- **Nota**: el epic `/amiga` (§6.0e) también deja v25 intacto; no usar Amiga como excusa para tocar v25.
+### 6.0d. _(histórico)_ `src/v25/**` — retirado
+- El árbol v25 fue **eliminado** en 2.4.1. Lecciones 6.0b/6.0c abajo quedan como memoria de bugs de ese experimento; no aplican a código vivo.
 
-### 6.0c. `v25:` MODE switch = visibility toggle, never wipe left host
+### 6.0c. _(histórico v25)_ MODE switch = visibility toggle, never wipe left host
 - **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10). Además `display: flex` en `.lab-left-host > [data-panel]` **pisa** el UA `[hidden]{display:none}` → el slot Arithmetic oculto sigue ocupando flex y deja un **hueco negro** arriba del Compare (lista cosine aplastada abajo).
 - **Solución Obligatoria**: host `.lab-left-host` con dos slots; ambos paneles montados; MODE alterna `hidden` + `.is-hidden` **y** CSS `display: none !important` en `[data-panel][hidden]`. Canvas guarda `lastArithmetic` **y** `lastCompare`. Al entrar COMPARE, VIEW preferido = **NAVIGATION** (framing multi-thread); ARITHMETIC vuelve a **ANALYSIS**.
 - **Invariante**: collapse/MODE ≠ unmount; nunca asumir que `[hidden]` gana a una regla `display:` propia.
 
-### 6.0b. `v25:` canvas host size = container, not `window`
-- **Problema**: `SceneSetup` legado dimensiona el renderer con `window.innerWidth/Height` (fullscreen `#app`). En v25 el héroe vive en `[data-zone="canvas"]` (celda de grid) → buffer/aspect incorrectos y labels proyectados contra viewport entero.
-- **Solución Obligatoria**: en `mountCanvasHost`, override `sceneSetup.onWindowResize` → `clientWidth/Height` del host (floor 1×1); `ResizeObserver` en el host; `renderer.setSize(w, h, false)` + CSS `canvas { inset:0; width/height:100% }`. ThreadLabels overlay `width/height: 100%` del host (no `100vw/100vh`).
-- **Invariante**: no fork de `SceneSetup` solo por MPA; no contaminar `src/style.css` legado. Startup canvas = `ARITHMETIC|ANALYSIS|POINTS` (`canvasStartupContext` / `appViewDefaults`).
-- **No hacer en Fase 8+ inmediata**: wire live de sliders (Fase 9) ni MODE Compare (Fase 10) desde header tabs.
+### 6.0b. _(histórico v25)_ canvas host size = container, not `window`
+- **Problema**: `SceneSetup` legado dimensiona el renderer con `window.innerWidth/Height` (fullscreen `#app`). En un host celda de grid → buffer/aspect incorrectos.
+- **Solución Obligatoria**: override `onWindowResize` → `clientWidth/Height` del host; `ResizeObserver`; ThreadLabels al tamaño del host.
+- **Invariante actual**: el producto default usa fullscreen `#app` (window size) otra vez; no reintroducir grid de zonas sin necesidad.
 
-### 6.0. `v25:` / `amiga:` Vite MPA + FastAPI directory index
-- **Problema**: un solo `index.html` en la raíz no alcanza para banderas blancas (`/v25/`, `/amiga/`). En prod, el catch-all que solo chequea `is_file()` trata `dist/<dir>/` como miss y cae al SPA legado. En **dev**, Vite SPA fallback sirve el legado en `/v25` o `/amiga` **sin** trailing slash.
-- **Solución Obligatoria**:
-  - Vite `build.rollupOptions.input` vía `getViteInputs(root)` (`vite.mpa.js`) → `main` + `v25` + `amiga` → emite `dist/index.html`, `dist/v25/index.html`, `dist/amiga/index.html`.
-  - `appType: 'mpa'` + plugin `mpaTrailingSlashRedirect` → bare dir 302 → trailing slash (`/v25/`, `/amiga/`).
-  - FastAPI: `resolve_dist_file(dist, path)` → archivo exacto, si no `path/index.html`, si no root `index.html`.
-- **Invariante**: nuevas páginas MPA = entry en `getViteInputs` **y** redirect bare-dir → slash; no hardcodear solo `…/index.html` en el cliente si `/dir/` debe funcionar.
-- **No hacer**: contaminar `src/style.css` / `src/main.js` legado desde v25 o amiga; no editar `src/v25/**` desde el epic amiga (ver §6.0e).
-- **URL de prueba**: preferí `http://127.0.0.1:5173/v25/` y `http://127.0.0.1:5173/amiga/` (con slash); sin slash debe redirigir, no cargar el legado.
+### 6.0. Vite entry + FastAPI static
+- **Estado 2.4.1+**: un solo `index.html` en la raíz. `getViteInputs` → `{ main }`. FastAPI `resolve_dist_file` sigue sirviendo `path/index.html` si algún día hay subpaths.
+- **No hacer**: contaminar el producto con MPA skins paralelos sin OK humano.
+- **URL de prueba**: `http://127.0.0.1:5173/`
 
 ### 6.1. Proxy `/api` en Vite: prefijo general, no ruta-a-ruta
 - **Problema**: Exponer frontend y backend con **el mismo** hostname ngrok (dos agentes → `:5173` y `:8000`) se pisa; el celu no puede llamar a `127.0.0.1:8000`.
@@ -346,7 +331,7 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 ### 7.0. Product name (2026-08-03)
 - Canonical product name: **VHectorLab 3D** (was VectorLab 3D / VECTORLAB). Keep `roadmap/` historical docs as-is.
 - Do **not** rename `localStorage` keys `vl3d.*` — technical prefix, not brand; renaming breaks persisted prefs.
-- Sync brand + SemVer: `manifest.json`, `package.json`, Navbar `version-tag`, FastAPI `app.version`, `CHANGELOG`. **`src/v25/version.js` solo si el humano pide sync v25** (ver §6.0d).
+- Sync brand + SemVer: `manifest.json`, `package.json`, Navbar `version-tag`, FastAPI `app.version`, `CHANGELOG`. v25 retirado en 2.4.1 — no hay `src/v25/version.js`.
 
 ### 7.1. Diagnosis (why it felt broken)
 - **Too fast (Aug 2026 epic day)**: `1.1.0`→`1.5.0` burned a **MINOR per roadmap etapa** (docks / landscape / touch / MESH / RIBBONS) on the same calendar day. Semantically each etapa *was* a capability, but the Navbar tag looked like five releases without five ship moments.

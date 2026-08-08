@@ -3,8 +3,7 @@ import {
   AMIGA_BG_DARKENED,
   AMIGA_TOKEN_HEX,
   MWB_PENS,
-} from '../src/amiga/tokenValues.js';
-import { PRODUCT_VERSION } from '../src/amiga/version.js';
+} from '../src/theme/tokenValues.js';
 
 describe('MagicWB pens', () => {
   it('exposes dark-gray palette defaults', () => {
@@ -21,7 +20,7 @@ describe('MagicWB pens', () => {
   });
 });
 
-describe('amiga semantic tokens', () => {
+describe('theme semantic tokens', () => {
   it('uses very dark gray bg with light fg', () => {
     expect(AMIGA_TOKEN_HEX.bg).toBe(AMIGA_BG_DARKENED);
     expect(AMIGA_BG_DARKENED).toBe('#222222');
@@ -33,11 +32,5 @@ describe('amiga semantic tokens', () => {
     expect(AMIGA_TOKEN_HEX.fontSizePx).toBe(16);
     expect(AMIGA_TOKEN_HEX.lineHeightPx).toBe(20);
     expect(AMIGA_TOKEN_HEX.fontSizePx % 8).toBe(0);
-  });
-});
-
-describe('amiga product version', () => {
-  it('starts the 2.4.x line', () => {
-    expect(PRODUCT_VERSION).toMatch(/^2\.4\.\d+$/);
   });
 });

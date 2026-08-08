@@ -61,10 +61,10 @@ Percent of the |t| range held at the zero color (default black) before blending 
 ### Group Contrast
 Visualization paint for Compare with ≥2 groups: **Shared noise** blackens same-sign dims by similarity; **Sign conflict** highlights opposite-sign dims (custom color × |Δ|) and can blacken them by difference. Uses group means on raw embeddings; geometry Y unchanged.
 
-### Amiga Skin
-Parallel MPA UI at `/amiga/` with Magic Workbench palette and Topaz pixel typography on the **same fullscreen + floating-dock layout as legacy `/`**. Independent of `/v25/` (no panel-zone grid). Palette overridable via `VITE_AMIGA_*` in `.env`.
+### Workbench Theme
+Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and bevelled panels on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**.
 
-_Avoid_: treating Amiga as a reskin of v25; copying v25 shell zones; editing `src/v25/**` for Amiga work.
+_Avoid_: parallel MPA skins (`/v25/`, `/amiga/` — retired in 2.4.1); multi-zone lab grids as the primary layout.
 
 ### Shared Noise Similarity
 `1 − |mean_G1 − mean_G2| / (|mean_G1| + |mean_G2|)` per dimension — high values mean shared-sign “noise” between groups.

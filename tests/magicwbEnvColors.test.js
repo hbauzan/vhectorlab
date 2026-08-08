@@ -6,7 +6,7 @@ import {
   applyAmigaCssVars,
   normalizeHex,
   resolveAmigaColors,
-} from '../src/amiga/amigaEnvColors.js';
+} from '../src/theme/magicwbEnvColors.js';
 
 describe('normalizeHex', () => {
   it('accepts #RRGGBB and RRGGBB', () => {

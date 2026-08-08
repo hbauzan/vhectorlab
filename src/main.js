@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import {
+  applyAmigaCssVars,
+  resolveAmigaColors,
+} from './theme/magicwbEnvColors.js';
 import { SceneSetup } from './engine/SceneSetup.js';
 import { Navigation } from './engine/Navigation.js';
 import { Interaction } from './engine/Interaction.js';
@@ -77,6 +81,10 @@ import {
 
 class VHectorLabApp {
   constructor() {
+    const colors = resolveAmigaColors(import.meta.env);
+    applyAmigaCssVars(document.documentElement, colors);
+    document.body.classList.add('workbench-theme');
+
     this.appContainer = document.getElementById('app');
 
     // 1. Core 3D Scene Engine
