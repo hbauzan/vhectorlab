@@ -117,11 +117,11 @@ body.amiga-workbench select {
   box-shadow: inset 2px 2px 0 var(--mwb-halfshadow) !important;
 }
 
-/* Compare token editor — black field */
+/* Compare token editor — black field, muted (darker) text */
 body.amiga-workbench #compare-panel #compare-tokens {
   background: #000000 !important;
-  color: #f0f0f0 !important;
-  caret-color: #f0f0f0;
+  color: #9a9a9a !important;
+  caret-color: #c0c0c0;
   box-shadow: inset 2px 2px 0 #1a1a1a !important;
 }
 
