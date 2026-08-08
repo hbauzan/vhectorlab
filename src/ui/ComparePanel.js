@@ -145,6 +145,13 @@ export class ComparePanel {
         </div>
 
         ${saeControlsMarkup('cmp')}
+
+        <div id="galaxy-progress" class="galaxy-progress hidden" hidden role="status" aria-live="polite">
+          <div class="galaxy-progress-label" id="galaxy-progress-label"></div>
+          <div class="galaxy-progress-bar" aria-hidden="true">
+            <div class="galaxy-progress-fill" id="galaxy-progress-fill"></div>
+          </div>
+        </div>
       </form>
 
       <div class="results-container compare-results">
@@ -183,6 +190,9 @@ export class ComparePanel {
     this.cosineList = this.element.querySelector('#compare-cosine-list');
     this.btnSortDesc = this.element.querySelector('#btn-sort-desc');
     this.btnSortAsc = this.element.querySelector('#btn-sort-asc');
+    this.galaxyProgressEl = this.element.querySelector('#galaxy-progress');
+    this.galaxyProgressLabel = this.element.querySelector('#galaxy-progress-label');
+    this.galaxyProgressFill = this.element.querySelector('#galaxy-progress-fill');
 
     this.saeUi = wireSaeControls(this.element, 'cmp', {
       primaryLabel: '🔍 VISUALIZE SEQUENCE (3D)',
@@ -359,6 +369,40 @@ export class ComparePanel {
 
   setLoading(loading) {
     this.saeUi.setPrimaryLoading(loading);
+  }
+
+  /**
+   * Galaxy pipeline progress: status text + determinate bar + step k/n.
+   * @param {{ step: number, total: number, label?: string, statusText?: string, ratio?: number }|null} progress
+   */
+  setGalaxyProgress(progress) {
+    if (!this.galaxyProgressEl) return;
+    if (!progress) {
+      this.clearGalaxyProgress();
+      return;
+    }
+    const label = progress.statusText
+      || `${progress.step}/${progress.total} ${progress.label || ''}`.trim();
+    const ratio = Number.isFinite(progress.ratio)
+      ? progress.ratio
+      : (progress.step / Math.max(1, progress.total));
+    const pct = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+
+    this.galaxyProgressEl.removeAttribute('hidden');
+    this.galaxyProgressEl.classList.remove('hidden');
+    if (this.galaxyProgressLabel) this.galaxyProgressLabel.textContent = label;
+    if (this.galaxyProgressFill) this.galaxyProgressFill.style.width = `${pct}%`;
+    this.galaxyProgressEl.setAttribute('aria-valuenow', String(pct));
+    this.galaxyProgressEl.setAttribute('aria-valuemin', '0');
+    this.galaxyProgressEl.setAttribute('aria-valuemax', '100');
+  }
+
+  clearGalaxyProgress() {
+    if (!this.galaxyProgressEl) return;
+    this.galaxyProgressEl.setAttribute('hidden', '');
+    this.galaxyProgressEl.classList.add('hidden');
+    if (this.galaxyProgressLabel) this.galaxyProgressLabel.textContent = '';
+    if (this.galaxyProgressFill) this.galaxyProgressFill.style.width = '0%';
   }
 
   updateMetrics(count) {
