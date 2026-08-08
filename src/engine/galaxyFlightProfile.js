@@ -13,12 +13,12 @@ export const DEFAULT_FLIGHT_PROFILE = Object.freeze({
 });
 
 /**
- * Galaxy-only: slower cruise + softer look so a larger UMAP world feels elegant.
- * Calibrated with GALAXY_DEFAULT_SCALE ≈ 96 (RMS≈1 → ~several seconds across IT-core).
+ * Galaxy-only: cruise = former Shift speed; Shift = 2× that (incremental).
+ * Look stays soft vs ANALYSIS/NAV. Calibrated with GALAXY_DEFAULT_SCALE ≈ 96.
  */
 export const GALAXY_FLIGHT_PROFILE = Object.freeze({
-  moveSpeed: 32.0,
-  turboMultiplier: 1.75,
+  moveSpeed: 56.0, // was 32 × 1.75 (previous turbo feel)
+  turboMultiplier: 2.0,
   lookSensitivity: 0.0014,
 });
 

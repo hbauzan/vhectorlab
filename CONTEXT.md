@@ -62,7 +62,13 @@ Percent of the |t| range held at the zero color (default black) before blending 
 Visualization paint for Compare with ≥2 groups: **Shared noise** blackens same-sign dims by similarity; **Sign conflict** highlights opposite-sign dims (custom color × |Δ|) and can blacken them by difference. Uses group means on raw embeddings; geometry Y unchanged.
 
 ### Workbench Theme
-Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and bevelled panels on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**.
+Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and bevelled panels on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**. Value fields use dark fills (not white).
+
+### Galaxy feel
+Galaxy VIEW uses a larger UMAP world scale and a slower flight profile (WASD/QE + mouse look) than ANALYSIS/NAVIGATION; leaving Galaxy restores default speeds. Galaxy POINTS render as soft circular stars.
+
+### Group hue
+Optional Visualization → Group contrast mode: each `GROUP_*` paints black (−1) → a picked color (+1), coexisting with Shared noise / Sign conflict. Default OFF.
 
 _Avoid_: parallel MPA skins (`/v25/`, `/amiga/` — retired in 2.4.1); multi-zone lab grids as the primary layout.
 

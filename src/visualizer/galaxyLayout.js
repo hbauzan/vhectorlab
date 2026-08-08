@@ -22,6 +22,9 @@ export const GALAXY_SPACING_TO_SCALE = 240;
 /** Floor so tiny spacing sliders never collapse the cloud. */
 export const GALAXY_MIN_SCALE = 32;
 
+/** Soft-star base pointSize floor (¼ of prior 26 after soft-star pass). */
+export const GALAXY_POINT_SIZE_FLOOR = 6.5;
+
 /**
  * Resolve Galaxy world scale from Spatial sliders (or default).
  * @param {{ threadSpacing?: number }|null|undefined} spatialConfig
@@ -33,6 +36,17 @@ export function resolveGalaxyWorldScale(spatialConfig) {
     return Math.max(GALAXY_MIN_SCALE, Number.isFinite(raw) ? raw : GALAXY_DEFAULT_SCALE);
   }
   return GALAXY_DEFAULT_SCALE;
+}
+
+/**
+ * Readable Galaxy POINTS size after world scale↑ (camera farther).
+ * Thickness still modulates above the floor. Sized ≈¼ of first soft-star pass.
+ * @param {number} [threadThickness=0.05]
+ * @returns {number}
+ */
+export function resolveGalaxyPointSize(threadThickness = 0.05) {
+  const t = Number.isFinite(threadThickness) ? threadThickness : 0.05;
+  return Math.max(GALAXY_POINT_SIZE_FLOOR, 30 * Math.max(t, 0));
 }
 
 /**
@@ -74,7 +88,8 @@ export function layoutGalaxyPoints(items, positions, opts = {}) {
       position: origin3D,
       activation,
       size: 12,
-      meta: { type: 'compare', token: text, dim: 0, val: activation },
+      groupId: item.groupId,
+      meta: { type: 'compare', token: text, dim: 0, val: activation, groupId: item.groupId },
     });
     labels.push({
       id,
