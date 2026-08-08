@@ -4,6 +4,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
+| [`galaxy-view.md`](./galaxy-view.md) | VIEW **Galaxy**: UMAP backend, 1 punto/token, COMPARE+POINTS locked, IT core×100 | **Activo (plan)** |
+| [`PROMPT-galaxy-view.md`](./PROMPT-galaxy-view.md) | Prompt serial por slice (1→7) para agentes Galaxy | **Activo** |
 | [`gui-art-v25.md`](./gui-art-v25.md) | GUI/Art **v25**: layout+skin paralelo en `/v25/` (fases 0–13, hand-offs) | **Activo (plan)** |
 | [`PROMPT-gui-art-v25.md`](./PROMPT-gui-art-v25.md) | Prompt por fase para agentes v25 (una fase / sesión) | **Activo** |
 | [`gui-art.md`](./gui-art.md) | Epic GUI & arte de producto (norte genérico) | **Activo** (operativo → v25) |
