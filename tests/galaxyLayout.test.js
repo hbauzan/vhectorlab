@@ -16,7 +16,7 @@ describe('galaxyLayout', () => {
   it('maps one world point per token from positions', () => {
     const items = [
       { id: 'a', text: 'server', groupId: IT_CORE_GROUP_ID, cosine_vs_first: 1 },
-      { id: 'b', text: 'car', groupId: 'GROUP_1', cosine_vs_first: 0.2 },
+      { id: 'b', text: 'car', groupId: 'vehicles', cosine_vs_first: 0.2 },
     ];
     const positions = [
       [1, 0, 0],
@@ -52,7 +52,7 @@ describe('galaxyLayout', () => {
     const labels = [
       { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(0, 0, 0) },
       { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(2, 4, 6) },
-      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(100, 0, 0) },
+      { groupId: 'vehicles', origin3D: new THREE.Vector3(100, 0, 0) },
     ];
     const c = centroidForGroup(labels, IT_CORE_GROUP_ID);
     expect(c.x).toBeCloseTo(1);
@@ -63,15 +63,15 @@ describe('galaxyLayout', () => {
   it('galaxyCameraTarget prefers IT core, else all bbox center', () => {
     const withCore = [
       { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(1, 2, 3) },
-      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(50, 0, 0) },
+      { groupId: 'vehicles', origin3D: new THREE.Vector3(50, 0, 0) },
     ];
     const t1 = galaxyCameraTarget(withCore);
     expect(t1.source).toBe(IT_CORE_GROUP_ID);
     expect(t1.lookAt).toEqual(new THREE.Vector3(1, 2, 3));
 
     const noCore = [
-      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(0, 0, 0) },
-      { groupId: 'GROUP_2', origin3D: new THREE.Vector3(10, 0, 0) },
+      { groupId: 'vehicles', origin3D: new THREE.Vector3(0, 0, 0) },
+      { groupId: 'women', origin3D: new THREE.Vector3(10, 0, 0) },
     ];
     const t2 = galaxyCameraTarget(noCore);
     expect(t2.source).toBe('all');

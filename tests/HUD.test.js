@@ -135,6 +135,38 @@ describe('HUD activation telemetry', () => {
     expect(segment.textContent).toBe('COMPARE');
   });
 
+  it('shows group/token when point has groupLabel', () => {
+    const hud = new HUD(root);
+    hud.activationEl = document.createElement('span');
+    hud.dimEl = document.createElement('span');
+    hud.coordsEl = document.createElement('span');
+    hud.segmentEl = document.createElement('span');
+    hud.tokenEl = document.createElement('span');
+    hud.activationEl.style = {};
+    hud.activationEl.removeAttribute = () => {};
+    hud.tokenEl.removeAttribute = () => {};
+
+    hud.updateTelemetry({
+      index: 0,
+      point: { x: 1, y: 0, z: 0 },
+      userData: {
+        pointsData: [{
+          activation: 0.5,
+          meta: {
+            type: 'compare',
+            token: 'car',
+            dim: 1,
+            val: 0.5,
+            groupId: 'vehicles',
+            groupLabel: 'vehicles',
+          },
+        }],
+      },
+    });
+
+    expect(hud.tokenEl.textContent).toBe('vehicles/car');
+  });
+
   it('clears to -- when hover leaves', () => {
     const hud = new HUD(root);
     hud.activationEl = document.createElement('span');

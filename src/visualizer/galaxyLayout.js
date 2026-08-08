@@ -89,7 +89,15 @@ export function layoutGalaxyPoints(items, positions, opts = {}) {
       activation,
       size: 12,
       groupId: item.groupId,
-      meta: { type: 'compare', token: text, dim: 0, val: activation, groupId: item.groupId },
+      groupLabel: item.groupLabel || item.groupId || null,
+      meta: {
+        type: 'compare',
+        token: text,
+        dim: 0,
+        val: activation,
+        groupId: item.groupId,
+        groupLabel: item.groupLabel || item.groupId || null,
+      },
     });
     labels.push({
       id,
@@ -135,7 +143,7 @@ export function boundingBoxFromLabels(labels) {
 }
 
 /**
- * Camera look-at: GROUP_it_core centroid, else bbox center of all points.
+ * Camera look-at: it_core centroid, else bbox center of all points.
  * @param {Array<{ origin3D: THREE.Vector3, groupId?: string }>} labels
  * @param {string} [preferredGroupId=IT_CORE_GROUP_ID]
  * @returns {{ lookAt: THREE.Vector3, source: string, box: THREE.Box3 }|null}

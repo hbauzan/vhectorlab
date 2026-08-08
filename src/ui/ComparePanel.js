@@ -50,11 +50,32 @@ export const AUTO_MANUAL_VOCAB_EN = [
 /** Deduplicated English auto-manual lexicon (stable order). */
 export const AUTO_MANUAL_UNIQUE_EN = [...new Set(AUTO_MANUAL_VOCAB_EN)];
 
-/** Demo textarea with two named groups (vehicles vs soft/emotional lexicon). */
-export const COMPARE_GROUPS_DEMO_TEXT = `GROUP_1 = "car, vehicle, automobile, truck, van, engine, piston, cylinder, crankshaft, camshaft, turbo, exhaust, muffler, radiator, transmission, gearbox, clutch, differential, driveshaft, steering, suspension, chassis, brake, brakes, rotor, wheel, wheels, tire, tires, rim, axle, bearing, pedal, accelerator, throttle, injector, manifold, intake, coolant, antifreeze, oil, filter, battery, alternator, starter, coil, fuse, relay, sensor, wiring, shock, spring, hood, trunk, windshield, headlight, bumper, fender, seatbelt, airbag, dashboard, speedometer, fuel, gasoline, diesel"
-GROUP_2 = "sophia, isabella, victoria, florence, beatrice, eleanor, charlotte, gloria, clara, penelope, serenity, compassion, tenderness, nostalgia, melancholy, empathy, affection, gratitude, forgiveness, solitude, devotion, harmony, poetry, symphony, melody, lullaby, romance, intimacy, solace, grace, bliss, euphoria, sweetness, delight, softness, warmth, kindness, hope, peace, innocence, purity, elegance, beauty, passion, desire, yearning, whisper, caress, embrace, soul, spirit, intuition, wisdom, reverie, fantasy, butterfly, blossom, rose, orchid, petal, jasmine, violet, peony, dahlia, magnolia"`;
+/** Demo group ids — semantic names matching corpus content. */
+export const VEHICLES_GROUP_ID = 'vehicles';
+export const WOMEN_GROUP_ID = 'women';
 
-/** Bootstrap / Galaxy default: IT core (100) first, then existing GROUP_1 + GROUP_2 demos. */
+/** 65 English women’s given names (simple tokens for the COMPARE splitter). */
+export const WOMEN_NAMES_EN = [
+  'sophia', 'isabella', 'victoria', 'florence', 'beatrice',
+  'eleanor', 'charlotte', 'gloria', 'clara', 'penelope',
+  'emma', 'olivia', 'ava', 'mia', 'amelia',
+  'harper', 'evelyn', 'abigail', 'emily', 'elizabeth',
+  'madison', 'avery', 'ella', 'scarlett', 'chloe',
+  'camila', 'aria', 'layla', 'riley', 'nora',
+  'lily', 'hazel', 'violet', 'aurora', 'savannah',
+  'audrey', 'brooklyn', 'bella', 'claire', 'skylar',
+  'lucy', 'paisley', 'everly', 'anna', 'caroline',
+  'genesis', 'aaliyah', 'kennedy', 'kinsley', 'allison',
+  'maya', 'willow', 'naomi', 'elena', 'sarah',
+  'natalie', 'luna', 'samantha', 'ashley', 'zoey',
+  'leah', 'annabelle', 'lauren', 'jade', 'ivy',
+];
+
+/** Demo textarea with two named groups (vehicles vs English women’s names). */
+export const COMPARE_GROUPS_DEMO_TEXT = `${VEHICLES_GROUP_ID} = "car, vehicle, automobile, truck, van, engine, piston, cylinder, crankshaft, camshaft, turbo, exhaust, muffler, radiator, transmission, gearbox, clutch, differential, driveshaft, steering, suspension, chassis, brake, brakes, rotor, wheel, wheels, tire, tires, rim, axle, bearing, pedal, accelerator, throttle, injector, manifold, intake, coolant, antifreeze, oil, filter, battery, alternator, starter, coil, fuse, relay, sensor, wiring, shock, spring, hood, trunk, windshield, headlight, bumper, fender, seatbelt, airbag, dashboard, speedometer, fuel, gasoline, diesel"
+${WOMEN_GROUP_ID} = "${WOMEN_NAMES_EN.join(', ')}"`;
+
+/** Bootstrap / Galaxy default: it_core (100) first, then vehicles + women demos. */
 export const COMPARE_GALAXY_BOOTSTRAP_TEXT = `${formatItCoreGroupLine()}
 ${COMPARE_GROUPS_DEMO_TEXT}`;
 
@@ -73,7 +94,7 @@ export const COMPARE_AUTO_PRESETS = {
 /**
  * Single source for COMPARE first-paint: textarea default + auto Visualize payload.
  * Must stay grouped so GROUP_* floating badges appear without a second submit.
- * Order: GROUP_it_core → GROUP_1 → GROUP_2 (REF inside the IT core).
+ * Order: it_core → vehicles → women (REF inside the IT core).
  * @returns {{
  *   mode: 'flat'|'grouped',
  *   tokens: string[],
@@ -133,7 +154,7 @@ export class ComparePanel {
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
           <label for="compare-tokens"><span class="field-label-text">Tokens / Words, or GROUP_name = tokens (comma, space, or newline)</span>${infoTipMarkup(FIELD_INFO.compareTokens)}</label>
-          <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine… or GROUP_1 = car, truck&#10;GROUP_2 = grace, hope" required></textarea>
+          <textarea id="compare-tokens" rows="6" placeholder="e.g. wheel, engine… or vehicles = car, truck&#10;women = sophia, emma" required></textarea>
         </div>
 
         <div class="preset-buttons-row">
@@ -412,7 +433,7 @@ export class ComparePanel {
   }
 
   /**
-   * Visible group chips under metrics (GROUP_1 · N) — survives even if 3D overlay fails.
+   * Visible group chips under metrics (vehicles · N) — survives even if 3D overlay fails.
    * @param {Array<{ groupId?: string, groupLabel?: string }>|null|undefined} items
    */
   updateGroupLegend(items) {

@@ -6,6 +6,21 @@
 export const MAX_ACTIVATION_DECIMALS = 32;
 
 /**
+ * HUD token caption: `group/token` (no spaces) when grouped; else bare token.
+ * @param {string|null|undefined} token
+ * @param {string|null|undefined} groupLabel
+ * @returns {string}
+ */
+export function formatHoverTokenLabel(token, groupLabel) {
+  const tok = String(token ?? '').trim();
+  const group = String(groupLabel ?? '').trim();
+  if (!tok && !group) return '—';
+  if (!group) return tok || '—';
+  if (!tok) return group;
+  return `${group}/${tok}`;
+}
+
+/**
  * Map a Three.js intersect payload to display fields.
  * @param {object|null|undefined} data
  * @returns {{
@@ -14,6 +29,8 @@ export const MAX_ACTIVATION_DECIMALS = 32;
  *   activation: number,
  *   type: string,
  *   token: string,
+ *   groupLabel: string | null,
+ *   tokenLabel: string,
  *   dim: number | null,
  * } | null}
  */
@@ -32,6 +49,8 @@ export function resolveHoverTelemetry(data) {
     const pt = pointsData[index];
     activation = typeof pt.activation === 'number' ? pt.activation : pt.meta?.val;
     meta = pt.meta && typeof pt.meta === 'object' ? pt.meta : {};
+    if (!meta.groupId && pt.groupId) meta = { ...meta, groupId: pt.groupId };
+    if (!meta.groupLabel && pt.groupLabel) meta = { ...meta, groupLabel: pt.groupLabel };
   } else if (Array.isArray(ud.activations)) {
     const actIdx = resolveActivationIndex(data, ud);
     if (actIdx != null && actIdx >= 0 && actIdx < ud.activations.length) {
@@ -44,6 +63,8 @@ export function resolveHoverTelemetry(data) {
         token: ud.token,
         type: ud.type,
         val: activation,
+        groupId: ud.groupId,
+        groupLabel: ud.groupLabel,
       };
     }
   } else if (typeof data.activation === 'number') {
@@ -64,6 +85,14 @@ export function resolveHoverTelemetry(data) {
     || (typeof ud.word === 'string' && ud.word)
     || (dim != null ? `DIM #${dim}` : '—');
 
+  const groupLabelRaw =
+    (typeof meta.groupLabel === 'string' && meta.groupLabel)
+    || (typeof ud.groupLabel === 'string' && ud.groupLabel)
+    || (typeof meta.groupId === 'string' && meta.groupId)
+    || (typeof ud.groupId === 'string' && ud.groupId)
+    || '';
+  const groupLabel = String(groupLabelRaw).trim() || null;
+
   const typeRaw = meta.type || ud.type || 'VECTOR';
 
   return {
@@ -72,6 +101,8 @@ export function resolveHoverTelemetry(data) {
     activation,
     type: String(typeRaw).toUpperCase(),
     token: String(token),
+    groupLabel,
+    tokenLabel: formatHoverTokenLabel(token, groupLabel),
     dim: dim != null && Number.isFinite(dim) ? dim : null,
   };
 }
