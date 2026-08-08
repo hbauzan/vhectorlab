@@ -1,0 +1,10 @@
+Topaz (TrueType remake) — Multi Platform Amiga Fonts
+Source: https://github.com/rewtnull/amigafonts (ttf/Topaz_a1200_v1.0.ttf)
+
+License: GPL with Font Exception (GPL-FE)
+  https://www.gnu.org/licenses/gpl-faq.html#FontException
+
+Topaz is © AmigaInc.
+TrueType version © dMG/t!s^dS! (Trueschool / Divine Stylers), 2009.
+
+Vendored here for the VHectorLab `/amiga` MagicWB skin (self-host; no CDN).

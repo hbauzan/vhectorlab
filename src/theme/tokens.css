@@ -1,0 +1,31 @@
+/**
+ * Magic Workbench tokens — default product chrome (VHectorLab 3D).
+ * Hex mirrored in `tokenValues.js` for tests.
+ */
+
+@font-face {
+  font-family: 'TopazNew';
+  src: url('./assets/fonts/Topaz_a1200_v1.0.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --mwb-gray: #2a2a2a;
+  --mwb-black: #000000;
+  --mwb-white: #ffffff;
+  --mwb-blue: #3b67a2;
+  --mwb-halfshadow: #1a1a1a;
+  --mwb-halfshine: #3d3d3d;
+  --mwb-tan: #aa907c;
+  --mwb-peach: #ffa997;
+
+  /* Very dark gray surfaces + light text */
+  --amiga-bg: #222222;
+  --amiga-fg: #f0f0f0;
+  --amiga-accent: var(--mwb-blue);
+  --amiga-font: 'TopazNew', monospace;
+  --amiga-font-size: 16px;
+  --amiga-line-height: 20px;
+}

@@ -4,24 +4,27 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- **Group contrast (Visualization panel)**: Compare ≥2 groups — Shared noise (same-sign → black by similarity %, ZC-style) + Sign conflict (opposite-sign highlight color × |Δ|, plus conflict coverage to black). Paint-only; gated until groups exist. Panel densified (~300px).
-- **Public lab release hygiene**: MIT `LICENSE` (© 2026 Hector Bauzan); root README frames VHectorLab as a study/laboratory tool (not SaaS), links the live HF Space demo, and documents shared cpu-basic limits; `backend/README.md` aligned in English.
-
-### Fixed
-- **v25 Compare left layout**: `[data-panel]{display:flex}` overrode `[hidden]` and left a black flex gap above Compare; force-hide inactive slot. COMPARE now prefers NAVIGATION framing (usable with ~130 group tokens).
+## [2.4.1] - 2026-08-08
 
 ### Added
-- **v25 SAE + viz filters** (Fase 11): live sign filter / color anchors / labels (LS); Compare Train SAE + Clean/Denoise encode/restore with filter bridge.
-- **v25 Compare MODE** (Fase 10): header MODE switches Arithmetic↔Compare; Visualize → `/compare`; cosine-vs-REF list with reorder/sort; GROUP_* parse + legend + 3D group badges; bootstrap groups demo. No SAE.
-- **v25 spatial sliders live** (Fase 9): Spacing/Distance/Amplitude/Length/Thickness rebuild canvas threads from cached Arithmetic payload (no new API); dblclick restores context defaults.
-- **v25 canvas + engine wire** (Fase 8): mount existing `SceneSetup` / `Instancer` / `Navigation` / `Interaction` in `[data-zone="canvas"]`; startup `ARITHMETIC|ANALYSIS|POINTS`; threads after Calculate; hover → footer telemetry. Sliders still chrome-only (Fase 9).
-- **v25 Arithmetic API wire** (Fase 7): Calculate → `RemoteProvider` `/arithmetic`; Top-10 list live; lab modal errors; ONLINE from `/health` (canvas still stub).
-- **v25 right + HUD chrome** (Fase 6): spatial sliders (fluo thumb), viz filter/colors/labels, footer telemetry placeholders with safe-area.
-- **v25 Arithmetic chrome** (Fase 5): Word A/B/C form, CALCULATE VECTOR CTA, Top-10 list host with §4.1 scroll floor (no API yet).
-- **v25 header chrome** (Fase 4): brand VHectorLab-3D, version tag, MODE/VIEW/RENDER UI tabs, ONLINE badge (local state only).
-- **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
-- **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
+- **Magic Workbench chrome as the default UI** at `/`: Topaz (self-hosted), dark MagicWB surfaces, Workbench bevels, Compare/Arithmetic panel scroll, env-tunable pens via `VITE_AMIGA_*` (`src/theme/`).
+- Product stays branded **VHectorLab 3D** (no “Amiga” in the product name).
+
+### Changed
+- **Single frontend entry**: Vite builds only `index.html` → `/`. Parallel MPAs **`/v25/`** and **`/amiga/`** removed (code under `src/v25/**`, `v25/`, `amiga/`, `src/amiga/**` deleted).
+- Theme modules live in `src/theme/` (tokens, chrome overrides, Topaz, `magicwbEnvColors`).
+- Roadmaps for v25 / amiga MPA / gui-art parallel skin moved to `roadmap/archivo/`.
+
+### Fixed (during Workbench cutover)
+- Right-dock gray slab behind Spatial Controls (dock-body no longer painted).
+- Compare token textarea: black field, muted text.
+- Compare/Arithmetic left panels: scroll like Visualization (`min(56vh, 520px)`); preset chips wrap.
+- Font antialiasing enabled for Workbench chrome.
+
+## [2.4.0] - 2026-08-08
+
+### Added
+- _(Superseded by 2.4.1 cutover.)_ Interim `/amiga/` MPA scaffold + `VITE_AMIGA_*` color env — folded into default `/` in 2.4.1.
 
 ## [2.3.0] - 2026-08-08
 
