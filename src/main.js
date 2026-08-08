@@ -66,6 +66,10 @@ import {
 import { runGalaxyPipeline, compareTextsFingerprint } from './ui/galaxyPipeline.js';
 import { galaxyCameraTarget } from './visualizer/galaxyLayout.js';
 import {
+  applyGalaxyFlightProfile,
+  restoreDefaultFlightProfile,
+} from './engine/galaxyFlightProfile.js';
+import {
   loadArithmeticSettings,
   saveArithmeticSettings,
 } from './ui/arithmeticDefaults.js';
@@ -390,6 +394,7 @@ class VHectorLabApp {
       this._preGalaxyTriad = entered.restore;
       this.viewMode = entered.viewMode;
       this.galaxyMethod = entered.method;
+      applyGalaxyFlightProfile(this.navigation);
       this.navbar.setModeRenderLocked(true);
       this.navbar.setGalaxyMethod(entered.method);
       this.navbar.setViewMode(entered.viewMode);
@@ -417,6 +422,7 @@ class VHectorLabApp {
       this._galaxyFramePending = false;
       this.comparePanel?.clearGalaxyProgress?.();
       this.viewMode = left.viewMode;
+      restoreDefaultFlightProfile(this.navigation);
       this.navbar.setModeRenderLocked(false);
       this.navbar.setViewMode(left.viewMode);
 
@@ -636,7 +642,8 @@ class VHectorLabApp {
     // Prefer fit-box so sparse cores stay readable; look-at is IT centroid when present.
     const box = target.box.clone();
     // Inflate slightly so focus isn't clipped
-    box.expandByScalar(8);
+    // Inflate padding scales with cloud size so fit framing stays comfortable
+    box.expandByScalar(24);
     void this.navigation.animateToFitBox(box, {
       viewMode: 'NAVIGATION',
       durationMs: 550,

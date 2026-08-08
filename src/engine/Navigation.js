@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { resolveCameraPose, VIEW_CAMERA_FALLBACKS } from './cameraViewDefaults.js';
+import { DEFAULT_FLIGHT_PROFILE } from './galaxyFlightProfile.js';
 
 /**
  * Inertial Flight & Camera Navigation Controller (WASDQE + Mouse Drag Look + Shift Turbo).
@@ -21,8 +22,9 @@ export class Navigation {
     };
 
     this.velocity = new THREE.Vector3();
-    this.moveSpeed = 75.0; // Bounded speed units/sec for responsive control
-    this.turboMultiplier = 2.0;
+    this.moveSpeed = DEFAULT_FLIGHT_PROFILE.moveSpeed;
+    this.turboMultiplier = DEFAULT_FLIGHT_PROFILE.turboMultiplier;
+    this.lookSensitivity = DEFAULT_FLIGHT_PROFILE.lookSensitivity;
     this.damping = 0.85;
     this._cameraTweenRaf = null;
 
@@ -63,9 +65,12 @@ export class Navigation {
    * @param {number} deltaY
    */
   applyLookDelta(deltaX, deltaY) {
+    const sens = Number.isFinite(this.lookSensitivity)
+      ? this.lookSensitivity
+      : DEFAULT_FLIGHT_PROFILE.lookSensitivity;
     this.euler.setFromQuaternion(this.camera.quaternion);
-    this.euler.y -= deltaX * 0.003;
-    this.euler.x -= deltaY * 0.003;
+    this.euler.y -= deltaX * sens;
+    this.euler.x -= deltaY * sens;
     this.euler.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, this.euler.x));
     this.camera.quaternion.setFromEuler(this.euler);
   }
