@@ -128,24 +128,53 @@ export function getDivergentColor(val, absMax = 1.0, anchors = null, zeroCoverag
 }
 
 /**
- * GLSL Vertex Shader for Divergent Activation Points
+ * GLSL Vertex Shader for Divergent Activation Points (square ANALYSIS/NAV path).
  */
 export const divergentVertexShader = `
 attribute float intensity;
 attribute float aCancel;
 attribute float aHighlight;
+attribute vec3 aBaseColor;
 varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
+varying vec3 vBaseColor;
 uniform float pointSize;
 
 void main() {
     vIntensity = intensity;
     vCancel = aCancel;
     vHighlight = aHighlight;
+    vBaseColor = aBaseColor;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     float dist = length(mvPosition.xyz);
     gl_PointSize = clamp(pointSize * (300.0 / max(dist, 0.01)), 4.0, 80.0);
+    gl_Position = projectionMatrix * mvPosition;
+}
+`;
+
+/**
+ * Galaxy soft-star vertex: size attenuation tuned for ~¼ prior soft-star footprint.
+ */
+export const softStarVertexShader = `
+attribute float intensity;
+attribute float aCancel;
+attribute float aHighlight;
+attribute vec3 aBaseColor;
+varying float vIntensity;
+varying float vCancel;
+varying float vHighlight;
+varying vec3 vBaseColor;
+uniform float pointSize;
+
+void main() {
+    vIntensity = intensity;
+    vCancel = aCancel;
+    vHighlight = aHighlight;
+    vBaseColor = aBaseColor;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    float dist = length(mvPosition.xyz);
+    gl_PointSize = clamp(pointSize * (420.0 / max(dist, 0.01)), 2.0, 35.0);
     gl_Position = projectionMatrix * mvPosition;
 }
 `;
@@ -155,11 +184,13 @@ void main() {
  * Filter modes: 0=all, 1=positive only, 2=negative only (ε = uNearZeroEps).
  * uZeroCoverage: fraction of |t| held at zero color before lerp to ±1.
  * aCancel / aHighlight: group-dim paint (shared-noise cancel + opposite highlight).
+ * Square Chebyshev edge (ANALYSIS / NAVIGATION POINTS).
  */
 export const divergentFragmentShader = `
 varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
+varying vec3 vBaseColor;
 uniform float baseOpacity;
 uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
@@ -168,6 +199,7 @@ uniform vec3 uColorHighlight;
 uniform int uFilterMode;
 uniform float uNearZeroEps;
 uniform float uZeroCoverage;
+uniform int uUseGroupHueBase;
 
 void main() {
     vec2 coord = abs(gl_PointCoord - vec2(0.5));
@@ -188,7 +220,8 @@ void main() {
 
     // Near-zero short-circuit → zero anchor + low alpha
     if (absT < uNearZeroEps) {
-        gl_FragColor = vec4(uColorZero, 0.05 * baseOpacity * solidEdge);
+        vec3 zc = uUseGroupHueBase == 1 ? vBaseColor : uColorZero;
+        gl_FragColor = vec4(zc, 0.05 * baseOpacity * solidEdge);
         return;
     }
 
@@ -200,9 +233,11 @@ void main() {
 
     float dynamicAlpha = clamp(pow(max(k, absT * 0.15), 1.1), 0.05, 1.0) * baseOpacity;
 
-    vec3 color = t > 0.0
-        ? mix(uColorZero, uColorPos, k)
-        : mix(uColorZero, uColorNeg, k);
+    vec3 color = uUseGroupHueBase == 1
+        ? vBaseColor
+        : (t > 0.0
+            ? mix(uColorZero, uColorPos, k)
+            : mix(uColorZero, uColorNeg, k));
 
     float hi = clamp(vHighlight, 0.0, 1.0);
     float cancel = clamp(vCancel, 0.0, 1.0);
@@ -216,6 +251,117 @@ void main() {
     gl_FragColor = vec4(finalColor, alpha);
 }
 `;
+
+/**
+ * Galaxy soft star: solid paint-color core + soft blurred halo around.
+ */
+export const softStarFragmentShader = `
+varying float vIntensity;
+varying float vCancel;
+varying float vHighlight;
+varying vec3 vBaseColor;
+uniform float baseOpacity;
+uniform vec3 uColorPos;
+uniform vec3 uColorNeg;
+uniform vec3 uColorZero;
+uniform vec3 uColorHighlight;
+uniform int uFilterMode;
+uniform float uNearZeroEps;
+uniform float uZeroCoverage;
+uniform int uUseGroupHueBase;
+
+void main() {
+    float r = length(gl_PointCoord - vec2(0.5)) * 2.0;
+    if (r > 1.0) discard;
+
+    // Solid disc of paint color + soft blur halo (not hard squares)
+    float core = 1.0 - smoothstep(0.20, 0.38, r);
+    float halo = 1.0 - smoothstep(0.28, 1.0, r);
+    halo = pow(max(halo, 0.0), 1.65);
+
+    float t = clamp(vIntensity, -1.0, 1.0);
+    float absT = abs(t);
+
+    if (uFilterMode == 1) {
+        if (absT < uNearZeroEps || t <= 0.0) discard;
+    } else if (uFilterMode == 2) {
+        if (absT < uNearZeroEps || t >= 0.0) discard;
+    }
+
+    float mask = clamp(core + (1.0 - core) * halo * 0.55, 0.0, 1.0);
+
+    if (absT < uNearZeroEps) {
+        vec3 zc = uUseGroupHueBase == 1 ? vBaseColor : uColorZero;
+        gl_FragColor = vec4(zc, 0.05 * baseOpacity * mask);
+        return;
+    }
+
+    float c = clamp(uZeroCoverage, 0.0, 0.999999);
+    float k = absT;
+    if (c > 1e-8) {
+        k = absT <= c ? 0.0 : (absT - c) / max(1.0 - c, 1e-8);
+    }
+
+    float dynamicAlpha = clamp(pow(max(k, absT * 0.15), 1.1), 0.05, 1.0) * baseOpacity;
+
+    vec3 color = uUseGroupHueBase == 1
+        ? vBaseColor
+        : (t > 0.0
+            ? mix(uColorZero, uColorPos, k)
+            : mix(uColorZero, uColorNeg, k));
+
+    float hi = clamp(vHighlight, 0.0, 1.0);
+    float cancel = clamp(vCancel, 0.0, 1.0);
+    color = mix(color, uColorHighlight, hi);
+    color = mix(color, uColorZero, cancel);
+    dynamicAlpha = max(0.05, dynamicAlpha * (1.0 - 0.85 * cancel));
+
+    // Core: full paint color; halo: same hue, softer alpha
+    vec3 finalColor = color * (0.98 * core + 0.55 * halo * (1.0 - core));
+    float alpha = dynamicAlpha * mask;
+
+    gl_FragColor = vec4(finalColor, alpha);
+}
+`;
+
+/** @typedef {'square'|'softStar'} PointEdgeStyle */
+
+export const POINT_EDGE_STYLE = Object.freeze({
+  SQUARE: 'square',
+  SOFT_STAR: 'softStar',
+});
+
+/**
+ * Opt-in soft disc for Galaxy POINTS; ANALYSIS/NAV keep square.
+ * @param {{ softStar?: boolean, galaxy?: boolean }|null|undefined} [options]
+ * @returns {PointEdgeStyle}
+ */
+export function resolvePointEdgeStyle(options = {}) {
+  if (options?.softStar === true || options?.galaxy === true) {
+    return POINT_EDGE_STYLE.SOFT_STAR;
+  }
+  return POINT_EDGE_STYLE.SQUARE;
+}
+
+/**
+ * @param {PointEdgeStyle|string} style
+ * @returns {string}
+ */
+export function divergentFragmentShaderFor(style) {
+  return style === POINT_EDGE_STYLE.SOFT_STAR
+    ? softStarFragmentShader
+    : divergentFragmentShader;
+}
+
+/**
+ * @param {PointEdgeStyle|string} style
+ * @returns {string}
+ */
+export function divergentVertexShaderFor(style) {
+  return style === POINT_EDGE_STYLE.SOFT_STAR
+    ? softStarVertexShader
+    : divergentVertexShader;
+}
 
 /**
  * Map viz filter mode → shader int.
@@ -238,6 +384,9 @@ export function filterModeToUniform(mode) {
  *   filterMode?: 'all'|'positive'|'negative',
  *   zeroCoverage?: number,
  *   highlightColor?: {r:number,g:number,b:number}|string,
+ *   softStar?: boolean,
+ *   galaxy?: boolean,
+ *   useGroupHueBase?: boolean,
  * }} [options]
  * @returns {THREE.ShaderMaterial}
  */
@@ -252,7 +401,8 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       hi = options.highlightColor;
     }
   }
-  return new THREE.ShaderMaterial({
+  const edgeStyle = resolvePointEdgeStyle(options);
+  const material = new THREE.ShaderMaterial({
     uniforms: {
       pointSize: { value: pointSize },
       baseOpacity: { value: baseOpacity },
@@ -263,13 +413,17 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       uFilterMode: { value: filterModeToUniform(options.filterMode) },
       uNearZeroEps: { value: NEAR_ZERO_EPS },
       uZeroCoverage: { value: coverage01 },
+      uUseGroupHueBase: { value: options.useGroupHueBase ? 1 : 0 },
     },
-    vertexShader: divergentVertexShader,
-    fragmentShader: divergentFragmentShader,
+    vertexShader: divergentVertexShaderFor(edgeStyle),
+    fragmentShader: divergentFragmentShaderFor(edgeStyle),
     transparent: true,
     depthWrite: false,
     blending: THREE.NormalBlending,
   });
+  material.userData.pointEdgeStyle = edgeStyle;
+  material.userData.useGroupHueBase = Boolean(options.useGroupHueBase);
+  return material;
 }
 
 /**

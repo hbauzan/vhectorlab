@@ -22,7 +22,14 @@ describe('galaxyFlightProfile', () => {
     expect(GALAXY_FLIGHT_PROFILE.lookSensitivity).toBeLessThan(
       DEFAULT_FLIGHT_PROFILE.lookSensitivity,
     );
-    expect(GALAXY_FLIGHT_PROFILE.turboMultiplier).toBeGreaterThan(1);
+    expect(GALAXY_FLIGHT_PROFILE.turboMultiplier).toBe(2);
+  });
+
+  it('Galaxy Shift is exactly 2× normal cruise', () => {
+    expect(GALAXY_FLIGHT_PROFILE.moveSpeed).toBe(56);
+    expect(
+      GALAXY_FLIGHT_PROFILE.moveSpeed * GALAXY_FLIGHT_PROFILE.turboMultiplier,
+    ).toBe(112);
   });
 
   it('applyGalaxyFlightProfile sets slower speeds on nav', () => {

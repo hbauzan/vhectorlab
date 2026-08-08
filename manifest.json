@@ -1,6 +1,6 @@
 {
   "project": "vhectorlab-3d",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "bootstrap_run": false,
   "state_schema": {
     "model_name": "all-mpnet-base-v2",
