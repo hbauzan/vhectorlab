@@ -248,4 +248,42 @@ export class RemoteProvider {
     data.activations = densifyTopKActivations(data);
     return data;
   }
+
+  /**
+   * Project embedding rows to 2D/3D (UMAP). Does not re-encode text.
+   * @param {number[][]} vectors
+   * @param {{
+   *   method?: string,
+   *   n_components?: 2|3,
+   *   seed?: number,
+   *   params?: { n_neighbors?: number, min_dist?: number, metric?: string },
+   * }} [opts]
+   */
+  async projectEmbeddings(vectors, opts = {}) {
+    const body = {
+      vectors,
+      method: opts.method || 'umap',
+      n_components: opts.n_components ?? 3,
+      seed: opts.seed ?? 42,
+    };
+    if (opts.params) body.params = opts.params;
+
+    const res = await this._fetchWithTimeout(
+      apiUrl(this.baseUrl, '/project'),
+      {
+        method: 'POST',
+        headers: this._headers({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(body),
+      },
+      120000
+    );
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      const detail = errorJson.detail;
+      throw new Error(
+        typeof detail === 'string' ? detail : `HTTP Error ${res.status}`,
+      );
+    }
+    return await res.json();
+  }
 }

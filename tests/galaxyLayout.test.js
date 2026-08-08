@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest';
+import * as THREE from 'three';
+import { IT_CORE_GROUP_ID } from '../src/ui/itCoreCorpus.js';
+import {
+  boundingBoxFromLabels,
+  centroidForGroup,
+  galaxyCameraTarget,
+  layoutGalaxyPoints,
+} from '../src/visualizer/galaxyLayout.js';
+
+describe('galaxyLayout', () => {
+  it('maps one world point per token from positions', () => {
+    const items = [
+      { id: 'a', text: 'server', groupId: IT_CORE_GROUP_ID, cosine_vs_first: 1 },
+      { id: 'b', text: 'car', groupId: 'GROUP_1', cosine_vs_first: 0.2 },
+    ];
+    const positions = [
+      [1, 0, 0],
+      [0, 1, 0],
+    ];
+    const { pointsData, labels, scale } = layoutGalaxyPoints(items, positions, { scale: 10 });
+    expect(scale).toBe(10);
+    expect(pointsData).toHaveLength(2);
+    expect(labels).toHaveLength(2);
+    expect(labels[0].origin3D).toEqual(new THREE.Vector3(10, 0, 0));
+    expect(labels[1].origin3D).toEqual(new THREE.Vector3(0, 10, 0));
+    expect(pointsData[0].meta.token).toBe('server');
+  });
+
+  it('centroidForGroup averages member origins', () => {
+    const labels = [
+      { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(0, 0, 0) },
+      { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(2, 4, 6) },
+      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(100, 0, 0) },
+    ];
+    const c = centroidForGroup(labels, IT_CORE_GROUP_ID);
+    expect(c.x).toBeCloseTo(1);
+    expect(c.y).toBeCloseTo(2);
+    expect(c.z).toBeCloseTo(3);
+  });
+
+  it('galaxyCameraTarget prefers IT core, else all bbox center', () => {
+    const withCore = [
+      { groupId: IT_CORE_GROUP_ID, origin3D: new THREE.Vector3(1, 2, 3) },
+      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(50, 0, 0) },
+    ];
+    const t1 = galaxyCameraTarget(withCore);
+    expect(t1.source).toBe(IT_CORE_GROUP_ID);
+    expect(t1.lookAt).toEqual(new THREE.Vector3(1, 2, 3));
+
+    const noCore = [
+      { groupId: 'GROUP_1', origin3D: new THREE.Vector3(0, 0, 0) },
+      { groupId: 'GROUP_2', origin3D: new THREE.Vector3(10, 0, 0) },
+    ];
+    const t2 = galaxyCameraTarget(noCore);
+    expect(t2.source).toBe('all');
+    expect(t2.lookAt.x).toBeCloseTo(5);
+
+    expect(boundingBoxFromLabels([]).isEmpty()).toBe(true);
+  });
+});

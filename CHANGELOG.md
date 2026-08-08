@@ -8,6 +8,14 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **Group contrast (Visualization panel)**: Compare ≥2 groups — Shared noise (same-sign → black by similarity %, ZC-style) + Sign conflict (opposite-sign highlight color × |Δ|, plus conflict coverage to black). Paint-only; gated until groups exist. Panel densified (~300px).
 - **Public lab release hygiene**: MIT `LICENSE` (© 2026 Hector Bauzan); root README frames VHectorLab as a study/laboratory tool (not SaaS), links the live HF Space demo, and documents shared cpu-basic limits; `backend/README.md` aligned in English.
 
+## [2.3.0] - 2026-08-08
+
+### Added
+- **Galaxy VIEW** (in progress): new VIEW tab with UMAP/PCA/t-SNE chips (PCA/t-SNE grayed); entering Galaxy locks MODE=COMPARE + RENDER=POINTS.
+- **`POST /project`**: backend UMAP projection of precomputed embeddings (`umap-learn`); pca/tsne → 501.
+- **Bootstrap corpus**: `GROUP_it_core` (100 IT tokens) + existing `GROUP_1` / `GROUP_2` demos (REF inside IT core).
+- **Galaxy layout**: one point per token from UMAP positions; group badges at centroids; camera frames IT core; no dim-axis ribbons.
+
 ### Fixed
 - **v25 Compare left layout**: `[data-panel]{display:flex}` overrode `[hidden]` and left a black flex gap above Compare; force-hide inactive slot. COMPARE now prefers NAVIGATION framing (usable with ~130 group tokens).
 
