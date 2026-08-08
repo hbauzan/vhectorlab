@@ -2,28 +2,67 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import {
   COMPARE_AUTO_PRESETS,
+  COMPARE_GALAXY_BOOTSTRAP_TEXT,
+  COMPARE_GROUPS_DEMO_TEXT,
   getCompareBootstrap,
 } from '../src/ui/ComparePanel.js';
 import {
+  assertItCoreCorpus,
+  IT_CORE_GROUP_ID,
+  IT_CORE_TOKENS,
+} from '../src/ui/itCoreCorpus.js';
+import {
   attachCompareGroupMeta,
   mergeCompareOverlayLabels,
+  parseCompareInput,
 } from '../src/ui/parseCompareGroups.js';
 
+describe('IT core corpus fixture', () => {
+  it('has exactly 100 unique tokens', () => {
+    const { length, unique } = assertItCoreCorpus();
+    expect(length).toBe(100);
+    expect(unique).toBe(true);
+    expect(IT_CORE_TOKENS[0]).toBe('server');
+    expect(IT_CORE_TOKENS[99]).toBe('encryption');
+  });
+});
+
 /**
- * Regression: textarea default was groupsDemo but COMPARE entry auto-loaded
- * flat `default` (136 tokens, no groupId) → overlay showed token names forever.
+ * Bootstrap = GROUP_it_core (100) + GROUP_1 + GROUP_2; REF inside IT core.
  */
 describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
-  it('bootstrap is grouped and matches groupsDemo token count', () => {
+  it('bootstrap is 3 groups with it_core first', () => {
     const boot = getCompareBootstrap();
     expect(boot.mode).toBe('grouped');
-    expect(boot.tokens.length).toBe(130);
-    expect(boot.tokenMeta[0].groupId).toBe('GROUP_1');
-    expect(boot.tokenMeta[65].groupId).toBe('GROUP_2');
-    expect(boot.textareaValue).toBe(COMPARE_AUTO_PRESETS.groupsDemo);
+    expect(boot.textareaValue).toBe(COMPARE_GALAXY_BOOTSTRAP_TEXT);
+    expect(boot.textareaValue).toBe(COMPARE_AUTO_PRESETS.galaxyDemo);
+    expect(boot.groups.map((g) => g.id)).toEqual([
+      IT_CORE_GROUP_ID,
+      'GROUP_1',
+      'GROUP_2',
+    ]);
+    expect(boot.groups[0].tokens).toHaveLength(100);
+    expect(boot.tokenMeta[0].groupId).toBe(IT_CORE_GROUP_ID);
+    expect(boot.tokens[0]).toBe('server');
+
+    const g1Start = 100;
+    const g2Start = 100 + boot.groups[1].tokens.length;
+    expect(boot.tokenMeta[g1Start].groupId).toBe('GROUP_1');
+    expect(boot.tokenMeta[g2Start].groupId).toBe('GROUP_2');
+    expect(boot.tokens.length).toBe(
+      100 + boot.groups[1].tokens.length + boot.groups[2].tokens.length,
+    );
+    expect(boot.tokens.length).toBe(230);
   });
 
-  it('bootstrap + attach meta → overlay shows only GROUP_1 / GROUP_2', () => {
+  it('2 Groups preset remains GROUP_1 + GROUP_2 only (130)', () => {
+    const parsed = parseCompareInput(COMPARE_GROUPS_DEMO_TEXT);
+    expect(parsed.tokens).toHaveLength(130);
+    expect(parsed.groups.map((g) => g.id)).toEqual(['GROUP_1', 'GROUP_2']);
+    expect(COMPARE_AUTO_PRESETS.groupsDemo).toBe(COMPARE_GROUPS_DEMO_TEXT);
+  });
+
+  it('bootstrap + attach meta → overlay shows it_core / GROUP_1 / GROUP_2', () => {
     const boot = getCompareBootstrap();
     const data = {
       count: boot.tokens.length,
@@ -44,8 +83,12 @@ describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
       groupLabel: item.groupLabel,
     }));
     const overlay = mergeCompareOverlayLabels(labels);
-    expect(overlay).toHaveLength(2);
-    expect(overlay.map((l) => l.text)).toEqual(['GROUP_1', 'GROUP_2']);
+    expect(overlay).toHaveLength(3);
+    expect(overlay.map((l) => l.text)).toEqual([
+      IT_CORE_GROUP_ID,
+      'GROUP_1',
+      'GROUP_2',
+    ]);
     expect(overlay.every((l) => l.type === 'group')).toBe(true);
   });
 
