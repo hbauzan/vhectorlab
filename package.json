@@ -1,6 +1,7 @@
 {
   "name": "vhectorlab-3d",
   "version": "2.4.2",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
