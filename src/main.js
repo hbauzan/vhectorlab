@@ -663,7 +663,15 @@ class VHectorLabApp {
     const items = state.workspaceMode === 'COMPARE'
       ? (this.rawCompareData?.items || state.compareData?.items || [])
       : [];
-    setGroupContrastControlsEnabled(this.vizEl, hasGroupsForDimContrast(items), this.vizConfig);
+    const groupIds = [...new Set(
+      (items || []).map((it) => it?.groupId).filter(Boolean),
+    )];
+    setGroupContrastControlsEnabled(
+      this.vizEl,
+      hasGroupsForDimContrast(items),
+      this.vizConfig,
+      groupIds,
+    );
   }
 
   /**

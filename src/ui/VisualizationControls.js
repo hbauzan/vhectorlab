@@ -13,6 +13,7 @@ import {
   resolveVisualizationSettings,
   saveVisualizationSettings,
   resetVisualizationSettings,
+  syncGroupHueColorsForGroups,
   VIZ_STORAGE_PREFIX,
   CONFLICT_COVER_MIN,
   CONFLICT_COVER_MAX,
@@ -28,7 +29,7 @@ import {
   writeCollapsedPreference,
   isMobileViewport,
 } from './CollapsibleDock.js';
-import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
+import { FIELD_INFO, infoTipMarkup, escapeHtmlAttr } from './fieldInfo.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -216,6 +217,14 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           <input type="range" id="viz-opposite-coverage" min="${CONFLICT_COVER_MIN}" max="${CONFLICT_COVER_MAX}" step="1" value="${s.oppositeCancelCoverage}" ${s.oppositeHighlightEnabled ? '' : 'disabled'}>
         </div>
       </div>
+
+      <div class="viz-group-fx-block" data-fx="group-hue">
+        <label class="viz-toggle-row">
+          <input type="checkbox" id="viz-group-hue-enabled" ${s.groupHueEnabled ? 'checked' : ''}>
+          <span class="field-label-text">Group hue</span>${infoTipMarkup(FIELD_INFO.groupHue)}
+        </label>
+        <div id="viz-group-hue-rows" class="viz-group-hue-rows" data-requires="group-hue"></div>
+      </div>
     </div>
 
     <div class="viz-labels-row">
@@ -282,6 +291,9 @@ export function syncVisualizationControlsFromConfig(container, config) {
   if (oppCov) oppCov.value = String(s.oppositeCancelCoverage);
   if (oppCovVal) oppCovVal.textContent = `${s.oppositeCancelCoverage}%`;
 
+  const hueOn = container.querySelector('#viz-group-hue-enabled');
+  if (hueOn) hueOn.checked = s.groupHueEnabled;
+
   syncGroupFxSliderEnabled(container, s);
 
   const labelsBtn = container.querySelector('#viz-labels-toggle');
@@ -316,6 +328,7 @@ export function syncGroupFxSliderEnabled(container, settings) {
 
   setDisabled(container.querySelector('#viz-same-sign-enabled'), !groupsOk);
   setDisabled(container.querySelector('#viz-opposite-enabled'), !groupsOk);
+  setDisabled(container.querySelector('#viz-group-hue-enabled'), !groupsOk);
 
   const sameSlidersOn = groupsOk && s.sameSignCancelEnabled;
   setDisabled(container.querySelector('#viz-same-sign-coverage'), !sameSlidersOn);
@@ -326,12 +339,19 @@ export function syncGroupFxSliderEnabled(container, settings) {
   setDisabled(container.querySelector('#viz-opposite-strength'), !oppSlidersOn);
   setDisabled(container.querySelector('#viz-opposite-coverage'), !oppSlidersOn);
 
+  const hueSlidersOn = groupsOk && s.groupHueEnabled;
+  for (const el of container.querySelectorAll('#viz-group-hue-rows input')) {
+    setDisabled(el, !hueSlidersOn);
+  }
+
   for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="same-sign"]')) {
     row.classList.toggle('is-inert', !sameSlidersOn);
   }
   for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="opposite"]')) {
     row.classList.toggle('is-inert', !oppSlidersOn);
   }
+  const hueRows = container.querySelector('#viz-group-hue-rows');
+  if (hueRows) hueRows.classList.toggle('is-inert', !hueSlidersOn);
 }
 
 /**
@@ -339,8 +359,9 @@ export function syncGroupFxSliderEnabled(container, settings) {
  * @param {HTMLElement|null|undefined} container
  * @param {boolean} enabled
  * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} [config]
+ * @param {string[]} [groupIds]
  */
-export function setGroupContrastControlsEnabled(container, enabled, config = null) {
+export function setGroupContrastControlsEnabled(container, enabled, config = null, groupIds = null) {
   if (!container) return;
   const section = container.querySelector('#viz-group-contrast');
   if (!section) return;
@@ -348,7 +369,83 @@ export function setGroupContrastControlsEnabled(container, enabled, config = nul
   section.classList.toggle('is-disabled', !on);
   section.setAttribute('aria-disabled', on ? 'false' : 'true');
   const settings = config || resolveVisualizationSettings(null);
+  if (Array.isArray(groupIds)) {
+    container._vizGroupHueIds = groupIds.slice();
+    const emit = typeof container._vizEmit === 'function'
+      ? container._vizEmit
+      : () => saveVisualizationSettings(settings);
+    syncGroupHueColorRows(container, groupIds, settings, emit);
+  }
   syncGroupFxSliderEnabled(container, settings);
+}
+
+/**
+ * Rebuild dynamic Group hue swatch rows for current GROUP_* ids.
+ * @param {HTMLElement} container
+ * @param {string[]} groupIds
+ * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} config
+ * @param {Function} [onColorChange]
+ */
+export function syncGroupHueColorRows(container, groupIds, config, onColorChange = null) {
+  if (!container || !config) return;
+  const host = container.querySelector('#viz-group-hue-rows');
+  if (!host) return;
+  const ids = Array.isArray(groupIds) ? groupIds.filter(Boolean) : [];
+  syncGroupHueColorsForGroups(config, ids);
+  const colors = config.groupHueColors || {};
+  host.innerHTML = ids.map((id) => {
+    const hex = colors[id] || '#00E5FF';
+    const safeId = escapeHtmlAttr(id);
+    const safeHex = escapeHtmlAttr(hex);
+    const inputId = `viz-group-hue-${safeId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+    return `
+      <div class="viz-color-row viz-group-hue-row" data-group-id="${safeId}">
+        <label for="${inputId}-hex"><span class="field-label-text">${safeId}</span>${infoTipMarkup(FIELD_INFO.groupHueSwatch)}</label>
+        <input type="color" id="${inputId}-swatch" class="viz-color-swatch" data-group-hue-swatch="${safeId}" value="${safeHex}" title="${safeId}" aria-label="${safeId} color">
+        <input type="text" id="${inputId}-hex" class="viz-color-hex" data-group-hue-hex="${safeId}" value="${safeHex}" maxlength="7" spellcheck="false" placeholder="#00E5FF">
+      </div>`;
+  }).join('');
+
+  if (typeof onColorChange === 'function') {
+    for (const swatch of host.querySelectorAll('[data-group-hue-swatch]')) {
+      swatch.addEventListener('input', () => {
+        const gid = swatch.getAttribute('data-group-hue-swatch');
+        const hex = normalizeHex(swatch.value);
+        if (!gid || !hex) return;
+        config.groupHueColors = { ...(config.groupHueColors || {}), [gid]: hex };
+        const row = swatch.closest('.viz-group-hue-row');
+        const text = row?.querySelector('[data-group-hue-hex]');
+        if (text) text.value = hex;
+        onColorChange();
+      });
+    }
+    for (const text of host.querySelectorAll('[data-group-hue-hex]')) {
+      const commit = () => {
+        const gid = text.getAttribute('data-group-hue-hex');
+        const hex = normalizeHex(text.value);
+        if (!gid) return;
+        if (!hex) {
+          text.value = (config.groupHueColors || {})[gid] || '#00E5FF';
+          return;
+        }
+        config.groupHueColors = { ...(config.groupHueColors || {}), [gid]: hex };
+        const row = text.closest('.viz-group-hue-row');
+        const swatch = row?.querySelector('[data-group-hue-swatch]');
+        if (swatch) swatch.value = hex;
+        text.value = hex;
+        onColorChange();
+      };
+      text.addEventListener('change', commit);
+      text.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commit();
+        }
+      });
+    }
+  }
+
+  syncGroupFxSliderEnabled(container, config);
 }
 
 /**
@@ -549,6 +646,20 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       emit();
     });
   }
+
+  const hueOn = container.querySelector('#viz-group-hue-enabled');
+  if (hueOn) {
+    hueOn.addEventListener('change', () => {
+      config.groupHueEnabled = Boolean(hueOn.checked);
+      syncGroupFxSliderEnabled(container, config);
+      emit();
+    });
+  }
+
+  /** @type {string[]} */
+  container._vizGroupHueIds = container._vizGroupHueIds || [];
+  container._vizEmit = emit;
+  syncGroupHueColorRows(container, container._vizGroupHueIds || [], config, emit);
 
   syncGroupFxSliderEnabled(container, config);
 

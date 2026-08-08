@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized } from './DivergentShading.js';
-import { anchorsFromSettings, resolveVisualizationSettings, hexToRgb01, effectiveZeroCoveragePercent } from '../ui/visualizationControlsDefaults.js';
+import { anchorsFromSettings, resolveVisualizationSettings, effectiveZeroCoveragePercent, normalizeHex } from '../ui/visualizationControlsDefaults.js';
 import { lineSegmentIndices, wideRibbonQuadIndices } from './activationFilter.js';
 import {
-  applyGroupDimPaint,
   buildPointGroupPaintAttributes,
 } from './groupDimContrast.js';
+import { colorForActivationWithGroupHue, getGroupHueColor } from './groupHuePaint.js';
 
 /**
  * Resolve optional vizConfig from MeshFactory options into filter mode + RGB anchors.
@@ -22,23 +22,33 @@ function resolveVizOptions(options = {}) {
     viz,
     groupDimMetrics: options.groupDimMetrics || null,
     sourceDims: options.sourceDims || null,
+    groupId: options.groupId || null,
   };
 }
 
 /**
- * Paint one activation with divergent + optional group-dim contrast.
+ * Paint one activation with divergent/group-hue + optional group-dim contrast.
  * @param {number} normVal
  * @param {number|undefined} sourceDim
  * @param {ReturnType<typeof resolveVizOptions>} resolved
  */
 function colorForActivation(normVal, sourceDim, resolved) {
-  const base = getDivergentColor(normVal, 1.0, resolved.anchors, resolved.zeroCoverage);
-  const metrics = resolved.groupDimMetrics;
-  if (!metrics?.length || sourceDim == null) return base;
-  const metric = metrics[sourceDim];
-  const zero = resolved.anchors.zero;
-  const hi = hexToRgb01(resolved.viz.oppositeHighlightColor);
-  return applyGroupDimPaint(base, metric, resolved.viz, zero, hi);
+  return colorForActivationWithGroupHue(normVal, sourceDim, resolved);
+}
+
+/**
+ * Base color only (no Shared noise / Sign conflict) for POINTS aBaseColor.
+ * @param {number} normVal
+ * @param {string|null|undefined} groupId
+ * @param {ReturnType<typeof resolveVizOptions>} resolved
+ */
+function baseColorForPoint(normVal, groupId, resolved) {
+  const viz = resolved.viz;
+  const hex = viz?.groupHueEnabled && groupId
+    ? normalizeHex(viz.groupHueColors?.[groupId])
+    : null;
+  if (hex) return getGroupHueColor(normVal, hex, resolved.zeroCoverage);
+  return getDivergentColor(normVal, 1.0, resolved.anchors, resolved.zeroCoverage);
 }
 
 /**
@@ -54,7 +64,8 @@ export class MeshFactory {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const rawActivations = [];
-    const { filterMode, anchors, zeroCoverage, viz, groupDimMetrics } = resolveVizOptions(options);
+    const resolved = resolveVizOptions(options);
+    const { filterMode, anchors, zeroCoverage, viz, groupDimMetrics } = resolved;
 
     pointsData.forEach((item) => {
       const pos = item.position;
@@ -65,10 +76,26 @@ export class MeshFactory {
     const normIntensities = calculateZScoreNormalized(rawActivations, 0.85);
     const { cancel, highlight } = buildPointGroupPaintAttributes(pointsData, groupDimMetrics, viz);
 
+    const useGroupHue = Boolean(viz.groupHueEnabled);
+    const baseColors = new Float32Array(pointsData.length * 3);
+    if (useGroupHue) {
+      for (let i = 0; i < pointsData.length; i++) {
+        const col = baseColorForPoint(
+          normIntensities[i],
+          pointsData[i]?.groupId || pointsData[i]?.meta?.groupId,
+          resolved,
+        );
+        baseColors[i * 3] = col.r;
+        baseColors[i * 3 + 1] = col.g;
+        baseColors[i * 3 + 2] = col.b;
+      }
+    }
+
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(normIntensities, 1));
     geometry.setAttribute('aCancel', new THREE.Float32BufferAttribute(cancel, 1));
     geometry.setAttribute('aHighlight', new THREE.Float32BufferAttribute(highlight, 1));
+    geometry.setAttribute('aBaseColor', new THREE.Float32BufferAttribute(baseColors, 3));
 
     const pointSize = options.pointSize || 14.0;
     const material = createDivergentMaterial(pointSize, 1.0, {
@@ -76,6 +103,9 @@ export class MeshFactory {
       filterMode,
       zeroCoverage,
       highlightColor: viz.oppositeHighlightColor,
+      softStar: options.softStar === true,
+      galaxy: options.galaxy === true,
+      useGroupHueBase: useGroupHue,
     });
 
     const pointsMesh = new THREE.Points(geometry, material);

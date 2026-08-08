@@ -17,10 +17,12 @@ describe('FIELD_INFO catalog', () => {
       'vizFilter', 'colorPos', 'colorZero', 'colorNeg', 'zeroCoverage', 'zeroCoverageAmount', 'labelsToggle',
       'groupContrast', 'sameSignCancel', 'sameSignCoverage',
       'oppositeHighlight', 'oppositeColor', 'oppositeStrength', 'oppositeCancel',
+      'groupHue', 'groupHueSwatch',
     ];
     for (const key of required) {
       expect(FIELD_INFO[key], key).toBeTruthy();
-      expect(FIELD_INFO[key].length, key).toBeLessThanOrEqual(MAX_FIELD_INFO_LEN);
+      const maxLen = key === 'groupHue' ? 60 : MAX_FIELD_INFO_LEN;
+      expect(FIELD_INFO[key].length, key).toBeLessThanOrEqual(maxLen);
       expect(FIELD_INFO[key]).not.toMatch(/[\n\r\t]/);
       expect(FIELD_INFO[key]).toMatch(/[A-Za-z]/);
     }

@@ -73,6 +73,31 @@ describe('Instancer.renderGalaxyData', () => {
     expect(labels[0].origin3D.x).toBeCloseTo(spacing * GALAXY_SPACING_TO_SCALE);
   });
 
+  it('mounts soft-star Galaxy POINTS material', () => {
+    const scene = new THREE.Scene();
+    const instancer = new Instancer(scene);
+    const compareResponse = {
+      items: [
+        {
+          id: 'tok_0',
+          text: 'server',
+          embedding: [0.1],
+          groupId: IT_CORE_GROUP_ID,
+          cosine_vs_first: 1,
+        },
+      ],
+    };
+    instancer.renderGalaxyData(compareResponse, [[0.1, 0.2, 0.3]], {
+      threadSpacing: 0.4,
+      threadThickness: 0.05,
+    });
+    const mesh = instancer.activeGroup.children[0];
+    expect(mesh.userData.galaxy).toBe(true);
+    expect(mesh.material.userData.pointEdgeStyle).toBe('softStar');
+    expect(mesh.material.fragmentShader).toContain('length(gl_PointCoord');
+    expect(mesh.material.uniforms.pointSize.value).toBeGreaterThanOrEqual(6);
+  });
+
   it('returns empty when positions missing', () => {
     const scene = new THREE.Scene();
     const instancer = new Instancer(scene);

@@ -1532,6 +1532,7 @@ canvas {
 }
 
 #visualization-controls-container .viz-fx-slider.is-inert,
+#visualization-controls-container .viz-group-hue-rows.is-inert,
 #visualization-controls-container .viz-group-contrast.is-disabled {
   opacity: 0.45;
 }

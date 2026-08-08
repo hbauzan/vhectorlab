@@ -4,6 +4,16 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-08-08
+
+### Added
+- **Galaxy feel**: larger UMAP world (`GALAXY_DEFAULT_SCALE` 96, spacing×240) + Galaxy-only flight profile (cruise 56, Shift ×2, softer look); leave Galaxy restores ANALYSIS/NAV speeds.
+- **Galaxy soft stars**: circular solid core + soft halo POINTS (ANALYSIS/NAV squares unchanged).
+- **Group hue** (Visualization → Group contrast): per-`GROUP_*` black (−1) → picked color (+1); default OFF; transversal COMPARE paint (POINTS + RIBBONS); Shared noise / Sign conflict still layer on top.
+
+### Changed
+- Workbench value fields (`input` / `textarea` / `select`): dark fill `#1a1a1a` instead of white (color/range/checkbox unchanged).
+
 ## [2.4.1] - 2026-08-08
 
 ### Added

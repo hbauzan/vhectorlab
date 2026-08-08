@@ -70,6 +70,8 @@ describe('visualizationControlsDefaults', () => {
       oppositeHighlightColor: '#00E5FF',
       oppositeHighlightStrength: 70,
       oppositeCancelCoverage: 0,
+      groupHueEnabled: false,
+      groupHueColors: {},
     });
   });
 
@@ -168,6 +170,9 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Zero coverage');
     expect(html).toContain('viz-group-contrast');
     expect(html).toContain('Group contrast');
+    expect(html).toContain('Group hue');
+    expect(html).toContain('viz-group-hue-enabled');
+    expect(html).toContain('viz-group-hue-rows');
     expect(html).toContain('viz-same-sign-enabled');
     expect(html).toContain('viz-opposite-enabled');
     expect(html).toContain('viz-labels-toggle');
