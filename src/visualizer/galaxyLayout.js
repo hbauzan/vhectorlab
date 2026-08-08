@@ -6,8 +6,34 @@
 import * as THREE from 'three';
 import { IT_CORE_GROUP_ID } from '../ui/itCoreCorpus.js';
 
-/** Default world scale for server-normalized (RMS≈1) UMAP coords. */
-export const GALAXY_DEFAULT_SCALE = 48;
+/**
+ * Default world scale for server-normalized (RMS≈1) UMAP coords.
+ * Raised (was 48) so Galaxy feels spacious with the slower flight profile.
+ */
+export const GALAXY_DEFAULT_SCALE = 96;
+
+/**
+ * Maps Spatial `threadSpacing` → galaxy world scale.
+ * At global default spacing 0.4 → 96 (matches GALAXY_DEFAULT_SCALE).
+ * Was 40 (→ scale 16 at spacing 0.4 — cramped).
+ */
+export const GALAXY_SPACING_TO_SCALE = 240;
+
+/** Floor so tiny spacing sliders never collapse the cloud. */
+export const GALAXY_MIN_SCALE = 32;
+
+/**
+ * Resolve Galaxy world scale from Spatial sliders (or default).
+ * @param {{ threadSpacing?: number }|null|undefined} spatialConfig
+ * @returns {number}
+ */
+export function resolveGalaxyWorldScale(spatialConfig) {
+  if (spatialConfig && spatialConfig.threadSpacing !== undefined) {
+    const raw = Number(spatialConfig.threadSpacing) * GALAXY_SPACING_TO_SCALE;
+    return Math.max(GALAXY_MIN_SCALE, Number.isFinite(raw) ? raw : GALAXY_DEFAULT_SCALE);
+  }
+  return GALAXY_DEFAULT_SCALE;
+}
 
 /**
  * @param {Array<{ id?: string, text?: string, groupId?: string, groupLabel?: string, cosine_vs_first?: number }>} items

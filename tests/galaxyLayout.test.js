@@ -5,7 +5,11 @@ import {
   boundingBoxFromLabels,
   centroidForGroup,
   galaxyCameraTarget,
+  GALAXY_DEFAULT_SCALE,
+  GALAXY_MIN_SCALE,
+  GALAXY_SPACING_TO_SCALE,
   layoutGalaxyPoints,
+  resolveGalaxyWorldScale,
 } from '../src/visualizer/galaxyLayout.js';
 
 describe('galaxyLayout', () => {
@@ -25,6 +29,23 @@ describe('galaxyLayout', () => {
     expect(labels[0].origin3D).toEqual(new THREE.Vector3(10, 0, 0));
     expect(labels[1].origin3D).toEqual(new THREE.Vector3(0, 10, 0));
     expect(pointsData[0].meta.token).toBe('server');
+  });
+
+  it('default layout scale matches GALAXY_DEFAULT_SCALE', () => {
+    const { scale } = layoutGalaxyPoints(
+      [{ id: 'a', text: 'x', cosine_vs_first: 0 }],
+      [[1, 0, 0]],
+    );
+    expect(scale).toBe(GALAXY_DEFAULT_SCALE);
+    expect(GALAXY_DEFAULT_SCALE).toBeGreaterThan(48);
+  });
+
+  it('resolveGalaxyWorldScale maps spacing and floors tiny values', () => {
+    expect(resolveGalaxyWorldScale(null)).toBe(GALAXY_DEFAULT_SCALE);
+    expect(resolveGalaxyWorldScale({ threadSpacing: 0.4 })).toBeCloseTo(
+      0.4 * GALAXY_SPACING_TO_SCALE,
+    );
+    expect(resolveGalaxyWorldScale({ threadSpacing: 0.01 })).toBe(GALAXY_MIN_SCALE);
   });
 
   it('centroidForGroup averages member origins', () => {

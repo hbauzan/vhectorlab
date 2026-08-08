@@ -13,7 +13,7 @@ import {
   computeDimRelationMetrics,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
-import { GALAXY_DEFAULT_SCALE, layoutGalaxyPoints } from './galaxyLayout.js';
+import { layoutGalaxyPoints, resolveGalaxyWorldScale } from './galaxyLayout.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -431,10 +431,7 @@ export class Instancer {
     const thicknessFactor = (spatialConfig && spatialConfig.threadThickness !== undefined)
       ? spatialConfig.threadThickness
       : 0.3;
-    // Prefer threadSpacing as global galaxy spread when present.
-    const scale = (spatialConfig && spatialConfig.threadSpacing !== undefined)
-      ? Math.max(8, Number(spatialConfig.threadSpacing) * 40)
-      : GALAXY_DEFAULT_SCALE;
+    const scale = resolveGalaxyWorldScale(spatialConfig);
 
     const { pointsData, labels } = layoutGalaxyPoints(
       compareResponse.items,
