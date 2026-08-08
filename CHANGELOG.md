@@ -23,6 +23,11 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
 - **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
 
+## [2.4.0] - 2026-08-08
+
+### Added
+- **`/amiga/` MPA scaffold** (Slice 1): Magic Workbench skin — self-hosted Topaz (`Topaz_a1200`), serrucho (no AA), 8-pen MagicWB tokens; Vite MPA entry + `/amiga` → `/amiga/` redirect. Parallel to legacy `/` and `/v25/` (neither skin touched). Plan: `roadmap/amiga-workbench.md`.
+
 ## [2.3.0] - 2026-08-08
 
 ### Added
