@@ -12,18 +12,18 @@
 }
 
 :root {
-  --mwb-gray: #959595;
+  --mwb-gray: #2a2a2a;
   --mwb-black: #000000;
   --mwb-white: #ffffff;
   --mwb-blue: #3b67a2;
-  --mwb-halfshadow: #7b7b7b;
-  --mwb-halfshine: #afafaf;
+  --mwb-halfshadow: #1a1a1a;
+  --mwb-halfshine: #3d3d3d;
   --mwb-tan: #aa907c;
   --mwb-peach: #ffa997;
 
-  /* Desktop bg: MagicWB gray (#959595) darkened 25% for contrast */
-  --amiga-bg: #707070;
-  --amiga-fg: var(--mwb-black);
+  /* Very dark gray surfaces + light text */
+  --amiga-bg: #222222;
+  --amiga-fg: #f0f0f0;
   --amiga-accent: var(--mwb-blue);
   --amiga-font: 'TopazNew', monospace;
   --amiga-font-size: 16px;

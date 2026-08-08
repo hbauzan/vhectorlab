@@ -138,7 +138,7 @@ Copy `.env.example` → `.env` (option 1 does this if `.env` is missing). Common
 | `VITE_API_BASE_URL` | `/api` | Browser API base URL |
 | `VITE_SHOW_CAM_POSE` | `false` | Live camera POS/ROT overlay (debug) |
 | `VITE_AMIGA_PEN_0`…`_7` | MagicWB pens | `/amiga/` palette pens (`#RRGGBB`) |
-| `VITE_AMIGA_BG` / `_FG` / `_ACCENT` | `#707070` / `#000000` / `#3B67A2` | `/amiga/` page bg, text, titlebar |
+| `VITE_AMIGA_BG` / `_FG` / `_ACCENT` | `#222222` / `#F0F0F0` / `#3B67A2` | `/amiga/` page bg, text, titlebar |
 
 ---
 
