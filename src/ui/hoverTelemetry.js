@@ -36,8 +36,11 @@ export function resolveHoverTelemetry(data) {
     const actIdx = resolveActivationIndex(data, ud);
     if (actIdx != null && actIdx >= 0 && actIdx < ud.activations.length) {
       activation = ud.activations[actIdx];
+      const sourceDim = Array.isArray(ud.sourceDims) && ud.sourceDims[actIdx] != null
+        ? Number(ud.sourceDims[actIdx])
+        : actIdx;
       meta = {
-        dim: actIdx,
+        dim: sourceDim,
         token: ud.token,
         type: ud.type,
         val: activation,

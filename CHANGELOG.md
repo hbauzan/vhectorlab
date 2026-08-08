@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Group contrast (Visualization panel)**: Compare ≥2 groups — Shared noise (same-sign → black by similarity %, ZC-style) + Sign conflict (opposite-sign highlight color × |Δ|, plus conflict coverage to black). Paint-only; gated until groups exist. Panel densified (~300px).
 - **Public lab release hygiene**: MIT `LICENSE` (© 2026 Hector Bauzan); root README frames VHectorLab as a study/laboratory tool (not SaaS), links the live HF Space demo, and documents shared cpu-basic limits; `backend/README.md` aligned in English.
 
 ### Fixed

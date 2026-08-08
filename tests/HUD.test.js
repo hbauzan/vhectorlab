@@ -101,15 +101,18 @@ describe('HUD activation telemetry', () => {
     Object.defineProperty(segment, 'offsetWidth', { get: () => 70 });
 
     const activation = document.createElement('span');
+    const dim = document.createElement('span');
     const coords = document.createElement('span');
     const token = document.createElement('span');
 
     center.appendChild(label);
     center.appendChild(segment);
+    center.appendChild(dim);
     center.appendChild(activation);
 
     hud.centerEl = center;
     hud.segmentEl = segment;
+    hud.dimEl = dim;
     hud.activationEl = activation;
     hud.coordsEl = coords;
     hud.tokenEl = token;
@@ -127,6 +130,7 @@ describe('HUD activation telemetry', () => {
 
     expect(activation.textContent).not.toMatch(/0\.0000$/);
     expect(activation.textContent).toMatch(/0\.0000421|4\.21e-/i);
+    expect(dim.textContent).toBe('DIM: 3');
     expect(token.textContent).toBe('alpha');
     expect(segment.textContent).toBe('COMPARE');
   });
@@ -134,6 +138,7 @@ describe('HUD activation telemetry', () => {
   it('clears to -- when hover leaves', () => {
     const hud = new HUD(root);
     hud.activationEl = document.createElement('span');
+    hud.dimEl = document.createElement('span');
     hud.coordsEl = document.createElement('span');
     hud.segmentEl = document.createElement('span');
     hud.tokenEl = document.createElement('span');
@@ -142,6 +147,7 @@ describe('HUD activation telemetry', () => {
 
     hud.updateTelemetry(null);
     expect(hud.activationEl.textContent).toBe('ACTIVATION: --');
+    expect(hud.dimEl.textContent).toBe('DIM: --');
     expect(hud.segmentEl.textContent).toBe('NEUTRAL SPACE');
   });
 });

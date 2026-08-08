@@ -32,11 +32,13 @@ import {
   vizPanelLayoutForViewport,
   resolveVisualizationMountParent,
   setVisualizationPanelLayout,
+  setGroupContrastControlsEnabled,
 } from './ui/VisualizationControls.js';
 import {
   loadVisualizationSettings,
   saveVisualizationSettings,
 } from './ui/visualizationControlsDefaults.js';
+import { hasGroupsForDimContrast } from './visualizer/groupDimContrast.js';
 import {
   snapshotFilterForSae,
   filterModeForSaeOn,
@@ -249,6 +251,7 @@ class VHectorLabApp {
       this.refreshRender();
     });
     this.threadLabels.setVisible(this.vizConfig.labelsVisible);
+    this.syncGroupContrastGate();
 
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       this._vizLayoutMq = window.matchMedia(MOBILE_MQ);
@@ -385,6 +388,18 @@ class VHectorLabApp {
         this.threadLabels.setLabels(labels);
       }
     }
+    this.syncGroupContrastGate();
+  }
+
+  /**
+   * Enable Group contrast viz controls only for compare ≥2 groups.
+   */
+  syncGroupContrastGate() {
+    if (!this.vizEl || !this.vizConfig) return;
+    const items = state.workspaceMode === 'COMPARE'
+      ? (this.rawCompareData?.items || state.compareData?.items || [])
+      : [];
+    setGroupContrastControlsEnabled(this.vizEl, hasGroupsForDimContrast(items), this.vizConfig);
   }
 
   /**

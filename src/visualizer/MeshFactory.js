@@ -1,7 +1,11 @@
 import * as THREE from 'three';
 import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized } from './DivergentShading.js';
-import { anchorsFromSettings, resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
+import { anchorsFromSettings, resolveVisualizationSettings, hexToRgb01, effectiveZeroCoveragePercent } from '../ui/visualizationControlsDefaults.js';
 import { lineSegmentIndices, wideRibbonQuadIndices } from './activationFilter.js';
+import {
+  applyGroupDimPaint,
+  buildPointGroupPaintAttributes,
+} from './groupDimContrast.js';
 
 /**
  * Resolve optional vizConfig from MeshFactory options into filter mode + RGB anchors.
@@ -14,9 +18,27 @@ function resolveVizOptions(options = {}) {
   return {
     filterMode: viz.vizFilterMode,
     anchors: anchorsFromSettings(viz),
-    zeroCoverage: viz.zeroCoverage,
+    zeroCoverage: effectiveZeroCoveragePercent(viz),
     viz,
+    groupDimMetrics: options.groupDimMetrics || null,
+    sourceDims: options.sourceDims || null,
   };
+}
+
+/**
+ * Paint one activation with divergent + optional group-dim contrast.
+ * @param {number} normVal
+ * @param {number|undefined} sourceDim
+ * @param {ReturnType<typeof resolveVizOptions>} resolved
+ */
+function colorForActivation(normVal, sourceDim, resolved) {
+  const base = getDivergentColor(normVal, 1.0, resolved.anchors, resolved.zeroCoverage);
+  const metrics = resolved.groupDimMetrics;
+  if (!metrics?.length || sourceDim == null) return base;
+  const metric = metrics[sourceDim];
+  const zero = resolved.anchors.zero;
+  const hi = hexToRgb01(resolved.viz.oppositeHighlightColor);
+  return applyGroupDimPaint(base, metric, resolved.viz, zero, hi);
 }
 
 /**
@@ -32,7 +54,7 @@ export class MeshFactory {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const rawActivations = [];
-    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
+    const { filterMode, anchors, zeroCoverage, viz, groupDimMetrics } = resolveVizOptions(options);
 
     pointsData.forEach((item) => {
       const pos = item.position;
@@ -41,15 +63,19 @@ export class MeshFactory {
     });
 
     const normIntensities = calculateZScoreNormalized(rawActivations, 0.85);
+    const { cancel, highlight } = buildPointGroupPaintAttributes(pointsData, groupDimMetrics, viz);
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(normIntensities, 1));
+    geometry.setAttribute('aCancel', new THREE.Float32BufferAttribute(cancel, 1));
+    geometry.setAttribute('aHighlight', new THREE.Float32BufferAttribute(highlight, 1));
 
     const pointSize = options.pointSize || 14.0;
     const material = createDivergentMaterial(pointSize, 1.0, {
       anchors,
       filterMode,
       zeroCoverage,
+      highlightColor: viz.oppositeHighlightColor,
     });
 
     const pointsMesh = new THREE.Points(geometry, material);
@@ -66,7 +92,8 @@ export class MeshFactory {
    * Full vertex buffer retained for in-situ compare reorder position updates.
    */
   static createRibbonMesh(points, activations = null, options = {}) {
-    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
+    const resolved = resolveVizOptions(options);
+    const { filterMode, sourceDims } = resolved;
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
     let normActivations = null;
@@ -74,7 +101,8 @@ export class MeshFactory {
       normActivations = calculateZScoreNormalized(activations, 0.85);
       const colors = new Float32Array(points.length * 3);
       for (let idx = 0; idx < normActivations.length; idx++) {
-        const col = getDivergentColor(normActivations[idx], 1.0, anchors, zeroCoverage);
+        const srcDim = sourceDims ? sourceDims[idx] : idx;
+        const col = colorForActivation(normActivations[idx], srcDim, resolved);
         colors[idx * 3 + 0] = col.r;
         colors[idx * 3 + 1] = col.g;
         colors[idx * 3 + 2] = col.b;
@@ -146,7 +174,8 @@ export class MeshFactory {
    */
   static createWideRibbonMesh(points, activations = null, options = {}) {
     if (!points || points.length < 2) return null;
-    const { filterMode, anchors, zeroCoverage } = resolveVizOptions(options);
+    const resolved = resolveVizOptions(options);
+    const { filterMode, sourceDims } = resolved;
     const width = options.width ?? 3.0;
     const half = width * 0.5;
     const n = points.length;
@@ -182,7 +211,8 @@ export class MeshFactory {
       positions[iR * 3 + 1] = p.y + side.y;
       positions[iR * 3 + 2] = p.z + side.z;
 
-      const col = getDivergentColor(norm[i], 1.0, anchors, zeroCoverage);
+      const srcDim = sourceDims ? sourceDims[i] : i;
+      const col = colorForActivation(norm[i], srcDim, resolved);
       for (const vi of [iL, iR]) {
         colors[vi * 3] = col.r;
         colors[vi * 3 + 1] = col.g;

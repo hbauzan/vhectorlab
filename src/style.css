@@ -985,6 +985,11 @@ canvas {
 }
 
 .hud-val { font-family: monospace; font-weight: 600; color: var(--text-main); }
+#hud-dim {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  min-width: 4.5ch;
+}
 .hud-badge {
   background: rgba(0, 255, 170, 0.15);
   color: var(--accent-cyan);
@@ -1229,9 +1234,9 @@ canvas {
   Collapse only hides the body — the short left dock-tab stays parked on the HUD.
 */
 #visualization-controls-container.viz-panel {
-  --viz-width: 260px;
-  --viz-tab-size: 28px;
-  --viz-tab-h: 72px;
+  --viz-width: 300px;
+  --viz-tab-size: 26px;
+  --viz-tab-h: 64px;
   position: absolute;
   right: var(--hud-pad);
   bottom: calc(var(--hud-bottom) + var(--hud-height) - 1px);
@@ -1276,11 +1281,11 @@ canvas {
 #visualization-controls-container .viz-panel-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px 12px;
+  gap: 6px;
+  padding: 8px 10px 10px;
   width: var(--viz-width);
   max-width: var(--viz-width);
-  max-height: min(48vh, 420px);
+  max-height: min(56vh, 520px);
   overflow-x: hidden;
   overflow-y: auto;
   box-sizing: border-box;
@@ -1333,49 +1338,111 @@ canvas {
 
 /* Compact Visualization internals */
 #visualization-controls-container .sliders-title {
-  font-size: 0.85rem;
-  padding-bottom: 6px;
+  font-size: 0.8rem;
+  padding-bottom: 4px;
   margin: 0;
 }
 
 #visualization-controls-container .viz-filter-group {
-  gap: 6px;
+  gap: 4px;
 }
 
 #visualization-controls-container .viz-filter-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 #visualization-controls-container .viz-colors-section {
-  gap: 6px;
+  gap: 4px;
 }
 
 #visualization-controls-container .viz-colors-title {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 #visualization-controls-container .viz-color-row {
-  gap: 6px;
+  gap: 4px;
 }
 
 #visualization-controls-container .viz-color-row label {
-  font-size: 0.72rem;
-  min-width: 2.4rem;
+  font-size: 0.68rem;
+  min-width: 2.1rem;
 }
 
 #visualization-controls-container .viz-color-hex {
-  font-size: 0.72rem;
-  padding: 4px 6px;
+  font-size: 0.68rem;
+  padding: 3px 5px;
 }
 
 #visualization-controls-container .viz-coverage-row {
-  gap: 4px;
+  gap: 2px;
 }
 
 #visualization-controls-container .viz-labels-toggle,
 #visualization-controls-container .viz-reset-btn {
-  padding: 6px 10px;
+  padding: 4px 8px;
+  font-size: 0.68rem;
+}
+
+#visualization-controls-container .viz-group-contrast {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 4px;
+  border-top: 1px solid var(--panel-border);
+}
+
+#visualization-controls-container .viz-group-contrast-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+#visualization-controls-container .viz-group-contrast-hint {
+  margin: 0;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+#visualization-controls-container .viz-group-fx-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#visualization-controls-container .viz-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+#visualization-controls-container .viz-toggle-row input[type="checkbox"] {
+  accent-color: var(--accent-cyan);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+#visualization-controls-container .viz-fx-slider.is-inert,
+#visualization-controls-container .viz-group-contrast.is-disabled {
+  opacity: 0.45;
+}
+
+#visualization-controls-container .viz-group-contrast.is-disabled .viz-group-contrast-hint {
+  opacity: 1;
+}
+
+#visualization-controls-container .viz-fx-slider.is-inert input,
+#visualization-controls-container .viz-group-contrast.is-disabled input {
+  cursor: not-allowed;
 }
 
 #axis-gizmo-container {
@@ -2032,9 +2099,9 @@ canvas {
     Collapsed tab stays on top of the HUD (not a side orphan).
   */
   #visualization-controls-container.viz-panel {
-    --viz-width: min(260px, calc(100vw - 64px));
-    --viz-tab-size: 28px;
-    --viz-tab-h: 56px;
+    --viz-width: min(300px, calc(100vw - 56px));
+    --viz-tab-size: 26px;
+    --viz-tab-h: 52px;
     position: fixed;
     left: auto;
     right: var(--hud-pad);
@@ -2056,9 +2123,9 @@ canvas {
   #visualization-controls-container .viz-panel-body {
     width: var(--viz-width);
     max-width: var(--viz-width);
-    padding: 8px 10px 10px;
-    gap: 7px;
-    max-height: min(38dvh, 260px);
+    padding: 7px 8px 8px;
+    gap: 5px;
+    max-height: min(42dvh, 340px);
     overflow-y: auto;
     border-radius: 0 10px 0 0;
   }
