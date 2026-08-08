@@ -68,13 +68,14 @@ body.amiga-workbench .galaxy-method-chip.active {
     inset -2px -2px 0 var(--mwb-white) !important;
 }
 
-/* Floating docks / panels — keep legacy fixed positioning; only restyle surfaces */
+/* Floating panels — paint the cards, NOT the dock host (right dock-body is height:100%
+   and would leave a MagicWB gray slab behind Spatial Controls + AxisGizmo). */
 body.amiga-workbench .glass-sidebar,
 body.amiga-workbench .compare-panel,
 body.amiga-workbench .glass-hud,
-body.amiga-workbench .thread-sliders,
-body.amiga-workbench .visualization-controls,
-body.amiga-workbench .collapsible-dock .dock-body {
+body.amiga-workbench #thread-sliders-container,
+body.amiga-workbench #visualization-controls-container .viz-panel-body,
+body.amiga-workbench .visualization-controls {
   background: var(--amiga-bg) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
@@ -83,6 +84,20 @@ body.amiga-workbench .collapsible-dock .dock-body {
     inset -2px -2px 0 var(--mwb-halfshadow),
     inset 2px 2px 0 var(--mwb-white) !important;
   color: var(--amiga-fg) !important;
+}
+
+/* Dock chrome must stay clear so the 3D canvas shows through */
+body.amiga-workbench .collapsible-dock .dock-body {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.amiga-workbench #axis-gizmo-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 body.amiga-workbench .dock-tab {
