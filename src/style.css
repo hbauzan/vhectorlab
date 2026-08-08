@@ -283,14 +283,29 @@ canvas {
   gap: 6px;
 }
 
+/* Panel button scale — match Shared noise (0.68rem / 600); CTAs larger */
+:root {
+  --panel-btn-font-size: 0.68rem;
+  --panel-btn-font-weight: 600;
+  --panel-btn-pad-y: 3px;
+  --panel-btn-pad-x: 6px;
+  --panel-cta-font-size: 0.82rem;
+  --panel-cta-font-weight: 700;
+  --panel-cta-pad-y: 12px;
+  --panel-cta-pad-x: 8px;
+}
+
 .btn-preset {
   flex: 1;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--panel-border);
   color: var(--text-muted);
-  padding: 4px 8px;
+  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-family: inherit;
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -427,9 +442,10 @@ canvas {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.35);
   color: var(--text-muted);
-  font-size: 0.6rem;
+  font-size: 0.58rem;
+  font-weight: var(--panel-btn-font-weight);
   line-height: 1;
-  padding: 4px 6px;
+  padding: 2px 5px;
   border-radius: 3px;
 }
 
@@ -519,9 +535,10 @@ canvas {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.35);
   color: var(--text-muted);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
+  font-weight: var(--panel-btn-font-weight);
   line-height: 1;
-  padding: 2px 4px;
+  padding: 1px 3px;
   border-radius: 3px;
 }
 
@@ -685,9 +702,11 @@ canvas {
   color: #050505;
   border: none;
   border-radius: 8px;
-  padding: 10px;
-  font-weight: 700;
-  font-size: 0.85rem;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-weight: var(--panel-btn-font-weight);
+  font-size: var(--panel-btn-font-size);
+  line-height: 1.2;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(0, 255, 170, 0.3);
   transition: transform 0.1s ease, box-shadow 0.2s ease;
@@ -703,7 +722,7 @@ canvas {
   cursor: not-allowed;
 }
 
-/* SAE Clean/Denoise — 50/50 CTA row */
+/* SAE Clean/Denoise — 50/50 CTA row (hero size) */
 .sae-controls {
   display: flex;
   flex-direction: column;
@@ -722,8 +741,9 @@ canvas {
 .sae-cta-row .btn-sae-toggle {
   width: 100%;
   min-width: 0;
-  padding: 10px 6px;
-  font-size: 0.72rem;
+  padding: var(--panel-cta-pad-y) var(--panel-cta-pad-x);
+  font-size: var(--panel-cta-font-size);
+  font-weight: var(--panel-cta-font-weight);
   line-height: 1.2;
 }
 
@@ -743,7 +763,8 @@ canvas {
   color: var(--text-main);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
-  font-weight: 700;
+  font-weight: var(--panel-cta-font-weight);
+  font-family: inherit;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
@@ -771,9 +792,10 @@ canvas {
   border: 1px dashed rgba(255, 255, 255, 0.25);
   color: var(--text-muted);
   border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -783,12 +805,16 @@ canvas {
 }
 
 .btn-sae-params {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
   color: var(--text-muted);
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -1060,7 +1086,7 @@ canvas {
   min-width: 0;
 }
 
-.hud-left, .hud-center, .hud-right {
+.hud-left, .hud-center {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1073,8 +1099,22 @@ canvas {
   overflow: hidden;
 }
 
-.hud-left, .hud-right {
+.hud-left {
   flex: 0 1 auto;
+  gap: 4px;
+}
+
+.hud-left .hud-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hud-left .hud-val,
+.hud-left #hud-coords {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .hud-label {
@@ -1119,7 +1159,9 @@ canvas {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 22vw;
+  max-width: min(28vw, 12rem);
+  flex: 0 1 auto;
+  text-align: right;
 }
 
 /* Camera pose overlay (VITE_SHOW_CAM_POSE=true) — readable POS/ROT for default-view capture */
@@ -1192,8 +1234,11 @@ canvas {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--panel-border);
   color: var(--text-main);
-  padding: 8px 16px;
+  padding: var(--panel-btn-pad-y) 10px;
   border-radius: 6px;
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -1289,11 +1334,12 @@ canvas {
 }
 
 .dock-right .dock-body {
+  /* Fill dock height so Spatial Controls stay top-right (not pinned to HUD). */
   height: 100%;
   max-height: none;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: flex-end;
-  gap: 16px;
+  gap: 8px;
 }
 
 .dock-right .dock-tab {
@@ -1308,6 +1354,7 @@ canvas {
 
 /* =============================================================================
    Thread Geometry Spatial Sliders 3D Styling (inside #right-dock)
+   Dense like Token Comparison — keep width; tighten padding/gaps only.
    ============================================================================= */
 #thread-sliders-container {
   position: relative;
@@ -1316,7 +1363,7 @@ canvas {
   width: 280px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
   z-index: 40;
   flex-shrink: 0;
   background: var(--panel-bg);
@@ -1324,8 +1371,37 @@ canvas {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
-  padding: 16px;
+  padding: 8px 10px 10px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+#thread-sliders-container .sliders-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 4px;
+  margin: 0 0 2px;
+}
+
+#thread-sliders-container .slider-group {
+  gap: 2px;
+}
+
+#thread-sliders-container .slider-header {
+  font-size: 0.68rem;
+  font-weight: 600;
+  min-height: 0;
+  line-height: 1.2;
+}
+
+#thread-sliders-container .slider-val {
+  font-size: 0.68rem;
+}
+
+#thread-sliders-container .slider-group input[type="range"] {
+  margin: 0;
+  height: 18px;
 }
 
 /*
@@ -1479,8 +1555,10 @@ canvas {
 
 #visualization-controls-container .viz-labels-toggle,
 #visualization-controls-container .viz-reset-btn {
-  padding: 4px 8px;
-  font-size: 0.68rem;
+  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
 }
 
 #visualization-controls-container .viz-group-contrast {
@@ -1544,6 +1622,72 @@ canvas {
 #visualization-controls-container .viz-fx-slider.is-inert input,
 #visualization-controls-container .viz-group-contrast.is-disabled input {
   cursor: not-allowed;
+}
+
+/* Group hue: ~3 named rows visible; side scroll when 4+ */
+#visualization-controls-container .viz-group-hue-rows {
+  --viz-hue-row-h: 28px;
+  --viz-hue-row-gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--viz-hue-row-gap);
+  max-height: calc(3 * var(--viz-hue-row-h) + 2 * var(--viz-hue-row-gap));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
+  margin: 0;
+}
+
+#visualization-controls-container .viz-group-hue-rows.is-scrollable {
+  padding-right: 4px;
+}
+
+#visualization-controls-container .viz-group-hue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(4.2rem, 5.2rem);
+  gap: 6px;
+  align-items: center;
+  min-height: var(--viz-hue-row-h);
+  height: var(--viz-hue-row-h);
+  flex: 0 0 auto;
+}
+
+#visualization-controls-container .viz-group-hue-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: none;
+  overflow: hidden;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+#visualization-controls-container .viz-group-hue-row .field-label-text {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#visualization-controls-container .viz-group-hue-row .viz-color-swatch {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border-radius: 4px;
+}
+
+#visualization-controls-container .viz-group-hue-row .viz-color-hex {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.62rem;
+  padding: 2px 4px;
 }
 
 #axis-gizmo-container {
@@ -1754,9 +1898,10 @@ canvas {
 .viz-labels-toggle {
   align-self: stretch;
   margin-top: 2px;
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--panel-border);
@@ -1775,9 +1920,10 @@ canvas {
 .viz-reset-btn {
   align-self: flex-start;
   margin-top: 2px;
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
+  font-size: var(--panel-btn-font-size);
+  font-weight: var(--panel-btn-font-weight);
+  line-height: 1.2;
   color: var(--accent-cyan);
   background: transparent;
   border: 1px solid var(--panel-border);
@@ -2190,22 +2336,61 @@ canvas {
     max-height: 96px;
   }
 
-  .btn-primary,
+  /* Compact panel buttons — Shared noise scale; CTAs keep 44px touch target */
+  .btn-primary:not(.sae-cta-main),
   .btn-preset,
+  .btn-sae-train,
+  .btn-sae-params,
   .btn-sort-cosine,
-  .btn-reorder {
-    min-height: 44px;
+  .btn-reorder,
+  .viz-labels-toggle,
+  .viz-reset-btn,
+  .btn-secondary {
+    min-height: 32px;
+    font-size: var(--panel-btn-font-size);
+    font-weight: var(--panel-btn-font-weight);
   }
 
   .btn-preset {
-    font-size: 0.72rem;
-    padding: 8px 6px;
+    padding: 6px 5px;
+  }
+
+  .sae-cta-row .btn-primary,
+  .sae-cta-row .btn-sae-toggle {
+    min-height: 44px;
+    padding: 10px 6px;
+    font-size: 0.8rem;
+    font-weight: var(--panel-cta-font-weight);
+  }
+
+  .btn-sae-params {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
   }
 
   #thread-sliders-container {
     width: min(260px, calc(100vw - 64px));
-    padding: 12px;
-    gap: 10px;
+    padding: 7px 8px 8px;
+    gap: 5px;
+  }
+
+  #thread-sliders-container .sliders-title {
+    font-size: 0.75rem;
+    padding-bottom: 3px;
+    margin: 0 0 1px;
+  }
+
+  #thread-sliders-container .slider-header {
+    font-size: 0.62rem;
+  }
+
+  #thread-sliders-container .slider-val {
+    font-size: 0.62rem;
+  }
+
+  #thread-sliders-container .slider-group input[type="range"] {
+    height: 16px;
   }
 
   /*
@@ -2244,6 +2429,26 @@ canvas {
     border-radius: 0 10px 0 0;
   }
 
+  #visualization-controls-container .viz-group-hue-rows {
+    --viz-hue-row-h: 26px;
+    --viz-hue-row-gap: 3px;
+  }
+
+  #visualization-controls-container .viz-group-hue-row {
+    grid-template-columns: minmax(0, 1fr) 26px minmax(3.8rem, 4.8rem);
+    gap: 5px;
+  }
+
+  #visualization-controls-container .viz-group-hue-row .viz-color-swatch {
+    width: 26px;
+    height: 20px;
+  }
+
+  #visualization-controls-container .viz-group-hue-row .viz-color-hex {
+    font-size: 0.58rem;
+    padding: 2px 3px;
+  }
+
   #visualization-controls-container.is-collapsed {
     left: auto;
     right: var(--hud-pad);
@@ -2276,9 +2481,22 @@ canvas {
     border-radius: 8px;
   }
 
-  .hud-left, .hud-right, .hud-center {
+  .hud-left, .hud-center {
     flex: 0 1 auto;
     gap: 4px;
+  }
+
+  .hud-left {
+    gap: 2px;
+  }
+
+  .hud-left .hud-label {
+    font-size: 0.48rem;
+  }
+
+  .hud-left .hud-val,
+  .hud-left #hud-coords {
+    font-size: 0.5rem;
   }
 
   .hud-center {
@@ -2293,13 +2511,14 @@ canvas {
   }
 
   .hud-badge {
-    max-width: 28vw;
+    max-width: 22vw;
     padding: 1px 5px;
     font-size: 0.55rem;
   }
 
   .hud-token-text {
-    max-width: 28vw;
+    max-width: min(32vw, 9rem);
+    font-size: 0.58rem;
   }
 
   .hud-highlight {
@@ -2332,8 +2551,10 @@ canvas {
     }
 
     #sidebar-panel .btn-primary {
-      min-height: 36px;
-      padding: 8px;
+      min-height: 32px;
+      padding: 6px 8px;
+      font-size: var(--panel-btn-font-size);
+      font-weight: var(--panel-btn-font-weight);
     }
 
     #sidebar-panel .sidebar-header h2 {

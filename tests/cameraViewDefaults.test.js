@@ -115,4 +115,26 @@ describe('resolveCameraPose', () => {
     expect(pose.rotationDeg[1]).toBeCloseTo(-35.7, 5);
     expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
   });
+
+  it('applies captured COMPARE|GALAXY|POINTS pose', () => {
+    const pose = resolveCameraPose({
+      workspaceMode: 'COMPARE',
+      viewMode: 'GALAXY',
+      renderMode: 'POINTS',
+    });
+    expect(pose.position).toEqual([25.5, 155.2, 328.9]);
+    expect(pose.rotationDeg[0]).toBeCloseTo(-23.2, 5);
+    expect(pose.rotationDeg[1]).toBeCloseTo(14.0, 5);
+    expect(pose.rotationDeg[2]).toBeCloseTo(0, 5);
+    expect(pose.position).toEqual([...VIEW_CAMERA_FALLBACKS.GALAXY.position]);
+  });
+
+  it('does not collapse GALAXY into NAVIGATION fallback', () => {
+    const pose = resolveCameraPose({
+      workspaceMode: 'COMPARE',
+      viewMode: 'GALAXY',
+      renderMode: 'POINTS',
+    });
+    expect(pose.position).not.toEqual([...VIEW_CAMERA_FALLBACKS.NAVIGATION.position]);
+  });
 });

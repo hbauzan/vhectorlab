@@ -276,6 +276,7 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Problema**: Rampa divergente global no distingue dominios `GROUP_*` en Galaxy/Compare.
 - **Solución**: Toggle `groupHueEnabled` + map `groupHueColors`; base = lerp(black, groupHex, remapped t) when ON (`groupHuePaint.js`); POINTS via `aBaseColor` + `uUseGroupHueBase`; RIBBONS via CPU `colorForActivationWithGroupHue`. Zero coverage remaps \|t\| then black↔color. Missing `groupId` → divergent fallback.
 - **Invariante**: Shared noise / Sign conflict still apply after base; default OFF; gate ≥2 groups; persist under `vl3d.viz.*`.
+- **UI labels**: filas Group hue usan `groupsForHueUi` → `{ id, label }` con `groupLabel` del textarea (mismo nombre que badges 3D / chips). No reutilizar el grid de Colors (`28px` para `+1`/`0`/`−1`); layout propio ~3 filas visibles + `overflow-y: auto` si hay 4+.
 
 ### 4.12. Bottom HUD hover activation (POINTS / RIBBONS)
 - **Problema**: `ACTIVATION` siempre `0.0000` — `Interaction` pasaba `userData` del mesh (`{ pointsData }`), y el HUD leía `userData.val` / `data.activation` (inexistentes).

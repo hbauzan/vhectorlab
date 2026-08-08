@@ -6,6 +6,12 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ### Changed
 - **License**: project relicensed from MIT to **Apache License 2.0** (`LICENSE` + `NOTICE`; README / HF Space card `license: apache-2.0`; `package.json` `license` field).
+- Bootstrap / 2 Groups demo labels: `it_core` (IT terms), `vehicles` (auto lexicon), `women` (English women’s names) — replaces `GROUP_it_core` / `GROUP_1` / `GROUP_2`.
+- Panel buttons: Visualize Sequence + Clean/Denoise (SAE) slightly larger; all other panel buttons compact at Shared-noise scale (`0.68rem` / weight 600).
+- 3D Spatial Controls: denser padding/gaps (Compare-like); dock stays top-right with gizmo stacked under sliders (no empty mid-gap).
+- HUD hover: token caption left of `HOVER TELEMETRY` (right TOKEN column removed); grouped Compare points show `group/token`.
+- Galaxy default camera pose: POS `25.5, 155.2, 328.9` / ROT `-23.2, 14.0, 0` (captured CAM POSE).
+- Startup chrome defaults: **COMPARE | GALAXY | POINTS** (was ARITHMETIC | ANALYSIS).
 
 ## [2.4.2] - 2026-08-08
 
