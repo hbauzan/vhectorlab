@@ -23,6 +23,11 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **v25 layout shell** (Fase 3): 5-zone grid (header / left / canvas / right / footer); mobile stack via legacy `MOBILE_MQ`.
 - **v25 design tokens** (Fase 2): dark/fluo lab `:root`, Oxanium + IBM Plex Mono, `.lab-panel` / `.lab-btn` pressable utilities, WCAG contrast checks via `contrastRatio`.
 
+## [2.4.1] - 2026-08-08
+
+### Added
+- **`/amiga/` full lab wire** (Slices 2–6): MagicWB 5-zone shell; Arithmetic / Compare / SAE / spatial / viz / canvas via legacy engine+UI modules hosted in Amiga zones (host-sized WebGL). Colors still from `VITE_AMIGA_*`. HF Space publish deferred to Slice 7 (needs explicit OK).
+
 ## [2.4.0] - 2026-08-08
 
 ### Added

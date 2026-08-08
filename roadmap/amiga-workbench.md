@@ -1,9 +1,9 @@
 # Amiga Workbench skin — `/amiga` (MagicWB)
 
-**Estado:** activo — Slice 1 listo (approval gate)  
+**Estado:** activo — Slices 2–6 wire listos (approval gate); Slice 7 HF Space pendiente de OK  
 **Protocolo:** `.agents/skills/dev-protocol/` (ciclo completo + approval gate)  
 **Prompt agente:** [`PROMPT-amiga-workbench.md`](./PROMPT-amiga-workbench.md)  
-**SemVer:** línea **`2.4.x`** (MINOR `2.4.0` en Slice 1)  
+**SemVer:** línea **`2.4.x`** (actual **2.4.1**)  
 **HF Space público:** **solo al final** (§7 Slice final) — no en slices intermedios
 
 ---
@@ -174,12 +174,12 @@ Cambios MPA compartidos permitidos (mínimos):
 | :---: | :--- | :--- | :---: | :--- |
 | **0** | Plan + prompt | Este doc + `PROMPT-amiga-workbench.md` + README roadmap + lesson §6.0e | — | ✅ 2026-08-08 |
 | **1** | Scaffold MPA + Topaz + tokens | `/amiga/` carga; Topaz self-host; serrucho; fondo MagicWB; `/` y `/v25/` intactos; bump **2.4.0**; tests MPA verdes | 0 | ✅ 2026-08-08 (branch `feat/amiga-scaffold`) |
-| **2** | Shell layout desktop+mobile | Zonas mínimas (header / left / canvas-host / right o equivalente) con tokens; responsive OK o pregunta si falla | 1 |
-| **3** | Chrome 2D mínimo | Paneles legibles “WB-ish” **sin** cosplay Q2-C (bordes/contraste MagicWB, no icon packs) | 2 |
-| **4** | Wire Arithmetic (o panel primario legado) | CTA real vía `/api`; lista resultados; canvas aún stub OK | 3 |
-| **5** | Canvas host + engine reuse | Montar scene existente en host amiga; POINTS startup; **sin** retocar shaders/look 3D | 4 |
-| **6** | Compare / SAE / viz (según prioridad humana) | Port vertical de superficies críticas; mobile no roto | 5 |
-| **7** | Polish + HF Space | Smoke desktop+mobile; CONTEXT/CHANGELOG; **publicar Space** con OK explícito | 6 |
+| **2** | Shell layout desktop+mobile | Zonas mínimas (header / left / canvas-host / right o equivalente) con tokens; responsive OK o pregunta si falla | 1 | ✅ 2026-08-08 |
+| **3** | Chrome 2D mínimo | Paneles legibles “WB-ish” **sin** cosplay Q2-C (bordes/contraste MagicWB, no icon packs) | 2 | ✅ 2026-08-08 |
+| **4** | Wire Arithmetic (o panel primario legado) | CTA real vía `/api`; lista resultados; canvas aún stub OK | 3 | ✅ 2026-08-08 |
+| **5** | Canvas host + engine reuse | Montar scene existente en host amiga; POINTS startup; **sin** retocar shaders/look 3D | 4 | ✅ 2026-08-08 |
+| **6** | Compare / SAE / viz (según prioridad humana) | Port vertical de superficies críticas; mobile no roto | 5 | ✅ 2026-08-08 |
+| **7** | Polish + HF Space | Smoke desktop+mobile; CONTEXT/CHANGELOG; **publicar Space** con OK explícito | 6 | ⏳ polish docs; HF = ask |
 
 ### Hand-off (plantilla)
 
@@ -231,11 +231,20 @@ Solo cuando Slices 1–6 cumplan DoD y el humano diga OK:
 - [x] Entrada README roadmap
 - [x] Lesson §6.0e aislamiento `/amiga` + v25 off-limits en este epic
 
+### Hand-off — Slices 2–6 (wire)
+- **Branch:** `feat/amiga-scaffold`
+- **Cómo probar:** `npm run dev` → `http://127.0.0.1:5173/amiga/` — lab completo MagicWB; Calculate / Compare / SAE; smoke `/` y `/v25/`
+- **Tests:** `npm test` (amigaShell, amigaTokens, amigaEnvColors, viteMpa…)
+- **Hecho:** shell 5 zonas; chrome MagicWB overrides; AmigaApp = legado wire en zonas; canvas host-sized; SemVer **2.4.1**
+- **NO hecho:** HF Space publish (Slice 7 — preguntar URL default)
+- **Verificación aislamiento:** sin tocar `src/v25/**`
+- **Nota:** UI modules reusan `src/ui/*` + `src/engine/*` (legado), no v25
+
 ### Hand-off — Slice 1
 - **Branch / commit:** `feat/amiga-scaffold` (local; approval gate)
 - **Cómo probar:** `npm run dev` → `http://127.0.0.1:5173/amiga/` (Topaz + gris MagicWB + titlebar azul + 8 swatches); smoke `/` y `/v25/` sin cambios de skin; `/amiga` sin slash → `/amiga/`
 - **Tests:** `npm test` (incl. `amigaTokens`, `viteMpaInputs`)
 - **Hecho:** MPA entry, tokens MagicWB, Topaz self-host GPL-FE, SemVer **2.4.0**, CONTEXT término Amiga Skin, lessons §6.0/§6.0e
-- **NO hecho:** shell 5 zonas (Slice 2), wire API/canvas, HF Space
+- **NO hecho:** (superseded by Slices 2–6 wire)
 - **Verificación aislamiento:** `git diff -- src/v25 v25` vacío; legado solo version-tag Navbar + MPA shared
 - **Riesgos / preguntas mobile:** Topaz 16px en phone portrait — revisar visualmente; si ilegible, preguntar (no bajar de múltiplos de 8 a ciegas)
