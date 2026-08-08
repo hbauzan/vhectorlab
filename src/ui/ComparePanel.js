@@ -2,6 +2,7 @@ import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.j
 import { parseCompareInput } from './parseCompareGroups.js';
 import { saeControlsMarkup, wireSaeControls } from './SaeControls.js';
 import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
+import { formatItCoreGroupLine } from './itCoreCorpus.js';
 
 /**
  * Typical auto-manual lexicon in English (parts, fluids, systems).
@@ -53,6 +54,10 @@ export const AUTO_MANUAL_UNIQUE_EN = [...new Set(AUTO_MANUAL_VOCAB_EN)];
 export const COMPARE_GROUPS_DEMO_TEXT = `GROUP_1 = "car, vehicle, automobile, truck, van, engine, piston, cylinder, crankshaft, camshaft, turbo, exhaust, muffler, radiator, transmission, gearbox, clutch, differential, driveshaft, steering, suspension, chassis, brake, brakes, rotor, wheel, wheels, tire, tires, rim, axle, bearing, pedal, accelerator, throttle, injector, manifold, intake, coolant, antifreeze, oil, filter, battery, alternator, starter, coil, fuse, relay, sensor, wiring, shock, spring, hood, trunk, windshield, headlight, bumper, fender, seatbelt, airbag, dashboard, speedometer, fuel, gasoline, diesel"
 GROUP_2 = "sophia, isabella, victoria, florence, beatrice, eleanor, charlotte, gloria, clara, penelope, serenity, compassion, tenderness, nostalgia, melancholy, empathy, affection, gratitude, forgiveness, solitude, devotion, harmony, poetry, symphony, melody, lullaby, romance, intimacy, solace, grace, bliss, euphoria, sweetness, delight, softness, warmth, kindness, hope, peace, innocence, purity, elegance, beauty, passion, desire, yearning, whisper, caress, embrace, soul, spirit, intuition, wisdom, reverie, fantasy, butterfly, blossom, rose, orchid, petal, jasmine, violet, peony, dahlia, magnolia"`;
 
+/** Bootstrap / Galaxy default: IT core (100) first, then existing GROUP_1 + GROUP_2 demos. */
+export const COMPARE_GALAXY_BOOTSTRAP_TEXT = `${formatItCoreGroupLine()}
+${COMPARE_GROUPS_DEMO_TEXT}`;
+
 /**
  * COMPARE presets — arrays become comma-joined; strings are written as-is (group demos).
  */
@@ -62,11 +67,13 @@ export const COMPARE_AUTO_PRESETS = {
   sample20: AUTO_MANUAL_UNIQUE_EN.slice(0, 20),
   sample50: AUTO_MANUAL_UNIQUE_EN.slice(0, 50),
   groupsDemo: COMPARE_GROUPS_DEMO_TEXT,
+  galaxyDemo: COMPARE_GALAXY_BOOTSTRAP_TEXT,
 };
 
 /**
  * Single source for COMPARE first-paint: textarea default + auto Visualize payload.
  * Must stay grouped so GROUP_* floating badges appear without a second submit.
+ * Order: GROUP_it_core → GROUP_1 → GROUP_2 (REF inside the IT core).
  * @returns {{
  *   mode: 'flat'|'grouped',
  *   tokens: string[],
@@ -76,7 +83,7 @@ export const COMPARE_AUTO_PRESETS = {
  * }}
  */
 export function getCompareBootstrap() {
-  const textareaValue = COMPARE_GROUPS_DEMO_TEXT;
+  const textareaValue = COMPARE_GALAXY_BOOTSTRAP_TEXT;
   const parsed = parseCompareInput(textareaValue);
   return { ...parsed, textareaValue };
 }
@@ -134,6 +141,7 @@ export class ComparePanel {
           <button type="button" class="btn-preset" data-preset="sample20">20 Tokens</button>
           <button type="button" class="btn-preset" data-preset="sample50">50 Tokens</button>
           <button type="button" class="btn-preset" data-preset="groupsDemo">2 Groups</button>
+          <button type="button" class="btn-preset" data-preset="galaxyDemo">3 Groups</button>
         </div>
 
         ${saeControlsMarkup('cmp')}
