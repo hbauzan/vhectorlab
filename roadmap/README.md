@@ -4,6 +4,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
+| [`amiga-workbench.md`](./amiga-workbench.md) | Skin **Amiga**/MagicWB en bandera blanca `/amiga/` (Topaz + paleta; SemVer 2.4.x) | **Activo (plan)** |
+| [`PROMPT-amiga-workbench.md`](./PROMPT-amiga-workbench.md) | Prompt serial por slice para agentes `/amiga` | **Activo** |
 | [`galaxy-view.md`](./galaxy-view.md) | VIEW **Galaxy**: UMAP backend, 1 punto/token, COMPARE+POINTS locked, IT core×100 | **Activo (plan)** |
 | [`PROMPT-galaxy-view.md`](./PROMPT-galaxy-view.md) | Prompt serial por slice (1→7) para agentes Galaxy | **Activo** |
 | [`gui-art-v25.md`](./gui-art-v25.md) | GUI/Art **v25**: layout+skin paralelo en `/v25/` (fases 0–13, hand-offs) | **Activo (plan)** |

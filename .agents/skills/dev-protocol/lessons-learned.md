@@ -288,11 +288,20 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 
 ## 6. Dev tooling / ngrok / Vite ↔ backend
 
+### 6.0e. `/amiga` (MagicWB) — proyecto aparte; v25 y legado off-limits
+- **Regla**: el skin Amiga Workbench / MagicWB vive **solo** bajo `amiga/` + `src/amiga/**` (MPA `/amiga/`). Es un epic **independiente** de `gui-art` / `gui-art-v25` / `/v25/`.
+- **PROHIBIDO** en el epic Amiga: editar `src/v25/**`, `v25/**`, o “alinear” v25 (versión, tokens, copy). También evitar contaminar `src/style.css` / `src/main.js` / `src/ui/*` legado salvo cambios MPA compartidos mínimos (`vite.mpa.js`, redirect `/amiga`, tests MPA).
+- **Invariante**: SemVer de producto en este epic = línea **`2.4.x`** (MINOR `2.4.0` al primer scaffold demoable). HF Space público = **último** slice del roadmap, no en slices intermedios.
+- **Verificación**: antes de approval / merge Amiga → `git diff -- src/v25 v25` vacío; revisar que el diff legado no meta skin Amiga en `/`.
+- **Norte visual**: Topaz self-hosted + sin antialiasing (múltiplos de 8px) + paleta MagicWB 8 colores; CSS estático (no inyección `<style>` por JS). Cosplay full (iconos/drawers) = roadmap futuro, no este epic.
+- **Mobile**: desktop y mobile desde el inicio; si Topaz/density falla → preguntar al humano, no bajar de múltiplos de 8 “a ciegas”.
+
 ### 6.0d. `src/v25/**` — no tocar salvo pedido explícito del humano
 - **Regla**: el árbol `src/v25/` (y `v25/index.html` / assets MPA asociados) es un **proyecto aparte**. En roadmaps/epics del UI legado (`src/main.js`, `src/ui/*`, `src/visualizer/*`) está **prohibido** editar `src/v25/**`.
 - **Invariante**: no “sync de cortesía” (versión, copy, presets compartidos, imports) en v25 **a menos que el humano lo indique explícitamente** en el prompt (“tocá v25”, “sync version en v25”, “también en /v25/”, etc.). Silencio ≠ permiso.
 - **Verificación**: antes de approval gate / merge, `git diff -- src/v25` debe estar vacío si el epic no autorizó v25.
 - **Excepción**: solo cuando el humano lo pida; no inferir desde SemVer, CHANGELOG, o que v25 importe módulos de `src/ui/`.
+- **Nota**: el epic `/amiga` (§6.0e) también deja v25 intacto; no usar Amiga como excusa para tocar v25.
 
 ### 6.0c. `v25:` MODE switch = visibility toggle, never wipe left host
 - **Problema**: montar Compare con `zones.left.innerHTML = …` destruye el panel Arithmetic (form state + Top-10). Además `display: flex` en `.lab-left-host > [data-panel]` **pisa** el UA `[hidden]{display:none}` → el slot Arithmetic oculto sigue ocupando flex y deja un **hueco negro** arriba del Compare (lista cosine aplastada abajo).
@@ -305,15 +314,15 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Invariante**: no fork de `SceneSetup` solo por MPA; no contaminar `src/style.css` legado. Startup canvas = `ARITHMETIC|ANALYSIS|POINTS` (`canvasStartupContext` / `appViewDefaults`).
 - **No hacer en Fase 8+ inmediata**: wire live de sliders (Fase 9) ni MODE Compare (Fase 10) desde header tabs.
 
-### 6.0. `v25:` Vite MPA + FastAPI directory index
-- **Problema**: un solo `index.html` en la raíz no alcanza para la bandera blanca `/v25/`. En prod, el catch-all que solo chequea `is_file()` trata `dist/v25/` como miss y cae al SPA legado. En **dev**, Vite SPA fallback sirve el legado en `/v25` **sin** trailing slash → canvas oscuro “vacío”.
+### 6.0. `v25:` / `amiga:` Vite MPA + FastAPI directory index
+- **Problema**: un solo `index.html` en la raíz no alcanza para banderas blancas (`/v25/`, `/amiga/`). En prod, el catch-all que solo chequea `is_file()` trata `dist/<dir>/` como miss y cae al SPA legado. En **dev**, Vite SPA fallback sirve el legado en `/v25` o `/amiga` **sin** trailing slash.
 - **Solución Obligatoria**:
-  - Vite `build.rollupOptions.input` vía `getViteInputs(root)` (`vite.mpa.js`) → `main` + `v25` → emite `dist/index.html` y `dist/v25/index.html`.
-  - `appType: 'mpa'` + plugin `mpaTrailingSlashRedirect` → `/v25` 302 → `/v25/`.
+  - Vite `build.rollupOptions.input` vía `getViteInputs(root)` (`vite.mpa.js`) → `main` + `v25` + `amiga` → emite `dist/index.html`, `dist/v25/index.html`, `dist/amiga/index.html`.
+  - `appType: 'mpa'` + plugin `mpaTrailingSlashRedirect` → bare dir 302 → trailing slash (`/v25/`, `/amiga/`).
   - FastAPI: `resolve_dist_file(dist, path)` → archivo exacto, si no `path/index.html`, si no root `index.html`.
-- **Invariante**: nuevas páginas MPA = entry en `getViteInputs` **y** redirect bare-dir → slash; no hardcodear solo `/v25/index.html` en el cliente si `/v25/` debe funcionar.
-- **No hacer**: contaminar `src/style.css` / `src/main.js` legado desde v25.
-- **URL de prueba**: preferí `http://127.0.0.1:5173/v25/` (con slash); sin slash debe redirigir, no cargar el legado.
+- **Invariante**: nuevas páginas MPA = entry en `getViteInputs` **y** redirect bare-dir → slash; no hardcodear solo `…/index.html` en el cliente si `/dir/` debe funcionar.
+- **No hacer**: contaminar `src/style.css` / `src/main.js` legado desde v25 o amiga; no editar `src/v25/**` desde el epic amiga (ver §6.0e).
+- **URL de prueba**: preferí `http://127.0.0.1:5173/v25/` y `http://127.0.0.1:5173/amiga/` (con slash); sin slash debe redirigir, no cargar el legado.
 
 ### 6.1. Proxy `/api` en Vite: prefijo general, no ruta-a-ruta
 - **Problema**: Exponer frontend y backend con **el mismo** hostname ngrok (dos agentes → `:5173` y `:8000`) se pisa; el celu no puede llamar a `127.0.0.1:8000`.

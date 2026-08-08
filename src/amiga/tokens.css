@@ -1,0 +1,30 @@
+/**
+ * Magic Workbench tokens — source of truth for `/amiga` chrome.
+ * Hex mirrored in `tokenValues.js` for tests.
+ */
+
+@font-face {
+  font-family: 'TopazNew';
+  src: url('./assets/fonts/Topaz_a1200_v1.0.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --mwb-gray: #959595;
+  --mwb-black: #000000;
+  --mwb-white: #ffffff;
+  --mwb-blue: #3b67a2;
+  --mwb-halfshadow: #7b7b7b;
+  --mwb-halfshine: #afafaf;
+  --mwb-tan: #aa907c;
+  --mwb-peach: #ffa997;
+
+  --amiga-bg: var(--mwb-gray);
+  --amiga-fg: var(--mwb-black);
+  --amiga-accent: var(--mwb-blue);
+  --amiga-font: 'TopazNew', monospace;
+  --amiga-font-size: 16px;
+  --amiga-line-height: 20px;
+}

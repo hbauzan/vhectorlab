@@ -61,6 +61,11 @@ Percent of the |t| range held at the zero color (default black) before blending 
 ### Group Contrast
 Visualization paint for Compare with ≥2 groups: **Shared noise** blackens same-sign dims by similarity; **Sign conflict** highlights opposite-sign dims (custom color × |Δ|) and can blacken them by difference. Uses group means on raw embeddings; geometry Y unchanged.
 
+### Amiga Skin
+Parallel MPA UI at `/amiga/` with Magic Workbench palette and Topaz pixel typography. Independent of legacy `/` and of `/v25/`; does not change product math or API contracts.
+
+_Avoid_: treating Amiga as a reskin of v25 or legacy; editing `src/v25/**` for Amiga work.
+
 ### Shared Noise Similarity
 `1 − |mean_G1 − mean_G2| / (|mean_G1| + |mean_G2|)` per dimension — high values mean shared-sign “noise” between groups.
 
