@@ -320,7 +320,15 @@ export class Instancer {
           activation: val,
           size: 10.0 * thicknessFactor,
           groupId: item.groupId,
-          meta: { type: "compare", token: item.text, dim: sourceDim, val, groupId: item.groupId }
+          groupLabel: item.groupLabel,
+          meta: {
+            type: "compare",
+            token: item.text,
+            dim: sourceDim,
+            val,
+            groupId: item.groupId,
+            groupLabel: item.groupLabel,
+          },
         });
         activations.push(val);
       });
@@ -347,6 +355,8 @@ export class Instancer {
         ribbonMesh.userData.token = item.text;
         ribbonMesh.userData.type = 'compare';
         ribbonMesh.userData.sourceDims = sourceDims;
+        if (item.groupId) ribbonMesh.userData.groupId = item.groupId;
+        if (item.groupLabel) ribbonMesh.userData.groupLabel = item.groupLabel;
         this.activeGroup.add(ribbonMesh);
       }
 

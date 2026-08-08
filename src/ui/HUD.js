@@ -27,14 +27,11 @@ export class HUD {
         <span id="hud-coords" class="hud-val">X: 0 | Y: 0 | Z: 0</span>
       </div>
       <div class="hud-center">
-        <span class="hud-label">HOVER TELEMETRY:</span>
+        <span id="hud-token" class="hud-token-text">--</span>
+        <span class="hud-label hud-telemetry-label">HOVER TELEMETRY:</span>
         <span id="hud-segment" class="hud-badge">RESULT VECTOR</span>
         <span id="hud-dim" class="hud-val">DIM: --</span>
         <span id="hud-activation" class="hud-highlight">ACTIVATION: --</span>
-      </div>
-      <div class="hud-right">
-        <span class="hud-label">TOKEN:</span>
-        <span id="hud-token" class="hud-token-text">--</span>
       </div>
     `;
 
@@ -46,6 +43,7 @@ export class HUD {
     this.activationEl = this.element.querySelector('#hud-activation');
     this.tokenEl = this.element.querySelector('#hud-token');
     this.centerEl = this.element.querySelector('.hud-center');
+    this.telemetryLabelEl = this.element.querySelector('.hud-telemetry-label');
 
     this._lastActivation = null;
     this._lastDim = null;
@@ -119,7 +117,8 @@ export class HUD {
       this.activationEl.textContent = 'ACTIVATION: --';
       this.activationEl.style.color = '#888888';
       this.activationEl.removeAttribute('title');
-      this.tokenEl.textContent = 'NONE';
+      this.tokenEl.textContent = '—';
+      this.tokenEl.removeAttribute?.('title');
       return;
     }
 
@@ -132,7 +131,8 @@ export class HUD {
     this._renderActivation(t.activation);
 
     this.segmentEl.textContent = t.type;
-    this.tokenEl.textContent = t.token;
+    this.tokenEl.textContent = t.tokenLabel;
+    this.tokenEl.title = t.tokenLabel;
   }
 
   /**
@@ -171,14 +171,17 @@ export class HUD {
   _activationSlotWidth() {
     if (!this.centerEl) return 160;
     const centerW = this.centerEl.clientWidth || 160;
-    const labelW = this.centerEl.querySelector('.hud-label')?.offsetWidth || 0;
+    const tokenW = this.tokenEl?.offsetWidth || 0;
+    const labelW = this.telemetryLabelEl?.offsetWidth
+      || this.centerEl.querySelector('.hud-telemetry-label')?.offsetWidth
+      || 0;
     const badgeW = this.segmentEl?.offsetWidth || 0;
     const dimW = this.dimEl?.offsetWidth || 0;
-    const gap = 20;
-    const available = centerW - labelW - badgeW - dimW - gap;
+    const gap = 24;
+    const available = centerW - tokenW - labelW - badgeW - dimW - gap;
     // Mobile wrap: if center is tight, allow activation to use most of the bar
     if (available < 64 && this.element?.clientWidth) {
-      return Math.max(72, Math.floor(this.element.clientWidth * 0.4));
+      return Math.max(72, Math.floor(this.element.clientWidth * 0.35));
     }
     return Math.max(64, available);
   }

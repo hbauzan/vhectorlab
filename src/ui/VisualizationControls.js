@@ -30,6 +30,7 @@ import {
   isMobileViewport,
 } from './CollapsibleDock.js';
 import { FIELD_INFO, infoTipMarkup, escapeHtmlAttr } from './fieldInfo.js';
+import { normalizeGroupHueRowSpecs } from '../visualizer/groupHuePaint.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -359,9 +360,9 @@ export function syncGroupFxSliderEnabled(container, settings) {
  * @param {HTMLElement|null|undefined} container
  * @param {boolean} enabled
  * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} [config]
- * @param {string[]} [groupIds]
+ * @param {Array<string|{ id?: string, label?: string }>} [groupsOrIds]
  */
-export function setGroupContrastControlsEnabled(container, enabled, config = null, groupIds = null) {
+export function setGroupContrastControlsEnabled(container, enabled, config = null, groupsOrIds = null) {
   if (!container) return;
   const section = container.querySelector('#viz-group-contrast');
   if (!section) return;
@@ -369,42 +370,49 @@ export function setGroupContrastControlsEnabled(container, enabled, config = nul
   section.classList.toggle('is-disabled', !on);
   section.setAttribute('aria-disabled', on ? 'false' : 'true');
   const settings = config || resolveVisualizationSettings(null);
-  if (Array.isArray(groupIds)) {
-    container._vizGroupHueIds = groupIds.slice();
+  if (Array.isArray(groupsOrIds)) {
+    const specs = normalizeGroupHueRowSpecs(groupsOrIds);
+    container._vizGroupHueGroups = specs;
+    container._vizGroupHueIds = specs.map((g) => g.id);
     const emit = typeof container._vizEmit === 'function'
       ? container._vizEmit
       : () => saveVisualizationSettings(settings);
-    syncGroupHueColorRows(container, groupIds, settings, emit);
+    syncGroupHueColorRows(container, specs, settings, emit);
   }
   syncGroupFxSliderEnabled(container, settings);
 }
 
 /**
- * Rebuild dynamic Group hue swatch rows for current GROUP_* ids.
+ * Rebuild dynamic Group hue swatch rows — labels from Compare textarea names.
+ * Caps visible height at ~3 rows; overflow scrolls (4+ groups).
  * @param {HTMLElement} container
- * @param {string[]} groupIds
+ * @param {Array<string|{ id?: string, label?: string }>} groupsOrIds
  * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} config
  * @param {Function} [onColorChange]
  */
-export function syncGroupHueColorRows(container, groupIds, config, onColorChange = null) {
+export function syncGroupHueColorRows(container, groupsOrIds, config, onColorChange = null) {
   if (!container || !config) return;
   const host = container.querySelector('#viz-group-hue-rows');
   if (!host) return;
-  const ids = Array.isArray(groupIds) ? groupIds.filter(Boolean) : [];
-  syncGroupHueColorsForGroups(config, ids);
+  const specs = normalizeGroupHueRowSpecs(groupsOrIds);
+  container._vizGroupHueGroups = specs;
+  container._vizGroupHueIds = specs.map((g) => g.id);
+  syncGroupHueColorsForGroups(config, container._vizGroupHueIds);
   const colors = config.groupHueColors || {};
-  host.innerHTML = ids.map((id) => {
+  host.innerHTML = specs.map(({ id, label }) => {
     const hex = colors[id] || '#00E5FF';
     const safeId = escapeHtmlAttr(id);
+    const safeLabel = escapeHtmlAttr(label);
     const safeHex = escapeHtmlAttr(hex);
     const inputId = `viz-group-hue-${safeId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
     return `
-      <div class="viz-color-row viz-group-hue-row" data-group-id="${safeId}">
-        <label for="${inputId}-hex"><span class="field-label-text">${safeId}</span>${infoTipMarkup(FIELD_INFO.groupHueSwatch)}</label>
-        <input type="color" id="${inputId}-swatch" class="viz-color-swatch" data-group-hue-swatch="${safeId}" value="${safeHex}" title="${safeId}" aria-label="${safeId} color">
-        <input type="text" id="${inputId}-hex" class="viz-color-hex" data-group-hue-hex="${safeId}" value="${safeHex}" maxlength="7" spellcheck="false" placeholder="#00E5FF">
+      <div class="viz-color-row viz-group-hue-row" data-group-id="${safeId}" title="${safeLabel}">
+        <label for="${inputId}-hex"><span class="field-label-text">${safeLabel}</span>${infoTipMarkup(FIELD_INFO.groupHueSwatch)}</label>
+        <input type="color" id="${inputId}-swatch" class="viz-color-swatch" data-group-hue-swatch="${safeId}" value="${safeHex}" title="${safeLabel}" aria-label="${safeLabel} color">
+        <input type="text" id="${inputId}-hex" class="viz-color-hex" data-group-hue-hex="${safeId}" value="${safeHex}" maxlength="7" spellcheck="false" placeholder="#00E5FF" aria-label="${safeLabel} hex">
       </div>`;
   }).join('');
+  host.classList.toggle('is-scrollable', specs.length > 3);
 
   if (typeof onColorChange === 'function') {
     for (const swatch of host.querySelectorAll('[data-group-hue-swatch]')) {
@@ -656,10 +664,20 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     });
   }
 
+  /** @type {Array<{ id: string, label: string }>} */
+  container._vizGroupHueGroups = container._vizGroupHueGroups || [];
   /** @type {string[]} */
-  container._vizGroupHueIds = container._vizGroupHueIds || [];
+  container._vizGroupHueIds = container._vizGroupHueIds
+    || container._vizGroupHueGroups.map((g) => g.id);
   container._vizEmit = emit;
-  syncGroupHueColorRows(container, container._vizGroupHueIds || [], config, emit);
+  syncGroupHueColorRows(
+    container,
+    container._vizGroupHueGroups.length
+      ? container._vizGroupHueGroups
+      : container._vizGroupHueIds,
+    config,
+    emit,
+  );
 
   syncGroupFxSliderEnabled(container, config);
 

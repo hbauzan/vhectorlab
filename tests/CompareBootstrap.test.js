@@ -4,6 +4,8 @@ import {
   COMPARE_AUTO_PRESETS,
   COMPARE_GALAXY_BOOTSTRAP_TEXT,
   COMPARE_GROUPS_DEMO_TEXT,
+  WOMEN_GROUP_ID,
+  VEHICLES_GROUP_ID,
   getCompareBootstrap,
 } from '../src/ui/ComparePanel.js';
 import {
@@ -28,7 +30,7 @@ describe('IT core corpus fixture', () => {
 });
 
 /**
- * Bootstrap = GROUP_it_core (100) + GROUP_1 + GROUP_2; REF inside IT core.
+ * Bootstrap = it_core (100) + vehicles + women; REF inside IT core.
  */
 describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
   it('bootstrap is 3 groups with it_core first', () => {
@@ -38,8 +40,8 @@ describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
     expect(boot.textareaValue).toBe(COMPARE_AUTO_PRESETS.galaxyDemo);
     expect(boot.groups.map((g) => g.id)).toEqual([
       IT_CORE_GROUP_ID,
-      'GROUP_1',
-      'GROUP_2',
+      VEHICLES_GROUP_ID,
+      WOMEN_GROUP_ID,
     ]);
     expect(boot.groups[0].tokens).toHaveLength(100);
     expect(boot.tokenMeta[0].groupId).toBe(IT_CORE_GROUP_ID);
@@ -47,22 +49,25 @@ describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
 
     const g1Start = 100;
     const g2Start = 100 + boot.groups[1].tokens.length;
-    expect(boot.tokenMeta[g1Start].groupId).toBe('GROUP_1');
-    expect(boot.tokenMeta[g2Start].groupId).toBe('GROUP_2');
+    expect(boot.tokenMeta[g1Start].groupId).toBe(VEHICLES_GROUP_ID);
+    expect(boot.tokenMeta[g2Start].groupId).toBe(WOMEN_GROUP_ID);
     expect(boot.tokens.length).toBe(
       100 + boot.groups[1].tokens.length + boot.groups[2].tokens.length,
     );
     expect(boot.tokens.length).toBe(230);
   });
 
-  it('2 Groups preset remains GROUP_1 + GROUP_2 only (130)', () => {
+  it('2 Groups preset remains vehicles + women only (130)', () => {
     const parsed = parseCompareInput(COMPARE_GROUPS_DEMO_TEXT);
     expect(parsed.tokens).toHaveLength(130);
-    expect(parsed.groups.map((g) => g.id)).toEqual(['GROUP_1', 'GROUP_2']);
+    expect(parsed.groups.map((g) => g.id)).toEqual([
+      VEHICLES_GROUP_ID,
+      WOMEN_GROUP_ID,
+    ]);
     expect(COMPARE_AUTO_PRESETS.groupsDemo).toBe(COMPARE_GROUPS_DEMO_TEXT);
   });
 
-  it('bootstrap + attach meta → overlay shows it_core / GROUP_1 / GROUP_2', () => {
+  it('bootstrap + attach meta → overlay shows it_core / vehicles / women', () => {
     const boot = getCompareBootstrap();
     const data = {
       count: boot.tokens.length,
@@ -86,8 +91,8 @@ describe('COMPARE bootstrap ↔ GROUP overlay contract', () => {
     expect(overlay).toHaveLength(3);
     expect(overlay.map((l) => l.text)).toEqual([
       IT_CORE_GROUP_ID,
-      'GROUP_1',
-      'GROUP_2',
+      VEHICLES_GROUP_ID,
+      WOMEN_GROUP_ID,
     ]);
     expect(overlay.every((l) => l.type === 'group')).toBe(true);
   });

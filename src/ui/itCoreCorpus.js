@@ -1,5 +1,5 @@
 /**
- * Canonical GROUP_it_core corpus for Galaxy VIEW (exactly 100 unique EN IT tokens).
+ * Canonical `it_core` corpus for Galaxy VIEW (exactly 100 unique EN IT tokens).
  * Do not silently grow — tests assert length + uniqueness.
  */
 
@@ -19,7 +19,8 @@ export const IT_CORE_TOKENS = Object.freeze([
   'memory', 'cpu', 'gpu', 'storage', 'network', 'protocol', 'encryption',
 ]);
 
-export const IT_CORE_GROUP_ID = 'GROUP_it_core';
+/** Galactic core group id — IT / software terms (camera look-at preferred). */
+export const IT_CORE_GROUP_ID = 'it_core';
 
 /**
  * Textarea line for the IT galactic core group.

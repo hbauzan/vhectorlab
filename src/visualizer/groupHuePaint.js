@@ -13,7 +13,6 @@ import {
   normalizeGroupHueColors,
   ensureGroupHueColors,
 } from '../ui/visualizationControlsDefaults.js';
-import { listDistinctGroupIds } from './groupStackLayout.js';
 import { getDivergentColor } from './DivergentShading.js';
 import { applyGroupDimPaint } from './groupDimContrast.js';
 
@@ -86,10 +85,57 @@ export function colorForActivationWithGroupHue(normVal, sourceDim, resolved) {
 }
 
 /**
- * Group ids from compare items for UI rows.
- * @param {Array<{ groupId?: string }>|null|undefined} items
+ * Distinct groups for Group hue UI rows — id for paint keys, label from textarea.
+ * Encounter order; label prefers `groupLabel` (name typed in Compare input).
+ * @param {Array<{ groupId?: string, groupLabel?: string }>|null|undefined} items
+ * @returns {Array<{ id: string, label: string }>}
+ */
+export function groupsForHueUi(items) {
+  /** @type {Array<{ id: string, label: string }>} */
+  const out = [];
+  const seen = new Set();
+  for (const it of items || []) {
+    const id = it?.groupId;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const label = String(it.groupLabel || id).trim() || id;
+    out.push({ id, label });
+  }
+  return out;
+}
+
+/**
+ * Group ids from compare items for UI / paint keys.
+ * @param {Array<{ groupId?: string, groupLabel?: string }>|null|undefined} items
  * @returns {string[]}
  */
 export function groupIdsForHueUi(items) {
-  return listDistinctGroupIds(items || []);
+  return groupsForHueUi(items).map((g) => g.id);
+}
+
+/**
+ * Normalize Group hue row specs: string ids or `{ id, label }` from textarea.
+ * @param {Array<string|{ id?: string, label?: string }>|null|undefined} groupsOrIds
+ * @returns {Array<{ id: string, label: string }>}
+ */
+export function normalizeGroupHueRowSpecs(groupsOrIds) {
+  if (!Array.isArray(groupsOrIds)) return [];
+  /** @type {Array<{ id: string, label: string }>} */
+  const out = [];
+  const seen = new Set();
+  for (const g of groupsOrIds) {
+    if (typeof g === 'string') {
+      const id = g.trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push({ id, label: id });
+      continue;
+    }
+    const id = String(g?.id || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const label = String(g?.label || id).trim() || id;
+    out.push({ id, label });
+  }
+  return out;
 }

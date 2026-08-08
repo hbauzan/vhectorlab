@@ -43,6 +43,7 @@ import {
   saveVisualizationSettings,
 } from './ui/visualizationControlsDefaults.js';
 import { hasGroupsForDimContrast } from './visualizer/groupDimContrast.js';
+import { groupsForHueUi } from './visualizer/groupHuePaint.js';
 import {
   snapshotFilterForSae,
   filterModeForSaeOn,
@@ -57,14 +58,16 @@ import {
 import { wireFieldInfo } from './ui/fieldInfo.js';
 import {
   DEFAULT_VIEW_MODE,
+  DEFAULT_WORKSPACE_MODE,
+  DEFAULT_RENDER_MODE,
 } from './ui/appViewDefaults.js';
 import {
   enterGalaxyChrome,
   isGalaxyView,
   leaveGalaxyChrome,
+  DEFAULT_GALAXY_METHOD,
 } from './ui/galaxyChrome.js';
 import { runGalaxyPipeline, compareTextsFingerprint } from './ui/galaxyPipeline.js';
-import { galaxyCameraTarget } from './visualizer/galaxyLayout.js';
 import {
   applyGalaxyFlightProfile,
   restoreDefaultFlightProfile,
@@ -104,12 +107,11 @@ class VHectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. View Mode State — startup ARITHMETIC | ANALYSIS | POINTS
+    // 3. View Mode State — startup COMPARE | GALAXY | POINTS
     this.viewMode = DEFAULT_VIEW_MODE;
     /** @type {{ workspaceMode: string, viewMode: string, renderMode: string }|null} */
     this._preGalaxyTriad = null;
-    this.galaxyMethod = 'umap';
-    /** @type {number[][]|null} UMAP positions aligned with compare items */
+    this.galaxyMethod = DEFAULT_GALAXY_METHOD;    /** @type {number[][]|null} UMAP positions aligned with compare items */
     this.galaxyPositions = null;
     this._galaxyProjectBusy = false;
     this._galaxyFramePending = false;
@@ -207,6 +209,24 @@ class VHectorLabApp {
       async (payload) => this.handleCompareReorder(payload),
       saeHooks
     );
+
+    // Startup Galaxy triad: lock MODE/RENDER, show Compare, flight profile.
+    // Leaving Galaxy restores COMPARE | ANALYSIS | POINTS.
+    if (isGalaxyView(this.viewMode)) {
+      this._preGalaxyTriad = {
+        workspaceMode: 'COMPARE',
+        viewMode: 'ANALYSIS',
+        renderMode: DEFAULT_RENDER_MODE,
+      };
+      applyGalaxyFlightProfile(this.navigation);
+      this.navbar.setModeRenderLocked(true);
+      this.navbar.setGalaxyMethod(this.galaxyMethod);
+      this.navbar.setViewMode(this.viewMode);
+      this.navbar.setWorkspaceMode(DEFAULT_WORKSPACE_MODE);
+      this.navbar.setRenderMode(DEFAULT_RENDER_MODE);
+      this.sidebar.element.classList.add('hidden');
+      this.comparePanel.show();
+    }
 
     // Right dock: spatial sliders + AxisGizmo (roadmap D1).
     this.rightDock = new CollapsibleDock({
@@ -633,26 +653,16 @@ class VHectorLabApp {
   }
 
   /**
-   * Frame camera on GROUP_it_core centroid (fallback: all-points bbox).
-   * @param {Array} labels from renderGalaxyData
+   * Frame Galaxy camera to the captured default pose (CAM POSE).
+   * @param {Array} [_labels] from renderGalaxyData (unused; pose is fixed default)
    */
-  frameGalaxyCamera(labels) {
-    const target = galaxyCameraTarget(labels);
-    if (!target) return;
-    // Prefer fit-box so sparse cores stay readable; look-at is IT centroid when present.
-    const box = target.box.clone();
-    // Inflate slightly so focus isn't clipped
-    // Inflate padding scales with cloud size so fit framing stays comfortable
-    box.expandByScalar(24);
-    void this.navigation.animateToFitBox(box, {
-      viewMode: 'NAVIGATION',
-      durationMs: 550,
-    }).then(() => {
-      // Nudge look-at toward IT core centroid after fit
-      if (target.source !== 'all') {
-        this.navigation.focusPosition(target.lookAt, 0.45);
-      }
+  frameGalaxyCamera(_labels) {
+    const pose = resolveCameraPose({
+      workspaceMode: 'COMPARE',
+      viewMode: 'GALAXY',
+      renderMode: 'POINTS',
     });
+    void this.navigation.animateToPose(pose, 550);
   }
 
   /**
@@ -663,14 +673,12 @@ class VHectorLabApp {
     const items = state.workspaceMode === 'COMPARE'
       ? (this.rawCompareData?.items || state.compareData?.items || [])
       : [];
-    const groupIds = [...new Set(
-      (items || []).map((it) => it?.groupId).filter(Boolean),
-    )];
+    const groups = groupsForHueUi(items);
     setGroupContrastControlsEnabled(
       this.vizEl,
       hasGroupsForDimContrast(items),
       this.vizConfig,
-      groupIds,
+      groups,
     );
   }
 
@@ -696,7 +704,7 @@ class VHectorLabApp {
   }
 
   async init() {
-    // Initial camera for startup ARITHMETIC|ANALYSIS|POINTS
+    // Initial camera for startup COMPARE | GALAXY | POINTS
     this.navigation.setContextView({
       workspaceMode: state.workspaceMode,
       viewMode: this.viewMode,
@@ -717,7 +725,10 @@ class VHectorLabApp {
       this.navbar.setStatus(true, health.data.model, health.data.device);
       await this.refreshSaeStatusUi();
 
-      if (arithmeticPrefs.lastResult) {
+      if (state.workspaceMode === 'COMPARE' || isGalaxyView(this.viewMode)) {
+        const boot = getCompareBootstrap();
+        await this.handleCalculateCompare(boot.tokens, boot.tokenMeta);
+      } else if (arithmeticPrefs.lastResult) {
         this.applyArithmeticResult(arithmeticPrefs.lastResult);
       } else {
         await this.handleCalculateArithmetic(
