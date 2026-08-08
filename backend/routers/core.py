@@ -1,10 +1,11 @@
 """
 Core API Router for VHectorLab 3D.
-Provides /health, /embed, /tokenize, and /arithmetic endpoints.
+Provides /health, /embed, /tokenize, /arithmetic, /compare, and /project endpoints.
 """
 
-from typing import Any
+from typing import Any, Literal
 
+from backend.projection import ProjectError, project_embeddings
 from backend.state import state
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -39,6 +40,32 @@ class CompareRequest(BaseModel):
     texts: list[str] = Field(
         ...,
         description="List of texts/tokens to compute batch embeddings for (1 to 1024 items)",
+    )
+
+
+class ProjectParams(BaseModel):
+    n_neighbors: int = Field(default=15, ge=2, le=200)
+    min_dist: float = Field(default=0.1, ge=0.0)
+    metric: str = Field(default="cosine")
+
+
+class ProjectRequest(BaseModel):
+    vectors: list[list[float]] = Field(
+        ...,
+        description="Precomputed embedding rows (1..1024); does not re-encode text",
+    )
+    method: str = Field(
+        default="umap",
+        description="Projection method; v1 accepts 'umap' only",
+    )
+    n_components: Literal[2, 3] = Field(
+        default=3,
+        description="Output dimensionality (Galaxy uses 3; 2 reserved for future 2D VIEW)",
+    )
+    seed: int = Field(default=42, description="RNG seed for reproducibility")
+    params: ProjectParams | None = Field(
+        default=None,
+        description="UMAP hyperparameters (n_neighbors, min_dist, metric)",
     )
 
 
@@ -114,6 +141,24 @@ def perform_compare(req: CompareRequest) -> dict[str, Any]:
 
     try:
         return state.perform_compare(req.texts)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/project")
+def perform_project(req: ProjectRequest) -> dict[str, Any]:
+    """Project embedding vectors to 2D/3D (UMAP). Does not encode text."""
+    params = req.params.model_dump() if req.params is not None else None
+    try:
+        return project_embeddings(
+            req.vectors,
+            method=req.method,
+            n_components=req.n_components,
+            seed=req.seed,
+            params=params,
+        )
+    except ProjectError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(e))
 
