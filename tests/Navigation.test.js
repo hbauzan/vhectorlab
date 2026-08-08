@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { Navigation } from '../src/engine/Navigation.js';
+import {
+  DEFAULT_FLIGHT_PROFILE,
+  GALAXY_FLIGHT_PROFILE,
+  applyGalaxyFlightProfile,
+  restoreDefaultFlightProfile,
+} from '../src/engine/galaxyFlightProfile.js';
 
 function stubCamera() {
   return {
@@ -64,5 +70,25 @@ describe('Navigation default poses', () => {
     expect(nav.camera.position.x).toBeCloseTo(-178.3, 5);
     expect(nav.camera.position.y).toBeCloseTo(13.5, 5);
     expect(nav.camera.position.z).toBeCloseTo(52.2, 5);
+  });
+});
+
+describe('Navigation flight profile', () => {
+  it('starts on default profile and applyLookDelta uses lookSensitivity', () => {
+    const camera = stubCamera();
+    const nav = new Navigation(camera, { addEventListener() {} });
+    expect(nav.moveSpeed).toBe(DEFAULT_FLIGHT_PROFILE.moveSpeed);
+    expect(nav.lookSensitivity).toBe(DEFAULT_FLIGHT_PROFILE.lookSensitivity);
+
+    applyGalaxyFlightProfile(nav);
+    expect(nav.moveSpeed).toBe(GALAXY_FLIGHT_PROFILE.moveSpeed);
+
+    nav.euler.set(0, 0, 0, 'YXZ');
+    nav.camera.quaternion.setFromEuler(nav.euler);
+    nav.applyLookDelta(100, 0);
+    expect(nav.euler.y).toBeCloseTo(-100 * GALAXY_FLIGHT_PROFILE.lookSensitivity, 6);
+
+    restoreDefaultFlightProfile(nav);
+    expect(nav.moveSpeed).toBe(DEFAULT_FLIGHT_PROFILE.moveSpeed);
   });
 });

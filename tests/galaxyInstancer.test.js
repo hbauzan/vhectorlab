@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { Instancer } from '../src/visualizer/Instancer.js';
 import { IT_CORE_GROUP_ID } from '../src/ui/itCoreCorpus.js';
+import {
+  GALAXY_DEFAULT_SCALE,
+  GALAXY_SPACING_TO_SCALE,
+} from '../src/visualizer/galaxyLayout.js';
 
 describe('Instancer.renderGalaxyData', () => {
   it('mounts a single POINTS mesh and no ribbons', () => {
@@ -44,11 +48,29 @@ describe('Instancer.renderGalaxyData', () => {
     expect(labels).toHaveLength(3);
     expect(labels[0].text).toBe('server');
     expect(labels[0].groupId).toBe(IT_CORE_GROUP_ID);
+    expect(labels[0].origin3D.x).toBeCloseTo(0.1 * GALAXY_DEFAULT_SCALE);
 
     expect(instancer.activeGroup.children).toHaveLength(1);
     expect(instancer.activeGroup.children[0].type).toBe('Points');
     expect(instancer.activeGroup.children[0].userData.galaxy).toBe(true);
     expect(instancer.compareRuntime).toBeNull();
+  });
+
+  it('scales from threadSpacing via resolveGalaxyWorldScale', () => {
+    const scene = new THREE.Scene();
+    const instancer = new Instancer(scene);
+    const compareResponse = {
+      items: [
+        { id: 'a', text: 'a', embedding: [0], cosine_vs_first: 1 },
+      ],
+    };
+    const positions = [[1, 0, 0]];
+    const spacing = 0.5;
+    const labels = instancer.renderGalaxyData(compareResponse, positions, {
+      threadSpacing: spacing,
+      threadThickness: 0.05,
+    });
+    expect(labels[0].origin3D.x).toBeCloseTo(spacing * GALAXY_SPACING_TO_SCALE);
   });
 
   it('returns empty when positions missing', () => {
