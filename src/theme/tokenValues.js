@@ -2,7 +2,7 @@
  * Magic Workbench palette defaults (mirrored by CSS fallbacks + `.env.example`).
  * Runtime overrides: `resolveAmigaColors(import.meta.env)` via `VITE_AMIGA_*`.
  */
-import { DEFAULT_AMIGA_COLORS } from './amigaEnvColors.js';
+import { DEFAULT_AMIGA_COLORS } from './magicwbEnvColors.js';
 
 export const MWB_PENS = Object.freeze({
   0: DEFAULT_AMIGA_COLORS.pen0,
