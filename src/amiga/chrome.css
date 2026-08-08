@@ -117,6 +117,14 @@ body.amiga-workbench select {
   box-shadow: inset 2px 2px 0 var(--mwb-halfshadow) !important;
 }
 
+/* Compare token editor — black field */
+body.amiga-workbench #compare-panel #compare-tokens {
+  background: #000000 !important;
+  color: #f0f0f0 !important;
+  caret-color: #f0f0f0;
+  box-shadow: inset 2px 2px 0 #1a1a1a !important;
+}
+
 body.amiga-workbench .btn-primary,
 body.amiga-workbench button.lab-btn,
 body.amiga-workbench .sae-train-btn,
