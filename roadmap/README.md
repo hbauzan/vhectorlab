@@ -7,6 +7,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 | [`galaxy-view.md`](./galaxy-view.md) | VIEW **Galaxy**: UMAP backend, 1 punto/token, COMPARE+POINTS locked, IT core×100 | **Activo (plan)** |
 | [`PROMPT-galaxy-view.md`](./PROMPT-galaxy-view.md) | Prompt serial por slice (1→7) para agentes Galaxy | **Activo** |
 | [`PROMPT-galaxy-view-continue.md`](./PROMPT-galaxy-view-continue.md) | Continuación Galaxy (post Slice 4) | **Activo** |
+| [`galaxy-feel-group-hue.md`](./galaxy-feel-group-hue.md) | Galaxy: escala + vuelo lento + soft stars; viz **Group hue** (black→color/grupo) | **Activo (plan)** |
+| [`PROMPT-galaxy-feel-group-hue.md`](./PROMPT-galaxy-feel-group-hue.md) | Prompt serial por slice (1→4) feel + Group hue | **Activo** |
 | [`hf-space-cpu-demo.md`](./hf-space-cpu-demo.md) | HF Space Docker cpu-basic: packaging, setup 7+8, badge CPU/GPU, ARITHMETIC persistente | **Implementado** |
 | [`compare-group-contrast-viz.md`](./compare-group-contrast-viz.md) | Legibilidad contraste GROUP_* (Amplitude, SAE z-score dust, dim sort) | Implementado (v2.1.0) |
 | [`PROMPT-compare-group-contrast-viz.md`](./PROMPT-compare-group-contrast-viz.md) | Prompt para agente (pregunta D1–D12 → implementa) | Archivable |
