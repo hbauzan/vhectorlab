@@ -9,6 +9,10 @@ import {
   computeDimContrastPermutation,
   hasEnoughGroupsForDimSort,
 } from './dimContrastSort.js';
+import {
+  computeDimRelationMetrics,
+  hasGroupsForDimContrast,
+} from './groupDimContrast.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -273,6 +277,13 @@ export class Instancer {
     const { slots: ySlots, span: ySlotSpan } = computeGroupAwareYSlots(items, { gapSlots: 1 });
     const dimSortOn = options.dimSortByContrast === true && hasEnoughGroupsForDimSort(items);
     const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
+    const groupDimMetrics = hasGroupsForDimContrast(items)
+      ? computeDimRelationMetrics(items)
+      : null;
+    const sourceDimsForVec = (len) => {
+      if (dimPerm && dimPerm.length === len) return dimPerm.slice();
+      return Array.from({ length: len }, (_, i) => i);
+    };
 
     const pointsData = [];
     const threadLabelItems = [];
@@ -286,6 +297,7 @@ export class Instancer {
       if (!rawVec || !rawVec.length) return;
 
       const vec = dimPerm ? applyDimPermutation(rawVec, dimPerm) : rawVec;
+      const sourceDims = sourceDimsForVec(vec.length);
       const threadId = item.id || `tok_${idx}`;
       const layoutOpts = { ySlot: ySlots[idx] ?? idx, ySlotSpan };
       const vec3D = this.layoutEngine.mapVectorTo3DPoints(
@@ -301,7 +313,7 @@ export class Instancer {
 
       vec3D.forEach((p, dimIdx) => {
         const val = vec[dimIdx];
-        const sourceDim = dimPerm ? dimPerm[dimIdx] : dimIdx;
+        const sourceDim = sourceDims[dimIdx];
         pointsData.push({
           position: p,
           activation: val,
@@ -313,7 +325,10 @@ export class Instancer {
 
       surfaceRows.push({ points: vec3D, activations });
 
-      const vizOpts = vizConfig ? { vizConfig } : {};
+      const vizOpts = {
+        ...(vizConfig ? { vizConfig } : {}),
+        ...(groupDimMetrics?.length ? { groupDimMetrics, sourceDims } : {}),
+      };
       let ribbonMesh = null;
       if (renderMode === "RIBBONS") {
         const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
@@ -328,6 +343,7 @@ export class Instancer {
         ribbonMesh.userData.threadId = threadId;
         ribbonMesh.userData.token = item.text;
         ribbonMesh.userData.type = 'compare';
+        ribbonMesh.userData.sourceDims = sourceDims;
         this.activeGroup.add(ribbonMesh);
       }
 
@@ -374,6 +390,7 @@ export class Instancer {
       pointsMesh = MeshFactory.createPointsMesh(pointsData, {
         pointSize: 15.0 * thicknessFactor,
         ...(vizConfig ? { vizConfig } : {}),
+        ...(groupDimMetrics?.length ? { groupDimMetrics } : {}),
       });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);

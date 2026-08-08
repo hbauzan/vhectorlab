@@ -56,7 +56,7 @@ export function resolveCanvasSize(el) {
 /**
  * Map Interaction hover payload → footer HUD strings (minimal telemetry).
  * @param {object|null|undefined} hoverData
- * @returns {{ coords: string, segment: string, activation: string, token: string }}
+ * @returns {{ coords: string, segment: string, dim: string, activation: string, token: string }}
  */
 export function formatHoverForFooter(hoverData) {
   const t = resolveHoverTelemetry(hoverData);
@@ -64,14 +64,17 @@ export function formatHoverForFooter(hoverData) {
     return {
       coords: 'X: -- | Y: -- | Z: --',
       segment: 'NEUTRAL SPACE',
+      dim: 'DIM: --',
       activation: 'ACTIVATION: --',
       token: 'NONE',
     };
   }
   const pos = t.point || { x: 0, y: 0, z: 0 };
+  const dimLabel = t.dim != null && Number.isFinite(t.dim) ? `DIM: ${Math.trunc(t.dim)}` : 'DIM: --';
   return {
     coords: `X: ${Math.round(pos.x)} | Y: ${Math.round(pos.y)} | Z: ${Math.round(pos.z)}`,
     segment: t.type,
+    dim: dimLabel,
     activation: `ACTIVATION: ${formatActivationValue(t.activation, { maxChars: 16 })}`,
     token: t.token,
   };

@@ -41,9 +41,11 @@ describe('v25 right + HUD chrome', () => {
   it('footer HUD exposes coords / telemetry / token placeholders', () => {
     const html = footerHudMarkup();
     expect(html).toContain('id="lab-hud-coords"');
+    expect(html).toContain('id="lab-hud-dim"');
     expect(html).toContain('id="lab-hud-activation"');
     expect(html).toContain('id="lab-hud-token"');
     expect(html).toContain(HUD_PLACEHOLDERS.coords);
+    expect(html).toContain(HUD_PLACEHOLDERS.dim);
     expect(html).toContain('COORDS');
   });
 });

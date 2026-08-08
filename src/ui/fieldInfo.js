@@ -31,8 +31,16 @@ export const FIELD_INFO = Object.freeze({
   colorPos: 'Color at +1.',
   colorZero: 'Color at 0.',
   colorNeg: 'Color at −1.',
-  zeroCoverage: '% held at zero.',
+  zeroCoverage: 'Hold range at zero.',
+  zeroCoverageAmount: '30%…99.9999% band.',
   labelsToggle: 'Floating names.',
+  groupContrast: 'Groups only (G1↔G2).',
+  sameSignCancel: 'Blacken same-sign dims.',
+  sameSignCoverage: '30%…99.9999% sim.',
+  oppositeHighlight: 'Mark opposite signs.',
+  oppositeColor: 'Conflict color.',
+  oppositeStrength: 'Highlight × |Δ|.',
+  oppositeCancel: 'Fade conflicts black.',
 });
 
 /**
