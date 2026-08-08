@@ -9,6 +9,7 @@
  *   "ARITHMETIC"
  *   "ARITHMETIC|NAVIGATION"
  *   "COMPARE|NAVIGATION|POINTS"
+ *   "COMPARE|GALAXY|POINTS"
  */
 
 import {
@@ -16,12 +17,13 @@ import {
   DEFAULT_VIEW_MODE,
   DEFAULT_WORKSPACE_MODE,
 } from '../ui/appViewDefaults.js';
+import { GALAXY_VIEW } from '../ui/galaxyChrome.js';
 
 /** @typedef {{ position: [number, number, number], rotationDeg: [number, number, number] }} CameraPose */
 
 /**
  * View-level fallbacks (legacy setNavigationView / setAnalysisView poses).
- * @type {Readonly<Record<'NAVIGATION' | 'ANALYSIS', CameraPose>>}
+ * @type {Readonly<Record<'NAVIGATION' | 'ANALYSIS' | 'GALAXY', CameraPose>>}
  */
 export const VIEW_CAMERA_FALLBACKS = Object.freeze({
   NAVIGATION: Object.freeze({
@@ -33,6 +35,11 @@ export const VIEW_CAMERA_FALLBACKS = Object.freeze({
     // Captured ARITHMETIC + ANALYSIS + POINTS framing
     position: Object.freeze([-75.2, -0.8, 62.5]),
     rotationDeg: Object.freeze([0, 0, 0]),
+  }),
+  GALAXY: Object.freeze({
+    // Captured COMPARE + GALAXY default (CAM POSE overlay)
+    position: Object.freeze([25.5, 155.2, 328.9]),
+    rotationDeg: Object.freeze([-23.2, 14.0, 0]),
   }),
 });
 
@@ -56,7 +63,23 @@ export const CAMERA_DEFAULT_OVERRIDES = {
     position: [-575.8, 43.8, 237.9],
     rotationDeg: [-22.4, -35.7, 0],
   },
+  // Captured COMPARE + GALAXY + POINTS (CAM POSE overlay)
+  'COMPARE|GALAXY|POINTS': {
+    position: [25.5, 155.2, 328.9],
+    rotationDeg: [-23.2, 14.0, 0],
+  },
 };
+
+/**
+ * Normalize view id for camera lookup (Galaxy stays Galaxy; unknown → NAVIGATION).
+ * @param {string|undefined} rawView
+ * @returns {'ANALYSIS'|'NAVIGATION'|'GALAXY'}
+ */
+export function normalizeCameraViewMode(rawView) {
+  if (rawView === 'ANALYSIS') return 'ANALYSIS';
+  if (rawView === GALAXY_VIEW || rawView === 'GALAXY') return 'GALAXY';
+  return 'NAVIGATION';
+}
 
 /**
  * @param {{ workspaceMode?: string, viewMode?: string, renderMode?: string }} [ctx]
@@ -64,11 +87,10 @@ export const CAMERA_DEFAULT_OVERRIDES = {
  */
 export function resolveCameraPose(ctx = {}) {
   const workspaceMode = ctx.workspaceMode || DEFAULT_WORKSPACE_MODE;
-  const rawView = ctx.viewMode || DEFAULT_VIEW_MODE;
-  const viewMode = rawView === 'ANALYSIS' ? 'ANALYSIS' : 'NAVIGATION';
+  const viewMode = normalizeCameraViewMode(ctx.viewMode || DEFAULT_VIEW_MODE);
   const renderMode = ctx.renderMode || DEFAULT_RENDER_MODE;
 
-  const fallback = VIEW_CAMERA_FALLBACKS[viewMode];
+  const fallback = VIEW_CAMERA_FALLBACKS[viewMode] || VIEW_CAMERA_FALLBACKS.NAVIGATION;
   /** @type {CameraPose} */
   let out = {
     position: [...fallback.position],

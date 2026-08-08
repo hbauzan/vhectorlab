@@ -6,10 +6,44 @@ import {
   getGroupHueColor,
   normalizeGroupHueColors,
   colorForActivationWithGroupHue,
+  groupsForHueUi,
+  groupIdsForHueUi,
+  normalizeGroupHueRowSpecs,
 } from '../src/visualizer/groupHuePaint.js';
 import { anchorsFromSettings, resolveVisualizationSettings } from '../src/ui/visualizationControlsDefaults.js';
 
 describe('groupHuePaint', () => {
+  it('groupsForHueUi uses textarea groupLabel, keeps encounter order', () => {
+    expect(groupsForHueUi([
+      { groupId: 'animals', groupLabel: 'animals' },
+      { groupId: 'animals', groupLabel: 'animals' },
+      { groupId: 'it_core', groupLabel: 'it_core' },
+      { groupId: 'vehicles', groupLabel: 'vehicles' },
+    ])).toEqual([
+      { id: 'animals', label: 'animals' },
+      { id: 'it_core', label: 'it_core' },
+      { id: 'vehicles', label: 'vehicles' },
+    ]);
+    expect(groupIdsForHueUi([
+      { groupId: 'A', groupLabel: 'Alpha' },
+      { groupId: 'B', groupLabel: 'Beta' },
+    ])).toEqual(['A', 'B']);
+  });
+
+  it('normalizeGroupHueRowSpecs accepts ids or {id,label}', () => {
+    expect(normalizeGroupHueRowSpecs(['G1', 'G2'])).toEqual([
+      { id: 'G1', label: 'G1' },
+      { id: 'G2', label: 'G2' },
+    ]);
+    expect(normalizeGroupHueRowSpecs([
+      { id: 'G1', label: 'cars' },
+      { id: 'G2', label: 'women' },
+    ])).toEqual([
+      { id: 'G1', label: 'cars' },
+      { id: 'G2', label: 'women' },
+    ]);
+  });
+
   it('palette cycles stably', () => {
     expect(defaultGroupHueHexAt(0)).toBe(DEFAULT_GROUP_HUE_PALETTE[0]);
     expect(defaultGroupHueHexAt(DEFAULT_GROUP_HUE_PALETTE.length)).toBe(

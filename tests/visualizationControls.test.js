@@ -30,6 +30,7 @@ import {
   vizPanelTabGlyph,
   vizPanelLayoutForViewport,
   resolveVisualizationMountParent,
+  syncGroupHueColorRows,
 } from '../src/ui/VisualizationControls.js';
 import {
   NEAR_ZERO_EPS,
@@ -420,5 +421,43 @@ describe('remapAbsTWithZeroCoverage', () => {
   it('effectiveZeroCoveragePercent is 0 when Off', () => {
     expect(effectiveZeroCoveragePercent({ zeroCoverageEnabled: false, zeroCoverage: 80 })).toBe(0);
     expect(effectiveZeroCoveragePercent({ zeroCoverageEnabled: true, zeroCoverage: 80 })).toBe(80);
+  });
+
+  it('syncGroupHueColorRows uses textarea labels and scrolls past 3 groups', () => {
+    let rowsHtml = '';
+    let scrollable = false;
+    const host = {
+      classList: {
+        toggle: (cls, on) => {
+          if (cls === 'is-scrollable') scrollable = Boolean(on);
+        },
+      },
+      set innerHTML(v) { rowsHtml = String(v); },
+      get innerHTML() { return rowsHtml; },
+      querySelectorAll: () => [],
+    };
+    const container = {
+      querySelector: (sel) => {
+        if (sel === '#viz-group-hue-rows') return host;
+        return null;
+      },
+      querySelectorAll: () => [],
+    };
+    const config = resolveVisualizationSettings({ groupHueEnabled: true });
+    syncGroupHueColorRows(container, [
+      { id: 'animals', label: 'animals' },
+      { id: 'it_core', label: 'it_core' },
+      { id: 'women', label: 'women' },
+    ], config);
+    expect(rowsHtml).toContain('>animals<');
+    expect(rowsHtml).toContain('>it_core<');
+    expect(rowsHtml).toContain('>women<');
+    expect(rowsHtml).toContain('data-group-id="animals"');
+    expect(scrollable).toBe(false);
+
+    syncGroupHueColorRows(container, ['G1', 'G2', 'G3', 'G4'], config);
+    expect(rowsHtml).toContain('>G1<');
+    expect(rowsHtml).toContain('>G4<');
+    expect(scrollable).toBe(true);
   });
 });

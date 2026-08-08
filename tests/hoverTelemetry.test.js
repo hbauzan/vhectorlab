@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveHoverTelemetry,
   formatActivationValue,
+  formatHoverTokenLabel,
   estimateMonospaceChars,
   activationDisplayBudget,
   MAX_ACTIVATION_DECIMALS,
@@ -27,9 +28,39 @@ describe('resolveHoverTelemetry', () => {
     const t = resolveHoverTelemetry(data);
     expect(t.activation).toBe(-0.0421);
     expect(t.token).toBe('cat');
+    expect(t.tokenLabel).toBe('cat');
+    expect(t.groupLabel).toBeNull();
     expect(t.type).toBe('COMPARE');
     expect(t.dim).toBe(1);
     expect(t.point).toEqual({ x: 10, y: 2, z: 0 });
+  });
+
+  it('formats grouped token as group/token without spaces', () => {
+    expect(formatHoverTokenLabel('car', 'vehicles')).toBe('vehicles/car');
+    expect(formatHoverTokenLabel('car', null)).toBe('car');
+    expect(formatHoverTokenLabel('car', '')).toBe('car');
+
+    const t = resolveHoverTelemetry({
+      index: 0,
+      userData: {
+        pointsData: [{
+          activation: 0.2,
+          groupId: 'vehicles',
+          groupLabel: 'vehicles',
+          meta: {
+            type: 'compare',
+            token: 'car',
+            dim: 0,
+            val: 0.2,
+            groupId: 'vehicles',
+            groupLabel: 'vehicles',
+          },
+        }],
+      },
+    });
+    expect(t.token).toBe('car');
+    expect(t.groupLabel).toBe('vehicles');
+    expect(t.tokenLabel).toBe('vehicles/car');
   });
 
   it('maps ribbon actIdx through sourceDims when present', () => {
