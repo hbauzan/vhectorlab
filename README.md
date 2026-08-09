@@ -123,11 +123,22 @@ Copy `.env.example` → `.env` (option 1 does this if `.env` is missing). Common
 | :--- | :--- | :--- |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Backend listen address |
 | `MODEL_NAME` | `all-mpnet-base-v2` | Embedding model |
-| `VOCAB_PATH` | `public/vocab.txt` | App vocabulary file |
+| `VOCAB_PATH` | `public/vocab.txt` | App vocabulary file (use `public/vocab_en_es.txt` for EN∪ES) |
 | `VITE_API_BASE_URL` | `/api` | Browser API base URL |
 | `VITE_SHOW_CAM_POSE` | `false` | Live camera POS/ROT overlay (debug) |
 | `VITE_AMIGA_PEN_0`…`_7` | MagicWB pens | Workbench theme palette pens (`#RRGGBB`) |
 | `VITE_AMIGA_BG` / `_FG` / `_ACCENT` | `#222222` / `#F0F0F0` / `#3B67A2` | Page/panel bg, text, titlebar accent |
+
+### EN + ES vocabulary
+
+Default `public/vocab.txt` is English-only. For multilingual Arithmetic/Compare neighbors:
+
+```bash
+uv run python scripts/merge_vocab_en_es.py
+# → public/vocab_en_es.txt (~10k EN ∪ ES seed; includes king/rey … cat/gato)
+```
+
+Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/precompute_vocab_embeddings.py` or upcoming setup option 11). Languages beyond EN+ES are out of scope for now.
 
 ---
 
