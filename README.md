@@ -13,6 +13,8 @@ license: apache-2.0
 
 **A local study / laboratory tool for exploring semantic embeddings in 3D (WebGL). Not a production SaaS.**
 
+![VHectorLab 3D GUI tour — Arithmetic, Compare, Navigation, Ribbons, and Galaxy](./demo/vhectorlab-gui-tour.gif)
+
 3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`), plus compare sequences and related lab experiments.
 
 | | |
