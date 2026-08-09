@@ -71,10 +71,13 @@ class ProjectRequest(BaseModel):
 
 @router.get("/health")
 def health_check() -> dict[str, Any]:
+    selection = getattr(state, "selection", None)
+    short_label = getattr(selection, "short_label", None) if selection else None
     return {
         "status": "ok" if state.is_loaded else "uninitialized",
         "model": state.model_name,
         "model_profile": getattr(state, "model_profile", None),
+        "short_label": short_label,
         "embedding_dim": getattr(state, "embedding_dim", None),
         "truncate_dim": getattr(state, "truncate_dim", None),
         "vocab_size": len(state.vocab_words),

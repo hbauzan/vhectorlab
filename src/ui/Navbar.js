@@ -4,6 +4,7 @@
  * Mobile: overflow tab strip gets ◀ ▶ scroll arrows.
  */
 import { getTabsScrollState, nextTabsScrollLeft } from './navbarTabsScroll.js';
+import { formatOnlineStatusLabel } from './healthStatusLabel.js';
 import {
   DEFAULT_RENDER_MODE,
   DEFAULT_VIEW_MODE,
@@ -277,15 +278,24 @@ export class Navbar {
     });
   }
 
-  setStatus(online, modelName = '', device = '') {
+  setStatus(online, healthOrModel = '', device = '') {
     if (online) {
       this.statusDot.className = 'status-dot online';
-      const model = String(modelName || '').trim();
-      const dev = String(device || '').trim().toLowerCase();
-      let label = 'ONLINE';
-      if (model && dev) label = `ONLINE (${model} · ${dev})`;
-      else if (model) label = `ONLINE (${model})`;
-      else if (dev) label = `ONLINE (${dev})`;
+      let label;
+      if (healthOrModel && typeof healthOrModel === 'object') {
+        label = formatOnlineStatusLabel({
+          model: healthOrModel.model,
+          modelProfile: healthOrModel.model_profile,
+          shortLabel: healthOrModel.short_label,
+          embeddingDim: healthOrModel.embedding_dim,
+          device: healthOrModel.device ?? device,
+        });
+      } else {
+        label = formatOnlineStatusLabel({
+          model: healthOrModel,
+          device,
+        });
+      }
       this.statusText.textContent = label;
       this.statusDot.title = label;
       this.statusText.title = label;
