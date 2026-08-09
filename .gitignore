@@ -34,6 +34,11 @@ public/vocab_embeddings.npz
 # Local AI regeneration blueprint (do not publish)
 CONTEXT_HAB.MD
 
+# Demo GIF capture tooling / scratch (published tour GIF is tracked)
+scripts/capture-galaxy-demo.mjs
+demo/**
+!demo/vhectorlab-gui-tour.gif
+
 # Logs & temp
 *.log
 .DS_Store
