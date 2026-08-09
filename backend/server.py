@@ -14,8 +14,10 @@ _root_dir = str(Path(__file__).resolve().parent.parent)
 if _root_dir not in sys.path:
     sys.path.insert(0, _root_dir)
 
+from backend.model_catalog import resolve_selection_from_env
 from backend.routers.core import router as core_router
 from backend.routers.sae import router as sae_router
+from backend.routers.sae import sae_manager
 from backend.state import state
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,19 +29,21 @@ logger = logging.getLogger("vhectorlab")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing VHectorLab 3D backend lifespan...")
-    model_name = os.getenv("MODEL_NAME", "all-mpnet-base-v2")
     vocab_path = os.getenv("VOCAB_PATH", "public/vocab.txt")
     vocab_embeddings_path = os.getenv(
         "VOCAB_EMBEDDINGS_PATH", "public/vocab_embeddings.npz"
     )
+    selection = resolve_selection_from_env()
 
     # Lazy load model and vocabulary into AppState
     try:
         state.load_model_and_vocab(
-            model_name=model_name,
             vocab_path=vocab_path,
             vocab_embeddings_path=vocab_embeddings_path,
+            selection=selection,
         )
+        if state.embedding_dim is not None:
+            sae_manager.clear_if_dim_mismatch(state.embedding_dim)
     except Exception as e:  # noqa: BLE001
         logger.error(f"Error loading model/vocab in lifespan: {e}")
 
@@ -70,10 +74,9 @@ app.include_router(core_router)  # Also expose without /api prefix for convenien
 app.include_router(sae_router)
 
 # Mount static frontend files if dist/ exists (Docker / Production mode)
+from backend.static_dist import resolve_dist_file
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-
-from backend.static_dist import resolve_dist_file
 
 dist_path = Path(__file__).resolve().parent.parent / "dist"
 if dist_path.exists():
