@@ -15,12 +15,17 @@ if _root_dir not in sys.path:
     sys.path.insert(0, _root_dir)
 
 from backend.model_catalog import resolve_selection_from_env
+from backend.model_swap import apply_dotenv
 from backend.routers.core import router as core_router
 from backend.routers.sae import router as sae_router
 from backend.routers.sae import sae_manager
 from backend.state import state
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Repo-root `.env` (setup.sh option 11 / option 1). `uv run` from backend/ does not
+# load it automatically — without this, MODEL_* stay unset and default to mpnet.
+apply_dotenv(Path(_root_dir) / ".env")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vhectorlab")

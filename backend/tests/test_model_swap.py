@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
 from backend.model_catalog import resolve_profile
 from backend.model_swap import (
+    apply_dotenv,
     apply_model_swap,
     commit_env,
     format_menu_lines,
@@ -16,6 +18,51 @@ from backend.model_swap import (
     stage_env,
     upsert_dotenv,
 )
+
+
+def test_apply_dotenv_sets_missing_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    path = tmp_path / ".env"
+    path.write_text(
+        "MODEL_PROFILE=local-comfort\n"
+        "MODEL_NAME=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("MODEL_PROFILE", raising=False)
+    monkeypatch.delenv("MODEL_NAME", raising=False)
+    monkeypatch.setenv("HOST", "keep-me")
+
+    apply_dotenv(path)
+
+    assert os.environ["MODEL_PROFILE"] == "local-comfort"
+    assert (
+        os.environ["MODEL_NAME"]
+        == "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    )
+    assert os.environ["HOST"] == "keep-me"
+
+
+def test_apply_dotenv_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    path = tmp_path / ".env"
+    path.write_text("MODEL_NAME=from-file\n", encoding="utf-8")
+    monkeypatch.setenv("MODEL_NAME", "from-process")
+
+    apply_dotenv(path)
+    assert os.environ["MODEL_NAME"] == "from-process"
+
+    apply_dotenv(path, override=True)
+    assert os.environ["MODEL_NAME"] == "from-file"
+
+
+def test_backend_proc_pattern_matches_python3_m_server():
+    """Regression: setup.sh used to pkill only `python -m server`, missing python3."""
+    import re
+
+    # Mirrors setup.sh BACKEND_PROC_PATTERN (POSIX [[:space:]] ≈ \\s here).
+    pattern = re.compile(r"backend\.server:app|-m\s+server")
+    assert pattern.search("/venv/bin/python3 -m server")
+    assert pattern.search("uv run python -m server")
+    assert not pattern.search("python -m pytest")
+
 
 
 def test_upsert_dotenv_preserves_comments(tmp_path: Path):
