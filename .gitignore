@@ -31,6 +31,9 @@ htmlcov/
 !backend/artifacts/.gitkeep
 public/vocab_embeddings.npz
 
+# Local AI regeneration blueprint (do not publish)
+CONTEXT_HAB.MD
+
 # Logs & temp
 *.log
 .DS_Store
