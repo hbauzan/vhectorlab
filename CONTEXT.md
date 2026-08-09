@@ -78,6 +78,20 @@ _Avoid_: parallel MPA skins (`/v25/`, `/amiga/` — retired in 2.4.1); multi-zon
 ### Top‑K SAE
 Trained sparse autoencoder with exactly K active latents per input (ReLU + Top‑K, no L1 shrinkage). Trained on the **current workspace scope** (Compare/Arithmetic batch); ephemeral in-RAM session model. Default caps 768 → 8192 with K=32 (auto-scaled for small N).
 
+### Embedding Catalog
+Backend single source of truth (`model_catalog`) listing allowed SentenceTransformer Hub IDs plus flags (E5 mode, trust_remote_code, gated, default truncate).
+
+### Model Profile
+Named local preset (`local-comfort`, `local-full`, `hf-demo`) that resolves to a catalog Hub ID and optional `TRUNCATE_DIM`. Selected only from `setup.sh` option 11 — not from the web UI.
+
+### Active Model
+The one SentenceTransformer loaded in the backend process; exposed on `/health` as `model` / `short_label` / `embedding_dim` / `device` (and `model_profile` when set).
+
+### Truncate Dim
+Optional Matryoshka width (`TRUNCATE_DIM`) applied after encode; effective `embedding_dim` is the truncated width when set.
+
+_Avoid_: generative LLM “embeddings”; multi-model residency; in-app model switcher; HF Space model policy changes without approval gates.
+
 ### Clean/Denoise (SAE)
 Compare-only toggle that replaces raw 768D embeddings with SAE sparse activations for 3D threads and cosine while ON. Requires Train SAE on current Visualize data; scope changes clear the session model. Not available in Arithmetic.
 
