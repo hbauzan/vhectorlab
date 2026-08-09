@@ -75,11 +75,11 @@ describe('galaxyChrome', () => {
     expect(GALAXY_METHODS.tsne.title).toMatch(/Coming next/i);
   });
 
-  it('startup defaults are COMPARE | GALAXY | POINTS', () => {
-    expect(DEFAULT_WORKSPACE_MODE).toBe('COMPARE');
-    expect(DEFAULT_VIEW_MODE).toBe(GALAXY_VIEW);
+  it('startup defaults are ARITHMETIC | ANALYSIS | POINTS', () => {
+    expect(DEFAULT_WORKSPACE_MODE).toBe('ARITHMETIC');
+    expect(DEFAULT_VIEW_MODE).toBe('ANALYSIS');
     expect(DEFAULT_RENDER_MODE).toBe('POINTS');
-    // snapshotTriad empty fallbacks stay non-Galaxy (leave-Galaxy safety)
+    // snapshotTriad empty fallbacks match startup (leave-Galaxy safety)
     expect(snapshotTriad({})).toEqual({
       workspaceMode: 'ARITHMETIC',
       viewMode: 'ANALYSIS',

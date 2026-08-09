@@ -59,7 +59,8 @@ describe('galaxyPipeline', () => {
     expect(project).toHaveBeenCalledOnce();
     expect(result.positions).toEqual([[0, 0, 0], [1, 1, 1]]);
     expect(result.reusedCompare).toBe(false);
-    expect(progress).toEqual([
+    // Soft in-step ticker may repeat the same label; assert step order uniqueness.
+    expect([...new Set(progress)]).toEqual([
       '1/3 Encoding tokens…',
       '2/3 Running UMAP…',
       '3/3 Building galaxy…',
@@ -97,7 +98,7 @@ describe('galaxyPipeline', () => {
     expect(encodeSae).toHaveBeenCalledOnce();
     expect(result.reusedCompare).toBe(true);
     expect(result.displayData.featureSpace).toBe('SAE');
-    expect(progress).toEqual([
+    expect([...new Set(progress)]).toEqual([
       '1/4 Encoding tokens…',
       '2/4 Applying SAE…',
       '3/4 Running UMAP…',
