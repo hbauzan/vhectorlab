@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 
 logger = logging.getLogger("sae_model")
 
@@ -99,6 +99,42 @@ class SAEManager:
                 logger.info("Deleted SAE checkpoint %s", self.weights_path)
             except OSError as e:
                 logger.warning("Could not delete SAE checkpoint: %s", e)
+
+    def clear_if_dim_mismatch(self, embedding_dim: int) -> bool:
+        """
+        Clear SAE RAM (+ delete checkpoint) when stored input_dim ≠ embedding_dim (M10).
+
+        Returns True if something was cleared. No-op when SAE is empty or dims match.
+        """
+        stored: int | None = None
+        if self.config.get("input_dim") is not None:
+            stored = int(self.config["input_dim"])
+        elif self.model is not None:
+            stored = int(self.model.input_dim)
+        elif self.has_checkpoint_file():
+            try:
+                checkpoint = torch.load(self.weights_path, map_location="cpu")
+                cfg = checkpoint.get("config") or {}
+                if cfg.get("input_dim") is not None:
+                    stored = int(cfg["input_dim"])
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    "Could not read SAE checkpoint dim (%s); clearing to be safe.", e
+                )
+                self.clear(delete_file=True)
+                return True
+
+        if stored is None:
+            return False
+        if stored == int(embedding_dim):
+            return False
+        logger.warning(
+            "SAE input_dim=%s != embedding_dim=%s — clearing session SAE.",
+            stored,
+            embedding_dim,
+        )
+        self.clear(delete_file=True)
+        return True
 
     def unload(self) -> None:
         """Drop RAM only (keep file on disk)."""
