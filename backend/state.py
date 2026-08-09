@@ -9,6 +9,12 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from backend.model_catalog import (
+    ModelSelection,
+    build_model,
+    encode_texts,
+    resolve_selection_from_env,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +29,9 @@ def _resolve_path(vocab_path: str) -> Path | None:
     return None
 
 
-def load_vocab_embeddings_npz(npz_path: Path) -> tuple[list[str], np.ndarray, str | None]:
+def load_vocab_embeddings_npz(
+    npz_path: Path,
+) -> tuple[list[str], np.ndarray, str | None]:
     """
     Load precomputed vocab embeddings NPZ.
     Returns (words, embeddings float32 L2-normalized, model_name or None).
@@ -48,17 +56,46 @@ class AppState:
     def __init__(self):
         self.model = None
         self.model_name: str = "all-mpnet-base-v2"
+        self.model_profile: str | None = None
+        self.truncate_dim: int | None = None
+        self.embedding_dim: int | None = None
+        self.selection: ModelSelection | None = None
         self.vocab_words: list[str] = []
         self.vocab_embeddings: np.ndarray | None = None  # Normalized (N, D)
         self.is_loaded: bool = False
         self.device: str = "cpu"
 
+    def _apply_selection(self, selection: ModelSelection) -> None:
+        self.selection = selection
+        self.model_name = selection.hub_id
+        self.model_profile = selection.profile
+        self.truncate_dim = selection.truncate_dim
+
+    def _set_embedding_dim_from_model(self) -> None:
+        dim: int | None = None
+        if self.model is not None and hasattr(
+            self.model, "get_sentence_embedding_dimension"
+        ):
+            try:
+                dim = int(self.model.get_sentence_embedding_dimension())
+            except Exception:  # noqa: BLE001
+                dim = None
+        if dim is None and self.vocab_embeddings is not None:
+            dim = int(self.vocab_embeddings.shape[1])
+        if dim is not None and self.truncate_dim is not None:
+            dim = min(dim, self.truncate_dim)
+        self.embedding_dim = dim
+
     def load_model_and_vocab(
         self,
-        model_name: str = "all-mpnet-base-v2",
+        model_name: str | None = None,
         vocab_path: str = "public/vocab.txt",
         vocab_embeddings_path: str | None = None,
         device_env: str | None = None,
+        *,
+        selection: ModelSelection | None = None,
+        model_profile: str | None = None,
+        truncate_dim: int | None = None,
     ) -> None:
         """
         Lazy loads PyTorch SentenceTransformer model and vocabulary embeddings.
@@ -70,18 +107,28 @@ class AppState:
             return
 
         from backend.device import get_optimal_device
-        from sentence_transformers import SentenceTransformer
 
-        env_device = device_env if device_env is not None else os.getenv("SAE_DEVICE", "AUTO")
+        if selection is None:
+            selection = resolve_selection_from_env(
+                profile=model_profile,
+                model_name=model_name,
+                truncate_dim=truncate_dim,
+            )
+        self._apply_selection(selection)
+
+        env_device = (
+            device_env if device_env is not None else os.getenv("SAE_DEVICE", "AUTO")
+        )
         self.device = get_optimal_device(env_device)
 
         logger.info(
-            "Loading SentenceTransformer model: %s (device=%s)...",
-            model_name,
+            "Loading SentenceTransformer model: %s (profile=%s truncate_dim=%s device=%s)...",
+            selection.hub_id,
+            selection.profile,
+            selection.truncate_dim,
             self.device,
         )
-        self.model_name = model_name
-        self.model = SentenceTransformer(model_name, device=self.device)
+        self.model = build_model(selection, device=self.device)
 
         embeddings_env = (
             vocab_embeddings_path
@@ -93,23 +140,44 @@ class AppState:
         if npz_path is not None:
             try:
                 words, embeddings, cached_model = load_vocab_embeddings_npz(npz_path)
-                if cached_model and cached_model != model_name:
+                if cached_model and cached_model not in (
+                    selection.hub_id,
+                    selection.hub_id.split("/")[-1],
+                    self.model_name,
+                ):
                     logger.warning(
                         "Vocab NPZ model_name=%r differs from MODEL_NAME=%r — using NPZ vectors anyway.",
                         cached_model,
-                        model_name,
+                        selection.hub_id,
+                    )
+                if (
+                    selection.truncate_dim is not None
+                    and embeddings.shape[1] != selection.truncate_dim
+                ):
+                    logger.warning(
+                        "Vocab NPZ dim=%s differs from truncate_dim=%s — using NPZ as-is.",
+                        embeddings.shape[1],
+                        selection.truncate_dim,
                     )
                 self.vocab_words = words
                 self.vocab_embeddings = embeddings
                 self.is_loaded = True
+                self._set_embedding_dim_from_model()
+                if self.embedding_dim is None:
+                    self.embedding_dim = int(embeddings.shape[1])
                 logger.info(
-                    "AppState loading complete (vocab from NPZ: %s words, %s).",
+                    "AppState loading complete (vocab from NPZ: %s words, dim=%s, %s).",
                     len(words),
+                    self.embedding_dim,
                     npz_path,
                 )
                 return
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Failed to load vocab NPZ %s (%s); encoding from text.", npz_path, exc)
+                logger.warning(
+                    "Failed to load vocab NPZ %s (%s); encoding from text.",
+                    npz_path,
+                    exc,
+                )
 
         path = _resolve_path(vocab_path)
         if path is None:
@@ -117,6 +185,7 @@ class AppState:
             self.vocab_words = []
             self.vocab_embeddings = None
             self.is_loaded = True
+            self._set_embedding_dim_from_model()
             return
 
         with open(path, encoding="utf-8") as f:
@@ -126,29 +195,23 @@ class AppState:
         logger.info("Encoding %s vocabulary words into embeddings...", len(words))
 
         if words:
-            raw_embeddings = self.model.encode(
-                words, show_progress_bar=False, convert_to_numpy=True
+            self.vocab_embeddings = encode_texts(
+                self.model, words, selection, show_progress_bar=False
             )
-            norms = np.linalg.norm(raw_embeddings, axis=1, keepdims=True)
-            norms[norms == 0] = 1e-9
-            self.vocab_embeddings = raw_embeddings / norms
         else:
             self.vocab_embeddings = None
 
         self.is_loaded = True
-        logger.info("AppState loading complete.")
+        self._set_embedding_dim_from_model()
+        logger.info("AppState loading complete (embedding_dim=%s).", self.embedding_dim)
 
     def compute_embedding(self, text: str) -> np.ndarray:
         """Computes L2-normalized embedding for a single text query."""
-        if self.model is None:
+        if self.model is None or self.selection is None:
             raise RuntimeError(
                 "Model is not loaded. Ensure lifespan initialized AppState."
             )
-        raw = self.model.encode(text, convert_to_numpy=True)
-        norm = np.linalg.norm(raw)
-        if norm == 0:
-            norm = 1e-9
-        return raw / norm
+        return encode_texts(self.model, text, self.selection)
 
     def perform_arithmetic(
         self, word_a: str, word_b: str, word_c: str, top_k: int = 10
@@ -211,9 +274,13 @@ class AppState:
                 "vec_a": vec_a.tolist(),
                 "vec_b": vec_b.tolist(),
                 "vec_c": vec_c.tolist(),
-                "vec_top1": top1_vec if top1_vec is not None else normalized_res.tolist(),
+                "vec_top1": top1_vec
+                if top1_vec is not None
+                else normalized_res.tolist(),
             },
-            "top1_word": top1_word if top1_word else (results[0]["word"] if results else ""),
+            "top1_word": top1_word
+            if top1_word
+            else (results[0]["word"] if results else ""),
             "results": results,
         }
 
@@ -222,34 +289,28 @@ class AppState:
         Computes L2-normalized embeddings for a sequence of 1 to 1024 token/text items.
         Each item includes cosine_vs_first = dot(emb_i, emb_0) (embeddings already L2-normalized).
         """
-        if self.model is None:
+        if self.model is None or self.selection is None:
             raise RuntimeError("AppState not initialized with model.")
 
         cleaned = [t.strip() for t in texts if t.strip()][:1024]
         if not cleaned:
             return {"count": 0, "anchor": None, "items": []}
 
-        raw_embeddings = self.model.encode(
-            cleaned, show_progress_bar=False, convert_to_numpy=True
-        )
-        if raw_embeddings.ndim == 1:
-            raw_embeddings = raw_embeddings.reshape(1, -1)
-
-        norms = np.linalg.norm(raw_embeddings, axis=1, keepdims=True)
-        norms[norms == 0] = 1e-9
-        normalized = raw_embeddings / norms
+        normalized = encode_texts(self.model, cleaned, self.selection)
 
         anchor_vec = normalized[0]
         items = []
         for idx, text in enumerate(cleaned):
             cosine = float(np.dot(normalized[idx], anchor_vec))
-            items.append({
-                "id": f"tok_{idx}",
-                "index": idx,
-                "text": text,
-                "embedding": normalized[idx].tolist(),
-                "cosine_vs_first": cosine,
-            })
+            items.append(
+                {
+                    "id": f"tok_{idx}",
+                    "index": idx,
+                    "text": text,
+                    "embedding": normalized[idx].tolist(),
+                    "cosine_vs_first": cosine,
+                }
+            )
 
         return {
             "count": len(items),

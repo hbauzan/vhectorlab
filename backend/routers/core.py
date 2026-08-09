@@ -74,6 +74,9 @@ def health_check() -> dict[str, Any]:
     return {
         "status": "ok" if state.is_loaded else "uninitialized",
         "model": state.model_name,
+        "model_profile": getattr(state, "model_profile", None),
+        "embedding_dim": getattr(state, "embedding_dim", None),
+        "truncate_dim": getattr(state, "truncate_dim", None),
         "vocab_size": len(state.vocab_words),
         "is_loaded": state.is_loaded,
         "device": getattr(state, "device", "cpu"),
