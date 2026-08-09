@@ -2,10 +2,14 @@
 """
 Precompute L2-normalized vocabulary embeddings for fast Space/Docker boot.
 
+Uses the embedding catalog adapter (E5 prefixes / truncate_dim / L2).
+
 Writes NPZ with keys:
   words: object array of strings (lowercased, same order as vocab.txt)
   embeddings: float32 (N, D) L2-normalized
-  model_name: scalar string
+  model_name: scalar string (Hub id)
+  embedding_dim: scalar int
+  truncate_dim: scalar int (optional; only when set)
 """
 
 from __future__ import annotations
@@ -15,8 +19,6 @@ import os
 import sys
 from pathlib import Path
 
-import numpy as np
-
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
@@ -24,12 +26,13 @@ def _repo_root() -> Path:
 
 def precompute(
     *,
-    model_name: str,
+    selection,
     vocab_path: Path,
     out_path: Path,
     device: str,
 ) -> None:
-    from sentence_transformers import SentenceTransformer
+    from backend.model_catalog import build_model, encode_texts
+    from backend.vocab_embeddings import save_vocab_embeddings_npz
 
     if not vocab_path.is_file():
         raise FileNotFoundError(f"Vocab not found: {vocab_path}")
@@ -40,21 +43,22 @@ def precompute(
     if not words:
         raise ValueError(f"Empty vocabulary: {vocab_path}")
 
-    print(f"Loading model {model_name!r} on {device!r}…")
-    model = SentenceTransformer(model_name, device=device)
+    print(
+        f"Loading model {selection.hub_id!r} "
+        f"(truncate_dim={selection.truncate_dim!r}, e5_mode={selection.e5_mode}) "
+        f"on {device!r}…"
+    )
+    model = build_model(selection, device=device)
 
     print(f"Encoding {len(words)} words…")
-    raw = model.encode(words, show_progress_bar=True, convert_to_numpy=True)
-    norms = np.linalg.norm(raw, axis=1, keepdims=True)
-    norms[norms == 0] = 1e-9
-    embeddings = (raw / norms).astype(np.float32)
+    embeddings = encode_texts(model, words, selection, show_progress_bar=True)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(
+    save_vocab_embeddings_npz(
         out_path,
-        words=np.array(words, dtype=object),
+        words=words,
         embeddings=embeddings,
-        model_name=np.array(model_name),
+        model_name=selection.hub_id,
+        truncate_dim=selection.truncate_dim,
     )
     size_mb = out_path.stat().st_size / (1024 * 1024)
     print(f"Wrote {out_path} ({size_mb:.1f} MiB, shape={embeddings.shape})")
@@ -62,10 +66,28 @@ def precompute(
 
 def main() -> int:
     root = _repo_root()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+
+    from backend.device import get_optimal_device
+    from backend.model_catalog import resolve_selection
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--model",
         default=os.getenv("MODEL_NAME", "all-mpnet-base-v2"),
+        help="Hub id or bare catalog name (ignored when --profile is set)",
+    )
+    parser.add_argument(
+        "--profile",
+        default=os.getenv("MODEL_PROFILE") or None,
+        help="Named profile: local-comfort | local-full | hf-demo",
+    )
+    parser.add_argument(
+        "--truncate-dim",
+        type=int,
+        default=None,
+        help="Matryoshka truncate width (overrides profile default; env TRUNCATE_DIM)",
     )
     parser.add_argument(
         "--vocab",
@@ -89,14 +111,22 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    sys.path.insert(0, str(root))
-    from backend.device import get_optimal_device
+    truncate = args.truncate_dim
+    if truncate is None:
+        raw = os.getenv("TRUNCATE_DIM", "").strip()
+        truncate = int(raw) if raw else None
+
+    selection = resolve_selection(
+        profile=args.profile,
+        model_name=args.model,
+        truncate_dim=truncate,
+    )
 
     vocab = args.vocab if args.vocab.is_absolute() else root / args.vocab
     out = args.out if args.out.is_absolute() else root / args.out
     device = get_optimal_device(args.device)
 
-    precompute(model_name=args.model, vocab_path=vocab, out_path=out, device=device)
+    precompute(selection=selection, vocab_path=vocab, out_path=out, device=device)
     return 0
 
 
