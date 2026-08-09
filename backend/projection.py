@@ -61,6 +61,32 @@ def _normalize_positions(pos: np.ndarray) -> np.ndarray:
     return centered / rms
 
 
+def _project_small_n(
+    mat: np.ndarray, *, n_components: int, seed: int
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """
+    Deterministic layout when UMAP cannot run (n < 3).
+
+    n=1 → origin; n=2 → PCA to 1D padded to n_components (pair on an axis).
+    """
+    n_samples, dim = mat.shape
+    if n_samples == 1:
+        pos = np.zeros((1, n_components), dtype=np.float64)
+        return pos, {"fallback": "origin"}
+
+    from sklearn.decomposition import PCA
+
+    k = min(n_samples - 1, n_components, dim)
+    if k < 1:
+        pos = np.zeros((n_samples, n_components), dtype=np.float64)
+        return pos, {"fallback": "origin"}
+
+    reduced = PCA(n_components=k, random_state=seed).fit_transform(mat)
+    pos = np.zeros((n_samples, n_components), dtype=np.float64)
+    pos[:, :k] = reduced
+    return pos, {"fallback": "pca_micro", "pca_components": int(k)}
+
+
 def _resolve_umap_params(
     n_samples: int, params: dict[str, Any] | None
 ) -> dict[str, Any]:
@@ -117,10 +143,18 @@ def project_embeddings(
     mat = _as_matrix(vectors)
     n_samples, dim = mat.shape
 
-    # Need at least n_components + 1 points for a meaningful UMAP; allow smaller
-    # with clamped neighbors (smoke / edge cases).
+    # UMAP needs ≥3 samples; 1–2 tokens still valid in Token Comparison / Galaxy.
     if n_samples < 3:
-        raise ProjectError("UMAP requires at least 3 vectors")
+        embedded, fallback_meta = _project_small_n(
+            mat, n_components=n_components, seed=seed
+        )
+        positions = _normalize_positions(np.asarray(embedded, dtype=np.float64))
+        return {
+            "method": "umap",
+            "n_components": n_components,
+            "positions": positions.tolist(),
+            "meta": {"seed": seed, **fallback_meta},
+        }
 
     umap_params = _resolve_umap_params(n_samples, params)
     pre_pca_dims: int | None = None

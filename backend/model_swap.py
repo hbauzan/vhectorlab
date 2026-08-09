@@ -77,6 +77,21 @@ def read_dotenv(path: Path) -> dict[str, str]:
     return values
 
 
+def apply_dotenv(path: Path, *, override: bool = False) -> dict[str, str]:
+    """
+    Load KEY=VAL from a .env file into os.environ.
+
+    By default does not override variables already set in the process environment
+    (explicit exports / systemd / CI win). Used by the backend so option 1 and
+    option 11 honor the repo-root `.env` even when `uv run` cwd is `backend/`.
+    """
+    values = read_dotenv(path)
+    for key, value in values.items():
+        if override or key not in os.environ:
+            os.environ[key] = value
+    return values
+
+
 def upsert_dotenv(path: Path, updates: dict[str, str | None]) -> None:
     """
     Upsert keys in a .env file. Value None removes the key line.

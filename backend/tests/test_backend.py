@@ -79,11 +79,12 @@ def test_app_endpoints():
 def test_perform_compare_cosine_vs_first_with_stub_model():
     """Unit: cosine_vs_first = dot(emb_i, emb_0) on L2-normalized embeddings; anchor is first token."""
     import numpy as np
+    from backend.model_catalog import ModelSelection
     from backend.state import AppState
 
     class StubModel:
         def encode(self, texts, show_progress_bar=False, convert_to_numpy=True):
-            # Orthogonal-ish known vectors (will be L2-normalized by perform_compare)
+            # Orthogonal-ish known vectors (will be L2-normalized by encode_texts)
             table = {
                 "a": np.array([3.0, 0.0, 0.0], dtype=np.float64),
                 "b": np.array([0.0, 4.0, 0.0], dtype=np.float64),
@@ -93,14 +94,24 @@ def test_perform_compare_cosine_vs_first_with_stub_model():
 
     app_state = AppState()
     app_state.model = StubModel()
+    # perform_compare routes through encode_texts(selection); stub is not E5.
+    app_state.selection = ModelSelection(
+        hub_id="stub/local",
+        profile=None,
+        trust_remote_code=False,
+        e5_mode=False,
+        truncate_dim=None,
+        gated=False,
+        short_label="stub",
+    )
 
     data = app_state.perform_compare(["a", "b", "c"])
 
     assert data["count"] == 3
     assert data["anchor"] == {"index": 0, "text": "a"}
-    assert data["items"][0]["cosine_vs_first"] == pytest.approx(1.0, abs=1e-9)
-    # â=[1,0,0], b̂=[0,1,0] → cos=0; ĉ=[0.6,0.8,0] → cos=0.6
+    assert data["items"][0]["cosine_vs_first"] == pytest.approx(1.0, abs=1e-6)
+    # â=[1,0,0], b̂=[0,1,0] → cos=0; ĉ=[0.6,0.8,0] → cos=0.6 (float32 encode path)
     assert data["items"][1]["text"] == "b"
-    assert data["items"][1]["cosine_vs_first"] == pytest.approx(0.0, abs=1e-9)
+    assert data["items"][1]["cosine_vs_first"] == pytest.approx(0.0, abs=1e-6)
     assert data["items"][2]["text"] == "c"
-    assert data["items"][2]["cosine_vs_first"] == pytest.approx(0.6, abs=1e-9)
+    assert data["items"][2]["cosine_vs_first"] == pytest.approx(0.6, abs=1e-6)
