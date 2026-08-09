@@ -30,6 +30,7 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
   "status": "ok",
   "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "model_profile": "local-comfort",
+  "short_label": "MiniLM-multi",
   "embedding_dim": 384,
   "truncate_dim": null,
   "device": "mps",
@@ -37,7 +38,7 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
   "vocab_size": 12345
 }
 ```
-`model_profile` / `truncate_dim` may be `null` when unset. `embedding_dim` is the effective width after truncate.
+`model_profile` / `truncate_dim` / `short_label` may be `null` when unset. `embedding_dim` is the effective width after truncate. Navbar ONLINE chip uses profile (if any) · short_label · `{D}D` · device.
 
 #### Arithmetic
 ```json

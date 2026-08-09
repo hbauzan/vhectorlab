@@ -754,7 +754,7 @@ class VHectorLabApp {
     const health = await this.provider.checkHealth();
     if (health.ok) {
       state.setBackendConnected(true);
-      this.navbar.setStatus(true, health.data.model, health.data.device);
+      this.navbar.setStatus(true, health.data);
       await this.refreshSaeStatusUi();
 
       if (state.workspaceMode === 'COMPARE' || isGalaxyView(this.viewMode)) {
