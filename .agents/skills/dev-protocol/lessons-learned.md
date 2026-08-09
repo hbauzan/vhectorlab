@@ -185,6 +185,11 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
   - El dock host mantiene `overflow: hidden` / `fit-content` — scroll interno vive en listas (§4.1 Top-10 / §4.2 cosine), no en el dock.
 - **Invariante**: collapse ≠ unmount; MODE no resetea el dock izquierdo; HUD bottom ∉ docks.
 
+### 4.3b. Boot / Galaxy progress overlay
+- **Problema**: El strip `#galaxy-progress` vive en el dock izquierdo (a menudo colapsado, o el panel Compare aún oculto al venir de ARITHMETIC) → canvas vacío sin feedback al entrar a Galaxy / cold start.
+- **Solución**: `BootProgress` overlay fixed full-viewport (`#boot-progress`) + mirror al strip del Compare panel; `withSoftStepProgress` mueve la barra *dentro* de cada paso del pipeline.
+- **Invariante**: progreso de Galaxy siempre visible sobre el canvas; no depender del dock.
+
 ### 4.5. Control Espacial 3D — defaults = mid del rango + steps finos + dblclick reset
 - **Problema**: Rangos históricos asimétricos (Distancia Y / Grosor con default = min; Amplitud hasta 240) dejan el thumb pegado a un extremo al load — solo se puede agrandar, no afinar alrededor del punto dulce. Steps gruesos (enteros / 0.1 en rangos chicos) impiden valores intermedios. Sin gesto de reset, volver al punto dulce exige adivinar el valor.
 - **Solución Obligatoria**: Un solo set global de min/max (mismo track en todas las combos MODE|VIEW|RENDER). Separación $X$ ∈ $[0.4,2.0]$ step $0.05$ (COMPARE default $0.7$ se conserva; global $0.4$ en el min). Distancia $Y=10$ ∈ $[1,19]$ step $0.1$, Amplitud $Y=7$ ∈ $[1,40]$ step $0.1$ (**asimétrico**: default global 7 y override Analysis 40 se conservan; COMPARE Amp $4.9$ no fuerza mid). Longitud $Z$ ∈ $[0.001,0.2]$ step $0.001$ (nunca 0; COMPARE $0.1$ ≈ mid; global $0.2$ en el max; label 3 dec). Grosor $=0.05$ ∈ $[0.01,0.09]$ step $0.01$. Labels: 2 dec (X/Grosor), 3 dec (Z), 1 dec (Y). Defaults vía `resolveSpatialDefaults` / overrides por clave. **Doble clic** restaura solo ese slider al default del contexto.

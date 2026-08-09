@@ -46,6 +46,15 @@ describe('isUiTouchTarget', () => {
     expect(isUiTouchTarget(tip)).toBe(true);
   });
 
+  it('treats boot/Galaxy progress overlay as UI', () => {
+    const overlay = {
+      id: 'boot-progress',
+      tagName: 'DIV',
+      closest: (sel) => (sel.includes('#boot-progress') ? overlay : null),
+    };
+    expect(isUiTouchTarget(overlay)).toBe(true);
+  });
+
   it('allows bare canvas', () => {
     const canvas = { tagName: 'CANVAS', closest: () => null };
     expect(isUiTouchTarget(canvas)).toBe(false);

@@ -77,6 +77,7 @@ import {
   saveArithmeticSettings,
 } from './ui/arithmeticDefaults.js';
 import { ComparePanel, getCompareBootstrap } from './ui/ComparePanel.js';
+import { BootProgress, yieldToPaint } from './ui/BootProgress.js';
 import { CollapsibleDock, isMobileViewport, MOBILE_MQ } from './ui/CollapsibleDock.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
 import { TouchControls } from './ui/TouchControls.js';
@@ -107,7 +108,7 @@ class VHectorLabApp {
     // 2. HTTP Remote Provider Client
     this.provider = new RemoteProvider();
 
-    // 3. View Mode State — startup COMPARE | GALAXY | POINTS
+    // 3. View Mode State — startup ARITHMETIC | ANALYSIS | POINTS
     this.viewMode = DEFAULT_VIEW_MODE;
     /** @type {{ workspaceMode: string, viewMode: string, renderMode: string }|null} */
     this._preGalaxyTriad = null;
@@ -124,6 +125,7 @@ class VHectorLabApp {
     this.hud = new HUD(this.appContainer, {
       showCamPose: import.meta.env.VITE_SHOW_CAM_POSE === 'true'
     });
+    this.bootProgress = new BootProgress(this.appContainer);
     this.threadLabels = new ThreadLabels(this.appContainer);
 
     // Soft portrait overlay (Etapa B / D13) — never pauses the render loop.
@@ -406,6 +408,12 @@ class VHectorLabApp {
     const entering = isGalaxyView(nextView);
 
     if (entering && !wasGalaxy) {
+      // Overlay above the canvas immediately — dock strip is often collapsed/hidden
+      // when arriving from ARITHMETIC (mobile defaults collapsed).
+      this._reportBootProgress({
+        statusText: 'Preparing Galaxy…',
+        ratio: 0.04,
+      });
       const entered = enterGalaxyChrome({
         workspaceMode: state.workspaceMode,
         viewMode: this.viewMode,
@@ -441,6 +449,7 @@ class VHectorLabApp {
       this.galaxyPositions = null;
       this._galaxyFramePending = false;
       this.comparePanel?.clearGalaxyProgress?.();
+      this.bootProgress?.clear?.();
       this.viewMode = left.viewMode;
       restoreDefaultFlightProfile(this.navigation);
       this.navbar.setModeRenderLocked(false);
@@ -565,6 +574,10 @@ class VHectorLabApp {
     this._galaxyProjectBusy = true;
     this.galaxyPositions = null;
     this.comparePanel?.setLoading?.(true);
+    this._reportBootProgress({
+      statusText: 'Preparing Galaxy…',
+      ratio: 0.06,
+    });
 
     try {
       const saeEnabled = !!(this.saeSettings.enabled && this.saeStatus?.is_trained);
@@ -630,7 +643,10 @@ class VHectorLabApp {
           });
           return res.positions;
         },
-        onProgress: (p) => this.comparePanel.setGalaxyProgress(p),
+        onProgress: async (p) => {
+          this._reportBootProgress(p);
+          await yieldToPaint();
+        },
       });
 
       this._galaxyCompareCache = result.compareCache;
@@ -648,8 +664,24 @@ class VHectorLabApp {
     } finally {
       this._galaxyProjectBusy = false;
       this.comparePanel?.clearGalaxyProgress?.();
+      this.bootProgress?.clear?.();
       this.comparePanel?.setLoading?.(false);
     }
+  }
+
+  /**
+   * Mirror Galaxy/boot progress to the canvas overlay + Compare dock strip.
+   * Overlay stays visible even when the left dock is collapsed.
+   * @param {{ statusText?: string, step?: number, total?: number, label?: string, ratio?: number, indeterminate?: boolean }|null} progress
+   */
+  _reportBootProgress(progress) {
+    if (!progress) {
+      this.bootProgress?.clear?.();
+      this.comparePanel?.clearGalaxyProgress?.();
+      return;
+    }
+    this.bootProgress?.set?.(progress);
+    this.comparePanel?.setGalaxyProgress?.(progress);
   }
 
   /**
@@ -704,7 +736,7 @@ class VHectorLabApp {
   }
 
   async init() {
-    // Initial camera for startup COMPARE | GALAXY | POINTS
+    // Initial camera for startup ARITHMETIC | ANALYSIS | POINTS
     this.navigation.setContextView({
       workspaceMode: state.workspaceMode,
       viewMode: this.viewMode,
