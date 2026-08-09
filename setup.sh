@@ -428,6 +428,7 @@ show_menu() {
     echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(hf CLI · docker sdk · cpu-basic)${RESET}"
     echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
+    echo -e " ${MAGENTA}11.${RESET} ${BOLD}Select Embedding Model / Profile${RESET} ${DIM}(catalog · rebuild NPZ · restart backend)${RESET}"
     echo -e " ${DIM}0. Exit${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 }
@@ -552,6 +553,62 @@ manage_vocab() {
             echo -e "${RED}Invalid option.${RESET}"
             ;;
     esac
+    read -p "Press Enter to return to menu..."
+}
+
+select_embedding_model() {
+    echo ""
+    echo -e "${MAGENTA}${BOLD}--- Select Embedding Model / Profile ---${RESET}"
+    echo -e "${DIM}Swap always regenerates vocab NPZ, writes .env, and restarts the backend.${RESET}"
+    echo -e "${DIM}EN∪ES vocab is ensured (public/vocab_en_es.txt). No HF Space changes.${RESET}"
+    echo ""
+
+    if [ -f .env ]; then
+        echo -e "${BOLD}Current .env:${RESET}"
+        grep -E '^(MODEL_PROFILE|MODEL_NAME|TRUNCATE_DIM|VOCAB_PATH|VOCAB_EMBEDDINGS_PATH)=' .env 2>/dev/null \
+            | sed 's/^/  /' || true
+    else
+        echo -e "${YELLOW}No .env yet — will create/update on apply.${RESET}"
+    fi
+    echo ""
+
+    if ! uv run --directory backend python "$(pwd)/scripts/select_embedding_model.py" list; then
+        echo -e "${RED}Failed to load embedding catalog.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+    echo ""
+    echo -e " ${DIM}Enter P# (profile), M# (model), or Cancel.${RESET}"
+    read -p "Choice [e.g. P1 / M2 / cancel]: " choice
+    case "$choice" in
+        ""|c|C|cancel|Cancel|CANCEL|0)
+            echo -e "${YELLOW}Cancelled.${RESET}"
+            read -p "Press Enter to return to menu..."
+            return
+            ;;
+    esac
+
+    echo -e "\n${CYAN}▶ Staging .env + precomputing vocab embeddings (may download the model)…${RESET}"
+    if ! uv run --directory backend python "$(pwd)/scripts/select_embedding_model.py" apply --choice "$choice" --device "${SAE_DEVICE:-AUTO}"; then
+        echo -e "${RED}${BOLD}❌ Swap failed — previous .env restored.${RESET}"
+        echo -e "${DIM}Gated models need: hf auth login + accept license on the Hub.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+
+    echo -e "${CYAN}▶ Restarting backend to load the new model…${RESET}"
+    pkill -f "server:app|python -m server" 2>/dev/null
+    sleep 1
+    if ! start_backend; then
+        echo -e "${RED}${BOLD}❌ Backend failed to become healthy after swap. Check ${LOG_FILE}.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+
+    echo -e "\n${GREEN}${BOLD}✓ /health after swap:${RESET}"
+    curl -sS --max-time 5 "${BACKEND_URL}/health" | python3 -m json.tool 2>/dev/null \
+        || curl -sS --max-time 5 "${BACKEND_URL}/health"
+    echo ""
     read -p "Press Enter to return to menu..."
 }
 
@@ -809,7 +866,7 @@ view_logs() {
 
 while true; do
     show_menu
-    echo -ne "${BOLD}Choose an option [0-10]: ${RESET}"
+    echo -ne "${BOLD}Choose an option [0-11]: ${RESET}"
     read choice
     case $choice in
         1)
@@ -844,6 +901,9 @@ while true; do
             ;;
         10)
             stop_services
+            ;;
+        11)
+            select_embedding_model
             ;;
         0)
             exit_panel_keep_services
