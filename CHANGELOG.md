@@ -5,7 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Multi-embedding catalog (local)**: profiles `local-comfort` / `local-full` / `hf-demo`, setup.sh **option 11** swap (stage `.env` → rebuild vocab NPZ → restart), EN∪ES vocab merge, `/health` fields (`model_profile`, `short_label`, `embedding_dim`, `truncate_dim`), navbar ONLINE chip shows profile · label · dim · device. HF Space model policy unchanged.
+- **Multi-embedding catalog (local)**: profiles `local-comfort` / `local-full` / `hf-demo`, setup.sh **option 11** swap (stage `.env` → rebuild vocab NPZ → restart), EN∪ES vocab merge, `/health` fields (`model_profile`, `short_label`, `embedding_dim`, `truncate_dim`), navbar ONLINE chip shows profile · label · dim · device. Cross-lingual smoke: `scripts/smoke_crosslingual_cosine.py` (non-blocking; `--strict` optional). Default `.env.example` remains **all-mpnet-base-v2**. HF Space model policy unchanged.
 - **Galaxy / boot progress overlay**: full-viewport card over the canvas (`#boot-progress`) so encode→UMAP progress stays visible when the left dock is collapsed (e.g. switching ARITHMETIC → GALAXY on mobile).
 
 ### Changed
