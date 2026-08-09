@@ -15,6 +15,13 @@ from backend.model_catalog import (
     encode_texts,
     resolve_selection_from_env,
 )
+from backend.vocab_embeddings import (
+    load_vocab_embeddings_npz as _load_vocab_cache,
+)
+from backend.vocab_embeddings import (
+    npz_compatible_with_selection,
+    save_vocab_embeddings_npz,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,20 +43,8 @@ def load_vocab_embeddings_npz(
     Load precomputed vocab embeddings NPZ.
     Returns (words, embeddings float32 L2-normalized, model_name or None).
     """
-    data = np.load(npz_path, allow_pickle=True)
-    if "words" not in data or "embeddings" not in data:
-        raise ValueError(f"Invalid vocab embeddings file (missing keys): {npz_path}")
-    words = [str(w).strip().lower() for w in data["words"].tolist()]
-    embeddings = np.asarray(data["embeddings"], dtype=np.float32)
-    if embeddings.ndim != 2 or len(words) != embeddings.shape[0]:
-        raise ValueError(
-            f"Vocab NPZ shape mismatch: words={len(words)} embeddings={embeddings.shape}"
-        )
-    model_name = None
-    if "model_name" in data:
-        raw = data["model_name"]
-        model_name = str(raw.item() if hasattr(raw, "item") else raw)
-    return words, embeddings, model_name
+    cache = _load_vocab_cache(npz_path)
+    return cache.words, cache.embeddings, cache.model_name
 
 
 class AppState:
@@ -136,42 +131,46 @@ class AppState:
             else os.getenv("VOCAB_EMBEDDINGS_PATH", "public/vocab_embeddings.npz")
         )
         npz_path = _resolve_path(embeddings_env) if embeddings_env else None
+        # Keep unresolved path for write-back after auto-rebuild
+        npz_write_path: Path | None = None
+        if embeddings_env:
+            candidate = Path(embeddings_env)
+            npz_write_path = (
+                candidate
+                if candidate.is_absolute()
+                else Path(__file__).resolve().parent.parent / candidate
+            )
 
         if npz_path is not None:
             try:
-                words, embeddings, cached_model = load_vocab_embeddings_npz(npz_path)
-                if cached_model and cached_model not in (
-                    selection.hub_id,
-                    selection.hub_id.split("/")[-1],
-                    self.model_name,
-                ):
-                    logger.warning(
-                        "Vocab NPZ model_name=%r differs from MODEL_NAME=%r — using NPZ vectors anyway.",
-                        cached_model,
-                        selection.hub_id,
+                cache = _load_vocab_cache(npz_path)
+                ok, reason = npz_compatible_with_selection(cache, selection)
+                if ok:
+                    self.vocab_words = cache.words
+                    self.vocab_embeddings = cache.embeddings
+                    self.is_loaded = True
+                    self._set_embedding_dim_from_model()
+                    if self.embedding_dim is None:
+                        self.embedding_dim = int(cache.embeddings.shape[1])
+                    logger.info(
+                        "AppState loading complete (vocab from NPZ: %s words, dim=%s, %s).",
+                        len(cache.words),
+                        self.embedding_dim,
+                        npz_path,
                     )
-                if (
-                    selection.truncate_dim is not None
-                    and embeddings.shape[1] != selection.truncate_dim
-                ):
-                    logger.warning(
-                        "Vocab NPZ dim=%s differs from truncate_dim=%s — using NPZ as-is.",
-                        embeddings.shape[1],
-                        selection.truncate_dim,
-                    )
-                self.vocab_words = words
-                self.vocab_embeddings = embeddings
-                self.is_loaded = True
-                self._set_embedding_dim_from_model()
-                if self.embedding_dim is None:
-                    self.embedding_dim = int(embeddings.shape[1])
-                logger.info(
-                    "AppState loading complete (vocab from NPZ: %s words, dim=%s, %s).",
-                    len(words),
-                    self.embedding_dim,
+                    return
+                logger.warning(
+                    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+                    "VOCAB NPZ MISMATCH — auto-rebuilding embeddings from vocab text.\n"
+                    "  npz=%s\n"
+                    "  reason=%s\n"
+                    "  selection hub=%s truncate_dim=%s\n"
+                    "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
                     npz_path,
+                    reason,
+                    selection.hub_id,
+                    selection.truncate_dim,
                 )
-                return
             except Exception as exc:  # noqa: BLE001
                 logger.warning(
                     "Failed to load vocab NPZ %s (%s); encoding from text.",
@@ -198,6 +197,24 @@ class AppState:
             self.vocab_embeddings = encode_texts(
                 self.model, words, selection, show_progress_bar=False
             )
+            if npz_write_path is not None:
+                try:
+                    save_vocab_embeddings_npz(
+                        npz_write_path,
+                        words=words,
+                        embeddings=self.vocab_embeddings,
+                        model_name=selection.hub_id,
+                        truncate_dim=selection.truncate_dim,
+                    )
+                    logger.warning(
+                        "Wrote rebuilt vocab NPZ to %s (shape=%s).",
+                        npz_write_path,
+                        self.vocab_embeddings.shape,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "Could not write rebuilt NPZ %s: %s", npz_write_path, exc
+                    )
         else:
             self.vocab_embeddings = None
 

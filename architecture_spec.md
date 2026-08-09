@@ -11,6 +11,7 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 - **Vocabulary Acceleration**: Pre-computed L2-normalized embedding matrix $(N \times D)$ kept in RAM for instant matrix-vector dot product cosine similarity calculation:
   $$\text{Sim}(V_{res}, V_{vocab}) = V_{vocab} \cdot V_{res}^T$$
 - **SAE dim safety**: On load, if session SAE `input_dim` ≠ active `embedding_dim`, SAE RAM + checkpoint are cleared automatically.
+- **Vocab NPZ**: Prefer `VOCAB_EMBEDDINGS_PATH` when present. Keys: `words`, `embeddings`, `model_name`, `embedding_dim`, optional `truncate_dim`. **Mismatch strategy**: if `model_name` or effective width disagrees with the active catalog selection, log a loud warning, re-encode from `VOCAB_PATH` via `encode_texts`, and overwrite the NPZ (local DX auto-rebuild — not a hard fail).
 - **CORS Policy**: `allow_origins=["*"]` with `allow_credentials=False` for cross-origin WebGL clients.
 
 ### API Surface
