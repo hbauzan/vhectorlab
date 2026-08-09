@@ -44,15 +44,18 @@ def precompute(
         raise ValueError(f"Empty vocabulary: {vocab_path}")
 
     print(
-        f"Loading model {selection.hub_id!r} "
+        f"▶ [1/3] Loading model {selection.hub_id!r} "
         f"(truncate_dim={selection.truncate_dim!r}, e5_mode={selection.e5_mode}) "
         f"on {device!r}…"
     )
     model = build_model(selection, device=device)
+    print("✓ Model loaded")
 
-    print(f"Encoding {len(words)} words…")
+    print(f"▶ [2/3] Encoding {len(words)} vocabulary words (progress bar)…")
     embeddings = encode_texts(model, words, selection, show_progress_bar=True)
+    print(f"✓ Encoded shape={embeddings.shape}")
 
+    print(f"▶ [3/3] Writing NPZ → {out_path}")
     save_vocab_embeddings_npz(
         out_path,
         words=words,
@@ -61,7 +64,7 @@ def precompute(
         truncate_dim=selection.truncate_dim,
     )
     size_mb = out_path.stat().st_size / (1024 * 1024)
-    print(f"Wrote {out_path} ({size_mb:.1f} MiB, shape={embeddings.shape})")
+    print(f"✓ Wrote {out_path} ({size_mb:.1f} MiB, shape={embeddings.shape})")
 
 
 def main() -> int:
