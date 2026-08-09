@@ -72,14 +72,17 @@ def test_selection_from_menu_tokens():
         "mpnet" in first_model.hub_id.lower()
         or "mpnet" in first_model.short_label.lower()
     )
+    # Unified numeric index: 1 == first profile
+    assert selection_from_menu_token("1").profile == "local-comfort"
 
 
 def test_format_menu_has_profiles_and_models():
-    text = "\n".join(format_menu_lines())
+    text = "\n".join(format_menu_lines(color=False))
     assert "local-comfort" in text
     assert "MiniLM-multi" in text
     assert "Arctic-m-v2" in text
     assert "BAAI/bge-m3" not in text
+    assert "Cancel" in text
 
 
 def test_apply_skip_precompute_updates_env(
@@ -95,16 +98,24 @@ def test_apply_skip_precompute_updates_env(
     )
 
     monkeypatch.setattr("backend.model_swap.repo_root", lambda: root)
-    # ensure merge works with tiny files
     sel = resolve_profile("local-comfort")
     apply_model_swap(
         sel,
         root=root,
         env_path=env_path,
         skip_precompute=True,
+        quiet=True,
     )
     vals = read_dotenv(env_path)
     assert vals["MODEL_PROFILE"] == "local-comfort"
     assert "MiniLM" in vals["MODEL_NAME"] or "minilm" in vals["MODEL_NAME"].lower()
     assert vals["VOCAB_PATH"] == "public/vocab_en_es.txt"
     assert (root / "public" / "vocab_en_es.txt").is_file()
+
+
+def test_progress_bar_bounds():
+    from backend.progress_cli import progress_bar
+
+    assert len(progress_bar(0, 4, width=10)) == 10
+    assert progress_bar(4, 4, width=10) == "█" * 10
+    assert "█" in progress_bar(1, 4, width=10)
