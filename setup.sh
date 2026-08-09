@@ -334,17 +334,24 @@ kill_stack() {
 }
 
 wait_backend_healthy() {
-    echo -n "  Loading model [waiting for /health status=ok]"
-    local i
-    for i in {1..60}; do
+    # Progress bar while model loads into RAM (up to ~60s).
+    local i filled empty bar pct
+    local total=60
+    echo -e "  ${DIM}Waiting for /health status=ok (model load)…${RESET}"
+    for i in $(seq 1 "$total"); do
         if backend_health_ok; then
-            echo -e " ${GREEN}${BOLD}MODEL LOADED OK!${RESET}"
+            bar="$(printf '█%.0s' $(seq 1 28))"
+            echo -ne "\r  [${GREEN}${bar}${RESET}]  ${BOLD}100%${RESET}  ${GREEN}${BOLD}MODEL LOADED OK${RESET}                    \n"
             return 0
         fi
-        echo -n " ⏳"
+        filled=$(( i * 28 / total ))
+        empty=$(( 28 - filled ))
+        pct=$(( i * 100 / total ))
+        bar="$(printf '█%.0s' $(seq 1 "$filled") 2>/dev/null)$(printf '░%.0s' $(seq 1 "$empty") 2>/dev/null)"
+        echo -ne "\r  [${CYAN}${bar}${RESET}]  ${pct}%  probing ${BACKEND_URL}/health…   "
         sleep 1
     done
-    echo -e " ${RED}${BOLD}TIMEOUT${RESET}"
+    echo -e "\n  ${RED}${BOLD}TIMEOUT${RESET} — backend did not become healthy"
     return 1
 }
 
@@ -557,55 +564,96 @@ manage_vocab() {
 }
 
 select_embedding_model() {
+    local choice summary confirm
+    local script
+    script="$(pwd)/scripts/select_embedding_model.py"
+
     echo ""
-    echo -e "${MAGENTA}${BOLD}--- Select Embedding Model / Profile ---${RESET}"
-    echo -e "${DIM}Swap always regenerates vocab NPZ, writes .env, and restarts the backend.${RESET}"
-    echo -e "${DIM}EN∪ES vocab is ensured (public/vocab_en_es.txt). No HF Space changes.${RESET}"
+    echo -e "${MAGENTA}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${MAGENTA}${BOLD}║${RESET}  ${BOLD}Select Embedding Model / Profile${RESET}                         ${MAGENTA}${BOLD}║${RESET}"
+    echo -e "${MAGENTA}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${DIM}  Always regenerates vocab NPZ · writes .env · restarts backend${RESET}"
+    echo -e "${DIM}  EN∪ES vocab ensured · HF Space options 7/8 unchanged${RESET}"
     echo ""
 
     if [ -f .env ]; then
-        echo -e "${BOLD}Current .env:${RESET}"
-        grep -E '^(MODEL_PROFILE|MODEL_NAME|TRUNCATE_DIM|VOCAB_PATH|VOCAB_EMBEDDINGS_PATH)=' .env 2>/dev/null \
-            | sed 's/^/  /' || true
+        echo -e "  ${BOLD}Current selection${RESET}"
+        local cur_profile cur_model cur_trunc cur_vocab
+        cur_profile="$(grep -E '^MODEL_PROFILE=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+        cur_model="$(grep -E '^MODEL_NAME=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+        cur_trunc="$(grep -E '^TRUNCATE_DIM=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+        cur_vocab="$(grep -E '^VOCAB_PATH=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+        echo -e "    ${DIM}profile${RESET}   ${cur_profile:-—}"
+        echo -e "    ${DIM}model${RESET}     ${cur_model:-—}"
+        echo -e "    ${DIM}truncate${RESET}  ${cur_trunc:-—}"
+        echo -e "    ${DIM}vocab${RESET}     ${cur_vocab:-—}"
     else
-        echo -e "${YELLOW}No .env yet — will create/update on apply.${RESET}"
+        echo -e "  ${YELLOW}No .env yet — will be created on apply.${RESET}"
     fi
     echo ""
 
-    if ! uv run --directory backend python "$(pwd)/scripts/select_embedding_model.py" list; then
+    if ! uv run --directory backend python "$script" list; then
         echo -e "${RED}Failed to load embedding catalog.${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
     echo ""
-    echo -e " ${DIM}Enter P# (profile), M# (model), or Cancel.${RESET}"
-    read -p "Choice [e.g. P1 / M2 / cancel]: " choice
+    read -p "  Choice [number / P# / M# / 0 cancel]: " choice
     case "$choice" in
-        ""|c|C|cancel|Cancel|CANCEL|0)
-            echo -e "${YELLOW}Cancelled.${RESET}"
+        ""|0|c|C|cancel|Cancel|CANCEL)
+            echo -e "${YELLOW}  Cancelled.${RESET}"
             read -p "Press Enter to return to menu..."
             return
             ;;
     esac
 
-    echo -e "\n${CYAN}▶ Staging .env + precomputing vocab embeddings (may download the model)…${RESET}"
-    if ! uv run --directory backend python "$(pwd)/scripts/select_embedding_model.py" apply --choice "$choice" --device "${SAE_DEVICE:-AUTO}"; then
-        echo -e "${RED}${BOLD}❌ Swap failed — previous .env restored.${RESET}"
-        echo -e "${DIM}Gated models need: hf auth login + accept license on the Hub.${RESET}"
+    if ! summary="$(uv run --directory backend python "$script" describe --choice "$choice" 2>/dev/null)"; then
+        echo -e "${RED}  Invalid choice: ${choice}${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
 
-    echo -e "${CYAN}▶ Restarting backend to load the new model…${RESET}"
+    echo ""
+    echo -e "  ${BOLD}You selected${RESET}"
+    echo -e "    ${CYAN}${summary}${RESET}"
+    echo ""
+    echo -e "  ${DIM}This will: merge EN∪ES if needed → stage .env → encode NPZ → restart backend${RESET}"
+    read -p "  Proceed? [Y/n]: " confirm
+    case "$confirm" in
+        n|N|no|No|NO)
+            echo -e "${YELLOW}  Cancelled.${RESET}"
+            read -p "Press Enter to return to menu..."
+            return
+            ;;
+    esac
+
+    echo ""
+    echo -e "${CYAN}${BOLD}── Pipeline ──────────────────────────────────────────────${RESET}"
+    echo -e "  ${DIM}[░░░░░░░░░░░░░░░░░░░░░░░░░░░░]  overall · prepare + restart${RESET}"
+    echo ""
+
+    # Phase A — Python prepare (shows its own 1/4…4/4 bars + encode tqdm)
+    echo -e "  ${BOLD}Phase A/B${RESET}  Prepare (.env + NPZ)"
+    if ! uv run --directory backend python "$script" apply --choice "$choice" --device "${SAE_DEVICE:-AUTO}"; then
+        echo -e "${RED}${BOLD}  ✗ Swap failed — previous .env restored.${RESET}"
+        echo -e "${DIM}  Gated models: hf auth login + accept license on the Hub.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
+
+    echo ""
+    echo -e "  ${BOLD}Phase B/B${RESET}  Restart backend + wait for /health"
+    echo -e "  ${DIM}Stopping old backend process…${RESET}"
     pkill -f "server:app|python -m server" 2>/dev/null
     sleep 1
     if ! start_backend; then
-        echo -e "${RED}${BOLD}❌ Backend failed to become healthy after swap. Check ${LOG_FILE}.${RESET}"
+        echo -e "${RED}${BOLD}  ✗ Backend failed to become healthy after swap. Check ${LOG_FILE}.${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
 
-    echo -e "\n${GREEN}${BOLD}✓ /health after swap:${RESET}"
+    echo ""
+    echo -e "  ${GREEN}${BOLD}✓ Swap complete — /health${RESET}"
     curl -sS --max-time 5 "${BACKEND_URL}/health" | python3 -m json.tool 2>/dev/null \
         || curl -sS --max-time 5 "${BACKEND_URL}/health"
     echo ""
