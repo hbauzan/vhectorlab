@@ -185,6 +185,48 @@ def test_project_umap_pre_pca_when_high_dim(client: TestClient):
     assert meta["pre_pca_dims"] == 50
 
 
+def test_project_small_n_one_vector(client: TestClient):
+    """Token Comparison with a single token must still project (Galaxy path)."""
+    vectors = _random_vectors(n=1, dim=32, seed=2)
+    res = client.post(
+        "/project",
+        json={"vectors": vectors, "method": "umap", "n_components": 3, "seed": 42},
+    )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert len(data["positions"]) == 1
+    assert len(data["positions"][0]) == 3
+    assert data["meta"]["fallback"] == "origin"
+    assert data["positions"][0] == pytest.approx([0.0, 0.0, 0.0])
+
+
+def test_project_small_n_two_vectors_pair(client: TestClient):
+    """Two tokens (e.g. White, Blanco) — UMAP cannot run; PCA micro-layout."""
+    vectors = _random_vectors(n=2, dim=64, seed=9)
+    payload = {
+        "vectors": vectors,
+        "method": "umap",
+        "n_components": 3,
+        "seed": 42,
+    }
+    res = client.post("/project", json=payload)
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert len(data["positions"]) == 2
+    assert all(len(p) == 3 for p in data["positions"])
+    assert data["meta"]["fallback"] == "pca_micro"
+    assert data["meta"]["pca_components"] == 1
+
+    pos = np.asarray(data["positions"], dtype=np.float64)
+    assert np.allclose(pos.mean(axis=0), 0.0, atol=1e-5)
+    # Distinct points on an axis after normalize
+    assert float(np.linalg.norm(pos[0] - pos[1])) > 0.5
+
+    res2 = client.post("/project", json=payload)
+    assert res2.status_code == 200
+    assert np.allclose(pos, np.asarray(res2.json()["positions"]), atol=1e-5)
+
+
 def test_project_module_unit_rejects_method():
     from backend.projection import ProjectError, project_embeddings
 
