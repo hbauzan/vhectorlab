@@ -2,6 +2,8 @@
  * Galaxy VIEW client-driven pipeline (encode → SAE? → UMAP → build).
  */
 
+import { withSoftStepProgress } from './BootProgress.js';
+
 /**
  * @param {{ saeEnabled?: boolean }} [opts]
  * @returns {Array<{ id: string, label: string }>}
@@ -92,28 +94,39 @@ export async function runGalaxyPipeline(opts) {
   const steps = buildGalaxyPipelineSteps({ saeEnabled });
   const total = steps.length;
 
-  const report = (id) => {
+  const runStep = async (id, work, expectMs) => {
     const idx = steps.findIndex((s) => s.id === id);
-    if (idx < 0) return;
+    if (idx < 0) return work();
     const step = steps[idx];
-    opts.onProgress?.(galaxyProgressState(idx + 1, total, step.label));
+    const state = galaxyProgressState(idx + 1, total, step.label);
+    if (!opts.onProgress) return work();
+    return withSoftStepProgress(
+      {
+        onProgress: opts.onProgress,
+        step: state.step,
+        total: state.total,
+        label: state.label,
+        expectMs,
+      },
+      work,
+    );
   };
 
-  report('encode');
   const fingerprint = compareTextsFingerprint(texts);
   let reusedCompare = false;
   let rawData;
 
-  if (
-    canReuseCompareCache(opts.compareCache, fingerprint, texts.length)
-    && opts.compareCache?.rawData
-  ) {
-    rawData = opts.compareCache.rawData;
-    reusedCompare = true;
-  } else {
+  rawData = await runStep('encode', async () => {
+    if (
+      canReuseCompareCache(opts.compareCache, fingerprint, texts.length)
+      && opts.compareCache?.rawData
+    ) {
+      reusedCompare = true;
+      return opts.compareCache.rawData;
+    }
     const fetched = await opts.fetchCompare(texts);
-    rawData = opts.attachMeta ? opts.attachMeta(fetched, opts.tokenMeta) : fetched;
-  }
+    return opts.attachMeta ? opts.attachMeta(fetched, opts.tokenMeta) : fetched;
+  }, 50_000);
 
   const compareCache = {
     fingerprint,
@@ -126,22 +139,23 @@ export async function runGalaxyPipeline(opts) {
     if (typeof opts.encodeSae !== 'function') {
       throw new Error('Galaxy pipeline SAE step requires encodeSae');
     }
-    report('sae');
-    displayData = await opts.encodeSae(rawData);
+    displayData = await runStep('sae', () => opts.encodeSae(rawData), 30_000);
   }
 
-  report('umap');
-  const items = displayData?.items || [];
-  const vectors = items.map((it) => it.embedding).filter((v) => Array.isArray(v) && v.length);
-  if (vectors.length !== items.length || !vectors.length) {
-    throw new Error('Galaxy pipeline: missing embeddings for projection');
-  }
-  const positions = await opts.project(vectors);
-  if (!Array.isArray(positions) || positions.length !== items.length) {
-    throw new Error('Galaxy pipeline: /project position count mismatch');
-  }
+  const positions = await runStep('umap', async () => {
+    const items = displayData?.items || [];
+    const vectors = items.map((it) => it.embedding).filter((v) => Array.isArray(v) && v.length);
+    if (vectors.length !== items.length || !vectors.length) {
+      throw new Error('Galaxy pipeline: missing embeddings for projection');
+    }
+    const projected = await opts.project(vectors);
+    if (!Array.isArray(projected) || projected.length !== items.length) {
+      throw new Error('Galaxy pipeline: /project position count mismatch');
+    }
+    return projected;
+  }, 60_000);
 
-  report('build');
+  await runStep('build', async () => null, 2_000);
 
   return {
     rawData,

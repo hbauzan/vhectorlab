@@ -274,6 +274,84 @@ canvas {
   border-radius: 4px;
 }
 
+/* Canvas-centered boot / Galaxy pipeline overlay (visible with dock collapsed) */
+.boot-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  background: rgba(5, 5, 5, 0.55);
+  pointer-events: auto;
+}
+
+.boot-progress.hidden,
+.boot-progress.is-hidden,
+.boot-progress[hidden] {
+  display: none !important;
+}
+
+.boot-progress__card {
+  width: min(22rem, 100%);
+  padding: 1.1rem 1.25rem 1.2rem;
+  border: 2px solid var(--amiga-pen-3, #3b67a2);
+  border-radius: 2px;
+  background: rgba(20, 20, 20, 0.94);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.45),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.boot-progress__title {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-cyan, #3ecf8e);
+}
+
+.boot-progress__label {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-main, #f0f0f0);
+  font-variant-numeric: tabular-nums;
+  min-height: 1.2em;
+}
+
+.boot-progress__bar {
+  position: relative;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.boot-progress__fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2a7a5a, var(--accent-cyan, #3ecf8e));
+  transition: width 0.2s ease;
+}
+
+.boot-progress__bar.is-indeterminate .boot-progress__fill {
+  width: 36%;
+  transition: none;
+  animation: boot-progress-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes boot-progress-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
 .hidden {
   display: none !important;
 }
