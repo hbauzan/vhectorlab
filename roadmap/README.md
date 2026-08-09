@@ -4,6 +4,7 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
+| [`multillm/`](./multillm/) | Multi-embedding catalog + profiles + `setup.sh` option 11 (local; HF deferred) | **Activo (plan)** |
 | [`galaxy-view.md`](./galaxy-view.md) | VIEW **Galaxy**: UMAP backend, 1 punto/token, COMPARE+POINTS locked, IT core×100 | **Activo (plan)** |
 | [`PROMPT-galaxy-view.md`](./PROMPT-galaxy-view.md) | Prompt serial por slice (1→7) para agentes Galaxy | **Activo** |
 | [`PROMPT-galaxy-view-continue.md`](./PROMPT-galaxy-view-continue.md) | Continuación Galaxy (post Slice 4) | **Activo** |
