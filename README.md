@@ -1,14 +1,3 @@
----
-title: VHectorLab 3D
-emoji: 🧭
-colorFrom: gray
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
-license: apache-2.0
----
-
 # VHectorLab 3D
 
 **A local study / laboratory tool for exploring semantic embeddings in 3D (WebGL). Not a production SaaS.**
