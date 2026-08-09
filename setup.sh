@@ -226,6 +226,9 @@ BACKEND_URL="http://127.0.0.1:8000"
 FRONTEND_URL="http://127.0.0.1:5173"
 BACKEND_PORT=8000
 FRONTEND_PORT=5173
+# Must match `python3 -m server` / venv `.../python3 -m server` (NOT only `python -m server`).
+# Also matches uvicorn import string backend.server:app when present in the cmdline.
+BACKEND_PROC_PATTERN='backend\.server:app|-m[[:space:]]+server'
 
 port_listening() {
     local port="$1"
@@ -233,7 +236,40 @@ port_listening() {
 }
 
 backend_process_running() {
-    pgrep -f "server:app|python -m server" >/dev/null 2>&1
+    pgrep -f "$BACKEND_PROC_PATTERN" >/dev/null 2>&1
+}
+
+kill_backend() {
+    # Stop matching processes, then anything still bound to BACKEND_PORT.
+    # Uvicorn --reload leaves multiprocessing workers whose cmdline is
+    # `python -c ...spawn_main...` (does NOT match -m server) — port kill is mandatory.
+    pkill -f "$BACKEND_PROC_PATTERN" 2>/dev/null || true
+    local i pids
+    for i in 1 2 3 4 5 6 7 8; do
+        pids="$(lsof -nP -tiTCP:"${BACKEND_PORT}" -sTCP:LISTEN 2>/dev/null || true)"
+        if [ -z "$pids" ]; then
+            return 0
+        fi
+        # shellcheck disable=SC2086
+        if [ "$i" -le 3 ]; then
+            kill $pids 2>/dev/null || true
+        else
+            kill -9 $pids 2>/dev/null || true
+        fi
+        sleep 0.4
+    done
+}
+
+wait_backend_port_free() {
+    local i
+    for i in $(seq 1 40); do
+        if ! port_listening "$BACKEND_PORT"; then
+            return 0
+        fi
+        sleep 0.25
+    done
+    echo -e "  ${RED}Port ${BACKEND_PORT} still in use after kill.${RESET}"
+    return 1
 }
 
 frontend_process_running() {
@@ -326,10 +362,10 @@ run_full_test_suite() {
 }
 
 kill_stack() {
-    pkill -f "server:app|python -m server" 2>/dev/null
-    pkill -f "vite --port ${FRONTEND_PORT}" 2>/dev/null
+    kill_backend
+    pkill -f "vite --port ${FRONTEND_PORT}" 2>/dev/null || true
     # Fallback for older/manual vite launches on the same port
-    pkill -f "vite" 2>/dev/null
+    pkill -f "vite" 2>/dev/null || true
     sleep 1
 }
 
@@ -357,7 +393,17 @@ wait_backend_healthy() {
 
 start_backend() {
     echo -e "${BLUE}▶ Starting Backend FastAPI (${BACKEND_URL})...${RESET}"
-    launch_detached "backend" "$LOG_FILE" uv run python -m server
+    # Pass repo-root .env explicitly: uv project cwd is backend/ (no backend/.env).
+    # UVICORN_RELOAD=0 avoids orphan multiprocessing workers that survive pkill -m server.
+    local env_file
+    env_file="$(pwd)/.env"
+    if [ -f "$env_file" ]; then
+        launch_detached "backend" "$LOG_FILE" \
+            env UVICORN_RELOAD=0 uv run --env-file "$env_file" python -m server
+    else
+        launch_detached "backend" "$LOG_FILE" \
+            env UVICORN_RELOAD=0 uv run python -m server
+    fi
     wait_backend_healthy
 }
 
@@ -521,8 +567,8 @@ start_bare_metal_backend() {
 
     if [ "$be_state" = "sick" ]; then
         echo -e "\n${YELLOW}${BOLD}⚠ Backend sick — stopping and restarting.${RESET}"
-        pkill -f "server:app|python -m server" 2>/dev/null
-        sleep 1
+        kill_backend
+        wait_backend_port_free || true
     fi
 
     echo -e "${GREEN}Starting Bare-metal Backend...${RESET}"
@@ -644,8 +690,12 @@ select_embedding_model() {
     echo ""
     echo -e "  ${BOLD}Phase B/B${RESET}  Restart backend + wait for /health"
     echo -e "  ${DIM}Stopping old backend process…${RESET}"
-    pkill -f "server:app|python -m server" 2>/dev/null
-    sleep 1
+    kill_backend
+    if ! wait_backend_port_free; then
+        echo -e "${RED}${BOLD}  ✗ Could not free :${BACKEND_PORT} — old process may still be live.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
     if ! start_backend; then
         echo -e "${RED}${BOLD}  ✗ Backend failed to become healthy after swap. Check ${LOG_FILE}.${RESET}"
         read -p "Press Enter to return to menu..."
@@ -654,8 +704,18 @@ select_embedding_model() {
 
     echo ""
     echo -e "  ${GREEN}${BOLD}✓ Swap complete — /health${RESET}"
-    curl -sS --max-time 5 "${BACKEND_URL}/health" | python3 -m json.tool 2>/dev/null \
-        || curl -sS --max-time 5 "${BACKEND_URL}/health"
+    local health_json expected_model
+    health_json="$(curl -sS --max-time 5 "${BACKEND_URL}/health" 2>/dev/null || true)"
+    echo "$health_json" | python3 -m json.tool 2>/dev/null || echo "$health_json"
+    expected_model="$(grep -E '^MODEL_NAME=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+    if [ -n "$expected_model" ] && [ -n "$health_json" ]; then
+        if ! echo "$health_json" | grep -Fq "$expected_model"; then
+            echo -e "${RED}${BOLD}  ✗ /health model does not match .env MODEL_NAME=${expected_model}${RESET}"
+            echo -e "${DIM}  Old process may have survived, or .env was not loaded. Check ${LOG_FILE}.${RESET}"
+            read -p "Press Enter to return to menu..."
+            return
+        fi
+    fi
     echo ""
     read -p "Press Enter to return to menu..."
 }

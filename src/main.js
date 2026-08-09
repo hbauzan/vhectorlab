@@ -660,7 +660,13 @@ class VHectorLabApp {
       }
     } catch (err) {
       console.error('Galaxy pipeline failed:', err);
-      this.modal?.show?.('Galaxy projection failed', String(err?.message || err));
+      const msg = String(err?.message || err);
+      this.modal?.show?.(
+        'Galaxy projection failed',
+        msg.includes('at least 3')
+          ? `${msg}\n\nTip: add a third token, or switch VIEW to ANALYSIS for pairs.`
+          : msg,
+      );
     } finally {
       this._galaxyProjectBusy = false;
       this.comparePanel?.clearGalaxyProgress?.();

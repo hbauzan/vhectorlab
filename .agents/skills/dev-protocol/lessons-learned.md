@@ -146,6 +146,11 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Solución**: `galaxyFlightProfile.js` — apply on enter Galaxy, restore defaults on leave. Calibrated: `moveSpeed` 56 (former Shift feel), `turboMultiplier` 2, `lookSensitivity` 0.0014. World scale via `resolveGalaxyWorldScale` (`GALAXY_DEFAULT_SCALE` 96, spacing×240).
 - **Invariante**: ANALYSIS/NAV flight numbers unchanged; no Spatial speed knobs in v1.
 
+### 3.7. Galaxy `/project` with 1–2 tokens (UMAP floor)
+- **Problema**: Token Comparison accepts 1–1024 tokens, but UMAP needs ≥3 samples. Visualize of a pair (e.g. `White, Blanco`) in VIEW GALAXY hit `UMAP requires at least 3 vectors` → pipeline aborted after encode → cosine list / scene unchanged (“nothing happens”).
+- **Solución Obligatoria**: `backend/projection.py` — for `n < 3`, deterministic micro-layout (`origin` / `pca_micro`) instead of rejecting; meta reports `fallback`. Real UMAP only for `n ≥ 3`.
+- **Invariante**: `/project` must succeed for any legal Compare cardinality (1..1024); never hard-fail small-n Galaxy Visualize.
+
 ---
 
 ## 4. UI Panels (Sidebar / Compare)
