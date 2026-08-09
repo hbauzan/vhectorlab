@@ -138,7 +138,11 @@ uv run python scripts/merge_vocab_en_es.py
 # → public/vocab_en_es.txt (~10k EN ∪ ES seed; includes king/rey … cat/gato)
 ```
 
-Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/precompute_vocab_embeddings.py` or upcoming setup option 11). Languages beyond EN+ES are out of scope for now.
+Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/precompute_vocab_embeddings.py` or **setup.sh option 11**). Languages beyond EN+ES are out of scope for now.
+
+### Embedding model / profile (setup option 11)
+
+From `./setup.sh` → **11. Select Embedding Model / Profile**: pick `P#` / `M#`, stage `.env`, rebuild `vocab_embeddings.npz` (EN∪ES), restart backend, print `/health`. On failure the previous `.env` is restored. HF Space options 7/8 are unchanged.
 
 ---
 
