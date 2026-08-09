@@ -144,6 +144,17 @@ Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/pr
 
 From `./setup.sh` → **11. Select Embedding Model / Profile**: pick `P#` / `M#`, stage `.env`, rebuild `vocab_embeddings.npz` (EN∪ES), restart backend, print `/health`. On failure the previous `.env` is restored. HF Space options 7/8 are unchanged.
 
+Default `.env.example` keeps **`all-mpnet-base-v2`** (EN baseline). Switch to `local-comfort` / `local-full` via option 11 when you want multilingual.
+
+Cross-lingual smoke (after option 11, non-blocking):
+
+```bash
+uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py
+uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --profile local-comfort --include-fr
+# Fail only if mean EN↔ES cosine is soft-low:
+uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --strict --threshold 0.35
+```
+
 ---
 
 ## Manual start (without the panel)
