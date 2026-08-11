@@ -548,6 +548,10 @@ canvas {
   max-height: max(120px, min(280px, 40dvh));
   padding-right: 2px;
   flex: 1 1 auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .compare-cosine-item {
@@ -673,7 +677,11 @@ canvas {
   left: auto;
   width: 320px;
   height: fit-content;
-  max-height: calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px);
+  max-height: min(
+    68vh,
+    600px,
+    calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px)
+  );
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -682,6 +690,8 @@ canvas {
   z-index: 40;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .sidebar-header h2 {
@@ -1107,6 +1117,8 @@ canvas {
   padding-right: 4px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 @media (max-height: 560px) {

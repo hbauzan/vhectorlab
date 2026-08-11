@@ -10,7 +10,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - **Galaxy / boot progress overlay**: full-viewport card over the canvas (`#boot-progress`) so encode→UMAP progress stays visible when the left dock is collapsed (e.g. switching ARITHMETIC → GALAXY on mobile).
 
 ### Changed
-- Left Compare/Arithmetic dock `max-height` tracks viewport → HUD (`100dvh − navbar − HUD − 16px`) instead of a short `56vh`/`520px` cap.
+- Left Compare/Arithmetic dock: a bit taller (`min(68vh, 600px, …HUD)`) with side scrollbar + `scrollbar-gutter` when content overflows; never taller than the space above the bottom HUD.
 - **License**: project relicensed from MIT to **Apache License 2.0** (`LICENSE` + `NOTICE`; README / HF Space card `license: apache-2.0`; `package.json` `license` field).
 - Bootstrap / 2 Groups demo labels: `it_core` (IT terms), `vehicles` (auto lexicon), `women` (English women’s names) — replaces `GROUP_it_core` / `GROUP_1` / `GROUP_2`.
 - Panel buttons: Visualize Sequence + Clean/Denoise (SAE) slightly larger; all other panel buttons compact at Shared-noise scale (`0.68rem` / weight 600).
