@@ -122,7 +122,10 @@ export async function runGalaxyPipeline(opts) {
       && opts.compareCache?.rawData
     ) {
       reusedCompare = true;
-      return opts.compareCache.rawData;
+      // Same texts → skip /compare, but always re-apply tokenMeta so regroup
+      // Visualize (new GROUP_* labels, same tokens) is not stuck on old badges.
+      const cached = opts.compareCache.rawData;
+      return opts.attachMeta ? opts.attachMeta(cached, opts.tokenMeta) : cached;
     }
     const fetched = await opts.fetchCompare(texts);
     return opts.attachMeta ? opts.attachMeta(fetched, opts.tokenMeta) : fetched;
