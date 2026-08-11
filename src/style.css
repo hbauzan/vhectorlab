@@ -1639,16 +1639,23 @@ canvas {
 
 #visualization-controls-container .viz-color-row {
   gap: 4px;
+  grid-template-columns: 24px 26px 1fr;
 }
 
 #visualization-controls-container .viz-color-row label {
-  font-size: 0.68rem;
-  min-width: 2.1rem;
+  font-size: 0.62rem;
+  min-width: 1.8rem;
+}
+
+#visualization-controls-container .viz-color-swatch {
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
 }
 
 #visualization-controls-container .viz-color-hex {
-  font-size: 0.68rem;
-  padding: 3px 5px;
+  font-size: 0.55rem;
+  padding: 2px 4px;
 }
 
 #visualization-controls-container .viz-coverage-row {
@@ -1656,11 +1663,96 @@ canvas {
 }
 
 #visualization-controls-container .viz-labels-toggle,
-#visualization-controls-container .viz-reset-btn {
-  padding: var(--panel-btn-pad-y) var(--panel-btn-pad-x);
-  font-size: var(--panel-btn-font-size);
-  font-weight: var(--panel-btn-font-weight);
-  line-height: 1.2;
+#visualization-controls-container .viz-reset-btn,
+#visualization-controls-container .viz-ruler-btn {
+  padding: 2px 4px;
+  font-size: 0.58rem;
+  border-radius: 4px;
+  line-height: 1.15;
+}
+
+#visualization-controls-container .viz-ruler-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--panel-border);
+}
+
+#visualization-controls-container .viz-ruler-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+#visualization-controls-container .viz-ruler-style-row {
+  display: grid;
+  grid-template-columns: 28px 22px minmax(3.2rem, 1fr) minmax(3.5rem, 0.9fr);
+  align-items: center;
+  gap: 4px;
+}
+
+#visualization-controls-container .viz-ruler-style-row > label:first-child {
+  font-size: 0.58rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+#visualization-controls-container .viz-ruler-thick-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+#visualization-controls-container .viz-ruler-thickness {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--accent-cyan);
+  cursor: pointer;
+  height: 14px;
+}
+
+#visualization-controls-container .viz-ruler-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+#visualization-controls-container .viz-ruler-btn {
+  flex: 0 0 auto;
+  min-width: 1.35rem;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+}
+
+#visualization-controls-container .viz-ruler-btn:hover {
+  border-color: var(--accent-cyan);
+}
+
+#visualization-controls-container .viz-ruler-cursor {
+  width: 2.6rem;
+  font-family: monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--accent-gold);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  padding: 2px 3px;
+}
+
+#visualization-controls-container .viz-ruler-meta {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 #visualization-controls-container .viz-group-contrast {
@@ -1748,7 +1840,7 @@ canvas {
 
 #visualization-controls-container .viz-group-hue-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 28px minmax(4.2rem, 5.2rem);
+  grid-template-columns: minmax(0, 1fr) 22px minmax(4.2rem, 5.2rem);
   gap: 6px;
   align-items: center;
   min-height: var(--viz-hue-row-h);
@@ -1779,10 +1871,10 @@ canvas {
 }
 
 #visualization-controls-container .viz-group-hue-row .viz-color-swatch {
-  width: 28px;
-  height: 22px;
+  width: 22px;
+  height: 16px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 #visualization-controls-container .viz-group-hue-row .viz-color-hex {
@@ -2537,17 +2629,17 @@ canvas {
   }
 
   #visualization-controls-container .viz-group-hue-row {
-    grid-template-columns: minmax(0, 1fr) 26px minmax(3.8rem, 4.8rem);
+    grid-template-columns: minmax(0, 1fr) 22px minmax(3.8rem, 4.8rem);
     gap: 5px;
   }
 
   #visualization-controls-container .viz-group-hue-row .viz-color-swatch {
-    width: 26px;
-    height: 20px;
+    width: 22px;
+    height: 16px;
   }
 
   #visualization-controls-container .viz-group-hue-row .viz-color-hex {
-    font-size: 0.58rem;
+    font-size: 0.52rem;
     padding: 2px 3px;
   }
 

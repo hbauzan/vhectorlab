@@ -37,6 +37,7 @@ import {
   resolveVisualizationMountParent,
   setVisualizationPanelLayout,
   setGroupContrastControlsEnabled,
+  setVisualizationRulerDimCount,
 } from './ui/VisualizationControls.js';
 import {
   loadVisualizationSettings,
@@ -534,6 +535,7 @@ class VHectorLabApp {
         );
         this.setCompareOverlayLabels(labels);
         this.comparePanel.updateGroupLegend(data.items);
+        this.syncVisualizationRulerDimCount(data);
       }
     } else {
       if (state.arithmeticData) {
@@ -545,9 +547,28 @@ class VHectorLabApp {
           this.vizConfig
         );
         this.threadLabels.setLabels(labels);
+        this.syncVisualizationRulerDimCount(state.arithmeticData);
       }
     }
     this.syncGroupContrastGate();
+  }
+
+  /**
+   * Keep Visualization ruler cursor/total clamped to current embedding width.
+   * @param {{ items?: Array<{ embedding?: number[] }>, vector_res?: number[], components?: Record<string, number[]> }|null|undefined} data
+   */
+  syncVisualizationRulerDimCount(data) {
+    if (!this.vizEl || !this.vizConfig) return;
+    let dimCount = 0;
+    const firstEmb = data?.items?.find((it) => Array.isArray(it?.embedding))?.embedding;
+    if (firstEmb?.length) dimCount = firstEmb.length;
+    else if (Array.isArray(data?.vector_res) && data.vector_res.length) {
+      dimCount = data.vector_res.length;
+    } else if (data?.components) {
+      const vec = Object.values(data.components).find((v) => Array.isArray(v) && v.length);
+      if (vec) dimCount = vec.length;
+    }
+    setVisualizationRulerDimCount(this.vizEl, this.vizConfig, dimCount);
   }
 
   /**

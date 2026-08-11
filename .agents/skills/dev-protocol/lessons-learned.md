@@ -56,6 +56,11 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Invariante**: Para renderizar puntos cuadrados/cúbicos nítidos en GPU, se calcula la distancia Chebyshev `max(abs(coord.x), abs(coord.y))` y se aplica suavizado de borde de 1 píxel `smoothstep(0.44, 0.49, maxDist)`.
 - **Línea Base en Análisis**: En el modo **Análisis**, se renderiza una malla de línea vertical (`THREE.Line`) con opacidad de cristal (`opacity: 0.6`, `transparent: true`, `frustumCulled = false`) anclando el inicio ($X = \text{startX}$) de todos los hilos vectoriales apilados.
 
+### 1.6. Dim Ruler (ticks horizontales sobre max-Y)
+- **Qué es**: ticks 1-based sobre el eje de dimensiones (COMPARE/ANALYSIS/arithmetic; **no** Galaxy), a $Y=\max$ entre threads en esa dim.
+- **Grosor**: no confiar en `LineBasicMaterial.linewidth` (§1.4) — spine `LineSegments` + strip XZ (`MeshBasicMaterial`, `frustumCulled=false`, `depthWrite=false`).
+- **Estado**: `rulerCursor` / `rulerLineCount` / color / thickness en `vl3d.viz.*`; Reset del panel los limpia. Lógica pura en `dimRuler.js`.
+
 ---
 
 ## 2. Visualización y Normalización de Embeddings LLM

@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { createDivergentMaterial, getDivergentColor, calculateZScoreNormalized } from './DivergentShading.js';
-import { anchorsFromSettings, resolveVisualizationSettings, effectiveZeroCoveragePercent, normalizeHex } from '../ui/visualizationControlsDefaults.js';
+import {
+  anchorsFromSettings,
+  resolveVisualizationSettings,
+  effectiveZeroCoveragePercent,
+  normalizeHex,
+  rulerThicknessToWorldWidth,
+} from '../ui/visualizationControlsDefaults.js';
 import { lineSegmentIndices, wideRibbonQuadIndices } from './activationFilter.js';
 import {
   buildPointGroupPaintAttributes,
@@ -192,6 +198,116 @@ export class MeshFactory {
     lineMesh.frustumCulled = false;
 
     return lineMesh;
+  }
+
+  /**
+   * Dim-axis ruler: thin LineSegments spine + XZ strip for controllable thickness.
+   * WebGL linewidth is ignored on most platforms — strip carries visual width.
+   * @param {Array<{ start: { x: number, y: number, z?: number }, end: { x: number, y: number, z?: number } }>} segments
+   * @param {{ color?: string|number, thickness?: number, width?: number }} [options]
+   * @returns {THREE.Group|null}
+   */
+  static createDimRulerMesh(segments, options = {}) {
+    if (!segments || segments.length < 1) return null;
+
+    const hex = typeof options.color === 'string' ? normalizeHex(options.color) : null;
+    const color = hex
+      ? new THREE.Color(hex)
+      : new THREE.Color(typeof options.color === 'number' ? options.color : 0xffffff);
+    const width = options.width != null
+      ? Math.max(0.02, Number(options.width) || 0.02)
+      : rulerThicknessToWorldWidth(options.thickness);
+    const half = width * 0.5;
+
+    const linePositions = new Float32Array(segments.length * 2 * 3);
+    const stripPositions = new Float32Array(segments.length * 4 * 3);
+    const stripIndices = new Uint32Array(segments.length * 6);
+
+    for (let i = 0; i < segments.length; i += 1) {
+      const s = segments[i].start;
+      const e = segments[i].end;
+      const z0 = Number.isFinite(s.z) ? s.z : 0;
+      const z1 = Number.isFinite(e.z) ? e.z : z0;
+      const lo = i * 6;
+      linePositions[lo] = s.x;
+      linePositions[lo + 1] = s.y;
+      linePositions[lo + 2] = z0;
+      linePositions[lo + 3] = e.x;
+      linePositions[lo + 4] = e.y;
+      linePositions[lo + 5] = z1;
+
+      const so = i * 12;
+      // Quad in XZ plane at Y (tape on peaks)
+      stripPositions[so] = s.x;
+      stripPositions[so + 1] = s.y;
+      stripPositions[so + 2] = z0 - half;
+      stripPositions[so + 3] = e.x;
+      stripPositions[so + 4] = e.y;
+      stripPositions[so + 5] = z1 - half;
+      stripPositions[so + 6] = e.x;
+      stripPositions[so + 7] = e.y;
+      stripPositions[so + 8] = z1 + half;
+      stripPositions[so + 9] = s.x;
+      stripPositions[so + 10] = s.y;
+      stripPositions[so + 11] = z0 + half;
+
+      const vo = i * 4;
+      const io = i * 6;
+      stripIndices[io] = vo;
+      stripIndices[io + 1] = vo + 1;
+      stripIndices[io + 2] = vo + 2;
+      stripIndices[io + 3] = vo;
+      stripIndices[io + 4] = vo + 2;
+      stripIndices[io + 5] = vo + 3;
+    }
+
+    const group = new THREE.Group();
+    group.name = 'DimRuler';
+    group.userData.kind = 'dimRuler';
+
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+    });
+    const lineMesh = new THREE.LineSegments(lineGeo, lineMat);
+    lineMesh.frustumCulled = false;
+    group.add(lineMesh);
+
+    const stripGeo = new THREE.BufferGeometry();
+    stripGeo.setAttribute('position', new THREE.BufferAttribute(stripPositions, 3));
+    stripGeo.setIndex(new THREE.BufferAttribute(stripIndices, 1));
+    const stripMat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      fog: false,
+    });
+    const stripMesh = new THREE.Mesh(stripGeo, stripMat);
+    stripMesh.frustumCulled = false;
+    group.add(stripMesh);
+
+    return group;
+  }
+
+  /**
+   * Dispose a dim-ruler group created by createDimRulerMesh.
+   * @param {THREE.Object3D|null|undefined} mesh
+   */
+  static disposeDimRulerMesh(mesh) {
+    if (!mesh) return;
+    mesh.traverse((child) => {
+      child.geometry?.dispose?.();
+      if (child.material) {
+        if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose?.());
+        else child.material.dispose?.();
+      }
+    });
   }
 
   /**
