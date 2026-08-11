@@ -42,6 +42,7 @@ import {
   removeDimRulerLine,
   clampDimRulerState,
 } from '../visualizer/dimRuler.js';
+import { bindHoldRepeatButton } from './holdRepeat.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -903,7 +904,7 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
   }
   const rulerPlus = container.querySelector('#viz-ruler-plus');
   if (rulerPlus) {
-    rulerPlus.addEventListener('click', () => {
+    bindHoldRepeatButton(rulerPlus, () => {
       const next = addDimRulerLine(rulerState());
       applyDimRulerStateToConfig(container, config, next);
       emit();
@@ -911,7 +912,7 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
   }
   const rulerMinus = container.querySelector('#viz-ruler-minus');
   if (rulerMinus) {
-    rulerMinus.addEventListener('click', () => {
+    bindHoldRepeatButton(rulerMinus, () => {
       const next = removeDimRulerLine(rulerState());
       applyDimRulerStateToConfig(container, config, next);
       emit();
