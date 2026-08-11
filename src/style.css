@@ -1712,9 +1712,40 @@ canvas {
   color: var(--text-muted);
 }
 
-#visualization-controls-container .viz-ruler-link-seg .viz-seg-option span {
+#visualization-controls-container .viz-ruler-link-seg {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+#visualization-controls-container .viz-ruler-link-btn {
+  flex: 1;
+  margin: 0;
   padding: 4px 4px;
   font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--panel-border);
+  cursor: pointer;
+  user-select: none;
+}
+
+#visualization-controls-container .viz-ruler-link-btn:last-child {
+  border-right: none;
+}
+
+#visualization-controls-container .viz-ruler-link-btn[aria-pressed="true"] {
+  background: rgba(0, 229, 255, 0.18);
+  color: var(--accent-cyan);
+}
+
+#visualization-controls-container .viz-ruler-link-btn:hover {
+  color: var(--text-main);
 }
 
 #visualization-controls-container .viz-ruler-style-row {
