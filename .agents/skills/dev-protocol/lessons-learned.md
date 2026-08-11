@@ -57,8 +57,8 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Línea Base en Análisis**: En el modo **Análisis**, se renderiza una malla de línea vertical (`THREE.Line`) con opacidad de cristal (`opacity: 0.6`, `transparent: true`, `frustumCulled = false`) anclando el inicio ($X = \text{startX}$) de todos los hilos vectoriales apilados.
 
 ### 1.6. Dim Ruler (cross-token links per dim)
-- **Qué es**: en dims 1..N une **tokens** en la misma dim (COMPARE ANALYSIS + NAVIGATION; **no** Galaxy). `path` = edges consecutivos token→token; `span` = recta minY↔maxY. Cursor/`+`/`−` eligen cuántas dims.
-- **Grosor**: no confiar en `LineBasicMaterial.linewidth` (§1.4) — spine `LineSegments` + strip (`frustumCulled=false`, `depthWrite=false`).
+- **Qué es**: en dims 1..N une **tokens** en la misma dim (COMPARE ANALYSIS + NAVIGATION; **no** Galaxy). `path` = edges consecutivos token→token; `span` = recta minY↔maxY. Cursor/`+`/`−` (hold-accelerate) eligen cuántas dims.
+- **Look**: mismos `LineSegments` + `LineBasicMaterial` que la continuity line de POINTS (`createRibbonMesh`); thickness del panel mapea a opacidad (WebGL linewidth ≈1px).
 - **Estado**: `rulerCursor` / `rulerLineCount` / `rulerLinkMode` / color / thickness en `vl3d.viz.*`; Reset los limpia. Lógica en `dimRuler.js`.
 
 ---

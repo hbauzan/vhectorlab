@@ -5,7 +5,7 @@ import { Instancer } from '../src/visualizer/Instancer.js';
 import { buildDimRulerSegments } from '../src/visualizer/dimRuler.js';
 
 describe('MeshFactory dim ruler', () => {
-  it('createDimRulerMesh returns a group with line + strip and frustumCulled false', () => {
+  it('createDimRulerMesh returns LineSegments like token continuity threads', () => {
     const threads = [
       [{ x: 0, y: 10, z: 0 }, { x: 10, y: 12, z: 0 }],
       [{ x: 0, y: 4, z: 0 }, { x: 10, y: 6, z: 0 }],
@@ -16,13 +16,12 @@ describe('MeshFactory dim ruler', () => {
       thickness: 4,
     });
     expect(mesh).toBeTruthy();
+    expect(mesh.isLineSegments).toBe(true);
     expect(mesh.name).toBe('DimRuler');
-    expect(mesh.children.length).toBe(2);
-    mesh.traverse((child) => {
-      if (child.isLineSegments || child.isMesh) {
-        expect(child.frustumCulled).toBe(false);
-      }
-    });
+    expect(mesh.userData.kind).toBe('dimRuler');
+    expect(mesh.frustumCulled).toBe(false);
+    expect(mesh.material).toBeTruthy();
+    expect(mesh.material.type).toBe('LineBasicMaterial');
     MeshFactory.disposeDimRulerMesh(mesh);
   });
 
