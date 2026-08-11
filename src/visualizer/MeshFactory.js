@@ -5,7 +5,6 @@ import {
   resolveVisualizationSettings,
   effectiveZeroCoveragePercent,
   normalizeHex,
-  rulerThicknessToWorldWidth,
 } from '../ui/visualizationControlsDefaults.js';
 import { lineSegmentIndices, wideRibbonQuadIndices } from './activationFilter.js';
 import {
@@ -201,11 +200,10 @@ export class MeshFactory {
   }
 
   /**
-   * Dim-axis ruler: thin LineSegments spine + XZ strip for controllable thickness.
-   * WebGL linewidth is ignored on most platforms — strip carries visual width.
+   * Dim-axis ruler: same LineSegments look as token continuity threads (§ POINTS ribbons).
    * @param {Array<{ start: { x: number, y: number, z?: number }, end: { x: number, y: number, z?: number } }>} segments
-   * @param {{ color?: string|number, thickness?: number, width?: number }} [options]
-   * @returns {THREE.Group|null}
+   * @param {{ color?: string|number, thickness?: number }} [options]
+   * @returns {THREE.LineSegments|null}
    */
   static createDimRulerMesh(segments, options = {}) {
     if (!segments || segments.length < 1) return null;
@@ -214,89 +212,47 @@ export class MeshFactory {
     const color = hex
       ? new THREE.Color(hex)
       : new THREE.Color(typeof options.color === 'number' ? options.color : 0xffffff);
-    const width = options.width != null
-      ? Math.max(0.02, Number(options.width) || 0.02)
-      : rulerThicknessToWorldWidth(options.thickness);
-    const half = width * 0.5;
 
-    const linePositions = new Float32Array(segments.length * 2 * 3);
-    const stripPositions = new Float32Array(segments.length * 4 * 3);
-    const stripIndices = new Uint32Array(segments.length * 6);
+    // thickness 1…20 → opacity 0.55…0.95 (WebGL linewidth stays ~1px like thread lines)
+    const t = typeof options.thickness === 'number' && Number.isFinite(options.thickness)
+      ? options.thickness
+      : 4;
+    const opacity = Math.max(0.55, Math.min(0.95, 0.55 + ((t - 1) / 19) * 0.4));
 
+    const positions = new Float32Array(segments.length * 2 * 3);
     for (let i = 0; i < segments.length; i += 1) {
       const s = segments[i].start;
       const e = segments[i].end;
       const z0 = Number.isFinite(s.z) ? s.z : 0;
       const z1 = Number.isFinite(e.z) ? e.z : z0;
       const lo = i * 6;
-      linePositions[lo] = s.x;
-      linePositions[lo + 1] = s.y;
-      linePositions[lo + 2] = z0;
-      linePositions[lo + 3] = e.x;
-      linePositions[lo + 4] = e.y;
-      linePositions[lo + 5] = z1;
-
-      const so = i * 12;
-      // Quad in XZ plane at Y (tape on peaks)
-      stripPositions[so] = s.x;
-      stripPositions[so + 1] = s.y;
-      stripPositions[so + 2] = z0 - half;
-      stripPositions[so + 3] = e.x;
-      stripPositions[so + 4] = e.y;
-      stripPositions[so + 5] = z1 - half;
-      stripPositions[so + 6] = e.x;
-      stripPositions[so + 7] = e.y;
-      stripPositions[so + 8] = z1 + half;
-      stripPositions[so + 9] = s.x;
-      stripPositions[so + 10] = s.y;
-      stripPositions[so + 11] = z0 + half;
-
-      const vo = i * 4;
-      const io = i * 6;
-      stripIndices[io] = vo;
-      stripIndices[io + 1] = vo + 1;
-      stripIndices[io + 2] = vo + 2;
-      stripIndices[io + 3] = vo;
-      stripIndices[io + 4] = vo + 2;
-      stripIndices[io + 5] = vo + 3;
+      positions[lo] = s.x;
+      positions[lo + 1] = s.y;
+      positions[lo + 2] = z0;
+      positions[lo + 3] = e.x;
+      positions[lo + 4] = e.y;
+      positions[lo + 5] = z1;
     }
 
-    const group = new THREE.Group();
-    group.name = 'DimRuler';
-    group.userData.kind = 'dimRuler';
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-    const lineMat = new THREE.LineBasicMaterial({
+    const material = new THREE.LineBasicMaterial({
       color,
+      linewidth: 2,
       transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
+      opacity,
     });
-    const lineMesh = new THREE.LineSegments(lineGeo, lineMat);
+
+    const lineMesh = new THREE.LineSegments(geometry, material);
+    lineMesh.name = 'DimRuler';
     lineMesh.frustumCulled = false;
-    group.add(lineMesh);
-
-    const stripGeo = new THREE.BufferGeometry();
-    stripGeo.setAttribute('position', new THREE.BufferAttribute(stripPositions, 3));
-    stripGeo.setIndex(new THREE.BufferAttribute(stripIndices, 1));
-    const stripMat = new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0.55,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      fog: false,
-    });
-    const stripMesh = new THREE.Mesh(stripGeo, stripMat);
-    stripMesh.frustumCulled = false;
-    group.add(stripMesh);
-
-    return group;
+    lineMesh.userData.kind = 'dimRuler';
+    return lineMesh;
   }
 
   /**
-   * Dispose a dim-ruler group created by createDimRulerMesh.
+   * Dispose a dim-ruler mesh created by createDimRulerMesh.
    * @param {THREE.Object3D|null|undefined} mesh
    */
   static disposeDimRulerMesh(mesh) {

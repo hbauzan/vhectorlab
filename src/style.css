@@ -1759,6 +1759,13 @@ canvas {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--panel-border);
   cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+#visualization-controls-container .viz-ruler-btn:active {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.12);
 }
 
 #visualization-controls-container .viz-ruler-btn:hover {
