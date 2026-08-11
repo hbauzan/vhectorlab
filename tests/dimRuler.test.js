@@ -5,7 +5,7 @@ import {
   addDimRulerLine,
   removeDimRulerLine,
   clampDimRulerState,
-  computeDimMaxYs,
+  normalizeRulerLinkMode,
   buildDimRulerSegments,
 } from '../src/visualizer/dimRuler.js';
 
@@ -76,9 +76,9 @@ describe('dimRuler state', () => {
 
   it('repeated − walks backward one by one', () => {
     let s = createDimRulerState(100, { cursor: 5, lineCount: 10 });
-    s = removeDimRulerLine(s); // → 4
-    s = removeDimRulerLine(s); // → 3
-    s = removeDimRulerLine(s); // → 2
+    s = removeDimRulerLine(s);
+    s = removeDimRulerLine(s);
+    s = removeDimRulerLine(s);
     expect(s.lineCount).toBe(2);
     expect(s.cursor).toBe(2);
   });
@@ -101,36 +101,67 @@ describe('dimRuler state', () => {
   });
 });
 
-describe('dimRuler geometry', () => {
-  it('computeDimMaxYs takes per-dim max Y across threads', () => {
-    const threads = [
-      [{ x: 0, y: 1, z: 0 }, { x: 1, y: 5, z: 0 }, { x: 2, y: 2, z: 0 }],
-      [{ x: 0, y: 3, z: 0 }, { x: 1, y: 2, z: 0 }, { x: 2, y: 9, z: 0 }],
+describe('dimRuler link mode', () => {
+  it('normalizes path/span with path default', () => {
+    expect(normalizeRulerLinkMode('path')).toBe('path');
+    expect(normalizeRulerLinkMode('span')).toBe('span');
+    expect(normalizeRulerLinkMode('nope')).toBe('path');
+    expect(normalizeRulerLinkMode(null)).toBe('path');
+  });
+});
+
+describe('dimRuler cross-token geometry', () => {
+  const threads = [
+    [
+      { x: 0, y: 10, z: 0 },
+      { x: 10, y: 12, z: 0 },
+      { x: 20, y: 8, z: 0 },
+    ],
+    [
+      { x: 0, y: 4, z: 0 },
+      { x: 10, y: 6, z: 0 },
+      { x: 20, y: 2, z: 0 },
+    ],
+    [
+      { x: 0, y: 1, z: 0 },
+      { x: 10, y: 3, z: 0 },
+      { x: 20, y: 0, z: 0 },
+    ],
+  ];
+
+  it('path mode links consecutive tokens at each covered dim', () => {
+    const segs = buildDimRulerSegments(threads, 2, 'path');
+    // dim0: t0→t1, t1→t2; dim1: t0→t1, t1→t2
+    expect(segs).toEqual([
+      { start: { x: 0, y: 10, z: 0 }, end: { x: 0, y: 4, z: 0 } },
+      { start: { x: 0, y: 4, z: 0 }, end: { x: 0, y: 1, z: 0 } },
+      { start: { x: 10, y: 12, z: 0 }, end: { x: 10, y: 6, z: 0 } },
+      { start: { x: 10, y: 6, z: 0 }, end: { x: 10, y: 3, z: 0 } },
+    ]);
+  });
+
+  it('span mode draws one straight minY→maxY segment per dim', () => {
+    const segs = buildDimRulerSegments(threads, 1, 'span');
+    // dim0: maxY token0 (10) ↔ minY token2 (1)
+    expect(segs).toEqual([
+      { start: { x: 0, y: 1, z: 0 }, end: { x: 0, y: 10, z: 0 } },
+    ]);
+  });
+
+  it('returns [] when lineCount is 0 or fewer than 2 threads', () => {
+    expect(buildDimRulerSegments(threads, 0, 'path')).toEqual([]);
+    expect(buildDimRulerSegments([threads[0]], 2, 'path')).toEqual([]);
+  });
+
+  it('works with NAVIGATION-style distinct Z per token', () => {
+    const nav = [
+      [{ x: 5, y: 2, z: 0 }, { x: 15, y: 3, z: 0 }],
+      [{ x: 5, y: 1, z: 10 }, { x: 15, y: 4, z: 10 }],
     ];
-    expect(computeDimMaxYs(threads)).toEqual([3, 5, 9]);
-  });
-
-  it('buildDimRulerSegments connects consecutive dims along max-Y envelope', () => {
-    const xs = [0, 10, 20, 30];
-    const maxYs = [1, 5, 8, 2];
-    const segs = buildDimRulerSegments(xs, maxYs, 3);
+    const segs = buildDimRulerSegments(nav, 2, 'path');
     expect(segs).toEqual([
-      { start: { x: 0, y: 1, z: 0 }, end: { x: 10, y: 5, z: 0 } },
-      { start: { x: 10, y: 5, z: 0 }, end: { x: 20, y: 8, z: 0 } },
+      { start: { x: 5, y: 2, z: 0 }, end: { x: 5, y: 1, z: 10 } },
+      { start: { x: 15, y: 3, z: 0 }, end: { x: 15, y: 4, z: 10 } },
     ]);
-  });
-
-  it('buildDimRulerSegments with lineCount 1 emits a short tick at dim 1', () => {
-    const xs = [0, 10, 20];
-    const maxYs = [1, 5, 8];
-    const segs = buildDimRulerSegments(xs, maxYs, 1);
-    // half-step = 5
-    expect(segs).toEqual([
-      { start: { x: -5, y: 1, z: 0 }, end: { x: 5, y: 1, z: 0 } },
-    ]);
-  });
-
-  it('buildDimRulerSegments returns [] when lineCount is 0', () => {
-    expect(buildDimRulerSegments([0, 1], [0, 1], 0)).toEqual([]);
   });
 });

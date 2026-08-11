@@ -1697,6 +1697,26 @@ canvas {
   color: var(--text-muted);
 }
 
+#visualization-controls-container .viz-ruler-link-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#visualization-controls-container .viz-ruler-link-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+#visualization-controls-container .viz-ruler-link-seg .viz-seg-option span {
+  padding: 4px 4px;
+  font-size: 0.58rem;
+}
+
 #visualization-controls-container .viz-ruler-style-row {
   display: grid;
   grid-template-columns: 28px 22px minmax(3.2rem, 1fr) minmax(3.5rem, 0.9fr);
