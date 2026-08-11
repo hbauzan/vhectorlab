@@ -22,16 +22,23 @@ describe('Compare panel group cosine contract', () => {
     expect(subtitle).toBe('GROUP COSINE vs "vehicles"');
   });
 
-  it('left dock max-height tracks viewport→HUD (not a short 56vh/520px cap)', () => {
+  it('left dock keeps taller HUD-capped height and side scrollbars for overflow', () => {
     const chrome = readFileSync(
       resolve(process.cwd(), 'src/theme/chrome.css'),
       'utf8',
     );
     expect(chrome).toMatch(
-      /#compare-panel[\s\S]*?max-height:\s*calc\(\s*100dvh[\s\S]*?--hud-height[\s\S]*?--hud-bottom/,
+      /#compare-panel[\s\S]*?max-height:\s*min\([\s\S]*?68vh[\s\S]*?600px[\s\S]*?100dvh[\s\S]*?--hud-height/,
+    );
+    expect(chrome).toMatch(
+      /#compare-panel[\s\S]*?overflow-y:\s*auto\s*!important/,
+    );
+    expect(chrome).toMatch(/scrollbar-gutter:\s*stable/);
+    expect(chrome).toMatch(
+      /\.compare-cosine-list\s*\{[^}]*overflow-y:\s*auto/s,
     );
     expect(chrome).not.toMatch(
-      /#compare-panel,\s*\n\s*body\.workbench-theme #sidebar-panel \{\s*\n\s*max-height:\s*min\(56vh,\s*520px\)/,
+      /max-height:\s*min\(56vh,\s*520px\)\s*!important/,
     );
   });
 });
