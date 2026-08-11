@@ -110,14 +110,23 @@ describe('dimRuler geometry', () => {
     expect(computeDimMaxYs(threads)).toEqual([3, 5, 9]);
   });
 
-  it('buildDimRulerSegments emits horizontal ticks at each dim max Y', () => {
+  it('buildDimRulerSegments connects consecutive dims along max-Y envelope', () => {
     const xs = [0, 10, 20, 30];
     const maxYs = [1, 5, 8, 2];
-    const segs = buildDimRulerSegments(xs, maxYs, 2);
-    // half-step = |10-0|/2 = 5
+    const segs = buildDimRulerSegments(xs, maxYs, 3);
+    expect(segs).toEqual([
+      { start: { x: 0, y: 1, z: 0 }, end: { x: 10, y: 5, z: 0 } },
+      { start: { x: 10, y: 5, z: 0 }, end: { x: 20, y: 8, z: 0 } },
+    ]);
+  });
+
+  it('buildDimRulerSegments with lineCount 1 emits a short tick at dim 1', () => {
+    const xs = [0, 10, 20];
+    const maxYs = [1, 5, 8];
+    const segs = buildDimRulerSegments(xs, maxYs, 1);
+    // half-step = 5
     expect(segs).toEqual([
       { start: { x: -5, y: 1, z: 0 }, end: { x: 5, y: 1, z: 0 } },
-      { start: { x: 5, y: 5, z: 0 }, end: { x: 15, y: 5, z: 0 } },
     ]);
   });
 
