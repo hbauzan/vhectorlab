@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   DEFAULT_VISUALIZATION_SETTINGS,
   DEFAULT_VIZ_COLORS,
@@ -196,6 +198,20 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('data-field-info="Which signs show."');
     expect(html).toContain('data-field-info="Hold range at zero."');
     expect(html).toContain('data-field-info="Groups only (G1↔G2)."');
+  });
+
+  it('viz panel body uses taller HUD-capped height with side scrollbar', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/style.css'), 'utf8');
+    const chrome = readFileSync(resolve(process.cwd(), 'src/theme/chrome.css'), 'utf8');
+    expect(css).toMatch(
+      /\.viz-panel-body\s*\{[\s\S]*?max-height:\s*min\([\s\S]*?68vh[\s\S]*?600px[\s\S]*?100dvh[\s\S]*?--hud-height/,
+    );
+    expect(css).toMatch(/\.viz-panel-body\s*\{[\s\S]*?overflow-y:\s*auto/);
+    expect(css).toMatch(/\.viz-panel-body\s*\{[\s\S]*?scrollbar-gutter:\s*stable/);
+    expect(chrome).toMatch(
+      /\.viz-panel-body\s*\{[\s\S]*?max-height:\s*min\([\s\S]*?68vh[\s\S]*?600px/,
+    );
+    expect(css).not.toMatch(/\.viz-panel-body\s*\{[\s\S]*?max-height:\s*min\(56vh,\s*520px\)/);
   });
 
   it('collapse tab is a sibling of viz-panel-body (outside card chrome)', () => {

@@ -1563,9 +1563,18 @@ canvas {
   padding: 8px 10px 10px;
   width: var(--viz-width);
   max-width: var(--viz-width);
-  max-height: min(56vh, 520px);
+  /* Same HUD-aware taller cap as left Compare/Arithmetic — grow up from HUD seam. */
+  max-height: min(
+    68vh,
+    600px,
+    calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px)
+  );
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
   box-sizing: border-box;
   background: var(--panel-bg);
   backdrop-filter: blur(16px);
@@ -2618,8 +2627,17 @@ canvas {
     max-width: var(--viz-width);
     padding: 7px 8px 8px;
     gap: 5px;
-    max-height: min(42dvh, 340px);
+    max-height: min(
+      52dvh,
+      420px,
+      calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 20px)
+    );
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
     border-radius: 0 10px 0 0;
   }
 
