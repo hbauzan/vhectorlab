@@ -107,6 +107,24 @@ body.workbench-theme #sidebar-panel {
   scrollbar-width: thin;
 }
 
+/*
+  Visualization (right, HUD-glued): same taller scroll model as left panels.
+  Grows up from the HUD seam; side scrollbar when filter / colors / ruler overflow.
+*/
+body.workbench-theme #visualization-controls-container .viz-panel-body {
+  max-height: min(
+    68vh,
+    600px,
+    calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px)
+  ) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
 /* Preset row: wrap so Groups chips are not clipped horizontally */
 body.workbench-theme #compare-panel .preset-buttons-row {
   flex-wrap: wrap;

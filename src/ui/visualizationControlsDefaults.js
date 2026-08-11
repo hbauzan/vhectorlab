@@ -23,6 +23,7 @@
  *   groupHueColors: Record<string, string>,
  *   rulerColor: string,
  *   rulerThickness: number,
+ *   rulerLinkMode: 'path' | 'span',
  *   rulerCursor: number,
  *   rulerLineCount: number,
  * }} VisualizationSettings */
@@ -47,6 +48,7 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   groupHueColors: `${VIZ_STORAGE_PREFIX}groupHueColors`,
   rulerColor: `${VIZ_STORAGE_PREFIX}rulerColor`,
   rulerThickness: `${VIZ_STORAGE_PREFIX}rulerThickness`,
+  rulerLinkMode: `${VIZ_STORAGE_PREFIX}rulerLinkMode`,
   rulerCursor: `${VIZ_STORAGE_PREFIX}rulerCursor`,
   rulerLineCount: `${VIZ_STORAGE_PREFIX}rulerLineCount`,
 });
@@ -63,6 +65,9 @@ export const DEFAULT_OPPOSITE_HIGHLIGHT_COLOR = '#00E5FF';
 
 /** Dim-axis ruler stroke (editable in Visualization panel). */
 export const DEFAULT_RULER_COLOR = '#FFFFFF';
+
+/** Cross-token link style: path = consecutive tokens; span = minY↔maxY. */
+export const DEFAULT_RULER_LINK_MODE = /** @type {'path'|'span'} */ ('path');
 
 /** Ruler visual thickness slider: 1…20 → world strip width. */
 export const RULER_THICKNESS_MIN = 1;
@@ -117,6 +122,7 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   groupHueColors: Object.freeze({}),
   rulerColor: DEFAULT_RULER_COLOR,
   rulerThickness: DEFAULT_RULER_THICKNESS,
+  rulerLinkMode: DEFAULT_RULER_LINK_MODE,
   rulerCursor: 1,
   rulerLineCount: 0,
 });
@@ -131,6 +137,14 @@ export function normalizeRulerThickness(value) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return DEFAULT_RULER_THICKNESS;
   return Math.max(RULER_THICKNESS_MIN, Math.min(RULER_THICKNESS_MAX, Math.round(n)));
+}
+
+/**
+ * @param {unknown} mode
+ * @returns {'path'|'span'}
+ */
+export function normalizeRulerLinkMode(mode) {
+  return mode === 'span' ? 'span' : DEFAULT_RULER_LINK_MODE;
 }
 
 /**
@@ -479,6 +493,7 @@ export function resolveVisualizationSettings(partial = null) {
         ? src.rulerThickness
         : DEFAULT_RULER_THICKNESS
     ),
+    rulerLinkMode: normalizeRulerLinkMode(src.rulerLinkMode),
     rulerCursor: Math.max(
       1,
       normalizeRulerCount(
@@ -528,6 +543,7 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
       })(),
       rulerColor: storage.getItem(VIZ_STORAGE_KEYS.rulerColor),
       rulerThickness: storage.getItem(VIZ_STORAGE_KEYS.rulerThickness),
+      rulerLinkMode: storage.getItem(VIZ_STORAGE_KEYS.rulerLinkMode),
       rulerCursor: storage.getItem(VIZ_STORAGE_KEYS.rulerCursor),
       rulerLineCount: storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount),
     });
@@ -560,6 +576,7 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.groupHueColors, JSON.stringify(resolved.groupHueColors || {}));
     storage.setItem(VIZ_STORAGE_KEYS.rulerColor, resolved.rulerColor);
     storage.setItem(VIZ_STORAGE_KEYS.rulerThickness, String(resolved.rulerThickness));
+    storage.setItem(VIZ_STORAGE_KEYS.rulerLinkMode, resolved.rulerLinkMode);
     storage.setItem(VIZ_STORAGE_KEYS.rulerCursor, String(resolved.rulerCursor));
     storage.setItem(VIZ_STORAGE_KEYS.rulerLineCount, String(resolved.rulerLineCount));
   } catch {

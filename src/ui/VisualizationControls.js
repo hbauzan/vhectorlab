@@ -11,6 +11,7 @@ import {
   normalizeConflictCover,
   normalizeHighlightStrength,
   normalizeRulerThickness,
+  normalizeRulerLinkMode,
   resolveVisualizationSettings,
   saveVisualizationSettings,
   resetVisualizationSettings,
@@ -249,6 +250,19 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       <div class="viz-ruler-title">
         <span class="field-label-text">Ruler</span>${infoTipMarkup(FIELD_INFO.dimRuler)}
       </div>
+      <div class="viz-ruler-link-row">
+        <span class="viz-ruler-link-label"><span class="field-label-text">Link:</span>${infoTipMarkup(FIELD_INFO.dimRulerLink)}</span>
+        <div class="viz-segmented viz-ruler-link-seg" role="radiogroup" aria-label="Ruler link mode">
+          <label class="viz-seg-option">
+            <input type="radio" name="viz-ruler-link-mode" value="path" ${s.rulerLinkMode === 'path' ? 'checked' : ''}>
+            <span>Path</span>
+          </label>
+          <label class="viz-seg-option">
+            <input type="radio" name="viz-ruler-link-mode" value="span" ${s.rulerLinkMode === 'span' ? 'checked' : ''}>
+            <span>Span</span>
+          </label>
+        </div>
+      </div>
       <div class="viz-ruler-style-row">
         <label for="viz-ruler-hex"><span class="field-label-text">Color</span>${infoTipMarkup(FIELD_INFO.dimRulerColor)}</label>
         <input type="color" id="viz-ruler-swatch" class="viz-color-swatch" value="${s.rulerColor}" title="Ruler color" aria-label="Ruler color swatch">
@@ -394,6 +408,9 @@ export function syncDimRulerControlsFromConfig(container, config, dimCount = nul
   if (hex) hex.value = s.rulerColor;
   const thick = container.querySelector('#viz-ruler-thickness');
   if (thick) thick.value = String(s.rulerThickness);
+  for (const radio of container.querySelectorAll('input[name="viz-ruler-link-mode"]')) {
+    radio.checked = radio.value === s.rulerLinkMode;
+  }
 
   const cursor = container.querySelector('#viz-ruler-cursor');
   if (cursor) {
@@ -852,6 +869,14 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     rulerThick.addEventListener('input', () => {
       config.rulerThickness = normalizeRulerThickness(rulerThick.value);
       rulerThick.value = String(config.rulerThickness);
+      emit();
+    });
+  }
+
+  for (const radio of container.querySelectorAll('input[name="viz-ruler-link-mode"]')) {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      config.rulerLinkMode = normalizeRulerLinkMode(radio.value);
       emit();
     });
   }
