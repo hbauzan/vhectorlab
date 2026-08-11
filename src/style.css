@@ -592,6 +592,18 @@ canvas {
   flex-shrink: 0;
 }
 
+.compare-cosine-item .member-count {
+  font-size: 0.6rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.compare-cosine-item.compare-cosine-group .word {
+  color: var(--accent-cyan);
+}
+
 .compare-cosine-item .score {
   font-family: monospace;
   color: var(--text-muted);
@@ -661,7 +673,7 @@ canvas {
   left: auto;
   width: 320px;
   height: fit-content;
-  max-height: calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 24px);
+  max-height: calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -1357,7 +1369,7 @@ canvas {
   /* §4.1 / §4.2: no external scrollbar on the dock host (lists/panels scroll inside) */
   overflow: hidden;
   height: fit-content;
-  max-height: calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 24px);
+  max-height: calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px);
 }
 
 .collapsible-dock.is-collapsed .dock-body {

@@ -87,13 +87,15 @@ body.workbench-theme .visualization-controls {
 }
 
 /*
-  Compare (and Arithmetic) left panel: same scroll model as Visualization —
-  fixed max-height + overflow-y auto so presets (2 Groups / 3 Groups), SAE, etc.
-  are reachable instead of being clipped by the dock.
+  Compare (and Arithmetic) left panel: grow toward the bottom HUD so
+  presets / SAE / cosine list stay usable. Cap = viewport minus navbar + HUD
+  + small gap (same formula as .glass-sidebar in style.css).
 */
 body.workbench-theme #compare-panel,
 body.workbench-theme #sidebar-panel {
-  max-height: min(56vh, 520px) !important;
+  max-height: calc(
+    100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px
+  ) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
