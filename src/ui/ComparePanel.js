@@ -1,4 +1,8 @@
-import { reorderCompareItems, sortCompareItemsByCosine } from './compareCosine.js';
+import {
+  buildGroupCosineRows,
+  reorderCompareItems,
+  sortCompareItemsByCosine,
+} from './compareCosine.js';
 import { parseCompareInput } from './parseCompareGroups.js';
 import { saeControlsMarkup, wireSaeControls } from './SaeControls.js';
 import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
@@ -141,6 +145,8 @@ export class ComparePanel {
     this.dimSortByContrast = false;
     /** Cosine ▲/▼ blocked while ≥2 groups (D9). */
     this.cosineSortBlockedByGroups = false;
+    /** Panel list mode: 'tokens' | 'groups' (groups = centroid cosine; 3D unchanged). */
+    this.panelCosineMode = 'tokens';
 
     this.element = document.createElement('div');
     this.element.id = 'compare-panel';
@@ -298,7 +304,9 @@ export class ComparePanel {
   applyReorderResult(result) {
     if (!result) return;
     this.items = result.items;
-    this.renderCosineList(result.anchor, result.items);
+    // Reorder only applies to flat token list; group panel mode never reorders 3D.
+    this.panelCosineMode = 'tokens';
+    this.renderCosineList(result.anchor, result.items, { groupMode: false });
 
     if (this.onReorder) {
       this.setReorderLocked(true);
@@ -309,12 +317,13 @@ export class ComparePanel {
   }
 
   handleReorder(fromIndex, delta) {
-    if (!this.items || this.reorderLocked) return;
+    if (!this.items || this.reorderLocked || this.panelCosineMode === 'groups') return;
     this.applyReorderResult(reorderCompareItems(this.items, fromIndex, delta));
   }
 
   handleSort(direction) {
     if (!this.items || this.reorderLocked || this.cosineSortBlockedByGroups) return;
+    if (this.panelCosineMode === 'groups') return;
     this.applyReorderResult(sortCompareItemsByCosine(this.items, direction));
   }
 
@@ -342,7 +351,7 @@ export class ComparePanel {
     const blocked = this.cosineSortBlockedByGroups;
     const disabled = this.reorderLocked || !hasItems || blocked;
     const title = blocked
-      ? 'Disabled while groups are active (preserves group blocks)'
+      ? 'Disabled while groups are active (panel shows group-centroid cosine)'
       : null;
     if (this.btnSortDesc) {
       this.btnSortDesc.disabled = disabled;
@@ -464,11 +473,13 @@ export class ComparePanel {
 
   /**
    * Populate metrics + cosine-vs-anchor list from /compare response (or reordered payload).
+   * With ≥2 GROUP_*: panel shows group-centroid cosine vs first group (3D unchanged).
    * @param {{ count: number, anchor?: { text: string }, items: Array }} data
    */
   updateCompareResults(data) {
     if (!data || !data.items) {
       this.items = null;
+      this.panelCosineMode = 'tokens';
       this.updateMetrics(0);
       this.updateGroupLegend(null);
       this.cosineSubtitle.textContent = 'COSINE SIMILARITY vs —';
@@ -480,13 +491,30 @@ export class ComparePanel {
     this.items = data.items.slice();
     this.updateMetrics(data.count);
     this.updateGroupLegend(data.items);
+
+    const groupRows = buildGroupCosineRows(data.items);
+    if (groupRows) {
+      this.panelCosineMode = 'groups';
+      this.renderCosineList(groupRows.anchor, groupRows.items, { groupMode: true });
+      return;
+    }
+
+    this.panelCosineMode = 'tokens';
     const anchor = data.anchor || (data.items[0] ? { index: 0, text: data.items[0].text } : null);
-    this.renderCosineList(anchor, data.items);
+    this.renderCosineList(anchor, data.items, { groupMode: false });
   }
 
-  renderCosineList(anchor, items) {
+  /**
+   * @param {{ text?: string }|null} anchor
+   * @param {Array} items
+   * @param {{ groupMode?: boolean }} [opts]
+   */
+  renderCosineList(anchor, items, opts = {}) {
+    const groupMode = !!opts.groupMode;
     const anchorWord = anchor?.text ?? items[0]?.text ?? '—';
-    this.cosineSubtitle.textContent = `COSINE SIMILARITY vs "${anchorWord}"`;
+    this.cosineSubtitle.textContent = groupMode
+      ? `GROUP COSINE vs "${anchorWord}"`
+      : `COSINE SIMILARITY vs "${anchorWord}"`;
 
     this.cosineList.innerHTML = '';
     if (!items || items.length === 0) {
@@ -498,22 +526,32 @@ export class ComparePanel {
     items.forEach((item, index) => {
       const li = document.createElement('li');
       li.className = 'compare-cosine-item';
+      if (groupMode) li.classList.add('compare-cosine-group');
       li.setAttribute('data-id', item.id || `tok_${index}`);
+      if (item.groupId) li.setAttribute('data-group-id', item.groupId);
 
       const score = index === 0
         ? 1
         : (typeof item.cosine_vs_first === 'number' ? item.cosine_vs_first : 0);
 
       const refBadge = index === 0 ? '<span class="badge-ref">REF</span>' : '';
+      const memberHint = groupMode && item.memberCount
+        ? `<span class="member-count" title="${item.memberCount} tokens">${item.memberCount}</span>`
+        : '';
+      const reorder = groupMode
+        ? ''
+        : `<span class="reorder-btns">
+          <button type="button" class="btn-reorder" data-dir="up" data-index="${index}" ${index === 0 || this.reorderLocked ? 'disabled' : ''} aria-label="Move up">▲</button>
+          <button type="button" class="btn-reorder" data-dir="down" data-index="${index}" ${index === items.length - 1 || this.reorderLocked ? 'disabled' : ''} aria-label="Move down">▼</button>
+        </span>`;
+
       li.innerHTML = `
         <span class="rank">#${index + 1}</span>
         <span class="word">${item.text}</span>
+        ${memberHint}
         ${refBadge}
         <span class="score">${score.toFixed(4)}</span>
-        <span class="reorder-btns">
-          <button type="button" class="btn-reorder" data-dir="up" data-index="${index}" ${index === 0 || this.reorderLocked ? 'disabled' : ''} aria-label="Move up">▲</button>
-          <button type="button" class="btn-reorder" data-dir="down" data-index="${index}" ${index === items.length - 1 || this.reorderLocked ? 'disabled' : ''} aria-label="Move down">▼</button>
-        </span>
+        ${reorder}
       `;
       this.cosineList.appendChild(li);
     });
