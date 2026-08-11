@@ -73,6 +73,10 @@ describe('visualizationControlsDefaults', () => {
       oppositeCancelCoverage: 0,
       groupHueEnabled: false,
       groupHueColors: {},
+      rulerColor: '#FFFFFF',
+      rulerThickness: 4,
+      rulerCursor: 1,
+      rulerLineCount: 0,
     });
   });
 
@@ -118,9 +122,15 @@ describe('visualizationControlsDefaults', () => {
       colorPositive: '#FF0000',
       colorZero: '#111111',
       colorNegative: '#0000FF',
+      rulerColor: '#ABCDEF',
+      rulerThickness: 9,
+      rulerCursor: 12,
+      rulerLineCount: 4,
     });
     saveVisualizationSettings(settings, storage);
     expect(storage.getItem(VIZ_STORAGE_KEYS.filter)).toBe('positive');
+    expect(storage.getItem(VIZ_STORAGE_KEYS.rulerColor)).toBe('#ABCDEF');
+    expect(storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount)).toBe('4');
     expect(loadVisualizationSettings(storage)).toEqual(settings);
   });
 
@@ -173,6 +183,10 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('Group contrast');
     expect(html).toContain('Group hue');
     expect(html).toContain('viz-group-hue-enabled');
+    expect(html).toContain('viz-ruler-section');
+    expect(html).toContain('viz-ruler-plus');
+    expect(html).toContain('viz-ruler-cursor');
+    expect(html).toContain('Ruler');
     expect(html).toContain('viz-group-hue-rows');
     expect(html).toContain('viz-same-sign-enabled');
     expect(html).toContain('viz-opposite-enabled');

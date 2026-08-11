@@ -10,6 +10,7 @@ import {
   normalizeFilterMode,
   normalizeConflictCover,
   normalizeHighlightStrength,
+  normalizeRulerThickness,
   resolveVisualizationSettings,
   saveVisualizationSettings,
   resetVisualizationSettings,
@@ -20,6 +21,8 @@ import {
   HIGH_COVERAGE_SLIDER_MAX,
   HIGHLIGHT_STRENGTH_MIN,
   HIGHLIGHT_STRENGTH_MAX,
+  RULER_THICKNESS_MIN,
+  RULER_THICKNESS_MAX,
   highCoverageFromSlider,
   highCoverageToSlider,
   formatHighCoverage,
@@ -31,6 +34,13 @@ import {
 } from './CollapsibleDock.js';
 import { FIELD_INFO, infoTipMarkup, escapeHtmlAttr } from './fieldInfo.js';
 import { normalizeGroupHueRowSpecs } from '../visualizer/groupHuePaint.js';
+import {
+  createDimRulerState,
+  setDimRulerCursor,
+  addDimRulerLine,
+  removeDimRulerLine,
+  clampDimRulerState,
+} from '../visualizer/dimRuler.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -235,6 +245,31 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       ${infoTipMarkup(FIELD_INFO.labelsToggle)}
     </div>
 
+    <div class="viz-ruler-section">
+      <div class="viz-ruler-title">
+        <span class="field-label-text">Ruler</span>${infoTipMarkup(FIELD_INFO.dimRuler)}
+      </div>
+      <div class="viz-ruler-style-row">
+        <label for="viz-ruler-hex"><span class="field-label-text">Color</span>${infoTipMarkup(FIELD_INFO.dimRulerColor)}</label>
+        <input type="color" id="viz-ruler-swatch" class="viz-color-swatch" value="${s.rulerColor}" title="Ruler color" aria-label="Ruler color swatch">
+        <input type="text" id="viz-ruler-hex" class="viz-color-hex" value="${s.rulerColor}" maxlength="7" spellcheck="false" placeholder="#FFFFFF" title="Ruler hex">
+        <label class="viz-ruler-thick-label" for="viz-ruler-thickness" title="Thickness">${infoTipMarkup(FIELD_INFO.dimRulerThickness)}
+          <input type="range" id="viz-ruler-thickness" class="viz-ruler-thickness" min="${RULER_THICKNESS_MIN}" max="${RULER_THICKNESS_MAX}" step="1" value="${s.rulerThickness}" aria-label="Ruler thickness">
+        </label>
+      </div>
+      <div class="viz-ruler-stepper">
+        <button type="button" id="viz-ruler-minus" class="viz-ruler-btn" title="Remove ruler at cursor" aria-label="Remove ruler line">−</button>
+        <input type="number" id="viz-ruler-cursor" class="viz-ruler-cursor" value="${s.rulerCursor}" min="1" step="1" inputmode="numeric" title="Dimension cursor" aria-label="Ruler dimension cursor">
+        <button type="button" id="viz-ruler-plus" class="viz-ruler-btn" title="Add ruler through cursor" aria-label="Add ruler line">+</button>
+        <span class="viz-ruler-meta" title="Lines / total dims">
+          <span id="viz-ruler-line-count">${s.rulerLineCount}</span> lines
+          ·
+          <span id="viz-ruler-dim-total">—</span> dims
+        </span>
+        ${infoTipMarkup(FIELD_INFO.dimRulerCursor)}
+      </div>
+    </div>
+
     <button type="button" id="viz-reset-btn" class="viz-reset-btn">Reset</button>
   </div>
 </div>
@@ -302,6 +337,98 @@ export function syncVisualizationControlsFromConfig(container, config) {
     labelsBtn.setAttribute('aria-pressed', s.labelsVisible ? 'true' : 'false');
     labelsBtn.textContent = labelsToggleButtonText(s.labelsVisible);
   }
+
+  syncDimRulerControlsFromConfig(container, s);
+}
+
+/**
+ * Read runtime dimCount stored on the panel host (set after compare/arithmetic render).
+ * @param {HTMLElement} container
+ * @returns {number}
+ */
+export function readVizRulerDimCount(container) {
+  if (!container) return 0;
+  const n = Number(container.dataset?.vizRulerDimCount);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+}
+
+/**
+ * Apply ruler cursor/lineCount into config + refresh stepper UI.
+ * @param {HTMLElement} container
+ * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} config
+ * @param {import('../visualizer/dimRuler.js').DimRulerState} state
+ */
+function applyDimRulerStateToConfig(container, config, state) {
+  const s = clampDimRulerState(state);
+  config.rulerCursor = s.cursor;
+  config.rulerLineCount = s.lineCount;
+  syncDimRulerControlsFromConfig(container, config, s.dimCount);
+}
+
+/**
+ * Sync ruler color / thickness / stepper from config.
+ * @param {HTMLElement} container
+ * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} config
+ * @param {number} [dimCount]
+ */
+export function syncDimRulerControlsFromConfig(container, config, dimCount = null) {
+  if (!container || !config) return;
+  const s = resolveVisualizationSettings(config);
+  const dims = dimCount != null
+    ? Math.max(0, Math.round(Number(dimCount) || 0))
+    : readVizRulerDimCount(container);
+  const ruler = clampDimRulerState({
+    dimCount: dims,
+    cursor: s.rulerCursor,
+    lineCount: s.rulerLineCount,
+  });
+  if (dims > 0) {
+    config.rulerCursor = ruler.cursor;
+    config.rulerLineCount = ruler.lineCount;
+    container.dataset.vizRulerDimCount = String(dims);
+  }
+
+  const swatch = container.querySelector('#viz-ruler-swatch');
+  const hex = container.querySelector('#viz-ruler-hex');
+  if (swatch) swatch.value = s.rulerColor;
+  if (hex) hex.value = s.rulerColor;
+  const thick = container.querySelector('#viz-ruler-thickness');
+  if (thick) thick.value = String(s.rulerThickness);
+
+  const cursor = container.querySelector('#viz-ruler-cursor');
+  if (cursor) {
+    cursor.value = String(ruler.cursor);
+    if (dims > 0) {
+      cursor.min = '1';
+      cursor.max = String(dims);
+    }
+  }
+  const lineEl = container.querySelector('#viz-ruler-line-count');
+  if (lineEl) lineEl.textContent = String(ruler.lineCount);
+  const totalEl = container.querySelector('#viz-ruler-dim-total');
+  if (totalEl) totalEl.textContent = dims > 0 ? String(dims) : '—';
+}
+
+/**
+ * Update ruler dim total after compare/arithmetic layout (clamps persisted counts).
+ * @param {HTMLElement|null|undefined} container
+ * @param {import('./visualizationControlsDefaults.js').VisualizationSettings|null|undefined} config
+ * @param {number} dimCount
+ * @param {Function} [onChange]
+ */
+export function setVisualizationRulerDimCount(container, config, dimCount, onChange = null) {
+  if (!container || !config) return;
+  const dims = Math.max(0, Math.round(Number(dimCount) || 0));
+  container.dataset.vizRulerDimCount = String(dims);
+  const next = clampDimRulerState({
+    dimCount: dims,
+    cursor: config.rulerCursor,
+    lineCount: config.rulerLineCount,
+  });
+  config.rulerCursor = next.cursor;
+  config.rulerLineCount = next.lineCount;
+  syncDimRulerControlsFromConfig(container, config, dims);
+  if (typeof onChange === 'function') onChange(config);
 }
 
 /**
@@ -690,6 +817,83 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       emit();
     });
   }
+
+  const rulerSwatch = container.querySelector('#viz-ruler-swatch');
+  const rulerHex = container.querySelector('#viz-ruler-hex');
+  if (rulerSwatch && rulerHex) {
+    rulerSwatch.addEventListener('input', () => {
+      const hex = normalizeHex(rulerSwatch.value);
+      if (!hex) return;
+      config.rulerColor = hex;
+      rulerHex.value = hex;
+      emit();
+    });
+    const commitRulerHex = () => {
+      const hex = normalizeHex(rulerHex.value);
+      if (!hex) {
+        rulerHex.value = config.rulerColor;
+        return;
+      }
+      config.rulerColor = hex;
+      rulerSwatch.value = hex;
+      rulerHex.value = hex;
+      emit();
+    };
+    rulerHex.addEventListener('change', commitRulerHex);
+    rulerHex.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitRulerHex();
+      }
+    });
+  }
+  const rulerThick = container.querySelector('#viz-ruler-thickness');
+  if (rulerThick) {
+    rulerThick.addEventListener('input', () => {
+      config.rulerThickness = normalizeRulerThickness(rulerThick.value);
+      rulerThick.value = String(config.rulerThickness);
+      emit();
+    });
+  }
+
+  const rulerState = () => createDimRulerState(readVizRulerDimCount(container), {
+    cursor: config.rulerCursor,
+    lineCount: config.rulerLineCount,
+  });
+
+  const rulerCursorInput = container.querySelector('#viz-ruler-cursor');
+  if (rulerCursorInput) {
+    const commitCursor = () => {
+      const next = setDimRulerCursor(rulerState(), rulerCursorInput.value);
+      applyDimRulerStateToConfig(container, config, next);
+      emit();
+    };
+    rulerCursorInput.addEventListener('change', commitCursor);
+    rulerCursorInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitCursor();
+      }
+    });
+  }
+  const rulerPlus = container.querySelector('#viz-ruler-plus');
+  if (rulerPlus) {
+    rulerPlus.addEventListener('click', () => {
+      const next = addDimRulerLine(rulerState());
+      applyDimRulerStateToConfig(container, config, next);
+      emit();
+    });
+  }
+  const rulerMinus = container.querySelector('#viz-ruler-minus');
+  if (rulerMinus) {
+    rulerMinus.addEventListener('click', () => {
+      const next = removeDimRulerLine(rulerState());
+      applyDimRulerStateToConfig(container, config, next);
+      emit();
+    });
+  }
+
+  syncDimRulerControlsFromConfig(container, config);
 
   const resetBtn = container.querySelector('#viz-reset-btn');
   if (resetBtn) {

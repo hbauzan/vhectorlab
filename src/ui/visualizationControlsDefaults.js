@@ -21,6 +21,10 @@
  *   oppositeCancelCoverage: number,
  *   groupHueEnabled: boolean,
  *   groupHueColors: Record<string, string>,
+ *   rulerColor: string,
+ *   rulerThickness: number,
+ *   rulerCursor: number,
+ *   rulerLineCount: number,
  * }} VisualizationSettings */
 
 export const VIZ_STORAGE_PREFIX = 'vl3d.viz.';
@@ -41,6 +45,10 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   oppositeCancelCoverage: `${VIZ_STORAGE_PREFIX}oppositeCancelCoverage`,
   groupHueEnabled: `${VIZ_STORAGE_PREFIX}groupHueEnabled`,
   groupHueColors: `${VIZ_STORAGE_PREFIX}groupHueColors`,
+  rulerColor: `${VIZ_STORAGE_PREFIX}rulerColor`,
+  rulerThickness: `${VIZ_STORAGE_PREFIX}rulerThickness`,
+  rulerCursor: `${VIZ_STORAGE_PREFIX}rulerCursor`,
+  rulerLineCount: `${VIZ_STORAGE_PREFIX}rulerLineCount`,
 });
 
 /** Default anchors match former ramp endpoints (§0.2). */
@@ -52,6 +60,14 @@ export const DEFAULT_VIZ_COLORS = Object.freeze({
 
 /** Default highlight for opposite-sign dims (cyan). */
 export const DEFAULT_OPPOSITE_HIGHLIGHT_COLOR = '#00E5FF';
+
+/** Dim-axis ruler stroke (editable in Visualization panel). */
+export const DEFAULT_RULER_COLOR = '#FFFFFF';
+
+/** Ruler visual thickness slider: 1…20 → world strip width. */
+export const RULER_THICKNESS_MIN = 1;
+export const RULER_THICKNESS_MAX = 20;
+export const DEFAULT_RULER_THICKNESS = 4;
 
 export const DEFAULT_VIZ_FILTER = /** @type {VizFilterMode} */ ('all');
 
@@ -99,8 +115,45 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   oppositeCancelCoverage: DEFAULT_CONFLICT_COVER,
   groupHueEnabled: false,
   groupHueColors: Object.freeze({}),
+  rulerColor: DEFAULT_RULER_COLOR,
+  rulerThickness: DEFAULT_RULER_THICKNESS,
+  rulerCursor: 1,
+  rulerLineCount: 0,
 });
 const HEX_RE = /^#([0-9A-Fa-f]{6})$/;
+
+/**
+ * Clamp ruler thickness slider to [1, 20].
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function normalizeRulerThickness(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_RULER_THICKNESS;
+  return Math.max(RULER_THICKNESS_MIN, Math.min(RULER_THICKNESS_MAX, Math.round(n)));
+}
+
+/**
+ * Map thickness slider → world-space strip half-depth (Z).
+ * @param {unknown} thickness
+ * @returns {number}
+ */
+export function rulerThicknessToWorldWidth(thickness) {
+  const t = normalizeRulerThickness(thickness);
+  return 0.1 + (t - RULER_THICKNESS_MIN) * 0.12;
+}
+
+/**
+ * Non-negative int for ruler cursor / line count (final clamp needs dimCount).
+ * @param {unknown} value
+ * @param {number} [fallback=0]
+ * @returns {number}
+ */
+export function normalizeRulerCount(value, fallback = 0) {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.round(n));
+}
 
 /**
  * @param {unknown} value
@@ -420,6 +473,27 @@ export function resolveVisualizationSettings(partial = null) {
         ? src.groupHueColors
         : {}
     ),
+    rulerColor: normalizeHex(src.rulerColor) || DEFAULT_RULER_COLOR,
+    rulerThickness: normalizeRulerThickness(
+      src.rulerThickness !== undefined && src.rulerThickness !== null
+        ? src.rulerThickness
+        : DEFAULT_RULER_THICKNESS
+    ),
+    rulerCursor: Math.max(
+      1,
+      normalizeRulerCount(
+        src.rulerCursor !== undefined && src.rulerCursor !== null
+          ? src.rulerCursor
+          : 1,
+        1
+      )
+    ),
+    rulerLineCount: normalizeRulerCount(
+      src.rulerLineCount !== undefined && src.rulerLineCount !== null
+        ? src.rulerLineCount
+        : 0,
+      0
+    ),
   };
 }
 /**
@@ -452,6 +526,10 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
           return {};
         }
       })(),
+      rulerColor: storage.getItem(VIZ_STORAGE_KEYS.rulerColor),
+      rulerThickness: storage.getItem(VIZ_STORAGE_KEYS.rulerThickness),
+      rulerCursor: storage.getItem(VIZ_STORAGE_KEYS.rulerCursor),
+      rulerLineCount: storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount),
     });
   } catch {
     return { ...DEFAULT_VISUALIZATION_SETTINGS };
@@ -480,6 +558,10 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.oppositeCancelCoverage, String(resolved.oppositeCancelCoverage));
     storage.setItem(VIZ_STORAGE_KEYS.groupHueEnabled, String(resolved.groupHueEnabled));
     storage.setItem(VIZ_STORAGE_KEYS.groupHueColors, JSON.stringify(resolved.groupHueColors || {}));
+    storage.setItem(VIZ_STORAGE_KEYS.rulerColor, resolved.rulerColor);
+    storage.setItem(VIZ_STORAGE_KEYS.rulerThickness, String(resolved.rulerThickness));
+    storage.setItem(VIZ_STORAGE_KEYS.rulerCursor, String(resolved.rulerCursor));
+    storage.setItem(VIZ_STORAGE_KEYS.rulerLineCount, String(resolved.rulerLineCount));
   } catch {
     // Quota / private mode — ignore
   }
