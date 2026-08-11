@@ -43,10 +43,11 @@ export const FIELD_INFO = Object.freeze({
   oppositeCancel: 'Fade conflicts black.',
   groupHue: 'Per group: black (−1) → color (+1).',
   groupHueSwatch: 'This group’s +1 color.',
-  dimRuler: 'Dim ticks at max height across threads.',
+  dimRuler: 'Cross-token links at each dim.',
   dimRulerColor: 'Ruler stroke color.',
   dimRulerThickness: 'Ruler strip width.',
   dimRulerCursor: 'Jump to dim, then + / −.',
+  dimRulerLink: 'Path = token→token; Span = min↔max Y.',
 });
 
 /**

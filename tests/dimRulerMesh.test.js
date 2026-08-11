@@ -6,7 +6,11 @@ import { buildDimRulerSegments } from '../src/visualizer/dimRuler.js';
 
 describe('MeshFactory dim ruler', () => {
   it('createDimRulerMesh returns a group with line + strip and frustumCulled false', () => {
-    const segs = buildDimRulerSegments([0, 10, 20], [1, 4, 2], 2);
+    const threads = [
+      [{ x: 0, y: 10, z: 0 }, { x: 10, y: 12, z: 0 }],
+      [{ x: 0, y: 4, z: 0 }, { x: 10, y: 6, z: 0 }],
+    ];
+    const segs = buildDimRulerSegments(threads, 2, 'path');
     const mesh = MeshFactory.createDimRulerMesh(segs, {
       color: '#FFFFFF',
       thickness: 4,
@@ -46,19 +50,30 @@ describe('Instancer dim ruler', () => {
     };
   }
 
-  it('mounts ruler group when rulerLineCount > 0', () => {
+  it('mounts ruler group when rulerLineCount > 0 (path across tokens)', () => {
     instancer.renderCompareData(
       compareFixture(),
       'POINTS',
       { threadSpacing: 0.4, threadThickness: 0.3, vectorDistance: 0.5, amplitude: 1 },
       'ANALYSIS',
-      { rulerLineCount: 3, rulerColor: '#FF0000', rulerThickness: 5 },
+      { rulerLineCount: 3, rulerColor: '#FF0000', rulerThickness: 5, rulerLinkMode: 'path' },
     );
     const rulers = [];
     instancer.activeGroup.traverse((o) => {
       if (o.userData?.kind === 'dimRuler') rulers.push(o);
     });
     expect(rulers.length).toBe(1);
+    expect(instancer.compareRuntime?.rulerMesh).toBeTruthy();
+  });
+
+  it('mounts ruler in NAVIGATION with span mode', () => {
+    instancer.renderCompareData(
+      compareFixture(),
+      'POINTS',
+      { threadSpacing: 0.4, threadThickness: 0.3, vectorDistance: 0.5, amplitude: 1 },
+      'NAVIGATION',
+      { rulerLineCount: 2, rulerLinkMode: 'span' },
+    );
     expect(instancer.compareRuntime?.rulerMesh).toBeTruthy();
   });
 

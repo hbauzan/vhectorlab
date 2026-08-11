@@ -56,10 +56,10 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Invariante**: Para renderizar puntos cuadrados/cúbicos nítidos en GPU, se calcula la distancia Chebyshev `max(abs(coord.x), abs(coord.y))` y se aplica suavizado de borde de 1 píxel `smoothstep(0.44, 0.49, maxDist)`.
 - **Línea Base en Análisis**: En el modo **Análisis**, se renderiza una malla de línea vertical (`THREE.Line`) con opacidad de cristal (`opacity: 0.6`, `transparent: true`, `frustumCulled = false`) anclando el inicio ($X = \text{startX}$) de todos los hilos vectoriales apilados.
 
-### 1.6. Dim Ruler (polyline sobre max-Y)
-- **Qué es**: une dims 1..N con polyline en el envelope $Y=\max$ entre threads (COMPARE/ANALYSIS/arithmetic; **no** Galaxy). `lineCount=1` → tick corto; `≥2` → segmentos dim→dim+1.
-- **Grosor**: no confiar en `LineBasicMaterial.linewidth` (§1.4) — spine `LineSegments` + strip (`MeshBasicMaterial`, `frustumCulled=false`, `depthWrite=false`).
-- **Estado**: `rulerCursor` / `rulerLineCount` / color / thickness en `vl3d.viz.*`; Reset del panel los limpia. Lógica pura en `dimRuler.js`.
+### 1.6. Dim Ruler (cross-token links per dim)
+- **Qué es**: en dims 1..N une **tokens** en la misma dim (COMPARE ANALYSIS + NAVIGATION; **no** Galaxy). `path` = edges consecutivos token→token; `span` = recta minY↔maxY. Cursor/`+`/`−` eligen cuántas dims.
+- **Grosor**: no confiar en `LineBasicMaterial.linewidth` (§1.4) — spine `LineSegments` + strip (`frustumCulled=false`, `depthWrite=false`).
+- **Estado**: `rulerCursor` / `rulerLineCount` / `rulerLinkMode` / color / thickness en `vl3d.viz.*`; Reset los limpia. Lógica en `dimRuler.js`.
 
 ---
 
