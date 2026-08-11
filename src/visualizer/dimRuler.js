@@ -1,8 +1,8 @@
 /**
- * Dim-axis ruler: contiguous horizontal ticks along display dims 1..D.
+ * Dim-axis ruler: contiguous polyline along display dims 1..D.
  * Cursor / lineCount are 1-based dim indices; lineCount covers dims 1..lineCount.
- * Each line k sits at Y = max thread height at dim k (0-based index k-1),
- * spanning half a dim-step on each side of that dim’s X.
+ * Geometry connects consecutive dims at Y = max thread height per dim (envelope).
+ * lineCount=1 → short tick at dim 1 so the first + is visible.
  */
 
 /**
@@ -130,7 +130,7 @@ export function computeDimMaxYs(threadPointArrays) {
 }
 
 /**
- * Infer half-step from consecutive X samples.
+ * Infer half-step from consecutive X samples (used for the single-dim tick).
  * @param {number[]} xs
  * @returns {number}
  */
@@ -142,7 +142,8 @@ export function inferDimHalfStep(xs) {
 }
 
 /**
- * Horizontal ticks for dims 1..lineCount at each dim’s max Y.
+ * Connect dims 1..lineCount along the max-Y envelope (polyline).
+ * lineCount=1 → short tick at dim 1; lineCount≥2 → segments dim→dim+1.
  * @param {number[]} xs - world X per dim index (0-based)
  * @param {number[]} maxYs - world Y max per dim index
  * @param {number} lineCount
@@ -154,17 +155,26 @@ export function buildDimRulerSegments(xs, maxYs, lineCount, z = 0, halfStep = nu
   const n = Math.max(0, toInt(lineCount, 0));
   if (n <= 0 || !Array.isArray(xs) || !Array.isArray(maxYs)) return [];
 
-  const half = halfStep == null ? inferDimHalfStep(xs) : Math.max(0, Number(halfStep) || 0);
   /** @type {Array<{ start: RulerPoint, end: RulerPoint }>} */
   const segs = [];
-  for (let k = 1; k <= n; k += 1) {
-    const i = k - 1;
-    const x = xs[i];
-    if (!Number.isFinite(x)) continue;
-    const y = Number.isFinite(maxYs[i]) ? maxYs[i] : 0;
+
+  if (n === 1) {
+    const x = xs[0];
+    if (!Number.isFinite(x)) return [];
+    const half = halfStep == null ? inferDimHalfStep(xs) : Math.max(0, Number(halfStep) || 0);
+    const y = Number.isFinite(maxYs[0]) ? maxYs[0] : 0;
+    return [{ start: { x: x - half, y, z }, end: { x: x + half, y, z } }];
+  }
+
+  for (let i = 0; i < n - 1; i += 1) {
+    const x0 = xs[i];
+    const x1 = xs[i + 1];
+    if (!Number.isFinite(x0) || !Number.isFinite(x1)) continue;
+    const y0 = Number.isFinite(maxYs[i]) ? maxYs[i] : 0;
+    const y1 = Number.isFinite(maxYs[i + 1]) ? maxYs[i + 1] : 0;
     segs.push({
-      start: { x: x - half, y, z },
-      end: { x: x + half, y, z },
+      start: { x: x0, y: y0, z },
+      end: { x: x1, y: y1, z },
     });
   }
   return segs;
