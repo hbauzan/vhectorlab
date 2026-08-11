@@ -105,4 +105,44 @@ describe('galaxyPipeline', () => {
       '4/4 Building galaxy…',
     ]);
   });
+
+  it('cache hit still re-applies tokenMeta (regroup Visualize)', async () => {
+    const rawData = {
+      items: [
+        { id: '1', text: 'a', embedding: [1, 0], groupId: 'old', groupLabel: 'old' },
+        { id: '2', text: 'b', embedding: [0, 1], groupId: 'old', groupLabel: 'old' },
+      ],
+    };
+    const fp = compareTextsFingerprint(['a', 'b']);
+    const fetchCompare = vi.fn();
+    const attachMeta = vi.fn((data, meta) => ({
+      ...data,
+      items: data.items.map((it, i) => ({
+        ...it,
+        groupId: meta?.[i]?.groupId,
+        groupLabel: meta?.[i]?.groupLabel,
+      })),
+    }));
+    const project = vi.fn(async () => [[0, 0, 0], [1, 0, 0]]);
+    const newMeta = [
+      { groupId: 'alpha', groupLabel: 'alpha' },
+      { groupId: 'beta', groupLabel: 'beta' },
+    ];
+
+    const result = await runGalaxyPipeline({
+      texts: ['a', 'b'],
+      tokenMeta: newMeta,
+      saeEnabled: false,
+      compareCache: { fingerprint: fp, itemCount: 2, rawData },
+      fetchCompare,
+      attachMeta,
+      project,
+    });
+
+    expect(fetchCompare).not.toHaveBeenCalled();
+    expect(attachMeta).toHaveBeenCalledWith(rawData, newMeta);
+    expect(result.reusedCompare).toBe(true);
+    expect(result.rawData.items[0].groupId).toBe('alpha');
+    expect(result.rawData.items[1].groupId).toBe('beta');
+  });
 });
