@@ -87,19 +87,24 @@ body.workbench-theme .visualization-controls {
 }
 
 /*
-  Compare (and Arithmetic) left panel: grow toward the bottom HUD so
-  presets / SAE / cosine list stay usable. Cap = viewport minus navbar + HUD
-  + small gap (same formula as .glass-sidebar in style.css).
+  Compare (and Arithmetic) left panel:
+  - A bit taller than the old 56vh/520px cap, but still short enough that overflow
+    shows a side scrollbar when form / SAE / lists do not fit.
+  - Never taller than the space above the bottom HUD (auto-fit).
 */
 body.workbench-theme #compare-panel,
 body.workbench-theme #sidebar-panel {
-  max-height: calc(
-    100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px
+  max-height: min(
+    68vh,
+    600px,
+    calc(100dvh - var(--navbar-height, 56px) - var(--hud-height) - var(--hud-bottom) - 16px)
   ) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 /* Preset row: wrap so Groups chips are not clipped horizontally */
@@ -182,7 +187,10 @@ body.workbench-theme button:active {
 body.workbench-theme .results-list,
 body.workbench-theme .compare-cosine-list {
   max-height: max(120px, min(280px, 40dvh));
+  overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
   border: 2px solid var(--mwb-black);
   background: var(--mwb-halfshine);
 }
