@@ -195,3 +195,20 @@ export function buildDimRulerSegments(threadPointArrays, lineCount, mode = 'path
 
   return segs;
 }
+
+/**
+ * Collect token joints at dims 1..lineCount (for Path markers).
+ * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
+ * @param {number} lineCount
+ * @returns {RulerPoint[]}
+ */
+export function buildDimRulerJoints(threadPointArrays, lineCount) {
+  const n = Math.max(0, toInt(lineCount, 0));
+  if (n <= 0 || !Array.isArray(threadPointArrays)) return [];
+  /** @type {RulerPoint[]} */
+  const out = [];
+  for (let k = 0; k < n; k += 1) {
+    out.push(...pointsAtDim(threadPointArrays, k));
+  }
+  return out;
+}
