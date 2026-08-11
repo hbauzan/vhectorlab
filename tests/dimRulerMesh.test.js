@@ -1,0 +1,75 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import * as THREE from 'three';
+import { MeshFactory } from '../src/visualizer/MeshFactory.js';
+import { Instancer } from '../src/visualizer/Instancer.js';
+import { buildDimRulerSegments } from '../src/visualizer/dimRuler.js';
+
+describe('MeshFactory dim ruler', () => {
+  it('createDimRulerMesh returns a group with line + strip and frustumCulled false', () => {
+    const segs = buildDimRulerSegments([0, 10, 20], [1, 4, 2], 2);
+    const mesh = MeshFactory.createDimRulerMesh(segs, {
+      color: '#FFFFFF',
+      thickness: 4,
+    });
+    expect(mesh).toBeTruthy();
+    expect(mesh.name).toBe('DimRuler');
+    expect(mesh.children.length).toBe(2);
+    mesh.traverse((child) => {
+      if (child.isLineSegments || child.isMesh) {
+        expect(child.frustumCulled).toBe(false);
+      }
+    });
+    MeshFactory.disposeDimRulerMesh(mesh);
+  });
+
+  it('createDimRulerMesh returns null for empty segments', () => {
+    expect(MeshFactory.createDimRulerMesh([])).toBeNull();
+    expect(MeshFactory.createDimRulerMesh(null)).toBeNull();
+  });
+});
+
+describe('Instancer dim ruler', () => {
+  /** @type {Instancer} */
+  let instancer;
+
+  beforeEach(() => {
+    instancer = new Instancer(new THREE.Scene());
+  });
+
+  function compareFixture(dim = 8) {
+    const mk = (s) => Array.from({ length: dim }, (_, i) => Math.sin(i * 0.5) * s);
+    return {
+      items: [
+        { id: 'a', text: 'alpha', embedding: mk(1.2), index: 0 },
+        { id: 'b', text: 'beta', embedding: mk(0.6), index: 1 },
+      ],
+    };
+  }
+
+  it('mounts ruler group when rulerLineCount > 0', () => {
+    instancer.renderCompareData(
+      compareFixture(),
+      'POINTS',
+      { threadSpacing: 0.4, threadThickness: 0.3, vectorDistance: 0.5, amplitude: 1 },
+      'ANALYSIS',
+      { rulerLineCount: 3, rulerColor: '#FF0000', rulerThickness: 5 },
+    );
+    const rulers = [];
+    instancer.activeGroup.traverse((o) => {
+      if (o.userData?.kind === 'dimRuler') rulers.push(o);
+    });
+    expect(rulers.length).toBe(1);
+    expect(instancer.compareRuntime?.rulerMesh).toBeTruthy();
+  });
+
+  it('skips ruler when lineCount is 0', () => {
+    instancer.renderCompareData(
+      compareFixture(),
+      'POINTS',
+      { threadSpacing: 0.4, threadThickness: 0.3, vectorDistance: 0.5, amplitude: 1 },
+      'ANALYSIS',
+      { rulerLineCount: 0 },
+    );
+    expect(instancer.compareRuntime?.rulerMesh).toBeNull();
+  });
+});

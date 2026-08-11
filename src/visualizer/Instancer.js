@@ -14,6 +14,11 @@ import {
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
+import {
+  buildDimRulerSegments,
+  computeDimMaxYs,
+} from './dimRuler.js';
+import { resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -189,6 +194,7 @@ export class Instancer {
     }
 
     this._mountRenderModeGeometry(renderMode, surfaceRows, pointsData, thicknessFactor, vizConfig);
+    this._mountDimRulerFromRows(surfaceRows, vizConfig);
     return threadLabelItems;
   }
 
@@ -417,9 +423,13 @@ export class Instancer {
       ySlotSpan,
       pointsMesh,
       baselineMesh,
+      rulerMesh: null,
+      vizConfig,
       threads,
       renderMode,
     };
+
+    this._syncCompareRuler();
 
     return threadLabelItems;
   }
@@ -547,6 +557,72 @@ export class Instancer {
   }
 
   /**
+   * Build / refresh dim-axis ruler from thread layout points (not Galaxy).
+   * @param {Array<{ points?: Array<{ x: number, y: number, z?: number }> }>} surfaceRows
+   * @param {object|null} vizConfig
+   * @returns {THREE.Group|null}
+   */
+  _mountDimRulerFromRows(surfaceRows, vizConfig) {
+    const rows = Array.isArray(surfaceRows) ? surfaceRows : [];
+    const pointArrays = rows.map((r) => r?.points || []).filter((pts) => pts.length);
+    const mesh = this._buildDimRulerMesh(pointArrays, vizConfig);
+    if (mesh) this.activeGroup.add(mesh);
+    return mesh;
+  }
+
+  /**
+   * @param {Array<Array<{ x: number, y: number, z?: number }>>} pointArrays
+   * @param {object|null|undefined} vizConfig
+   * @returns {THREE.Group|null}
+   */
+  _buildDimRulerMesh(pointArrays, vizConfig) {
+    const viz = resolveVisualizationSettings(vizConfig);
+    const lineCount = viz.rulerLineCount || 0;
+    if (lineCount <= 0 || !pointArrays?.length) return null;
+
+    const maxYs = computeDimMaxYs(pointArrays);
+    const ref = pointArrays.find((pts) => pts.length) || [];
+    if (!ref.length) return null;
+    const xs = ref.map((p) => p.x);
+    let zSum = 0;
+    let zN = 0;
+    for (const pts of pointArrays) {
+      const z = pts[0]?.z;
+      if (typeof z === 'number' && Number.isFinite(z)) {
+        zSum += z;
+        zN += 1;
+      }
+    }
+    const z = zN ? zSum / zN : 0;
+    const segs = buildDimRulerSegments(xs, maxYs, Math.min(lineCount, xs.length), z);
+    if (!segs.length) return null;
+    return MeshFactory.createDimRulerMesh(segs, {
+      color: viz.rulerColor,
+      thickness: viz.rulerThickness,
+    });
+  }
+
+  _syncCompareRuler() {
+    const runtime = this.compareRuntime;
+    if (!runtime) return;
+
+    if (runtime.rulerMesh) {
+      this.activeGroup.remove(runtime.rulerMesh);
+      MeshFactory.disposeDimRulerMesh(runtime.rulerMesh);
+      runtime.rulerMesh = null;
+    }
+
+    const pointArrays = (runtime.threads || [])
+      .map((t) => t._layoutPoints || [])
+      .filter((pts) => pts.length);
+    const mesh = this._buildDimRulerMesh(pointArrays, runtime.vizConfig);
+    if (mesh) {
+      this.activeGroup.add(mesh);
+      runtime.rulerMesh = mesh;
+    }
+  }
+
+  /**
    * Smoothly re-slot compare threads to match list order (reuse meshes; lerp layout ~200–400ms).
    * @param {string[]} orderedIds - Thread ids in the new list order
    * @param {{ duration?: number, onFrame?: Function }} [options]
@@ -651,6 +727,7 @@ export class Instancer {
           }
 
           this._syncCompareBaseline(origins);
+          this._syncCompareRuler();
 
           if (onFrame) onFrame(labels);
 
