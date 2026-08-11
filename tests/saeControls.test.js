@@ -7,13 +7,41 @@ import {
   resolveSaeSettings,
   saveSaeSettings,
 } from '../src/ui/saeControlsDefaults.js';
+import { saeControlsMarkup } from '../src/ui/SaeControls.js';
 import {
   applySaeToCompare,
   cosineSimilarity,
   densifyTopKActivations,
 } from '../src/core/saeReplace.js';
 
+/**
+ * WHATWG HTML number "step mismatch" check (approx.).
+ * An invalid lr input inside #compare-form blocks type=submit Visualize
+ * with no visible error when the params panel is hidden.
+ */
+function htmlNumberStepOk(value, min, step) {
+  if (step === 'any' || step == null || step === '') return true;
+  const v = Number(value);
+  const m = Number(min);
+  const s = Number(step);
+  if (![v, m, s].every(Number.isFinite) || s <= 0) return false;
+  const n = (v - m) / s;
+  return Math.abs(n - Math.round(n)) < 1e-8;
+}
+
 describe('saeControlsDefaults', () => {
+  it('default lr is valid for SAE markup min/step (HTML5 Visualize submit gate)', () => {
+    const markup = saeControlsMarkup('cmp');
+    const lrTag = markup.match(/id="cmp-sae-lr"[^>]*>/);
+    expect(lrTag).toBeTruthy();
+    const min = Number(/min="([^"]+)"/.exec(lrTag[0])?.[1]);
+    const stepAttr = /step="([^"]+)"/.exec(lrTag[0])?.[1];
+    expect(
+      htmlNumberStepOk(DEFAULT_SAE_SETTINGS.lr, min, stepAttr),
+      `lr=${DEFAULT_SAE_SETTINGS.lr} invalid for min=${min} step=${stepAttr} — blocks Compare Visualize submit`,
+    ).toBe(true);
+  });
+
   it('round-trips enabled + train params through localStorage', () => {
     const store = new Map();
     const storage = {
