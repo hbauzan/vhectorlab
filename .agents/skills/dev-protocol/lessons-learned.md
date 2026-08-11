@@ -235,6 +235,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Visibilidad**: con groups activos, overlay muestra **solo** badges de grupo (los token cards a N alto los tapaban y el offset grande los metía bajo el dock z-index 40). Lista cosine sigue con todos los tokens. `#thread-labels-container` z-index ≥ docks; offset screen de group badges chico.
 - **Bootstrap**: textarea default **y** auto-Visualize al entrar a COMPARE deben salir de `getCompareBootstrap()` (groupsDemo + `tokenMeta`). Autoload de `COMPARE_AUTO_PRESETS.default` (136 flat, sin meta) mientras el textarea muestra `GROUP_*` → etiquetas de token forever. Preset buttons deben Visualize, no solo rellenar texto.
 - **SAE + groups**: `applySaeToCompare` y encode path deben re-afirmar `groupId`/`groupLabel` desde RAW cache (no `groupName`). `ThreadLabels.updateOrigins` rebuilds DOM si el set de ids cambia (tokens → group badges).
+- **Galaxy cache + regroup**: fingerprint de texts puede pegar cache de `/compare`, pero Visualize con **mismos tokens / grupos distintos** debe re-correr `attachMeta(tokenMeta)` — si no, badges/chips quedan en el groupId viejo.
 
 ### 4.9. Visualization Controls — sign filter + color anchors + zero coverage (v1.8.x)
 - **Panel**: glass card glued to the **bottom HUD** (app root); EN copy; global (not per MODE|VIEW|RENDER). Right dock keeps Spatial Controls + AxisGizmo only.
@@ -252,6 +253,7 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Train scope = current workspace batch** (Compare items / Arithmetic vectors), **not** the full vocabulary. Model is **ephemeral** (RAM session); `POST /api/sae/clear` on Visualize/Calculate.
 - Defaults caps: 768 → 8192 latents, K=32; `suggest_sae_dims(n)` auto-scales down for small N. Encode activations drive 3D when toggle ON; `/api/sae/status|train|encode|clear`.
 - UI: Compare-only 50/50 CTA `Clean/Denoise (SAE)`; replace Compare vectors while ON; raw 768 cache restore on OFF; `vl3d.sae.*` localStorage; train progress via status poll. **Arithmetic has no SAE.**
+- **HTML5 form trap**: SAE train params (`type=number`) live **inside** `#compare-form`. Invalid `min`/`step` vs default `lr` (e.g. `lr=0.001` with `min=1e-5` `step=1e-4` → step mismatch) **silently blocks** `type=submit` Visualize — no toast, params panel often hidden so no browser bubble. Presets still work (they call `onCalculate` directly). **Invariante**: `lr` input uses `step="any"`; any new number field in the Compare form must pass an HTML5 step-validity check against product defaults (see `tests/saeControls.test.js`).
 - Archived “NO SAE” in `roadmap/archivo/big-picture.md` is **superseded**.
 - **Train fast-path**: `from_numpy` + full-batch when N small; MPS/CUDA via `SAE_DEVICE=AUTO`; CUDA AMP; `inference_mode` for final metrics; `suggest_train_schedule` caps epochs (≤12 if hidden≤128). Defaults UI epochs=20.
 - Encode already had bucketing + inference_mode + autocast; MPS autocast attempted with FP32 fallback.
