@@ -5,10 +5,12 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Compare group cosine panel**: with ≥2 `GROUP_*`, the lower list shows group-centroid cosine vs the first group in the textarea (mean of L2 unit vectors → re-L2 → dot); flat / single group stays token-vs-first. 3D viewer unchanged.
 - **Multi-embedding catalog (local)**: profiles `local-comfort` / `local-full` / `hf-demo`, setup.sh **option 11** swap (stage `.env` → rebuild vocab NPZ → restart), EN∪ES vocab merge, `/health` fields (`model_profile`, `short_label`, `embedding_dim`, `truncate_dim`), navbar ONLINE chip shows profile · label · dim · device. Cross-lingual smoke: `scripts/smoke_crosslingual_cosine.py` (non-blocking; `--strict` optional). Default `.env.example` remains **all-mpnet-base-v2**. HF Space model policy unchanged.
 - **Galaxy / boot progress overlay**: full-viewport card over the canvas (`#boot-progress`) so encode→UMAP progress stays visible when the left dock is collapsed (e.g. switching ARITHMETIC → GALAXY on mobile).
 
 ### Changed
+- Left Compare/Arithmetic dock `max-height` tracks viewport → HUD (`100dvh − navbar − HUD − 16px`) instead of a short `56vh`/`520px` cap.
 - **License**: project relicensed from MIT to **Apache License 2.0** (`LICENSE` + `NOTICE`; README / HF Space card `license: apache-2.0`; `package.json` `license` field).
 - Bootstrap / 2 Groups demo labels: `it_core` (IT terms), `vehicles` (auto lexicon), `women` (English women’s names) — replaces `GROUP_it_core` / `GROUP_1` / `GROUP_2`.
 - Panel buttons: Visualize Sequence + Clean/Denoise (SAE) slightly larger; all other panel buttons compact at Shared-noise scale (`0.68rem` / weight 600).

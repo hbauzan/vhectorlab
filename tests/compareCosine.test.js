@@ -4,6 +4,7 @@ import {
   recomputeCompareAnchorScores,
   reorderCompareItems,
   sortCompareItemsByCosine,
+  buildGroupCosineRows,
 } from '../src/ui/compareCosine.js';
 
 describe('compareCosine helpers', () => {
@@ -16,6 +17,64 @@ describe('compareCosine helpers', () => {
   it('cosineDot is the plain dot product', () => {
     expect(cosineDot([1, 0], [0, 1])).toBe(0);
     expect(cosineDot([0.6, 0.8], [1, 0])).toBeCloseTo(0.6, 9);
+  });
+
+  describe('buildGroupCosineRows (centroid vs first group)', () => {
+    it('returns null when fewer than 2 groups (flat / single group stay token list)', () => {
+      expect(buildGroupCosineRows(makeItems())).toBeNull();
+      expect(buildGroupCosineRows([
+        { text: 'a', embedding: [1, 0], groupId: 'only', groupLabel: 'only' },
+        { text: 'b', embedding: [0, 1], groupId: 'only', groupLabel: 'only' },
+      ])).toBeNull();
+      expect(buildGroupCosineRows(null)).toBeNull();
+      expect(buildGroupCosineRows([])).toBeNull();
+    });
+
+    it('REF = first group in item order; cosine = centroid(L2) vs REF', () => {
+      // G1 along +X, G2 along +Y → centroids orthogonal → cosine 0
+      const items = [
+        { text: 'car', embedding: [1, 0], groupId: 'vehicles', groupLabel: 'vehicles' },
+        { text: 'truck', embedding: [1, 0], groupId: 'vehicles', groupLabel: 'vehicles' },
+        { text: 'sophia', embedding: [0, 1], groupId: 'women', groupLabel: 'women' },
+        { text: 'emma', embedding: [0, 1], groupId: 'women', groupLabel: 'women' },
+      ];
+      const rows = buildGroupCosineRows(items);
+      expect(rows).not.toBeNull();
+      expect(rows.anchor).toEqual({ index: 0, text: 'vehicles', groupId: 'vehicles' });
+      expect(rows.items).toHaveLength(2);
+      expect(rows.items[0]).toMatchObject({
+        text: 'vehicles',
+        groupId: 'vehicles',
+        cosine_vs_first: 1,
+        memberCount: 2,
+        isGroupRow: true,
+      });
+      expect(rows.items[1].text).toBe('women');
+      expect(rows.items[1].cosine_vs_first).toBeCloseTo(0, 9);
+      expect(rows.items[1].memberCount).toBe(2);
+    });
+
+    it('mean of L2-normalized members then re-L2 (not raw mean of unnormalized)', () => {
+      // Two G1 vectors of different magnitudes along +X; G2 = 45° unit vector
+      const items = [
+        { text: 'a', embedding: [2, 0], groupId: 'g1', groupLabel: 'g1' },
+        { text: 'b', embedding: [4, 0], groupId: 'g1', groupLabel: 'g1' },
+        { text: 'c', embedding: [1, 1], groupId: 'g2', groupLabel: 'g2' },
+      ];
+      const rows = buildGroupCosineRows(items);
+      // After L2: G1 centroid = [1,0]; G2 = [1/√2, 1/√2]; cosine = 1/√2
+      expect(rows.items[1].cosine_vs_first).toBeCloseTo(Math.SQRT1_2, 5);
+    });
+
+    it('preserves first-appearance group order (not alphabetical)', () => {
+      const items = [
+        { text: 'z', embedding: [0, 1], groupId: 'zebra', groupLabel: 'zebra' },
+        { text: 'a', embedding: [1, 0], groupId: 'alpha', groupLabel: 'alpha' },
+      ];
+      const rows = buildGroupCosineRows(items);
+      expect(rows.items.map((r) => r.text)).toEqual(['zebra', 'alpha']);
+      expect(rows.anchor.text).toBe('zebra');
+    });
   });
 
   it('recomputeCompareAnchorScores sets REF=1 and scores vs new #1', () => {
