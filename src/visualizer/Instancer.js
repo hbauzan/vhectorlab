@@ -16,6 +16,7 @@ import {
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
 import {
   buildDimRulerSegments,
+  buildDimRulerJoints,
 } from './dimRuler.js';
 import { resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
 
@@ -584,11 +585,17 @@ export class Instancer {
       .filter((n) => n > 0);
     if (!lengths.length) return null;
     const dimCap = Math.min(lineCount, ...lengths);
-    const segs = buildDimRulerSegments(pointArrays, dimCap, viz.rulerLinkMode);
+    const linkMode = viz.rulerLinkMode === 'span' ? 'span' : 'path';
+    const segs = buildDimRulerSegments(pointArrays, dimCap, linkMode);
     if (!segs.length) return null;
+    const joints = linkMode === 'path'
+      ? buildDimRulerJoints(pointArrays, dimCap)
+      : [];
     return MeshFactory.createDimRulerMesh(segs, {
       color: viz.rulerColor,
       thickness: viz.rulerThickness,
+      linkMode,
+      joints,
     });
   }
 

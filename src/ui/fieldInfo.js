@@ -47,7 +47,7 @@ export const FIELD_INFO = Object.freeze({
   dimRulerColor: 'Ruler stroke color.',
   dimRulerThickness: 'Ruler strip width.',
   dimRulerCursor: 'Jump to dim, then + / −.',
-  dimRulerLink: 'Path = token→token; Span = min↔max Y.',
+  dimRulerLink: 'Path=chain; Span=min↔max.',
 });
 
 /**

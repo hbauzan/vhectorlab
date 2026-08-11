@@ -253,15 +253,9 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       </div>
       <div class="viz-ruler-link-row">
         <span class="viz-ruler-link-label"><span class="field-label-text">Link:</span>${infoTipMarkup(FIELD_INFO.dimRulerLink)}</span>
-        <div class="viz-segmented viz-ruler-link-seg" role="radiogroup" aria-label="Ruler link mode">
-          <label class="viz-seg-option">
-            <input type="radio" name="viz-ruler-link-mode" value="path" ${s.rulerLinkMode === 'path' ? 'checked' : ''}>
-            <span>Path</span>
-          </label>
-          <label class="viz-seg-option">
-            <input type="radio" name="viz-ruler-link-mode" value="span" ${s.rulerLinkMode === 'span' ? 'checked' : ''}>
-            <span>Span</span>
-          </label>
+        <div class="viz-segmented viz-ruler-link-seg" role="group" aria-label="Ruler link mode">
+          <button type="button" id="viz-ruler-link-path" class="viz-ruler-link-btn" aria-pressed="${s.rulerLinkMode === 'path' ? 'true' : 'false'}">Path</button>
+          <button type="button" id="viz-ruler-link-span" class="viz-ruler-link-btn" aria-pressed="${s.rulerLinkMode === 'span' ? 'true' : 'false'}">Span</button>
         </div>
       </div>
       <div class="viz-ruler-style-row">
@@ -409,9 +403,10 @@ export function syncDimRulerControlsFromConfig(container, config, dimCount = nul
   if (hex) hex.value = s.rulerColor;
   const thick = container.querySelector('#viz-ruler-thickness');
   if (thick) thick.value = String(s.rulerThickness);
-  for (const radio of container.querySelectorAll('input[name="viz-ruler-link-mode"]')) {
-    radio.checked = radio.value === s.rulerLinkMode;
-  }
+  const pathBtn = container.querySelector('#viz-ruler-link-path');
+  const spanBtn = container.querySelector('#viz-ruler-link-span');
+  if (pathBtn) pathBtn.setAttribute('aria-pressed', s.rulerLinkMode === 'path' ? 'true' : 'false');
+  if (spanBtn) spanBtn.setAttribute('aria-pressed', s.rulerLinkMode === 'span' ? 'true' : 'false');
 
   const cursor = container.querySelector('#viz-ruler-cursor');
   if (cursor) {
@@ -874,12 +869,22 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     });
   }
 
-  for (const radio of container.querySelectorAll('input[name="viz-ruler-link-mode"]')) {
-    radio.addEventListener('change', () => {
-      if (!radio.checked) return;
-      config.rulerLinkMode = normalizeRulerLinkMode(radio.value);
-      emit();
-    });
+  const setRulerLinkMode = (mode) => {
+    const next = normalizeRulerLinkMode(mode);
+    config.rulerLinkMode = next;
+    const pathBtn = container.querySelector('#viz-ruler-link-path');
+    const spanBtn = container.querySelector('#viz-ruler-link-span');
+    if (pathBtn) pathBtn.setAttribute('aria-pressed', next === 'path' ? 'true' : 'false');
+    if (spanBtn) spanBtn.setAttribute('aria-pressed', next === 'span' ? 'true' : 'false');
+    emit();
+  };
+  const rulerPathBtn = container.querySelector('#viz-ruler-link-path');
+  if (rulerPathBtn) {
+    rulerPathBtn.addEventListener('click', () => setRulerLinkMode('path'));
+  }
+  const rulerSpanBtn = container.querySelector('#viz-ruler-link-span');
+  if (rulerSpanBtn) {
+    rulerSpanBtn.addEventListener('click', () => setRulerLinkMode('span'));
   }
 
   const rulerState = () => createDimRulerState(readVizRulerDimCount(container), {
