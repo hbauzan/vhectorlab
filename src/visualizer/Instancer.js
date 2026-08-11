@@ -16,7 +16,6 @@ import {
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
 import {
   buildDimRulerSegments,
-  computeDimMaxYs,
 } from './dimRuler.js';
 import { resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
 
@@ -578,23 +577,14 @@ export class Instancer {
   _buildDimRulerMesh(pointArrays, vizConfig) {
     const viz = resolveVisualizationSettings(vizConfig);
     const lineCount = viz.rulerLineCount || 0;
-    if (lineCount <= 0 || !pointArrays?.length) return null;
+    if (lineCount <= 0 || !pointArrays?.length || pointArrays.length < 2) return null;
 
-    const maxYs = computeDimMaxYs(pointArrays);
-    const ref = pointArrays.find((pts) => pts.length) || [];
-    if (!ref.length) return null;
-    const xs = ref.map((p) => p.x);
-    let zSum = 0;
-    let zN = 0;
-    for (const pts of pointArrays) {
-      const z = pts[0]?.z;
-      if (typeof z === 'number' && Number.isFinite(z)) {
-        zSum += z;
-        zN += 1;
-      }
-    }
-    const z = zN ? zSum / zN : 0;
-    const segs = buildDimRulerSegments(xs, maxYs, Math.min(lineCount, xs.length), z);
+    const lengths = pointArrays
+      .map((pts) => (Array.isArray(pts) ? pts.length : 0))
+      .filter((n) => n > 0);
+    if (!lengths.length) return null;
+    const dimCap = Math.min(lineCount, ...lengths);
+    const segs = buildDimRulerSegments(pointArrays, dimCap, viz.rulerLinkMode);
     if (!segs.length) return null;
     return MeshFactory.createDimRulerMesh(segs, {
       color: viz.rulerColor,

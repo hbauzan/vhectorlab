@@ -1,8 +1,8 @@
 /**
- * Dim-axis ruler: contiguous polyline along display dims 1..D.
- * Cursor / lineCount are 1-based dim indices; lineCount covers dims 1..lineCount.
- * Geometry connects consecutive dims at Y = max thread height per dim (envelope).
- * lineCount=1 → short tick at dim 1 so the first + is visible.
+ * Dim-axis ruler: cross-token links at display dims 1..N.
+ * Cursor / lineCount are 1-based; lineCount covers dims 1..lineCount.
+ * Each covered dim joins tokens (list order): path = consecutive edges,
+ * span = single straight segment from min-Y to max-Y point at that dim.
  */
 
 /**
@@ -11,6 +11,10 @@
  *   cursor: number,
  *   lineCount: number,
  * }} DimRulerState
+ */
+
+/**
+ * @typedef {'path' | 'span'} DimRulerLinkMode
  */
 
 /**
@@ -26,6 +30,14 @@ function toInt(n, fallback) {
   const v = typeof n === 'number' ? n : Number(n);
   if (!Number.isFinite(v)) return fallback;
   return Math.round(v);
+}
+
+/**
+ * @param {unknown} mode
+ * @returns {DimRulerLinkMode}
+ */
+export function normalizeRulerLinkMode(mode) {
+  return mode === 'span' ? 'span' : 'path';
 }
 
 /**
@@ -106,76 +118,80 @@ export function removeDimRulerLine(state) {
 }
 
 /**
- * Per-dim max world Y across thread point arrays (display order).
- * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
- * @returns {number[]}
+ * @param {unknown} p
+ * @returns {RulerPoint|null}
  */
-export function computeDimMaxYs(threadPointArrays) {
+function asPoint(p) {
+  if (!p || typeof p !== 'object') return null;
+  const x = p.x;
+  const y = p.y;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  const z = Number.isFinite(p.z) ? p.z : 0;
+  return { x, y, z };
+}
+
+/**
+ * Collect valid thread points at a 0-based dim index (list order).
+ * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
+ * @param {number} dimIndex
+ * @returns {RulerPoint[]}
+ */
+export function pointsAtDim(threadPointArrays, dimIndex) {
   const threads = Array.isArray(threadPointArrays) ? threadPointArrays : [];
-  let dimCount = 0;
-  for (const pts of threads) {
-    if (Array.isArray(pts) && pts.length > dimCount) dimCount = pts.length;
-  }
-  const maxYs = new Array(dimCount).fill(Number.NEGATIVE_INFINITY);
+  /** @type {RulerPoint[]} */
+  const out = [];
   for (const pts of threads) {
     if (!Array.isArray(pts)) continue;
-    for (let i = 0; i < pts.length; i += 1) {
-      const y = pts[i]?.y;
-      if (typeof y === 'number' && Number.isFinite(y) && y > maxYs[i]) {
-        maxYs[i] = y;
-      }
-    }
+    const p = asPoint(pts[dimIndex]);
+    if (p) out.push(p);
   }
-  return maxYs.map((y) => (Number.isFinite(y) ? y : 0));
+  return out;
 }
 
 /**
- * Infer half-step from consecutive X samples (used for the single-dim tick).
- * @param {number[]} xs
- * @returns {number}
- */
-export function inferDimHalfStep(xs) {
-  if (!Array.isArray(xs) || xs.length < 2) return 0.5;
-  const d = xs[1] - xs[0];
-  if (!Number.isFinite(d) || Math.abs(d) < 1e-9) return 0.5;
-  return Math.abs(d) * 0.5;
-}
-
-/**
- * Connect dims 1..lineCount along the max-Y envelope (polyline).
- * lineCount=1 → short tick at dim 1; lineCount≥2 → segments dim→dim+1.
- * @param {number[]} xs - world X per dim index (0-based)
- * @param {number[]} maxYs - world Y max per dim index
+ * Cross-token segments for dims 1..lineCount.
+ * - path: consecutive token→token edges in list order at each dim
+ * - span: one straight segment from lowest-Y to highest-Y point at each dim
+ *
+ * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
  * @param {number} lineCount
- * @param {number} [z=0]
- * @param {number} [halfStep]
+ * @param {DimRulerLinkMode|string} [mode='path']
  * @returns {Array<{ start: RulerPoint, end: RulerPoint }>}
  */
-export function buildDimRulerSegments(xs, maxYs, lineCount, z = 0, halfStep = null) {
+export function buildDimRulerSegments(threadPointArrays, lineCount, mode = 'path') {
   const n = Math.max(0, toInt(lineCount, 0));
-  if (n <= 0 || !Array.isArray(xs) || !Array.isArray(maxYs)) return [];
+  const linkMode = normalizeRulerLinkMode(mode);
+  if (n <= 0 || !Array.isArray(threadPointArrays) || threadPointArrays.length < 2) {
+    return [];
+  }
 
   /** @type {Array<{ start: RulerPoint, end: RulerPoint }>} */
   const segs = [];
 
-  if (n === 1) {
-    const x = xs[0];
-    if (!Number.isFinite(x)) return [];
-    const half = halfStep == null ? inferDimHalfStep(xs) : Math.max(0, Number(halfStep) || 0);
-    const y = Number.isFinite(maxYs[0]) ? maxYs[0] : 0;
-    return [{ start: { x: x - half, y, z }, end: { x: x + half, y, z } }];
+  for (let k = 0; k < n; k += 1) {
+    const pts = pointsAtDim(threadPointArrays, k);
+    if (pts.length < 2) continue;
+
+    if (linkMode === 'span') {
+      let lo = pts[0];
+      let hi = pts[0];
+      for (let i = 1; i < pts.length; i += 1) {
+        if (pts[i].y < lo.y) lo = pts[i];
+        if (pts[i].y > hi.y) hi = pts[i];
+      }
+      if (lo !== hi) {
+        segs.push({ start: { ...lo }, end: { ...hi } });
+      }
+      continue;
+    }
+
+    for (let i = 0; i < pts.length - 1; i += 1) {
+      segs.push({
+        start: { ...pts[i] },
+        end: { ...pts[i + 1] },
+      });
+    }
   }
 
-  for (let i = 0; i < n - 1; i += 1) {
-    const x0 = xs[i];
-    const x1 = xs[i + 1];
-    if (!Number.isFinite(x0) || !Number.isFinite(x1)) continue;
-    const y0 = Number.isFinite(maxYs[i]) ? maxYs[i] : 0;
-    const y1 = Number.isFinite(maxYs[i + 1]) ? maxYs[i + 1] : 0;
-    segs.push({
-      start: { x: x0, y: y0, z },
-      end: { x: x1, y: y1, z },
-    });
-  }
   return segs;
 }
