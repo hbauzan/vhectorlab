@@ -362,6 +362,7 @@ export function readVizRulerDimCount(container) {
 function applyDimRulerStateToConfig(container, config, state) {
   const s = clampDimRulerState(state);
   config.rulerCursor = s.cursor;
+  config.rulerPaintedDims = s.painted;
   config.rulerLineCount = s.lineCount;
   syncDimRulerControlsFromConfig(container, config, s.dimCount);
 }
@@ -381,10 +382,12 @@ export function syncDimRulerControlsFromConfig(container, config, dimCount = nul
   const ruler = clampDimRulerState({
     dimCount: dims,
     cursor: s.rulerCursor,
+    painted: s.rulerPaintedDims,
     lineCount: s.rulerLineCount,
   });
   if (dims > 0) {
     config.rulerCursor = ruler.cursor;
+    config.rulerPaintedDims = ruler.painted;
     config.rulerLineCount = ruler.lineCount;
     container.dataset.vizRulerDimCount = String(dims);
   }
@@ -424,9 +427,11 @@ export function setVisualizationRulerDimCount(container, config, dimCount, onCha
   const next = clampDimRulerState({
     dimCount: dims,
     cursor: config.rulerCursor,
+    painted: config.rulerPaintedDims,
     lineCount: config.rulerLineCount,
   });
   config.rulerCursor = next.cursor;
+  config.rulerPaintedDims = next.painted;
   config.rulerLineCount = next.lineCount;
   syncDimRulerControlsFromConfig(container, config, dims);
   if (typeof onChange === 'function') onChange(config);
@@ -859,6 +864,7 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
 
   const rulerState = () => createDimRulerState(readVizRulerDimCount(container), {
     cursor: config.rulerCursor,
+    painted: config.rulerPaintedDims,
     lineCount: config.rulerLineCount,
   });
 
