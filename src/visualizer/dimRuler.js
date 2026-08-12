@@ -1,8 +1,7 @@
 /**
  * Dim-axis ruler: cross-token links at display dims 1..N.
  * Cursor / lineCount are 1-based; lineCount covers dims 1..lineCount.
- * Each covered dim joins tokens (list order): path = consecutive edges,
- * span = single straight segment from min-Y to max-Y point at that dim.
+ * Each covered dim joins consecutive tokens (list order) at that dim.
  */
 
 /**
@@ -11,10 +10,6 @@
  *   cursor: number,
  *   lineCount: number,
  * }} DimRulerState
- */
-
-/**
- * @typedef {'path' | 'span'} DimRulerLinkMode
  */
 
 /**
@@ -30,14 +25,6 @@ function toInt(n, fallback) {
   const v = typeof n === 'number' ? n : Number(n);
   if (!Number.isFinite(v)) return fallback;
   return Math.round(v);
-}
-
-/**
- * @param {unknown} mode
- * @returns {DimRulerLinkMode}
- */
-export function normalizeRulerLinkMode(mode) {
-  return mode === 'span' ? 'span' : 'path';
 }
 
 /**
@@ -149,18 +136,15 @@ export function pointsAtDim(threadPointArrays, dimIndex) {
 }
 
 /**
- * Cross-token segments for dims 1..lineCount.
- * - path: consecutive token→token edges in list order at each dim
- * - span: one straight segment from lowest-Y to highest-Y point at each dim
+ * Cross-token segments for dims 1..lineCount: consecutive token→token edges
+ * in list order at each covered dim.
  *
  * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
  * @param {number} lineCount
- * @param {DimRulerLinkMode|string} [mode='path']
  * @returns {Array<{ start: RulerPoint, end: RulerPoint }>}
  */
-export function buildDimRulerSegments(threadPointArrays, lineCount, mode = 'path') {
+export function buildDimRulerSegments(threadPointArrays, lineCount) {
   const n = Math.max(0, toInt(lineCount, 0));
-  const linkMode = normalizeRulerLinkMode(mode);
   if (n <= 0 || !Array.isArray(threadPointArrays) || threadPointArrays.length < 2) {
     return [];
   }
@@ -171,19 +155,6 @@ export function buildDimRulerSegments(threadPointArrays, lineCount, mode = 'path
   for (let k = 0; k < n; k += 1) {
     const pts = pointsAtDim(threadPointArrays, k);
     if (pts.length < 2) continue;
-
-    if (linkMode === 'span') {
-      let lo = pts[0];
-      let hi = pts[0];
-      for (let i = 1; i < pts.length; i += 1) {
-        if (pts[i].y < lo.y) lo = pts[i];
-        if (pts[i].y > hi.y) hi = pts[i];
-      }
-      if (lo !== hi) {
-        segs.push({ start: { ...lo }, end: { ...hi } });
-      }
-      continue;
-    }
 
     for (let i = 0; i < pts.length - 1; i += 1) {
       segs.push({
@@ -197,7 +168,7 @@ export function buildDimRulerSegments(threadPointArrays, lineCount, mode = 'path
 }
 
 /**
- * Collect token joints at dims 1..lineCount (for Path markers).
+ * Collect token joints at dims 1..lineCount (markers on the path).
  * @param {Array<Array<{ x?: number, y?: number, z?: number }|null|undefined>>} threadPointArrays
  * @param {number} lineCount
  * @returns {RulerPoint[]}

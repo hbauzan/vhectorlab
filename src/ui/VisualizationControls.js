@@ -11,7 +11,6 @@ import {
   normalizeConflictCover,
   normalizeHighlightStrength,
   normalizeRulerThickness,
-  normalizeRulerLinkMode,
   resolveVisualizationSettings,
   saveVisualizationSettings,
   resetVisualizationSettings,
@@ -251,13 +250,6 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       <div class="viz-ruler-title">
         <span class="field-label-text">Ruler</span>${infoTipMarkup(FIELD_INFO.dimRuler)}
       </div>
-      <div class="viz-ruler-link-row">
-        <span class="viz-ruler-link-label"><span class="field-label-text">Link:</span>${infoTipMarkup(FIELD_INFO.dimRulerLink)}</span>
-        <div class="viz-segmented viz-ruler-link-seg" role="group" aria-label="Ruler link mode">
-          <button type="button" id="viz-ruler-link-path" class="viz-ruler-link-btn" aria-pressed="${s.rulerLinkMode === 'path' ? 'true' : 'false'}">Path</button>
-          <button type="button" id="viz-ruler-link-span" class="viz-ruler-link-btn" aria-pressed="${s.rulerLinkMode === 'span' ? 'true' : 'false'}">Span</button>
-        </div>
-      </div>
       <div class="viz-ruler-style-row">
         <label for="viz-ruler-hex"><span class="field-label-text">Color</span>${infoTipMarkup(FIELD_INFO.dimRulerColor)}</label>
         <input type="color" id="viz-ruler-swatch" class="viz-color-swatch" value="${s.rulerColor}" title="Ruler color" aria-label="Ruler color swatch">
@@ -403,10 +395,6 @@ export function syncDimRulerControlsFromConfig(container, config, dimCount = nul
   if (hex) hex.value = s.rulerColor;
   const thick = container.querySelector('#viz-ruler-thickness');
   if (thick) thick.value = String(s.rulerThickness);
-  const pathBtn = container.querySelector('#viz-ruler-link-path');
-  const spanBtn = container.querySelector('#viz-ruler-link-span');
-  if (pathBtn) pathBtn.setAttribute('aria-pressed', s.rulerLinkMode === 'path' ? 'true' : 'false');
-  if (spanBtn) spanBtn.setAttribute('aria-pressed', s.rulerLinkMode === 'span' ? 'true' : 'false');
 
   const cursor = container.querySelector('#viz-ruler-cursor');
   if (cursor) {
@@ -867,24 +855,6 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       rulerThick.value = String(config.rulerThickness);
       emit();
     });
-  }
-
-  const setRulerLinkMode = (mode) => {
-    const next = normalizeRulerLinkMode(mode);
-    config.rulerLinkMode = next;
-    const pathBtn = container.querySelector('#viz-ruler-link-path');
-    const spanBtn = container.querySelector('#viz-ruler-link-span');
-    if (pathBtn) pathBtn.setAttribute('aria-pressed', next === 'path' ? 'true' : 'false');
-    if (spanBtn) spanBtn.setAttribute('aria-pressed', next === 'span' ? 'true' : 'false');
-    emit();
-  };
-  const rulerPathBtn = container.querySelector('#viz-ruler-link-path');
-  if (rulerPathBtn) {
-    rulerPathBtn.addEventListener('click', () => setRulerLinkMode('path'));
-  }
-  const rulerSpanBtn = container.querySelector('#viz-ruler-link-span');
-  if (rulerSpanBtn) {
-    rulerSpanBtn.addEventListener('click', () => setRulerLinkMode('span'));
   }
 
   const rulerState = () => createDimRulerState(readVizRulerDimCount(container), {

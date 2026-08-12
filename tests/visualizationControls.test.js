@@ -77,7 +77,6 @@ describe('visualizationControlsDefaults', () => {
       groupHueColors: {},
       rulerColor: '#FFFFFF',
       rulerThickness: 4,
-      rulerLinkMode: 'path',
       rulerCursor: 1,
       rulerLineCount: 0,
     });
@@ -189,8 +188,8 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('viz-ruler-section');
     expect(html).toContain('viz-ruler-plus');
     expect(html).toContain('viz-ruler-cursor');
-    expect(html).toContain('viz-ruler-link-path');
-    expect(html).toContain('viz-ruler-link-span');
+    expect(html).not.toContain('viz-ruler-link-path');
+    expect(html).not.toContain('viz-ruler-link-span');
     expect(html).toContain('Ruler');
     expect(html).toContain('viz-group-hue-rows');
     expect(html).toContain('viz-same-sign-enabled');
