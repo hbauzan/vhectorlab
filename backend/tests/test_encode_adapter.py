@@ -120,9 +120,98 @@ def test_build_model_passes_trust_remote_code():
 
     sel = get_model("Snowflake/snowflake-arctic-embed-m-v2.0")
     fake = MagicMock(name="SentenceTransformer")
-    with patch("sentence_transformers.SentenceTransformer", fake):
+    with (
+        patch("sentence_transformers.SentenceTransformer", fake),
+        patch("backend.model_catalog._repair_gte_nonpersistent_buffers") as repair,
+    ):
         build_model(sel, device="cpu")
     fake.assert_called_once()
     kwargs = fake.call_args.kwargs
     assert kwargs.get("trust_remote_code") is True
     assert kwargs.get("device") == "cpu"
+    # Arctic Hub config enables xformers MEA + unpad; disable both without xformers.
+    assert kwargs.get("config_kwargs") == {
+        "use_memory_efficient_attention": False,
+        "unpad_inputs": False,
+    }
+    repair.assert_called_once_with(fake.return_value)
+
+
+def test_build_model_skips_config_kwargs_without_trust_remote():
+    from backend.model_catalog import build_model
+
+    sel = get_model("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    fake = MagicMock(name="SentenceTransformer")
+    with (
+        patch("sentence_transformers.SentenceTransformer", fake),
+        patch("backend.model_catalog._repair_gte_nonpersistent_buffers") as repair,
+    ):
+        build_model(sel, device="cpu")
+    kwargs = fake.call_args.kwargs
+    assert "trust_remote_code" not in kwargs
+    assert "config_kwargs" not in kwargs
+    repair.assert_not_called()
+
+
+def test_repair_gte_nonpersistent_buffers_restores_position_ids_and_rope():
+    import torch
+    from backend.model_catalog import _repair_gte_nonpersistent_buffers
+
+    class _Emb(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.register_buffer(
+                "position_ids",
+                torch.tensor([0, 99, -1], dtype=torch.long),
+                persistent=False,
+            )
+            rotary = torch.nn.Module()
+            rotary.dim = 4
+            rotary.base = 10000.0
+            rotary.max_position_embeddings = 8
+            rotary.register_buffer(
+                "inv_freq", torch.zeros(2, dtype=torch.float32), persistent=False
+            )
+
+            def _set_cos_sin_cache(seq_len, device, dtype):
+                rotary.max_seq_len_cached = seq_len
+                rotary.register_buffer(
+                    "cos_cached",
+                    torch.ones(seq_len, rotary.dim, device=device, dtype=dtype),
+                    persistent=False,
+                )
+                rotary.register_buffer(
+                    "sin_cached",
+                    torch.zeros(seq_len, rotary.dim, device=device, dtype=dtype),
+                    persistent=False,
+                )
+
+            rotary._set_cos_sin_cache = _set_cos_sin_cache
+            self.rotary_emb = rotary
+
+    class _Auto(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embeddings = _Emb()
+            self.lin = torch.nn.Linear(2, 2)  # provides parameters()/device
+            self.config = type("C", (), {"max_position_embeddings": 8})()
+
+    class _TransformerMod:
+        def __init__(self, auto: _Auto) -> None:
+            self.auto_model = auto
+
+    class _ST:
+        def __init__(self) -> None:
+            self._first = _TransformerMod(_Auto())
+
+        def __getitem__(self, idx: int):
+            assert idx == 0
+            return self._first
+
+    st = _ST()
+    _repair_gte_nonpersistent_buffers(st)
+    emb = st[0].auto_model.embeddings
+    assert torch.equal(emb.position_ids, torch.arange(3, dtype=torch.long))
+    assert torch.all(emb.rotary_emb.inv_freq > 0)
+    assert emb.rotary_emb.cos_cached.shape[0] == 8
+    assert emb.rotary_emb.sin_cached.shape[0] == 8
