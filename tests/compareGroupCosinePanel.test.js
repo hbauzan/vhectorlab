@@ -41,4 +41,23 @@ describe('Compare panel group cosine contract', () => {
       /max-height:\s*min\(56vh,\s*520px\)\s*!important/,
     );
   });
+
+  it('compare-results must not overflow:hidden-clip the cosine list under metrics', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/style.css'), 'utf8');
+    // Contract: results block participates in panel scroll (SAE form is tall).
+    expect(css).toMatch(
+      /#compare-panel\s+\.compare-results\s*\{[^}]*overflow:\s*visible/s,
+    );
+    expect(css).toMatch(
+      /#compare-panel\s+\.compare-results\s*\{[^}]*flex:\s*0\s+0\s+auto/s,
+    );
+    // Floor so flex squeeze cannot collapse the list to 0px.
+    expect(css).toMatch(
+      /#compare-panel\s+\.compare-cosine-list\s*\{[^}]*min-height:\s*120px/s,
+    );
+    // Guard against regressions of the clip bug.
+    expect(css).not.toMatch(
+      /#compare-panel\s+\.compare-results\s*\{[^}]*overflow:\s*hidden/s,
+    );
+  });
 });

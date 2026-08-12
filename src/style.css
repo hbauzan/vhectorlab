@@ -483,11 +483,16 @@ canvas {
   margin-left: auto;
 }
 
-/* COMPARE: cosine-vs-anchor list — scroll only inside the list (§4.1 panel invariant) */
+/*
+ * COMPARE metrics + cosine list (§4.2):
+ * Panel already scrolls (SAE form is tall; max-height 68vh/600px).
+ * Do NOT overflow:hidden + flex-shrink this block — that clips the cosine
+ * header/list to 0px under ACTIVE SEQUENCE METRICS (unreachable via scroll).
+ * List keeps its own max-height + overflow-y:auto for long token rows.
+ */
 #compare-panel .compare-results {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  flex: 0 0 auto;
+  overflow: visible;
   gap: 6px;
 }
 
@@ -544,10 +549,11 @@ canvas {
   gap: 3px;
   overflow-x: hidden;
   overflow-y: auto;
-  min-height: 0;
+  /* Floor matches Arithmetic Top-10 — never collapse to 0 under flex squeeze */
+  min-height: 120px;
   max-height: max(120px, min(280px, 40dvh));
   padding-right: 2px;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
