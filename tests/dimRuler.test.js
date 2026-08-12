@@ -5,8 +5,8 @@ import {
   addDimRulerLine,
   removeDimRulerLine,
   clampDimRulerState,
-  normalizeRulerLinkMode,
   buildDimRulerSegments,
+  buildDimRulerJoints,
 } from '../src/visualizer/dimRuler.js';
 
 describe('dimRuler state', () => {
@@ -76,9 +76,9 @@ describe('dimRuler state', () => {
 
   it('repeated − walks backward one by one', () => {
     let s = createDimRulerState(100, { cursor: 5, lineCount: 10 });
-    s = removeDimRulerLine(s);
-    s = removeDimRulerLine(s);
-    s = removeDimRulerLine(s);
+    s = removeDimRulerLine(s); // → 4
+    s = removeDimRulerLine(s); // → 3
+    s = removeDimRulerLine(s); // → 2
     expect(s.lineCount).toBe(2);
     expect(s.cursor).toBe(2);
   });
@@ -101,15 +101,6 @@ describe('dimRuler state', () => {
   });
 });
 
-describe('dimRuler link mode', () => {
-  it('normalizes path/span with path default', () => {
-    expect(normalizeRulerLinkMode('path')).toBe('path');
-    expect(normalizeRulerLinkMode('span')).toBe('span');
-    expect(normalizeRulerLinkMode('nope')).toBe('path');
-    expect(normalizeRulerLinkMode(null)).toBe('path');
-  });
-});
-
 describe('dimRuler cross-token geometry', () => {
   const threads = [
     [
@@ -129,8 +120,8 @@ describe('dimRuler cross-token geometry', () => {
     ],
   ];
 
-  it('path mode links consecutive tokens at each covered dim', () => {
-    const segs = buildDimRulerSegments(threads, 2, 'path');
+  it('links consecutive tokens at each covered dim', () => {
+    const segs = buildDimRulerSegments(threads, 2);
     // dim0: t0→t1, t1→t2; dim1: t0→t1, t1→t2
     expect(segs).toEqual([
       { start: { x: 0, y: 10, z: 0 }, end: { x: 0, y: 4, z: 0 } },
@@ -140,17 +131,9 @@ describe('dimRuler cross-token geometry', () => {
     ]);
   });
 
-  it('span mode draws one straight minY→maxY segment per dim', () => {
-    const segs = buildDimRulerSegments(threads, 1, 'span');
-    // dim0: maxY token0 (10) ↔ minY token2 (1)
-    expect(segs).toEqual([
-      { start: { x: 0, y: 1, z: 0 }, end: { x: 0, y: 10, z: 0 } },
-    ]);
-  });
-
   it('returns [] when lineCount is 0 or fewer than 2 threads', () => {
-    expect(buildDimRulerSegments(threads, 0, 'path')).toEqual([]);
-    expect(buildDimRulerSegments([threads[0]], 2, 'path')).toEqual([]);
+    expect(buildDimRulerSegments(threads, 0)).toEqual([]);
+    expect(buildDimRulerSegments([threads[0]], 2)).toEqual([]);
   });
 
   it('works with NAVIGATION-style distinct Z per token', () => {
@@ -158,10 +141,19 @@ describe('dimRuler cross-token geometry', () => {
       [{ x: 5, y: 2, z: 0 }, { x: 15, y: 3, z: 0 }],
       [{ x: 5, y: 1, z: 10 }, { x: 15, y: 4, z: 10 }],
     ];
-    const segs = buildDimRulerSegments(nav, 2, 'path');
+    const segs = buildDimRulerSegments(nav, 2);
     expect(segs).toEqual([
       { start: { x: 5, y: 2, z: 0 }, end: { x: 5, y: 1, z: 10 } },
       { start: { x: 15, y: 3, z: 0 }, end: { x: 15, y: 4, z: 10 } },
+    ]);
+  });
+
+  it('buildDimRulerJoints collects all token points on covered dims', () => {
+    const joints = buildDimRulerJoints(threads, 1);
+    expect(joints).toEqual([
+      { x: 0, y: 10, z: 0 },
+      { x: 0, y: 4, z: 0 },
+      { x: 0, y: 1, z: 0 },
     ]);
   });
 });

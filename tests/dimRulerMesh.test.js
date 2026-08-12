@@ -3,57 +3,26 @@ import * as THREE from 'three';
 import { MeshFactory } from '../src/visualizer/MeshFactory.js';
 import { Instancer } from '../src/visualizer/Instancer.js';
 import { buildDimRulerSegments } from '../src/visualizer/dimRuler.js';
-import {
-  visualizationControlsMarkup,
-  syncDimRulerControlsFromConfig,
-} from '../src/ui/VisualizationControls.js';
+import { visualizationControlsMarkup } from '../src/ui/VisualizationControls.js';
 import {
   DEFAULT_VISUALIZATION_SETTINGS,
   resolveVisualizationSettings,
 } from '../src/ui/visualizationControlsDefaults.js';
 
 describe('MeshFactory dim ruler', () => {
-  it('path mode returns a group with line + joint points', () => {
+  it('returns LineSegments only (no joint squares)', () => {
     const threads = [
       [{ x: 0, y: 10, z: 0 }, { x: 10, y: 12, z: 0 }],
       [{ x: 0, y: 4, z: 0 }, { x: 10, y: 6, z: 0 }],
     ];
-    const segs = buildDimRulerSegments(threads, 2, 'path');
-    const joints = [
-      { x: 0, y: 10, z: 0 },
-      { x: 0, y: 4, z: 0 },
-      { x: 10, y: 12, z: 0 },
-      { x: 10, y: 6, z: 0 },
-    ];
+    const segs = buildDimRulerSegments(threads, 2);
     const mesh = MeshFactory.createDimRulerMesh(segs, {
       color: '#FFFFFF',
       thickness: 4,
-      linkMode: 'path',
-      joints,
     });
     expect(mesh).toBeTruthy();
-    expect(mesh.isGroup).toBe(true);
-    expect(mesh.userData.kind).toBe('dimRuler');
-    expect(mesh.userData.linkMode).toBe('path');
-    expect(mesh.children.some((c) => c.isLineSegments)).toBe(true);
-    expect(mesh.children.some((c) => c.isPoints)).toBe(true);
-    MeshFactory.disposeDimRulerMesh(mesh);
-  });
-
-  it('span mode returns bare LineSegments (no joint dots)', () => {
-    const threads = [
-      [{ x: 0, y: 10, z: 0 }],
-      [{ x: 0, y: 4, z: 0 }],
-      [{ x: 0, y: 1, z: 0 }],
-    ];
-    const segs = buildDimRulerSegments(threads, 1, 'span');
-    expect(segs).toHaveLength(1);
-    const mesh = MeshFactory.createDimRulerMesh(segs, {
-      color: '#FFFFFF',
-      linkMode: 'span',
-    });
     expect(mesh.isLineSegments).toBe(true);
-    expect(mesh.userData.linkMode).toBe('span');
+    expect(mesh.userData.kind).toBe('dimRuler');
     MeshFactory.disposeDimRulerMesh(mesh);
   });
 
@@ -63,7 +32,7 @@ describe('MeshFactory dim ruler', () => {
   });
 });
 
-describe('Instancer dim ruler link modes', () => {
+describe('Instancer dim ruler path', () => {
   /** @type {Instancer} */
   let instancer;
 
@@ -82,7 +51,7 @@ describe('Instancer dim ruler link modes', () => {
     };
   }
 
-  it('path mode mounts joint markers; span does not', () => {
+  it('mounts LineSegments ruler without joint Points', () => {
     const spatial = {
       threadSpacing: 0.4,
       threadThickness: 0.3,
@@ -94,85 +63,29 @@ describe('Instancer dim ruler link modes', () => {
       'POINTS',
       spatial,
       'ANALYSIS',
-      { rulerLineCount: 2, rulerLinkMode: 'path' },
+      { rulerLineCount: 2 },
     );
-    let pathJoints = 0;
+    let rulers = 0;
+    let joints = 0;
     instancer.activeGroup.traverse((o) => {
-      if (o.userData?.kind === 'dimRulerJoints') pathJoints += 1;
+      if (o.userData?.kind === 'dimRuler') rulers += 1;
+      if (o.userData?.kind === 'dimRulerJoints') joints += 1;
     });
-    expect(pathJoints).toBe(1);
-
-    instancer.renderCompareData(
-      compareFixture(),
-      'POINTS',
-      spatial,
-      'ANALYSIS',
-      { rulerLineCount: 2, rulerLinkMode: 'span' },
-    );
-    let spanJoints = 0;
-    instancer.activeGroup.traverse((o) => {
-      if (o.userData?.kind === 'dimRulerJoints') spanJoints += 1;
-    });
-    expect(spanJoints).toBe(0);
-    expect(instancer.compareRuntime?.rulerMesh?.userData?.linkMode).toBe('span');
+    expect(rulers).toBe(1);
+    expect(joints).toBe(0);
+    expect(instancer.compareRuntime?.rulerMesh?.isLineSegments).toBe(true);
   });
 });
 
-describe('Visualization ruler link toggle', () => {
-  it('Path/Span buttons update config.rulerLinkMode', () => {
+describe('Visualization ruler markup', () => {
+  it('has ruler controls without Path/Span link toggle', () => {
     const config = resolveVisualizationSettings({
       ...DEFAULT_VISUALIZATION_SETTINGS,
-      rulerLinkMode: 'path',
     });
-    const host = {
-      querySelector: () => null,
-      querySelectorAll: () => [],
-      addEventListener: () => {},
-      classList: { contains: () => false, toggle: () => {} },
-      dataset: {},
-    };
-    // Lightweight DOM via markup + manual button dispatch isn't available in node;
-    // assert markup + sync contract instead.
     const html = visualizationControlsMarkup(config);
-    expect(html).toContain('id="viz-ruler-link-path"');
-    expect(html).toContain('id="viz-ruler-link-span"');
-    expect(html).toContain('aria-pressed="true"'); // path default
-    expect(html).toMatch(/viz-ruler-link-path[^>]*aria-pressed="true"/);
-    expect(html).toMatch(/viz-ruler-link-span[^>]*aria-pressed="false"/);
-
-    const spanHtml = visualizationControlsMarkup({
-      ...config,
-      rulerLinkMode: 'span',
-    });
-    expect(spanHtml).toMatch(/viz-ruler-link-span[^>]*aria-pressed="true"/);
-    expect(spanHtml).toMatch(/viz-ruler-link-path[^>]*aria-pressed="false"/);
-  });
-
-  it('syncDimRulerControlsFromConfig mirrors link mode onto buttons', () => {
-    const buttons = {
-      path: { setAttribute: viSet('path'), attrs: {} },
-      span: { setAttribute: viSet('span'), attrs: {} },
-    };
-    function viSet(key) {
-      return (name, value) => { buttons[key].attrs[name] = value; };
-    }
-    const container = {
-      dataset: { vizRulerDimCount: '10' },
-      querySelector: (sel) => {
-        if (sel === '#viz-ruler-link-path') return buttons.path;
-        if (sel === '#viz-ruler-link-span') return buttons.span;
-        if (sel === '#viz-ruler-swatch') return { value: '' };
-        if (sel === '#viz-ruler-hex') return { value: '' };
-        if (sel === '#viz-ruler-thickness') return { value: '' };
-        if (sel === '#viz-ruler-cursor') return { value: '', min: '', max: '' };
-        if (sel === '#viz-ruler-line-count') return { textContent: '' };
-        if (sel === '#viz-ruler-dim-total') return { textContent: '' };
-        return null;
-      },
-    };
-    const config = resolveVisualizationSettings({ rulerLinkMode: 'span' });
-    syncDimRulerControlsFromConfig(container, config, 10);
-    expect(buttons.path.attrs['aria-pressed']).toBe('false');
-    expect(buttons.span.attrs['aria-pressed']).toBe('true');
+    expect(html).toContain('id="viz-ruler-plus"');
+    expect(html).toContain('id="viz-ruler-minus"');
+    expect(html).not.toContain('viz-ruler-link-path');
+    expect(html).not.toContain('viz-ruler-link-span');
   });
 });

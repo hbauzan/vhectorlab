@@ -16,7 +16,6 @@ import {
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
 import {
   buildDimRulerSegments,
-  buildDimRulerJoints,
 } from './dimRuler.js';
 import { resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
 
@@ -571,6 +570,7 @@ export class Instancer {
   }
 
   /**
+   * Cross-token path at each covered dim (token→token in list order).
    * @param {Array<Array<{ x: number, y: number, z?: number }>>} pointArrays
    * @param {object|null|undefined} vizConfig
    * @returns {THREE.Group|null}
@@ -585,17 +585,11 @@ export class Instancer {
       .filter((n) => n > 0);
     if (!lengths.length) return null;
     const dimCap = Math.min(lineCount, ...lengths);
-    const linkMode = viz.rulerLinkMode === 'span' ? 'span' : 'path';
-    const segs = buildDimRulerSegments(pointArrays, dimCap, linkMode);
+    const segs = buildDimRulerSegments(pointArrays, dimCap);
     if (!segs.length) return null;
-    const joints = linkMode === 'path'
-      ? buildDimRulerJoints(pointArrays, dimCap)
-      : [];
     return MeshFactory.createDimRulerMesh(segs, {
       color: viz.rulerColor,
       thickness: viz.rulerThickness,
-      linkMode,
-      joints,
     });
   }
 

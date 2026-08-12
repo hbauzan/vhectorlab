@@ -56,10 +56,27 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 - **Invariante**: Para renderizar puntos cuadrados/cúbicos nítidos en GPU, se calcula la distancia Chebyshev `max(abs(coord.x), abs(coord.y))` y se aplica suavizado de borde de 1 píxel `smoothstep(0.44, 0.49, maxDist)`.
 - **Línea Base en Análisis**: En el modo **Análisis**, se renderiza una malla de línea vertical (`THREE.Line`) con opacidad de cristal (`opacity: 0.6`, `transparent: true`, `frustumCulled = false`) anclando el inicio ($X = \text{startX}$) de todos los hilos vectoriales apilados.
 
-### 1.6. Dim Ruler (cross-token links per dim)
-- **Qué es**: en dims 1..N une **tokens** en la misma dim (COMPARE ANALYSIS + NAVIGATION; **no** Galaxy). `path` = edges consecutivos token→token; `span` = recta minY↔maxY. Cursor/`+`/`−` (hold-accelerate) eligen cuántas dims.
-- **Look**: mismos `LineSegments` + `LineBasicMaterial` que la continuity line de POINTS (`createRibbonMesh`); thickness del panel mapea a opacidad (WebGL linewidth ≈1px).
-- **Estado**: `rulerCursor` / `rulerLineCount` / `rulerLinkMode` / color / thickness en `vl3d.viz.*`; Reset los limpia. Lógica en `dimRuler.js`.
+### 1.6. Dim Ruler — regla dimensional básica (conector cross-token)
+
+**Regla canónica (no negociable):** el Ruler es un **conector de la misma dimensión entre tokens**. En la dim *k* une el punto de esa dim del token 1 → token 2 → token 3 → … (orden de lista), para todas las dims cubiertas `1..lineCount`.
+
+```
+dim k:  T1.dim_k ─── T2.dim_k ─── T3.dim_k ─── … ─── Tn.dim_k
+```
+
+Misma X (misma dim), a lo largo de Y (y Z en Navigation). **No** une dim→dim a lo largo de X.
+
+| | Correcto | Incorrecto (regresiones) |
+| :--- | :--- | :--- |
+| Geometría | token→token en cada dim fija | envolvente max-Y uniendo dim1→dim2→dim3 |
+| Mesh | solo `LineSegments` + `LineBasicMaterial` | joint `Points` / `PointsMaterial` + `sizeAttenuation` → **cuadrados blancos enormes** |
+| UI | color / thickness / cursor / `+` `−` | toggle Path/Span (eliminado; siempre path cross-token) |
+
+- **Dónde**: COMPARE + ARITHMETIC en ANALYSIS y NAVIGATION. **Nunca** en Galaxy.
+- **Estado**: `rulerCursor`, `rulerLineCount`, `rulerColor`, `rulerThickness` en `vl3d.viz.*`.
+- **Código**: `dimRuler.js` (`buildDimRulerSegments`) → `Instancer._buildDimRulerMesh` → `MeshFactory.createDimRulerMesh` (línea sola, sin joints).
+- **Lección**: si el ruler “se ve raro”, primero verificar que los segmentos van **entre tokens en la misma dim**, no entre dims; y que no haya `Points` de joints.
+
 
 ---
 
