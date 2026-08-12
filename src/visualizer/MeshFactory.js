@@ -200,15 +200,11 @@ export class MeshFactory {
   }
 
   /**
-   * Dim-axis ruler: thread-style LineSegments; Path also marks token joints.
+   * Dim-axis ruler: thread-style LineSegments only (no joint markers —
+   * PointsMaterial squares blow up with sizeAttenuation).
    * @param {Array<{ start: { x: number, y: number, z?: number }, end: { x: number, y: number, z?: number } }>} segments
-   * @param {{
-   *   color?: string|number,
-   *   thickness?: number,
-   *   linkMode?: 'path'|'span',
-   *   joints?: Array<{ x: number, y: number, z?: number }>,
-   * }} [options]
-   * @returns {THREE.Object3D|null}
+   * @param {{ color?: string|number, thickness?: number }} [options]
+   * @returns {THREE.LineSegments|null}
    */
   static createDimRulerMesh(segments, options = {}) {
     if (!segments || segments.length < 1) return null;
@@ -222,7 +218,6 @@ export class MeshFactory {
       ? options.thickness
       : 4;
     const opacity = Math.max(0.55, Math.min(0.95, 0.55 + ((t - 1) / 19) * 0.4));
-    const linkMode = options.linkMode === 'span' ? 'span' : 'path';
 
     const positions = new Float32Array(segments.length * 2 * 3);
     for (let i = 0; i < segments.length; i += 1) {
@@ -250,44 +245,9 @@ export class MeshFactory {
     });
 
     const lineMesh = new THREE.LineSegments(geometry, material);
-    lineMesh.frustumCulled = false;
-    lineMesh.userData.kind = 'dimRulerLine';
-
-    const joints = Array.isArray(options.joints) ? options.joints : [];
-    if (linkMode === 'path' && joints.length) {
-      const jp = new Float32Array(joints.length * 3);
-      for (let i = 0; i < joints.length; i += 1) {
-        const p = joints[i];
-        jp[i * 3] = p.x;
-        jp[i * 3 + 1] = p.y;
-        jp[i * 3 + 2] = Number.isFinite(p.z) ? p.z : 0;
-      }
-      const jGeo = new THREE.BufferGeometry();
-      jGeo.setAttribute('position', new THREE.BufferAttribute(jp, 3));
-      const jMat = new THREE.PointsMaterial({
-        color,
-        size: 4.0,
-        sizeAttenuation: true,
-        transparent: true,
-        opacity: Math.min(1, opacity + 0.1),
-        depthWrite: false,
-      });
-      const jointPts = new THREE.Points(jGeo, jMat);
-      jointPts.frustumCulled = false;
-      jointPts.userData.kind = 'dimRulerJoints';
-
-      const group = new THREE.Group();
-      group.name = 'DimRuler';
-      group.userData.kind = 'dimRuler';
-      group.userData.linkMode = 'path';
-      group.add(lineMesh);
-      group.add(jointPts);
-      return group;
-    }
-
     lineMesh.name = 'DimRuler';
+    lineMesh.frustumCulled = false;
     lineMesh.userData.kind = 'dimRuler';
-    lineMesh.userData.linkMode = linkMode;
     return lineMesh;
   }
 
