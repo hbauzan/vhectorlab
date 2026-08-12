@@ -280,20 +280,104 @@ def resolve_selection_from_env(
     )
 
 
+def _gte_auto_model(st_model: Any) -> Any | None:
+    """Return the underlying HF auto model for a SentenceTransformer, if present."""
+    try:
+        first = st_model[0]
+    except (TypeError, IndexError, KeyError):
+        return None
+    return getattr(first, "auto_model", None)
+
+
+def _repair_gte_nonpersistent_buffers(st_model: Any) -> None:
+    """
+    Re-init GTE/Arctic non-persistent buffers after transformers 5.x meta load.
+
+    Remote GTE code registers position_ids / RoPE caches with persistent=False but
+    does not restore them in _init_weights. transformers≥5 materializes on meta and
+    leaves those buffers as uninitialized / zero storage → RoPE NaNs or IndexError.
+    See HF transformers#43644 / #43950.
+    """
+    import torch
+
+    auto = _gte_auto_model(st_model)
+    if auto is None:
+        return
+    embeddings = getattr(auto, "embeddings", None)
+    if embeddings is None:
+        return
+
+    position_ids = getattr(embeddings, "position_ids", None)
+    if isinstance(position_ids, torch.Tensor) and position_ids.numel() > 0:
+        expected = torch.arange(
+            position_ids.numel(),
+            device=position_ids.device,
+            dtype=position_ids.dtype,
+        )
+        if not torch.equal(position_ids, expected):
+            embeddings.register_buffer(
+                "position_ids", expected, persistent=False
+            )
+            logger.info("Repaired GTE embeddings.position_ids after meta load")
+
+    rotary = getattr(embeddings, "rotary_emb", None)
+    if rotary is None:
+        return
+    dim = int(getattr(rotary, "dim", 0) or 0)
+    base = float(getattr(rotary, "base", 10000.0) or 10000.0)
+    max_pos = int(
+        getattr(rotary, "max_position_embeddings", 0)
+        or getattr(auto.config, "max_position_embeddings", 0)
+        or 0
+    )
+    if dim <= 0 or max_pos <= 0:
+        return
+    device = next(auto.parameters()).device
+    inv_freq = 1.0 / (
+        base ** (torch.arange(0, dim, 2, device=device, dtype=torch.float32) / dim)
+    )
+    rotary.register_buffer("inv_freq", inv_freq, persistent=False)
+    # Prefer the module's own cache builder (covers NTKScalingRotaryEmbedding).
+    if hasattr(rotary, "_set_cos_sin_cache"):
+        rotary._set_cos_sin_cache(
+            seq_len=max_pos,
+            device=device,
+            dtype=torch.get_default_dtype(),
+        )
+    logger.info("Repaired GTE rotary_emb buffers after meta load")
+
+
 def build_model(selection: ModelSelection, device: str) -> Any:
-    """Construct SentenceTransformer for the selection (trust_remote_code when declared)."""
+    """Construct SentenceTransformer for the selection (trust_remote_code when declared).
+
+    Arctic (GTE remote code) ships with use_memory_efficient_attention=true and
+    unpad_inputs=true, which hard-require xformers. That package is often
+    unavailable on macOS/MPS and unnecessary for lab encode workloads, so we
+    force both flags off via config_kwargs. Also repairs non-persistent RoPE /
+    position buffers corrupted by transformers≥5 meta-device loading.
+    """
     from sentence_transformers import SentenceTransformer
 
     kwargs: dict[str, Any] = {"device": device}
     if selection.trust_remote_code:
         kwargs["trust_remote_code"] = True
+        # Arctic Hub config: use_memory_efficient_attention=true (+ unpad_inputs)
+        # hard-requires xformers; without MEA, unpad+RoPE blows up on encode.
+        # Force both off for CPU/MPS/lab loads (HF discussion #15).
+        kwargs["config_kwargs"] = {
+            "use_memory_efficient_attention": False,
+            "unpad_inputs": False,
+        }
     logger.info(
         "Building SentenceTransformer hub_id=%s trust_remote_code=%s device=%s",
         selection.hub_id,
         selection.trust_remote_code,
         device,
     )
-    return SentenceTransformer(selection.hub_id, **kwargs)
+    model = SentenceTransformer(selection.hub_id, **kwargs)
+    if selection.trust_remote_code:
+        _repair_gte_nonpersistent_buffers(model)
+    return model
 
 
 def _apply_e5_prefixes(texts: Sequence[str]) -> list[str]:
