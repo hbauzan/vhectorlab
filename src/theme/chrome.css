@@ -204,6 +204,7 @@ body.workbench-theme button:active {
 
 body.workbench-theme .results-list,
 body.workbench-theme .compare-cosine-list {
+  min-height: 120px;
   max-height: max(120px, min(280px, 40dvh));
   overflow-x: hidden;
   overflow-y: auto;
