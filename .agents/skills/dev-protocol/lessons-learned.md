@@ -58,7 +58,7 @@ Este archivo registra las lecciones aprendidas, invariantes de arquitectura y pa
 
 ### 1.6. Dim Ruler — regla dimensional básica (conector cross-token)
 
-**Regla canónica (no negociable):** el Ruler es un **conector de la misma dimensión entre tokens**. En la dim *k* une el punto de esa dim del token 1 → token 2 → token 3 → … (orden de lista), para todas las dims cubiertas `1..lineCount`.
+**Regla canónica (no negociable):** el Ruler es un **conector de la misma dimensión entre tokens**. En cada dim *pintada* *k* une el punto de esa dim del token 1 → token 2 → token 3 → … (orden de lista).
 
 ```
 dim k:  T1.dim_k ─── T2.dim_k ─── T3.dim_k ─── … ─── Tn.dim_k
@@ -66,16 +66,22 @@ dim k:  T1.dim_k ─── T2.dim_k ─── T3.dim_k ─── … ─── T
 
 Misma X (misma dim), a lo largo de Y (y Z en Navigation). **No** une dim→dim a lo largo de X.
 
+**Cursor de pintura (no “llenar hasta N”):**
+- El número del panel es el **cursor**: `+` **pinta en esa dim** y avanza (+1); `−` **borra en esa dim** y retrocede (−1).
+- Las dims ya pintadas **quedan** si saltás el cursor (ej. pintaste 1…5, vas a 78 y `+` → quedan 1…5 **y** 78).
+- Para borrar: ponés el cursor en la dim (ej. 5) y `−`.
+- Estado: set sparse `rulerPaintedDims` (1-based). `rulerLineCount` = `painted.length` (display). Legacy `lineCount` solo → migra a `1..N`.
+
 | | Correcto | Incorrecto (regresiones) |
 | :--- | :--- | :--- |
-| Geometría | token→token en cada dim fija | envolvente max-Y uniendo dim1→dim2→dim3 |
+| Geometría | token→token en cada dim pintada | envolvente max-Y uniendo dim1→dim2→dim3 |
 | Mesh | solo `LineSegments` + `LineBasicMaterial` | joint `Points` / `PointsMaterial` + `sizeAttenuation` → **cuadrados blancos enormes** |
-| UI | color / thickness / cursor / `+` `−` | toggle Path/Span (eliminado; siempre path cross-token) |
+| UI / estado | cursor de pintura + set sparse | fill contiguo `1..lineCount` / toggle Path/Span |
 
 - **Dónde**: COMPARE + ARITHMETIC en ANALYSIS y NAVIGATION. **Nunca** en Galaxy.
-- **Estado**: `rulerCursor`, `rulerLineCount`, `rulerColor`, `rulerThickness` en `vl3d.viz.*`.
-- **Código**: `dimRuler.js` (`buildDimRulerSegments`) → `Instancer._buildDimRulerMesh` → `MeshFactory.createDimRulerMesh` (línea sola, sin joints).
-- **Lección**: si el ruler “se ve raro”, primero verificar que los segmentos van **entre tokens en la misma dim**, no entre dims; y que no haya `Points` de joints.
+- **Persistencia**: `rulerCursor`, `rulerPaintedDims`, `rulerLineCount`, color, thickness en `vl3d.viz.*`.
+- **Código**: `dimRuler.js` (`addDimRulerLine` / `removeDimRulerLine` / `buildDimRulerSegments`) → `Instancer._buildDimRulerMesh` → `MeshFactory.createDimRulerMesh`.
+- **Lección**: si el ruler “se ve raro”, verificar segmentos **entre tokens en la misma dim**, set sparse (no fill), y sin `Points` de joints.
 
 
 ---

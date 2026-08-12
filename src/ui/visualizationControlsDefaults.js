@@ -3,6 +3,8 @@
  * Global (not per MODE|VIEW|RENDER). Filter applies to normalized activations (post z-score/tanh).
  */
 
+import { normalizePaintedDims } from '../visualizer/dimRuler.js';
+
 /** @typedef {'all' | 'positive' | 'negative'} VizFilterMode */
 
 /** @typedef {{
@@ -24,6 +26,7 @@
  *   rulerColor: string,
  *   rulerThickness: number,
  *   rulerCursor: number,
+ *   rulerPaintedDims: number[],
  *   rulerLineCount: number,
  * }} VisualizationSettings */
 
@@ -48,6 +51,7 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   rulerColor: `${VIZ_STORAGE_PREFIX}rulerColor`,
   rulerThickness: `${VIZ_STORAGE_PREFIX}rulerThickness`,
   rulerCursor: `${VIZ_STORAGE_PREFIX}rulerCursor`,
+  rulerPaintedDims: `${VIZ_STORAGE_PREFIX}rulerPaintedDims`,
   rulerLineCount: `${VIZ_STORAGE_PREFIX}rulerLineCount`,
 });
 
@@ -118,6 +122,7 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   rulerColor: DEFAULT_RULER_COLOR,
   rulerThickness: DEFAULT_RULER_THICKNESS,
   rulerCursor: 1,
+  rulerPaintedDims: Object.freeze([]),
   rulerLineCount: 0,
 });
 const HEX_RE = /^#([0-9A-Fa-f]{6})$/;
@@ -153,6 +158,27 @@ export function normalizeRulerCount(value, fallback = 0) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, Math.round(n));
+}
+
+/**
+ * Parse painted dims from storage / partial settings.
+ * @param {unknown} raw
+ * @returns {number[]|null} null = not provided (use legacy lineCount migrate)
+ */
+export function parseRulerPaintedDims(raw) {
+  if (raw == null) return null;
+  if (Array.isArray(raw)) return raw.map((d) => Number(d)).filter((d) => Number.isFinite(d));
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map((d) => Number(d)).filter((d) => Number.isFinite(d));
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
@@ -488,12 +514,26 @@ export function resolveVisualizationSettings(partial = null) {
         1
       )
     ),
-    rulerLineCount: normalizeRulerCount(
-      src.rulerLineCount !== undefined && src.rulerLineCount !== null
-        ? src.rulerLineCount
-        : 0,
-      0
-    ),
+    ...(() => {
+      const parsed = parseRulerPaintedDims(
+        src.rulerPaintedDims !== undefined ? src.rulerPaintedDims : null
+      );
+      const legacy = normalizeRulerCount(
+        src.rulerLineCount !== undefined && src.rulerLineCount !== null
+          ? src.rulerLineCount
+          : 0,
+        0
+      );
+      const painted = normalizePaintedDims(
+        parsed === null ? undefined : parsed,
+        0,
+        parsed === null ? legacy : null
+      );
+      return {
+        rulerPaintedDims: painted,
+        rulerLineCount: painted.length,
+      };
+    })(),
   };
 }
 /**
@@ -529,6 +569,7 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
       rulerColor: storage.getItem(VIZ_STORAGE_KEYS.rulerColor),
       rulerThickness: storage.getItem(VIZ_STORAGE_KEYS.rulerThickness),
       rulerCursor: storage.getItem(VIZ_STORAGE_KEYS.rulerCursor),
+      rulerPaintedDims: storage.getItem(VIZ_STORAGE_KEYS.rulerPaintedDims),
       rulerLineCount: storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount),
     });
   } catch {
@@ -561,6 +602,7 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.rulerColor, resolved.rulerColor);
     storage.setItem(VIZ_STORAGE_KEYS.rulerThickness, String(resolved.rulerThickness));
     storage.setItem(VIZ_STORAGE_KEYS.rulerCursor, String(resolved.rulerCursor));
+    storage.setItem(VIZ_STORAGE_KEYS.rulerPaintedDims, JSON.stringify(resolved.rulerPaintedDims || []));
     storage.setItem(VIZ_STORAGE_KEYS.rulerLineCount, String(resolved.rulerLineCount));
   } catch {
     // Quota / private mode — ignore
