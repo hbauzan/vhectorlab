@@ -199,13 +199,15 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
 - **Invariante**: phone landscape short = mobile chrome; tablet portrait alto ≠ phone.
 
 ### 4.2. COMPARE Cosine-vs-Anchor: scroll interno + reorder 3D con tween in-situ
-- **Problema**: Listas largas (20/50/1024) en Compare rompen el layout si el scroll vive en el panel; un reorder con `clear()` + rebuild provoca flicker y desync lista↔3D.
+- **Problema**: Listas largas (20/50/1024) en Compare rompen el layout si el scroll vive solo en el panel; un reorder con `clear()` + rebuild provoca flicker y desync lista↔3D. Con form SAE alto + cap `min(68vh, 600px)`, un `.compare-results { overflow: hidden; flex: 1; min-height: 0 }` **clippea** el header/lista cosine debajo de ACTIVE SEQUENCE METRICS — queda espacio vacío y la lista es inalcanzable incluso scrolleando el panel (el overflow del hijo no participa del scroll del padre).
 - **Solución Obligatoria**:
-  - Scroll **solo** en `#compare-panel .compare-cosine-list` (`overflow-y: auto` + `max-height`); el panel permanece `overflow: hidden` / `fit-content`.
+  - Panel Compare: `overflow-y: auto` + max-height HUD-capped (form + SAE + métricas caben vía scroll de panel).
+  - `#compare-panel .compare-results`: `flex: 0 0 auto; overflow: visible` — el bloque métricas+cosine **participa** del scroll del panel; nunca `overflow: hidden` que trague la lista.
+  - Scroll **de filas** en `#compare-panel .compare-cosine-list` (`overflow-y: auto` + `max-height` + **`min-height: 120px`** floor); la lista no puede colapsar a 0px.
   - Filas de similitud: `pointer-events: none` en la fila; solo ▲/▼ con `pointer-events: auto` (métrica + reorder, sin focus de cámara).
   - Reorder: recalcular `cosine_vs_first` en memoria (`compareCosine.js`); animar slots con `Instancer.animateCompareReorder` (lerp de `sequenceIndex` fraccionario ~200–400ms, reuse de ribbon/points meshes, `ThreadLabels.updateOrigins` por frame).
   - Bloquear spamming de flechas mientras `_reorderBusy` (un tween a la vez).
-- **Invariante**: lista COMPARE ↔ orden de hilos 3D siempre sincronizados; #1 es ancla REF con score `1.0000`.
+- **Invariante**: lista COMPARE ↔ orden de hilos 3D siempre sincronizados; #1 es ancla REF con score `1.0000`; cosine list siempre alcanzable bajo ACTIVE SEQUENCE METRICS.
 
 ### 4.3. Docks colapsables: transform + tab, sin desmontar DOM; MODE comparte estado izq.
 - **Problema**: Ocultar paneles con `display: none` / desmontar nodos pierde estado de formularios, sliders y lista cosine; duplicar lógica left/right y resetear collapse al cambiar MODE rompe la UX.
