@@ -570,22 +570,23 @@ export class Instancer {
   }
 
   /**
-   * Cross-token path at each covered dim (token→token in list order).
+   * Cross-token path at each painted dim (token→token in list order).
    * @param {Array<Array<{ x: number, y: number, z?: number }>>} pointArrays
    * @param {object|null|undefined} vizConfig
-   * @returns {THREE.Group|null}
+   * @returns {THREE.LineSegments|null}
    */
   _buildDimRulerMesh(pointArrays, vizConfig) {
     const viz = resolveVisualizationSettings(vizConfig);
-    const lineCount = viz.rulerLineCount || 0;
-    if (lineCount <= 0 || !pointArrays?.length || pointArrays.length < 2) return null;
+    const painted = Array.isArray(viz.rulerPaintedDims) ? viz.rulerPaintedDims : [];
+    if (!painted.length || !pointArrays?.length || pointArrays.length < 2) return null;
 
     const lengths = pointArrays
       .map((pts) => (Array.isArray(pts) ? pts.length : 0))
       .filter((n) => n > 0);
     if (!lengths.length) return null;
-    const dimCap = Math.min(lineCount, ...lengths);
-    const segs = buildDimRulerSegments(pointArrays, dimCap);
+    const dimCap = Math.min(...lengths);
+    const dims = painted.filter((d) => d >= 1 && d <= dimCap);
+    const segs = buildDimRulerSegments(pointArrays, dims);
     if (!segs.length) return null;
     return MeshFactory.createDimRulerMesh(segs, {
       color: viz.rulerColor,
