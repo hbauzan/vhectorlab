@@ -458,3 +458,11 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
   - Opción **10** siempre hace stop real (`kill_stack`), no no-op.
   - **Ctrl+C** nunca baja servicios: en live logs pausa → Enter vuelve al menú; segundo Ctrl+C sale del panel.
 - **Invariante**: no hay flag “force restart” separado; el stop explícito basta. No bajar+subir un stack ya healthy. Solo opción **10** detiene el stack a propósito. Servicios NUNCA comparten sesión/TTY con el panel.
+
+### 8.8. Arctic / GTE remote code on transformers≥5 (no xformers)
+- **Problema**: `Snowflake/snowflake-arctic-embed-m-v2.0` (profile `local-full`) falla al swap/precompute con `AssertionError: please install xformers` porque el Hub config trae `use_memory_efficient_attention=true`. En macOS/MPS xformers suele no estar / no servir.
+- **Problema 2**: aunque se desactive MEA, transformers **5.x** materializa en meta device y **corrompe** buffers `persistent=False` del remote GTE (`position_ids`, RoPE `inv_freq`/`cos_cached`/`sin_cached`) → `IndexError` o embeddings NaN. El remote code no los re-inicia en `_init_weights` (HF #43644 / #43950).
+- **Solución Obligatoria** en `backend.model_catalog.build_model` cuando `trust_remote_code`:
+  1. `config_kwargs={use_memory_efficient_attention: False, unpad_inputs: False}` (sin xformers; unpad sin MEA rompe RoPE).
+  2. Post-load `_repair_gte_nonpersistent_buffers`: rearmar `position_ids` + `rotary_emb` (`inv_freq` + `_set_cos_sin_cache`).
+- **Invariante**: no agregar `xformers` como dep de lab/macOS; no asumir que el remote GTE es compatible con transformers 5 sin repair.
