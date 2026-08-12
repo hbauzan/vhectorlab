@@ -43,10 +43,10 @@ export const FIELD_INFO = Object.freeze({
   oppositeCancel: 'Fade conflicts black.',
   groupHue: 'Per group: black (−1) → color (+1).',
   groupHueSwatch: 'This group’s +1 color.',
-  dimRuler: 'Cross-token links at each dim.',
+  dimRuler: 'Cross-token links at each painted dim.',
   dimRulerColor: 'Ruler stroke color.',
   dimRulerThickness: 'Ruler strip width.',
-  dimRulerCursor: 'Jump to dim, then + / −.',
+  dimRulerCursor: 'Paint cursor: jump, then + paints / − erases.',
 });
 
 /**

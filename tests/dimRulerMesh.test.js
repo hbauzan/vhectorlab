@@ -63,7 +63,7 @@ describe('Instancer dim ruler path', () => {
       'POINTS',
       spatial,
       'ANALYSIS',
-      { rulerLineCount: 2 },
+      { rulerPaintedDims: [1, 2], rulerLineCount: 2 },
     );
     let rulers = 0;
     let joints = 0;

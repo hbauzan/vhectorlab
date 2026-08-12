@@ -78,6 +78,7 @@ describe('visualizationControlsDefaults', () => {
       rulerColor: '#FFFFFF',
       rulerThickness: 4,
       rulerCursor: 1,
+      rulerPaintedDims: [],
       rulerLineCount: 0,
     });
   });
@@ -127,13 +128,21 @@ describe('visualizationControlsDefaults', () => {
       rulerColor: '#ABCDEF',
       rulerThickness: 9,
       rulerCursor: 12,
-      rulerLineCount: 4,
+      rulerPaintedDims: [1, 78, 79],
     });
+    expect(settings.rulerLineCount).toBe(3);
     saveVisualizationSettings(settings, storage);
     expect(storage.getItem(VIZ_STORAGE_KEYS.filter)).toBe('positive');
     expect(storage.getItem(VIZ_STORAGE_KEYS.rulerColor)).toBe('#ABCDEF');
-    expect(storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount)).toBe('4');
+    expect(storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount)).toBe('3');
+    expect(JSON.parse(storage.getItem(VIZ_STORAGE_KEYS.rulerPaintedDims))).toEqual([1, 78, 79]);
     expect(loadVisualizationSettings(storage)).toEqual(settings);
+  });
+
+  it('migrates legacy rulerLineCount to painted 1..N', () => {
+    const resolved = resolveVisualizationSettings({ rulerLineCount: 4 });
+    expect(resolved.rulerPaintedDims).toEqual([1, 2, 3, 4]);
+    expect(resolved.rulerLineCount).toBe(4);
   });
 
   it('reset restores defaults and All', () => {
