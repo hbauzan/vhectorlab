@@ -53,7 +53,7 @@ export class Navbar {
       <div class="navbar-brand">
         <div class="title-group">
           <h1>VHectorLab <span class="accent-3d">3D</span></h1>
-          <span class="version-tag">v3.0.0</span>
+          <span class="version-tag">v3.0.1</span>
         </div>
       </div>
 

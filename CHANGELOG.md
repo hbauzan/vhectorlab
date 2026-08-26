@@ -5,7 +5,6 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Thread lines** toggle (Visualization panel, top): show/hide POINTS continuity lines along each thread; points and magnitude colors stay. Persists `vl3d.viz.threadLinesVisible` (default ON).
 - **HF Space README inject**: `deploy/hf/space-frontmatter.yml` + `scripts/compose_hf_space_readme.sh`; option 8 pushes an ephemeral tip with `sdk: docker` / `app_port: 7860` without polluting the GitHub product README.
 - **Compare group cosine panel**: with ≥2 `GROUP_*`, the lower list shows group-centroid cosine vs the first group in the textarea (mean of L2 unit vectors → re-L2 → dot); flat / single group stays token-vs-first. 3D viewer unchanged.
 - **Multi-embedding catalog (local)**: profiles `local-comfort` / `local-full` / `hf-demo`, setup.sh **option 11** swap (stage `.env` → rebuild vocab NPZ → restart), EN∪ES vocab merge, `/health` fields (`model_profile`, `short_label`, `embedding_dim`, `truncate_dim`), navbar ONLINE chip shows profile · label · dim · device. Cross-lingual smoke: `scripts/smoke_crosslingual_cosine.py` (non-blocking; `--strict` optional). Default `.env.example` remains **all-mpnet-base-v2**. HF Space model policy unchanged.
@@ -20,6 +19,11 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - HUD hover: token caption left of `HOVER TELEMETRY` (right TOKEN column removed); grouped Compare points show `group/token`.
 - Galaxy default camera pose: POS `25.5, 155.2, 328.9` / ROT `-23.2, 14.0, 0` (captured CAM POSE).
 - Startup chrome defaults: **ARITHMETIC | ANALYSIS | POINTS** (desktop + mobile; was COMPARE | GALAXY).
+
+## [3.0.1] - 2026-08-26
+
+### Added
+- **Thread lines** toggle (Visualization panel, top): show/hide POINTS continuity lines along each thread; points and magnitude colors stay. Persists `vl3d.viz.threadLinesVisible` (default ON).
 
 ## [3.0.0] - 2026-08-26
 
