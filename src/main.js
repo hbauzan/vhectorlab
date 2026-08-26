@@ -37,13 +37,17 @@ import {
   resolveVisualizationMountParent,
   setVisualizationPanelLayout,
   setGroupContrastControlsEnabled,
+  setSharedNoiseControlsEnabled,
   setVisualizationRulerDimCount,
 } from './ui/VisualizationControls.js';
 import {
   loadVisualizationSettings,
   saveVisualizationSettings,
 } from './ui/visualizationControlsDefaults.js';
-import { hasGroupsForDimContrast } from './visualizer/groupDimContrast.js';
+import {
+  hasGroupsForDimContrast,
+  hasEnoughTokensForSharedNoise,
+} from './visualizer/groupDimContrast.js';
 import { groupsForHueUi } from './visualizer/groupHuePaint.js';
 import {
   snapshotFilterForSae,
@@ -725,7 +729,7 @@ class VHectorLabApp {
   }
 
   /**
-   * Enable Group contrast viz controls only for compare ≥2 groups.
+   * Gate Shared noise (≥2 tokens) and Group contrast (≥2 groups).
    */
   syncGroupContrastGate() {
     if (!this.vizEl || !this.vizConfig) return;
@@ -733,6 +737,11 @@ class VHectorLabApp {
       ? (this.rawCompareData?.items || state.compareData?.items || [])
       : [];
     const groups = groupsForHueUi(items);
+    setSharedNoiseControlsEnabled(
+      this.vizEl,
+      hasEnoughTokensForSharedNoise(items),
+      this.vizConfig,
+    );
     setGroupContrastControlsEnabled(
       this.vizEl,
       hasGroupsForDimContrast(items),

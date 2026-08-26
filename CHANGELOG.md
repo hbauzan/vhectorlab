@@ -20,6 +20,12 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - Galaxy default camera pose: POS `25.5, 155.2, 328.9` / ROT `-23.2, 14.0, 0` (captured CAM POSE).
 - Startup chrome defaults: **ARITHMETIC | ANALYSIS | POINTS** (desktop + mobile; was COMPARE | GALAXY).
 
+## [2.4.3] - 2026-08-26
+
+### Changed
+- **Shared noise** retarget: cancel from **token-batch** min/max across all Compare embeddings (`groupId` ignored); Sign conflict stays G1↔G2 means. Control sits after Zero coverage; gate ≥2 tokens. Group contrast = Sign conflict + Group hue (≥2 groups).
+- **Zero coverage / Shared noise Similarity**: range **30%…100%**; dual **A / mA** Workbench knobs + editable % readout (one persisted percent). Dual coarse/fine knobs for Zero coverage and Shared noise — yes, it looks a bit like studio gear cosplay on a Workbench panel. Keeping it anyway: one slider fighting the top end was worse UX than a little theatrical.
+
 ## [2.4.2] - 2026-08-08
 
 ### Added

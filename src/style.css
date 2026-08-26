@@ -1828,6 +1828,32 @@ canvas {
   white-space: nowrap;
 }
 
+#visualization-controls-container .viz-shared-noise {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+#visualization-controls-container .viz-shared-noise-hint {
+  margin: 0;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+#visualization-controls-container .viz-shared-noise.is-disabled {
+  opacity: 0.55;
+}
+
+#visualization-controls-container .viz-shared-noise.is-disabled .viz-shared-noise-hint {
+  opacity: 1;
+}
+
+#visualization-controls-container .viz-shared-noise.is-disabled input {
+  pointer-events: none;
+}
+
 #visualization-controls-container .viz-group-contrast {
   display: flex;
   flex-direction: column;

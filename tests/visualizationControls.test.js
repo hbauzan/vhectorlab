@@ -34,6 +34,8 @@ import {
   vizPanelLayoutForViewport,
   resolveVisualizationMountParent,
   syncGroupHueColorRows,
+  setSharedNoiseControlsEnabled,
+  setGroupContrastControlsEnabled,
 } from '../src/ui/VisualizationControls.js';
 import {
   NEAR_ZERO_EPS,
@@ -195,9 +197,20 @@ describe('Visualization panel collapse tab', () => {
     expect(html).not.toContain('viz-zero-coverage-slider');
     expect(html).toContain('viz-zero-coverage-enabled');
     expect(html).toContain('Zero coverage');
+    expect(html).toContain('viz-shared-noise');
     expect(html).toContain('viz-same-sign-coverage-a');
     expect(html).toContain('data-field-info="Coarse percent (A)."');
     expect(html).toContain('data-field-info="Tenths of a % (mA)."');
+    expect(html).toContain('data-field-info="Sign conflict + Group hue."');
+    // Shared noise sits after Zero coverage, outside Group contrast
+    const zeroIdx = html.indexOf('viz-zero-coverage-block');
+    const sharedIdx = html.indexOf('id="viz-shared-noise"');
+    const contrastIdx = html.indexOf('id="viz-group-contrast"');
+    expect(zeroIdx).toBeGreaterThan(-1);
+    expect(sharedIdx).toBeGreaterThan(zeroIdx);
+    expect(contrastIdx).toBeGreaterThan(sharedIdx);
+    expect(html.indexOf('viz-same-sign-enabled')).toBeGreaterThan(sharedIdx);
+    expect(html.indexOf('viz-same-sign-enabled')).toBeLessThan(contrastIdx);
     expect(html).toContain('viz-group-contrast');
     expect(html).toContain('Group contrast');
     expect(html).toContain('Group hue');
@@ -216,7 +229,69 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('field-info-btn');
     expect(html).toContain('data-field-info="Which signs show."');
     expect(html).toContain('data-field-info="Hold range at zero."');
-    expect(html).toContain('data-field-info="Groups only (G1↔G2)."');
+    expect(html).not.toContain('data-field-info="Groups only (G1↔G2)."');
+  });
+
+  it('Shared noise gate is independent of Group contrast (≥2 tokens)', () => {
+    const classBag = new Set(['is-disabled']);
+    const contrastBag = new Set(['is-disabled']);
+    const disabled = new Map();
+    const makeEl = (id, bag) => ({
+      id,
+      classList: {
+        contains: (c) => bag.has(c),
+        toggle: (c, on) => {
+          if (on) bag.add(c);
+          else bag.delete(c);
+        },
+      },
+      setAttribute: () => {},
+      get disabled() { return Boolean(disabled.get(id)); },
+      set disabled(v) { disabled.set(id, Boolean(v)); },
+    });
+    const shared = makeEl('viz-shared-noise', classBag);
+    const contrast = makeEl('viz-group-contrast', contrastBag);
+    const sameOn = makeEl('viz-same-sign-enabled', new Set());
+    const oppOn = makeEl('viz-opposite-enabled', new Set());
+    const hueOn = makeEl('viz-group-hue-enabled', new Set());
+    const zeroOn = makeEl('viz-zero-coverage-enabled', new Set());
+    const byId = {
+      '#viz-shared-noise': shared,
+      '#viz-group-contrast': contrast,
+      '#viz-same-sign-enabled': sameOn,
+      '#viz-opposite-enabled': oppOn,
+      '#viz-group-hue-enabled': hueOn,
+      '#viz-zero-coverage-enabled': zeroOn,
+      '#viz-group-hue-rows': {
+        classList: { toggle: () => {} },
+        querySelectorAll: () => [],
+        set innerHTML(_v) {},
+        get innerHTML() { return ''; },
+      },
+    };
+    const container = {
+      querySelector: (sel) => byId[sel] || null,
+      querySelectorAll: (sel) => {
+        if (sel === '.viz-fx-slider[data-requires="zero-coverage"]') return [];
+        if (sel === '.viz-fx-slider[data-requires="same-sign"]') return [];
+        if (sel === '.viz-fx-slider[data-requires="opposite"]') return [];
+        if (sel === '#viz-group-hue-rows input') return [];
+        return [];
+      },
+    };
+
+    expect(shared.classList.contains('is-disabled')).toBe(true);
+    expect(contrast.classList.contains('is-disabled')).toBe(true);
+
+    const config = resolveVisualizationSettings({ ...DEFAULT_VISUALIZATION_SETTINGS });
+    setSharedNoiseControlsEnabled(container, true, config);
+    expect(shared.classList.contains('is-disabled')).toBe(false);
+    expect(contrast.classList.contains('is-disabled')).toBe(true);
+    expect(sameOn.disabled).toBe(false);
+
+    setGroupContrastControlsEnabled(container, true, config, ['G1', 'G2']);
+    expect(contrast.classList.contains('is-disabled')).toBe(false);
+    expect(oppOn.disabled).toBe(false);
   });
 
   it('viz panel body uses taller HUD-capped height with side scrollbar', () => {

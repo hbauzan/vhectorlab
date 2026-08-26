@@ -187,12 +187,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       })}
     </div>
 
-    <div id="viz-group-contrast" class="viz-group-contrast is-disabled" aria-disabled="true">
-      <div class="viz-group-contrast-title">
-        <span class="field-label-text">Group contrast</span>${infoTipMarkup(FIELD_INFO.groupContrast)}
-      </div>
-      <p class="viz-group-contrast-hint">Requires ≥2 compare groups.</p>
-
+    <div id="viz-shared-noise" class="viz-shared-noise is-disabled" aria-disabled="true">
       <div class="viz-group-fx-block" data-fx="same-sign">
         <label class="viz-toggle-row">
           <input type="checkbox" id="viz-same-sign-enabled" ${s.sameSignCancelEnabled ? 'checked' : ''}>
@@ -207,6 +202,14 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           requires: 'same-sign',
         })}
       </div>
+      <p class="viz-shared-noise-hint">Requires ≥2 compare tokens.</p>
+    </div>
+
+    <div id="viz-group-contrast" class="viz-group-contrast is-disabled" aria-disabled="true">
+      <div class="viz-group-contrast-title">
+        <span class="field-label-text">Group contrast</span>${infoTipMarkup(FIELD_INFO.groupContrast)}
+      </div>
+      <p class="viz-group-contrast-hint">Requires ≥2 compare groups.</p>
 
       <div class="viz-group-fx-block" data-fx="opposite">
         <label class="viz-toggle-row">
@@ -442,8 +445,10 @@ export function setVisualizationRulerDimCount(container, config, dimCount, onCha
  */
 export function syncGroupFxSliderEnabled(container, settings) {
   if (!container) return;
-  const section = container.querySelector('#viz-group-contrast');
-  const groupsOk = section ? !section.classList.contains('is-disabled') : false;
+  const contrastSection = container.querySelector('#viz-group-contrast');
+  const groupsOk = contrastSection ? !contrastSection.classList.contains('is-disabled') : false;
+  const sharedSection = container.querySelector('#viz-shared-noise');
+  const tokensOk = sharedSection ? !sharedSection.classList.contains('is-disabled') : false;
   const s = resolveVisualizationSettings(settings);
 
   const setDisabled = (el, disabled) => {
@@ -458,12 +463,12 @@ export function syncGroupFxSliderEnabled(container, settings) {
     row.classList.toggle('is-inert', !zeroSlidersOn);
   }
 
-  setDisabled(container.querySelector('#viz-same-sign-enabled'), !groupsOk);
+  setDisabled(container.querySelector('#viz-same-sign-enabled'), !tokensOk);
+  const sameSlidersOn = tokensOk && s.sameSignCancelEnabled;
+  setCoverageAmKnobsEnabled(container, 'viz-same-sign-coverage', sameSlidersOn);
+
   setDisabled(container.querySelector('#viz-opposite-enabled'), !groupsOk);
   setDisabled(container.querySelector('#viz-group-hue-enabled'), !groupsOk);
-
-  const sameSlidersOn = groupsOk && s.sameSignCancelEnabled;
-  setCoverageAmKnobsEnabled(container, 'viz-same-sign-coverage', sameSlidersOn);
 
   const oppSlidersOn = groupsOk && s.oppositeHighlightEnabled;
   setDisabled(container.querySelector('#viz-opposite-swatch'), !oppSlidersOn);
@@ -484,6 +489,23 @@ export function syncGroupFxSliderEnabled(container, settings) {
   }
   const hueRows = container.querySelector('#viz-group-hue-rows');
   if (hueRows) hueRows.classList.toggle('is-inert', !hueSlidersOn);
+}
+
+/**
+ * Gate Shared noise: usable with ≥2 Compare tokens (embeddings).
+ * @param {HTMLElement|null|undefined} container
+ * @param {boolean} enabled
+ * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} [config]
+ */
+export function setSharedNoiseControlsEnabled(container, enabled, config = null) {
+  if (!container) return;
+  const section = container.querySelector('#viz-shared-noise');
+  if (!section) return;
+  const on = Boolean(enabled);
+  section.classList.toggle('is-disabled', !on);
+  section.setAttribute('aria-disabled', on ? 'false' : 'true');
+  const settings = config || resolveVisualizationSettings(null);
+  syncGroupFxSliderEnabled(container, settings);
 }
 
 /**

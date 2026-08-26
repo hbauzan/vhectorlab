@@ -310,9 +310,9 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 | Layout axes (ANALYSIS) | X=dim, Y=thread stack + val×amp, Z=0 | Soft Y gap between `GROUP_*` blocks (+1× spacing) aids domain reading |
 
 ### 4.11b. Group contrast paint (shared noise / sign conflict)
-- **Problema**: En Compare con ≥2 `GROUP_*`, dims del mismo signo en ambos grupos son ruido compartido; dims de signo opuesto son señal — sin controles de paint dedicados.
-- **Solución**: Deep module `groupDimContrast.js` — means raw G1↔G2; `sim = 1−|Δ|/(|a|+|b|)`; cancel ZC-style sobre metric alta → negro; opposite → highlight color × strength×diff + conflict coverage independiente. Solo paint (Y intacto). UI gated (`setGroupContrastControlsEnabled`) hasta ≥2 grupos.
-- **Invariante**: Zero coverage global y Group contrast son independientes; On habilita sliders (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`.
+- **Problema**: En Compare, dims “chatas” compartidas por todos los tokens son ruido común; dims G1↔G2 de signo opuesto son señal — sin controles de paint dedicados.
+- **Solución**: Deep module `groupDimContrast.js` — **Shared noise** = min/max crudo sobre **todos** los embeddings del batch (`groupId` ignored; gate ≥2 tokens); `sim = 1−|Δ|/(|a|+|b|)`; cancel ZC-style. **Sign conflict** = means G1↔G2; highlight + conflict cover. Solo paint (Y intacto). UI: Shared noise junto a Zero coverage; Group contrast = Sign conflict + Group hue (≥2 grupos). Coverage 30…100% vía knobs A/mA (`coverageAmKnobs.js`).
+- **Invariante**: Zero coverage y Shared noise independientes; On habilita knobs (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`; métrica Shared noise = valores **crudos** del embedding visualizado (no t normalizado).
 
 ### 4.11c. Group hue (per-group black → color)
 - **Problema**: Rampa divergente global no distingue dominios `GROUP_*` en Galaxy/Compare.
