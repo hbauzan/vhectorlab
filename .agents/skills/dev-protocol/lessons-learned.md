@@ -402,11 +402,11 @@ Sync **`manifest.json` + `package.json` + Navbar `version-tag` + `CHANGELOG` sec
 
 | Bump | When |
 | :--- | :--- |
-| **MAJOR (`x.0.0`)** | Breaking backend/API contracts, embedding dim, or data shapes that break clients. |
-| **MINOR (`1.y.0`)** | Add **or remove** a product surface: MODE / VIEW / RENDER mode, major panel capability, or comparable user-facing feature. *This release:* retiring MESH → **1.6.0** (same weight class as when MESH shipped as `1.4.0`). |
+| **MAJOR (`x.0.0`)** | Breaking backend/API contracts, embedding dim, or data shapes that break clients — **or** an explicit product milestone reset when the human asks to restart the line (e.g. **3.0.0** coverage-knobs ship after a long tag lag). |
+| **MINOR (`1.y.0`)** | Add **or remove** a product surface: MODE / VIEW / RENDER mode, major panel capability, or comparable user-facing feature. |
 | **PATCH (`1.y.z`)** | Fixes, spatial/camera defaults, fog/copy/i18n polish, docs-only sync that still ships. Prefer PATCH over leaving long Unreleased tails. |
 
-**Cadence rule**: bump **once per shippable delivery** of a notable change — not once per internal etapa on the same day, and not “never until the next epic.” Batch same-day etapas into one MINOR if they ship together.
+**Cadence rule**: bump **once per shippable delivery** of a notable change — not once per internal etapa on the same day, and not “never until the next epic.” Batch same-day etapas into one MINOR if they ship together. Do **not** leave the Navbar stuck for weeks while Unreleased grows.
 
 ### 7.3. Build numbers — analysis (do **not** use as product version)
 Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
