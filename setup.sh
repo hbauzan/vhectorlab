@@ -478,7 +478,7 @@ show_menu() {
     echo -e " ${BLUE}5.${RESET} ${BOLD}Run Backend Unit Tests${RESET} ${DIM}(pytest)${RESET}"
     echo -e " ${MAGENTA}6.${RESET} ${BOLD}Manage Vocabulary${RESET} ${DIM}(Custom vocab.txt / N words)${RESET}"
     echo -e " ${YELLOW}7.${RESET} ${BOLD}Build Hugging Face Space Docker Image${RESET} ${DIM}(Docker Desktop · torch CPU · :7860)${RESET}"
-    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(hf CLI · docker sdk · cpu-basic)${RESET}"
+    echo -e " ${YELLOW}8.${RESET} ${BOLD}Publish Hugging Face Space${RESET} ${DIM}(hf CLI · inject deploy/hf frontmatter · cpu-basic)${RESET}"
     echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
     echo -e " ${MAGENTA}11.${RESET} ${BOLD}Select Embedding Model / Profile${RESET} ${DIM}(catalog · rebuild NPZ · restart backend)${RESET}"
@@ -858,19 +858,100 @@ load_dotenv() {
     done < .env
 }
 
+# Push HEAD tree to a Space remote, but with README.md = frontmatter + project README.
+# Uses a temp GIT_INDEX_FILE + commit-tree so the working tree and GitHub branch stay clean.
+push_hf_space_commit() {
+    local space_url="$1"
+    local force_push="$2"
+    local composed_readme="$3"
+    local blob tree commit idx ec=0
+
+    idx="$(mktemp)"
+    export GIT_INDEX_FILE="$idx"
+    if ! git read-tree HEAD; then
+        unset GIT_INDEX_FILE
+        rm -f "$idx"
+        echo -e "${RED}❌ git read-tree HEAD failed.${RESET}"
+        return 1
+    fi
+    blob="$(git hash-object -w "$composed_readme")" || ec=$?
+    if [ "$ec" -ne 0 ] || [ -z "$blob" ]; then
+        unset GIT_INDEX_FILE
+        rm -f "$idx"
+        echo -e "${RED}❌ Could not hash composed README.${RESET}"
+        return 1
+    fi
+    git update-index --cacheinfo "100644,${blob},README.md" || ec=$?
+    if [ "$ec" -ne 0 ]; then
+        unset GIT_INDEX_FILE
+        rm -f "$idx"
+        echo -e "${RED}❌ git update-index for README.md failed.${RESET}"
+        return 1
+    fi
+    tree="$(git write-tree)" || ec=$?
+    unset GIT_INDEX_FILE
+    rm -f "$idx"
+    if [ "$ec" -ne 0 ] || [ -z "$tree" ]; then
+        echo -e "${RED}❌ git write-tree failed.${RESET}"
+        return 1
+    fi
+
+    commit="$(git commit-tree "$tree" -p HEAD -m "$(cat <<'EOF'
+publish(hf): Space snapshot with injected README frontmatter
+
+Ephemeral tip for Hugging Face only — not merged to GitHub main.
+EOF
+)")" || ec=$?
+    if [ "$ec" -ne 0 ] || [ -z "$commit" ]; then
+        echo -e "${RED}❌ git commit-tree failed.${RESET}"
+        return 1
+    fi
+
+    echo -e "${DIM}  Ephemeral Space tip: ${commit:0:12} (README frontmatter injected)${RESET}"
+    if [ "$force_push" = "1" ] || [ "$force_push" = "true" ] || [ "$force_push" = "yes" ]; then
+        echo -e "${DIM}  Using --force (HF_SPACE_FORCE_PUSH=${force_push}); GitHub main is untouched.${RESET}"
+        if ! git push --force "$space_url" "${commit}:main"; then
+            echo -e "${RED}❌ git push --force to Space failed.${RESET}"
+            echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
+            return 1
+        fi
+    else
+        if ! git push "$space_url" "${commit}:main"; then
+            echo -e "${RED}❌ git push to Space failed (divergent history?).${RESET}"
+            echo -e "${DIM}  Set HF_SPACE_FORCE_PUSH=1 in .env to overwrite the Space remote.${RESET}"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 publish_hf_space() {
     load_dotenv
     local default_space="${HF_SPACE_ID:-hbauzan/llm-semantic-visualizer}"
     local force_push="${HF_SPACE_FORCE_PUSH:-1}"
+    local frontmatter="${HF_SPACE_FRONTMATTER:-deploy/hf/space-frontmatter.yml}"
 
     echo -e "${YELLOW}${BOLD}--- Hugging Face Spaces Publisher (Docker · cpu-basic) ---${RESET}"
     echo -e "${DIM}  Defaults from .env — press Enter to accept.${RESET}"
     echo -e "${DIM}  Space: ${default_space}  ·  force-push: ${force_push}${RESET}"
+    echo -e "${DIM}  Frontmatter: ${frontmatter} (injected at push; GitHub README stays clean)${RESET}"
     if ! ensure_hf_cli; then
         read -p "Press Enter..."
         return
     fi
     if ! ensure_hf_auth; then
+        read -p "Press Enter..."
+        return
+    fi
+
+    if [ ! -f "$frontmatter" ]; then
+        echo -e "${RED}❌ Missing Space frontmatter: ${frontmatter}${RESET}"
+        echo -e "${DIM}  Expected deploy/hf/space-frontmatter.yml (sdk: docker, app_port: 7860).${RESET}"
+        read -p "Press Enter..."
+        return
+    fi
+    if [ ! -f scripts/compose_hf_space_readme.sh ]; then
+        echo -e "${RED}❌ Missing scripts/compose_hf_space_readme.sh${RESET}"
         read -p "Press Enter..."
         return
     fi
@@ -922,28 +1003,29 @@ publish_hf_space() {
         return
     }
 
+    local composed
+    composed="$(mktemp)"
+    echo -e "${CYAN}Composing Space README (frontmatter + project README)…${RESET}"
+    if ! bash scripts/compose_hf_space_readme.sh "$frontmatter" README.md "$composed"; then
+        rm -f "$composed"
+        echo -e "${RED}❌ README compose failed — aborting Space push.${RESET}"
+        read -p "Press Enter..."
+        return
+    fi
+    echo -e "  ${GREEN}✓ Composed README has sdk: docker + app_port: 7860${RESET}"
+
     local space_url="https://huggingface.co/spaces/${space_id}"
-    echo -e "${CYAN}Pushing HEAD → ${space_url} (main)…${RESET}"
-    echo -e "${DIM}  HF builds the Docker image from this repo (Dockerfile + README sdk: docker).${RESET}"
+    echo -e "${CYAN}Pushing ephemeral tip → ${space_url} (main)…${RESET}"
+    echo -e "${DIM}  HF builds Docker from this tree (Dockerfile + injected README). GitHub README unchanged.${RESET}"
 
     # Space git history is independent of GitHub. Default force-push replaces the old
     # Space tree (e.g. predecessor app) with this repo — does NOT touch origin/main.
-    if [ "$force_push" = "1" ] || [ "$force_push" = "true" ] || [ "$force_push" = "yes" ]; then
-        echo -e "${DIM}  Using --force (HF_SPACE_FORCE_PUSH=${force_push}); GitHub main is untouched.${RESET}"
-        if ! git push --force "$space_url" HEAD:main; then
-            echo -e "${RED}❌ git push --force to Space failed.${RESET}"
-            echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
-            read -p "Press Enter..."
-            return
-        fi
-    else
-        if ! git push "$space_url" HEAD:main; then
-            echo -e "${RED}❌ git push to Space failed (divergent history?).${RESET}"
-            echo -e "${DIM}  Set HF_SPACE_FORCE_PUSH=1 in .env to overwrite the Space remote.${RESET}"
-            read -p "Press Enter..."
-            return
-        fi
+    if ! push_hf_space_commit "$space_url" "$force_push" "$composed"; then
+        rm -f "$composed"
+        read -p "Press Enter..."
+        return
     fi
+    rm -f "$composed"
 
     echo -e "${GREEN}${BOLD}✅ Published.${RESET}"
     echo -e "  Space URL: ${CYAN}${space_url}${RESET}"

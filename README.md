@@ -93,7 +93,7 @@ You do **not** need to install `uv` or Node by hand on a typical Mac — option 
 
 Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) if you want to build the Hugging Face Spaces image locally. After install, open Docker Desktop and wait until the engine is running (whale icon steady), then use option **7**.
 
-Option **8** creates/publishes a **Docker** Space on **cpu-basic** via the `hf` CLI + `git push` (Hub builds the image). It does **not** require Docker Desktop locally.
+Option **8** publishes a **Docker** Space on **cpu-basic** via the `hf` CLI. It injects `deploy/hf/space-frontmatter.yml` into the Space README at push time (GitHub `README.md` stays clean) and does **not** require Docker Desktop locally.
 
 ---
 
@@ -108,7 +108,7 @@ Option **8** creates/publishes a **Docker** Space on **cpu-basic** via the `hf` 
 | **5** | Backend unit tests (pytest) |
 | **6** | Vocabulary: load a custom file or generate N words |
 | **7** | Build HF Spaces Docker image locally (torch CPU · optional :7860 smoke) |
-| **8** | Create/publish HF Space (`sdk: docker`, cpu-basic) via `hf` + git push |
+| **8** | Publish HF Space: inject `deploy/hf/space-frontmatter.yml` into README at push (GitHub README stays clean) |
 | **9** | View backend logs |
 | **10** | **Stop** / clean services (always kills; not idempotent) |
 | **0** | Exit |
