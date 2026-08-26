@@ -1,6 +1,9 @@
 # Open — Shared noise knob (feel)
 
-**Estado:** parking / volver más tarde. **No implementar** hasta que el humano lo pida.
+> **Sucedido:** 2026-08-26 por [`shared-noise-omit-common.md`](./shared-noise-omit-common.md).  
+> El “feel del knob” no era chrome: paint-only deja las columnas comunes en la geometría. Seguir ahí.
+
+**Estado:** superseded. **No implementar** desde este archivo.
 
 ## Nota (2026-08-26)
 
@@ -12,3 +15,4 @@ Revisar más adelante (UX del cable A/mA, resolución mA 5dp, lectura del efecto
 
 - Ship: `3.0.0` coverage knobs (DAW drag + mA 5dp).
 - Epic archivado: `roadmap/archivo/shared-noise-coverage-knobs.md`.
+- Draft vivo: `roadmap/shared-noise-omit-common.md`.
