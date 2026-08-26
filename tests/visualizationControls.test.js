@@ -69,6 +69,7 @@ describe('visualizationControlsDefaults', () => {
       colorNegative: '#9900E6',
       zeroCoverageEnabled: false,
       zeroCoverage: 30,
+      threadLinesVisible: true,
       labelsVisible: true,
       sameSignCancelEnabled: false,
       sameSignCancelCoverage: 30,
@@ -140,6 +141,15 @@ describe('visualizationControlsDefaults', () => {
     expect(storage.getItem(VIZ_STORAGE_KEYS.rulerLineCount)).toBe('3');
     expect(JSON.parse(storage.getItem(VIZ_STORAGE_KEYS.rulerPaintedDims))).toEqual([1, 78, 79]);
     expect(loadVisualizationSettings(storage)).toEqual(settings);
+  });
+
+  it('threadLinesVisible false persists', () => {
+    const storage = mockStorage();
+    const settings = resolveVisualizationSettings({ threadLinesVisible: false });
+    expect(settings.threadLinesVisible).toBe(false);
+    saveVisualizationSettings(settings, storage);
+    expect(storage.getItem(VIZ_STORAGE_KEYS.threadLinesVisible)).toBe('false');
+    expect(loadVisualizationSettings(storage).threadLinesVisible).toBe(false);
   });
 
   it('migrates legacy rulerLineCount to painted 1..N', () => {
@@ -224,6 +234,15 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('viz-group-hue-rows');
     expect(html).toContain('viz-same-sign-enabled');
     expect(html).toContain('viz-opposite-enabled');
+    expect(html).toContain('viz-thread-lines-enabled');
+    expect(html).toContain('Thread lines');
+    expect(html).toContain('data-field-info="Joins dims on a thread."');
+    // Thread lines toggle sits at the top of the panel body
+    const titleIdx = html.indexOf('sliders-title');
+    const threadLinesIdx = html.indexOf('viz-thread-lines-enabled');
+    const filterIdx = html.indexOf('viz-filter-group');
+    expect(threadLinesIdx).toBeGreaterThan(titleIdx);
+    expect(filterIdx).toBeGreaterThan(threadLinesIdx);
     expect(html).toContain('viz-labels-toggle');
     expect(html).toContain('Hide labels');
     expect(html).toContain('field-info-btn');
