@@ -135,6 +135,11 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
   <div id="viz-panel-body" class="viz-panel-body">
     <h3 class="sliders-title">Visualization</h3>
 
+    <label class="viz-toggle-row viz-thread-lines-row">
+      <input type="checkbox" id="viz-thread-lines-enabled" ${s.threadLinesVisible ? 'checked' : ''}>
+      <span class="field-label-text">Thread lines</span>${infoTipMarkup(FIELD_INFO.threadLines)}
+    </label>
+
     <div class="viz-filter-group">
       <span class="viz-filter-label"><span class="field-label-text">Show:</span>${infoTipMarkup(FIELD_INFO.vizFilter)}</span>
       <div class="viz-segmented" role="radiogroup" aria-label="Sign filter">
@@ -309,6 +314,9 @@ export function syncVisualizationControlsFromConfig(container, config) {
   const zeroOn = container.querySelector('#viz-zero-coverage-enabled');
   if (zeroOn) zeroOn.checked = s.zeroCoverageEnabled;
   syncCoverageAmKnobsFromPercent(container, 'viz-zero-coverage', s.zeroCoverage);
+
+  const threadLinesOn = container.querySelector('#viz-thread-lines-enabled');
+  if (threadLinesOn) threadLinesOn.checked = s.threadLinesVisible;
 
   const sameOn = container.querySelector('#viz-same-sign-enabled');
   if (sameOn) sameOn.checked = s.sameSignCancelEnabled;
@@ -726,6 +734,14 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     setPercent: (v) => { config.zeroCoverage = v; },
     emit,
   });
+
+  const threadLinesOn = container.querySelector('#viz-thread-lines-enabled');
+  if (threadLinesOn) {
+    threadLinesOn.addEventListener('change', () => {
+      config.threadLinesVisible = Boolean(threadLinesOn.checked);
+      emit();
+    });
+  }
 
   const sameOn = container.querySelector('#viz-same-sign-enabled');
   if (sameOn) {

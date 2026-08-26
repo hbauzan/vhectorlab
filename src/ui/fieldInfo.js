@@ -35,6 +35,7 @@ export const FIELD_INFO = Object.freeze({
   zeroCoverageAmount: '30%…100% band.',
   coverageAmps: 'Coarse percent (A).',
   coverageMilliAmps: 'Fine % · 5 decimals.',
+  threadLines: 'Joins dims on a thread.',
   labelsToggle: 'Floating names.',
   groupContrast: 'Sign conflict + Group hue.',
   sameSignCancel: 'Blacken flat dims (tokens).',

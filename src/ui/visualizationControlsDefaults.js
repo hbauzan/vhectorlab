@@ -14,6 +14,7 @@ import { normalizePaintedDims } from '../visualizer/dimRuler.js';
  *   colorNegative: string,
  *   zeroCoverageEnabled: boolean,
  *   zeroCoverage: number,
+ *   threadLinesVisible: boolean,
  *   labelsVisible: boolean,
  *   sameSignCancelEnabled: boolean,
  *   sameSignCancelCoverage: number,
@@ -39,6 +40,7 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   colorNegative: `${VIZ_STORAGE_PREFIX}colorNegative`,
   zeroCoverageEnabled: `${VIZ_STORAGE_PREFIX}zeroCoverageEnabled`,
   zeroCoverage: `${VIZ_STORAGE_PREFIX}zeroCoverage`,
+  threadLinesVisible: `${VIZ_STORAGE_PREFIX}threadLinesVisible`,
   labelsVisible: `${VIZ_STORAGE_PREFIX}labelsVisible`,
   sameSignCancelEnabled: `${VIZ_STORAGE_PREFIX}sameSignCancelEnabled`,
   sameSignCancelCoverage: `${VIZ_STORAGE_PREFIX}sameSignCancelCoverage`,
@@ -74,6 +76,9 @@ export const RULER_THICKNESS_MAX = 20;
 export const DEFAULT_RULER_THICKNESS = 4;
 
 export const DEFAULT_VIZ_FILTER = /** @type {VizFilterMode} */ ('all');
+
+/** POINTS continuity lines (dim→dim along each thread) visible by default. */
+export const DEFAULT_THREAD_LINES_VISIBLE = true;
 
 /** Thread / group floating labels visible by default. */
 export const DEFAULT_LABELS_VISIBLE = true;
@@ -113,6 +118,7 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   ...DEFAULT_VIZ_COLORS,
   zeroCoverageEnabled: false,
   zeroCoverage: DEFAULT_HIGH_COVERAGE,
+  threadLinesVisible: DEFAULT_THREAD_LINES_VISIBLE,
   labelsVisible: DEFAULT_LABELS_VISIBLE,
   sameSignCancelEnabled: false,
   sameSignCancelCoverage: DEFAULT_HIGH_COVERAGE,
@@ -281,6 +287,17 @@ export function hexToRgb01(hex) {
 export function normalizeFilterMode(mode) {
   if (mode === 'positive' || mode === 'negative' || mode === 'all') return mode;
   return DEFAULT_VIZ_FILTER;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function normalizeThreadLinesVisible(value) {
+  if (value === false || value === 'false' || value === '0') return false;
+  if (value === true || value === 'true' || value === '1') return true;
+  if (value == null || value === '') return DEFAULT_THREAD_LINES_VISIBLE;
+  return DEFAULT_THREAD_LINES_VISIBLE;
 }
 
 /**
@@ -484,6 +501,11 @@ export function resolveVisualizationSettings(partial = null) {
         ? src.zeroCoverage
         : DEFAULT_HIGH_COVERAGE
     ),
+    threadLinesVisible: normalizeThreadLinesVisible(
+      src.threadLinesVisible !== undefined && src.threadLinesVisible !== null
+        ? src.threadLinesVisible
+        : DEFAULT_THREAD_LINES_VISIBLE
+    ),
     labelsVisible: normalizeLabelsVisible(
       src.labelsVisible !== undefined && src.labelsVisible !== null
         ? src.labelsVisible
@@ -574,6 +596,7 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
       colorNegative: storage.getItem(VIZ_STORAGE_KEYS.colorNegative),
       zeroCoverageEnabled: storage.getItem(VIZ_STORAGE_KEYS.zeroCoverageEnabled),
       zeroCoverage: storage.getItem(VIZ_STORAGE_KEYS.zeroCoverage),
+      threadLinesVisible: storage.getItem(VIZ_STORAGE_KEYS.threadLinesVisible),
       labelsVisible: storage.getItem(VIZ_STORAGE_KEYS.labelsVisible),
       sameSignCancelEnabled: storage.getItem(VIZ_STORAGE_KEYS.sameSignCancelEnabled),
       sameSignCancelCoverage: storage.getItem(VIZ_STORAGE_KEYS.sameSignCancelCoverage),
@@ -614,6 +637,7 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.colorNegative, resolved.colorNegative);
     storage.setItem(VIZ_STORAGE_KEYS.zeroCoverageEnabled, String(resolved.zeroCoverageEnabled));
     storage.setItem(VIZ_STORAGE_KEYS.zeroCoverage, String(resolved.zeroCoverage));
+    storage.setItem(VIZ_STORAGE_KEYS.threadLinesVisible, String(resolved.threadLinesVisible));
     storage.setItem(VIZ_STORAGE_KEYS.labelsVisible, String(resolved.labelsVisible));
     storage.setItem(VIZ_STORAGE_KEYS.sameSignCancelEnabled, String(resolved.sameSignCancelEnabled));
     storage.setItem(VIZ_STORAGE_KEYS.sameSignCancelCoverage, String(resolved.sameSignCancelCoverage));

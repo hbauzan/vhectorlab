@@ -219,10 +219,13 @@ export class Instancer {
     }
 
     // POINTS: thin continuity lines + point cloud
-    surfaceRows.forEach((row) => {
-      const ribbon = MeshFactory.createRibbonMesh(row.points, row.activations, vizOpts);
-      this.activeGroup.add(ribbon);
-    });
+    const showThreadLines = resolveVisualizationSettings(vizConfig).threadLinesVisible;
+    if (showThreadLines) {
+      surfaceRows.forEach((row) => {
+        const ribbon = MeshFactory.createRibbonMesh(row.points, row.activations, vizOpts);
+        this.activeGroup.add(ribbon);
+      });
+    }
     if (pointsData.length) {
       const pointsMesh = MeshFactory.createPointsMesh(pointsData, {
         pointSize: 15.0 * thicknessFactor,
@@ -364,7 +367,7 @@ export class Instancer {
           width: ribbonWidth,
           ...vizOpts,
         });
-      } else {
+      } else if (resolveVisualizationSettings(vizConfig).threadLinesVisible) {
         ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations, vizOpts);
       }
       if (ribbonMesh) {

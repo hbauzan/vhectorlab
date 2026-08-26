@@ -15,7 +15,7 @@ describe('FIELD_INFO catalog', () => {
       'saeToggle', 'saeHidden', 'saeK', 'saeEpochs', 'saeLr', 'saeBatch',
       'spacingX', 'vectorDistY', 'amplitudeY', 'lengthZ', 'thickness',
       'vizFilter', 'colorPos', 'colorZero', 'colorNeg', 'zeroCoverage', 'zeroCoverageAmount',
-      'coverageAmps', 'coverageMilliAmps', 'labelsToggle',
+      'coverageAmps', 'coverageMilliAmps', 'threadLines', 'labelsToggle',
       'groupContrast', 'sameSignCancel', 'sameSignCoverage',
       'oppositeHighlight', 'oppositeColor', 'oppositeStrength', 'oppositeCancel',
       'groupHue', 'groupHueSwatch',
