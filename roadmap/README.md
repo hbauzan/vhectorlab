@@ -5,6 +5,7 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 | Doc | Tema | Estado |
 |---|---|---|
 | [`multillm/`](./multillm/) | Multi-embedding catalog + profiles + `setup.sh` option 11 (local; HF deferred) | **Activo (plan)** |
+| [`open-shared-noise-knob.md`](./open-shared-noise-knob.md) | Shared noise knob — feel no cierra; parking | **Pendiente (HITL)** |
 | [`archivo/`](./archivo/) | Epics ya ejecutados o superados | Archivado |
 
 Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `main` @ SemVer en `manifest.json`.
