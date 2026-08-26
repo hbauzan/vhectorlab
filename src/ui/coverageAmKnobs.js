@@ -16,8 +16,10 @@ import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 export const COVERAGE_A_MIN = HIGH_COVERAGE_MIN;
 export const COVERAGE_A_MAX = HIGH_COVERAGE_MAX;
 export const COVERAGE_MA_MIN = 0;
-export const COVERAGE_MA_MAX = 0.9;
-export const COVERAGE_MA_STEP = 0.1;
+/** Fractional % via mA: up to 5 decimals (0 … 0.99999). µA knob later if needed. */
+export const COVERAGE_MA_MAX = 0.99999;
+export const COVERAGE_MA_STEP = 0.00001;
+export const COVERAGE_MA_SLIDER_MAX = Math.round(COVERAGE_MA_MAX / COVERAGE_MA_STEP);
 
 /** Dial sweep degrees (CSS rotate). */
 export const COVERAGE_KNOB_ANGLE_MIN = -135;
@@ -27,23 +29,26 @@ export const COVERAGE_KNOB_ANGLE_MAX = 135;
 export const COVERAGE_KNOB_LERP_MS = 200;
 
 /**
- * Long vertical throw (px per unit) — grip / slow feel.
- * Full A 30→100 ≈ 980px; full mA 0→0.9 ≈ 270px.
+ * Long vertical throw (px) — grip / slow feel.
+ * Full A 30→100 ≈ 980px; full mA 0→≈1 ≈ 1600px.
  */
 export const COVERAGE_KNOB_PX_PER_A = 14;
+/** @deprecated alias — prefer COVERAGE_KNOB_PX_PER_MA_UNIT */
 export const COVERAGE_KNOB_PX_PER_MA_STEP = 30;
+/** Pixels to drag across the full mA span (0 → ~1). */
+export const COVERAGE_KNOB_PX_PER_MA_UNIT = 1600;
 
 /**
- * Snap milliamperes metaphor to tenths [0.0, 0.9].
+ * Snap milliamperes metaphor to 5-decimal fractional percent [0, 0.99999].
  * @param {unknown} raw
  * @returns {number}
  */
 export function normalizeCoverageMilliAmps(raw) {
   const n = typeof raw === 'number' ? raw : Number(raw);
   if (!Number.isFinite(n)) return COVERAGE_MA_MIN;
-  const snapped = Math.round(n / COVERAGE_MA_STEP) * COVERAGE_MA_STEP;
-  const clamped = Math.max(COVERAGE_MA_MIN, Math.min(COVERAGE_MA_MAX, snapped));
-  return Math.round(clamped * 10) / 10;
+  const steps = Math.round(n / COVERAGE_MA_STEP);
+  const clamped = Math.max(0, Math.min(COVERAGE_MA_SLIDER_MAX, steps));
+  return Number((clamped * COVERAGE_MA_STEP).toFixed(5));
 }
 
 /**
@@ -58,23 +63,23 @@ export function normalizeCoverageAmps(raw) {
 }
 
 /**
- * Percent → { a, mA }. 100→A100/mA0; 99.9→A99/mA0.9.
+ * Percent → { a, mA }. 100→A100/mA0; 99.12345→A99/mA0.12345.
  * @param {unknown} percent
  * @returns {{ a: number, mA: number }}
  */
 export function decomposeCoveragePercent(percent) {
   const v = normalizeHighCoverage(percent);
-  if (v >= HIGH_COVERAGE_MAX - 1e-9) {
+  if (v >= HIGH_COVERAGE_MAX - 1e-12) {
     return { a: COVERAGE_A_MAX, mA: 0 };
   }
-  const a = Math.floor(v + 1e-9);
+  const a = Math.floor(v + 1e-12);
   const mA = normalizeCoverageMilliAmps(v - a);
   return { a, mA };
 }
 
 /**
  * Compose A + mA → clamped percent.
- * With `{ fromMilli: true }`, A=100 + mA>0 forces A→99 so tenths stay usable.
+ * With `{ fromMilli: true }`, A=100 + mA>0 forces A→99 so fine fraction stays usable.
  *
  * @param {unknown} a
  * @param {unknown} mA
@@ -85,7 +90,7 @@ export function composeCoveragePercent(a, mA, opts = {}) {
   let amps = typeof a === 'number' ? a : Number(a);
   if (!Number.isFinite(amps)) amps = COVERAGE_A_MIN;
   const milli = normalizeCoverageMilliAmps(mA);
-  if (opts.fromMilli === true && amps >= COVERAGE_A_MAX - 1e-9 && milli > 0) {
+  if (opts.fromMilli === true && amps >= COVERAGE_A_MAX - 1e-12 && milli > 0) {
     amps = COVERAGE_A_MAX - 1;
   }
   return normalizeHighCoverage(amps + milli);
@@ -123,7 +128,7 @@ export function coverageKnobValueDeltaFromDy(dyPx, pxPerUnit) {
 }
 
 /**
- * Tenths index 0…9 ↔ mA 0.0…0.9 for HTML range (a11y fallback).
+ * Integer steps 0…99999 ↔ mA 0…0.99999 for HTML range (a11y fallback).
  * @param {number} mA
  * @returns {number}
  */
@@ -205,11 +210,11 @@ export function coverageAmKnobsMarkup(opts) {
           </div>
           <div class="viz-am-knob viz-am-knob--ma">
             <div class="viz-am-knob-label"><span class="field-label-text">mA</span>${infoTipMarkup(FIELD_INFO.coverageMilliAmps)}</div>
-            <div class="viz-am-knob-face" id="${id}-ma-face" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="9" aria-valuenow="${maSlider}" aria-label="${amountLabel} mA" title="Drag vertically (DAW)">
+            <div class="viz-am-knob-face" id="${id}-ma-face" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="${COVERAGE_MA_SLIDER_MAX}" aria-valuenow="${maSlider}" aria-label="${amountLabel} mA" title="Drag vertically (DAW)">
               <div class="viz-am-knob-dial" id="${id}-ma-dial" style="--knob-angle: ${mAngle}deg" aria-hidden="true">
                 <span class="viz-am-knob-pointer"></span>
               </div>
-              <input type="range" id="${id}-ma" class="viz-am-knob-range" min="0" max="9" step="1" value="${maSlider}" ${dis} tabindex="-1" aria-hidden="true">
+              <input type="range" id="${id}-ma" class="viz-am-knob-range" min="0" max="${COVERAGE_MA_SLIDER_MAX}" step="1" value="${maSlider}" ${dis} tabindex="-1" aria-hidden="true">
             </div>
           </div>
         </div>
@@ -357,8 +362,8 @@ export function wireCoverageAmKnobs(container, opts) {
     isDisabled: () => maRange.disabled,
     getFloat: () => milliAmpsFromSlider(maRange.value),
     applyFloat: commitMilli,
-    // 30px per tenth → pxPerUnit on 0…0.9 scale
-    pxPerUnit: COVERAGE_KNOB_PX_PER_MA_STEP / COVERAGE_MA_STEP,
+    // Long throw across full fractional span (0 → ~1)
+    pxPerUnit: COVERAGE_KNOB_PX_PER_MA_UNIT,
     min: COVERAGE_MA_MIN,
     max: COVERAGE_MA_MAX,
   });
@@ -375,7 +380,8 @@ export function wireCoverageAmKnobs(container, opts) {
     if (which === 'a') {
       commitAmps(Number(aRange.value) + dir);
     } else {
-      commitMilli(milliAmpsFromSlider(maRange.value) + dir * COVERAGE_MA_STEP);
+      const step = e.shiftKey ? 0.001 : COVERAGE_MA_STEP;
+      commitMilli(milliAmpsFromSlider(maRange.value) + dir * step);
     }
   };
   aFace?.addEventListener('keydown', onFaceKey('a'));

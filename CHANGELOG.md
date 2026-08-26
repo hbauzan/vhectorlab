@@ -20,6 +20,14 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - Galaxy default camera pose: POS `25.5, 155.2, 328.9` / ROT `-23.2, 14.0, 0` (captured CAM POSE).
 - Startup chrome defaults: **ARITHMETIC | ANALYSIS | POINTS** (desktop + mobile; was COMPARE | GALAXY).
 
+## [3.0.0] - 2026-08-26
+
+Milestone cut: start the **3.x** line after shipping the coverage / Shared noise chrome (the tag had lagged the product for too long).
+
+### Changed
+- **Coverage knobs (Zero coverage + Shared noise)**: DAW-style vertical drag (`ns-resize`), long throw, A=100 + mA forces A→99; **mA** fine fraction now **5 decimal places** (`0…0.99999`, step `1e-5`). Room for a future µA knob if needed.
+- Builds on **2.4.3** Shared noise token-batch + A/mA Workbench chrome (30%…100%).
+
 ## [2.4.3] - 2026-08-26
 
 ### Changed

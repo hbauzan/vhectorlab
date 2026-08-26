@@ -85,6 +85,9 @@ export const DEFAULT_LABELS_VISIBLE = true;
 export const HIGH_COVERAGE_MIN = 30;
 export const HIGH_COVERAGE_MAX = 100;
 export const HIGH_COVERAGE_SLIDER_MAX = 10000;
+/** Persist / display precision for Zero coverage + Shared noise %. */
+export const HIGH_COVERAGE_DECIMALS = 5;
+export const HIGH_COVERAGE_SCALE = 10 ** HIGH_COVERAGE_DECIMALS;
 export const DEFAULT_HIGH_COVERAGE = HIGH_COVERAGE_MIN;
 export const COVERAGE_UNIT_MAX = HIGH_COVERAGE_MAX / 100;
 
@@ -343,8 +346,7 @@ export function normalizeHighCoverage(value) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return DEFAULT_HIGH_COVERAGE;
   const clamped = Math.max(HIGH_COVERAGE_MIN, Math.min(HIGH_COVERAGE_MAX, n));
-  // Keep up to 4 decimal places
-  return Math.round(clamped * 10000) / 10000;
+  return Math.round(clamped * HIGH_COVERAGE_SCALE) / HIGH_COVERAGE_SCALE;
 }
 
 /**
@@ -373,17 +375,16 @@ export function highCoverageToSlider(percent) {
 }
 
 /**
- * Display label for high coverage (trim trailing zeros, up to 4 decimals).
+ * Display label for high coverage (trim trailing zeros, up to 5 decimals).
  * @param {unknown} percent
  * @returns {string}
  */
 export function formatHighCoverage(percent) {
   const v = normalizeHighCoverage(percent);
-  const rounded = Math.round(v * 10000) / 10000;
-  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
-    return `${Math.round(rounded)}%`;
+  if (Math.abs(v - Math.round(v)) < 1 / HIGH_COVERAGE_SCALE / 2) {
+    return `${Math.round(v)}%`;
   }
-  return `${parseFloat(rounded.toFixed(4))}%`;
+  return `${parseFloat(v.toFixed(HIGH_COVERAGE_DECIMALS))}%`;
 }
 
 /**
@@ -393,11 +394,10 @@ export function formatHighCoverage(percent) {
  */
 export function formatHighCoverageEdit(percent) {
   const v = normalizeHighCoverage(percent);
-  const rounded = Math.round(v * 10000) / 10000;
-  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
-    return String(Math.round(rounded));
+  if (Math.abs(v - Math.round(v)) < 1 / HIGH_COVERAGE_SCALE / 2) {
+    return String(Math.round(v));
   }
-  return String(parseFloat(rounded.toFixed(4)));
+  return String(parseFloat(v.toFixed(HIGH_COVERAGE_DECIMALS)));
 }
 
 /**
