@@ -1,6 +1,6 @@
 # Prompt — agente Shared noise common-mode
 
-> **Archivado:** 2026-08-26 — no usar. Sucesor: [`../PROMPT-shared-noise-coverage-knobs.md`](../PROMPT-shared-noise-coverage-knobs.md).
+> **Archivado:** 2026-08-26 — no usar. Sucesor (también archivado, shipped 2.4.3): [`PROMPT-shared-noise-coverage-knobs.md`](./PROMPT-shared-noise-coverage-knobs.md).
 
 Copiá y pegá el bloque siguiente en una sesión **nueva**.  
 Roadmap: [`shared-noise-common-mode.md`](./shared-noise-common-mode.md) (2026-08-26).

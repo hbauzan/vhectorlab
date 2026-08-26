@@ -1,8 +1,12 @@
 # Prompt — agente Shared noise ship + coverage A/mA knobs
 
+> **Archivado:** 2026-08-26 — shipped **2.4.3**. No usar para trabajo nuevo.  
+> Roadmap: [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md).  
+> Predecessor: [`shared-noise-common-mode.md`](./shared-noise-common-mode.md).
+
 Copiá y pegá el bloque siguiente en una sesión **nueva**.  
 Roadmap: [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md) (2026-08-26).  
-Predecessor archivado (parcial): [`archivo/shared-noise-common-mode.md`](./archivo/shared-noise-common-mode.md).
+Predecessor archivado (parcial): [`shared-noise-common-mode.md`](./shared-noise-common-mode.md).
 
 **Modo de trabajo:** **serial** — una sesión / un slice. No agentes en paralelo.  
 Empezá por **Slice 1** salvo que el humano diga otro.
