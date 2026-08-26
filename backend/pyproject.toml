@@ -23,6 +23,18 @@ dev = [
     "ruff>=0.3.0",
 ]
 
+# HF Space / Docker (Linux): CPU wheels only — PyPI Linux torch pulls multi-GB nvidia-*.
+# macOS keeps default PyPI (MPS-capable). UV_TORCH_BACKEND alone does NOT affect `uv sync`.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

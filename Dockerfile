@@ -1,5 +1,5 @@
 # Monolithic Dockerfile for VHectorLab 3D on Hugging Face Spaces (Port 7860)
-# Target hardware: cpu-basic — install PyTorch CPU wheels only (UV_TORCH_BACKEND=cpu).
+# Target hardware: cpu-basic — Linux torch from pytorch-cpu index (see backend/pyproject.toml).
 FROM python:3.10-slim
 
 # Install system dependencies & Node.js
@@ -19,15 +19,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy configuration and package files
 COPY package.json package-lock.json ./
-COPY backend/pyproject.toml backend/pyproject.toml
-COPY backend/README.md backend/README.md
+COPY backend/pyproject.toml backend/uv.lock backend/README.md ./backend/
 
-# CPU-only torch for HF cpu-basic (avoids multi-GB NVIDIA wheels)
-ENV UV_TORCH_BACKEND=cpu
-
-# Install Node and Python dependencies
+# CPU-only torch on Linux via [tool.uv.sources] → pytorch-cpu (not UV_TORCH_BACKEND / uv sync).
 RUN npm ci
-RUN cd backend && UV_TORCH_BACKEND=cpu uv sync
+RUN cd backend && uv sync --frozen
 
 # Copy source code and vocabulary
 COPY . .
@@ -41,7 +37,7 @@ ENV MODEL_NAME=all-mpnet-base-v2
 ENV VOCAB_PATH=public/vocab.txt
 ENV VOCAB_EMBEDDINGS_PATH=public/vocab_embeddings.npz
 ENV SAE_DEVICE=CPU
-RUN UV_TORCH_BACKEND=cpu uv run --directory backend python /app/scripts/precompute_vocab_embeddings.py \
+RUN uv run --directory backend --frozen python /app/scripts/precompute_vocab_embeddings.py \
     --device CPU \
     --vocab /app/public/vocab.txt \
     --out /app/public/vocab_embeddings.npz \
@@ -60,4 +56,4 @@ ENV VOCAB_EMBEDDINGS_PATH=public/vocab_embeddings.npz
 ENV SAE_DEVICE=CPU
 
 # Entrypoint: FastAPI serving API + static frontend
-CMD ["uv", "run", "--directory", "backend", "python", "-m", "server"]
+CMD ["uv", "run", "--directory", "backend", "--frozen", "python", "-m", "server"]

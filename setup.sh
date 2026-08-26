@@ -795,7 +795,7 @@ build_hf_docker() {
         read -p "Press Enter to return to menu..."
         return
     fi
-    echo -e "${DIM}  UV_TORCH_BACKEND=cpu · port 7860 · precomputes vocab_embeddings.npz in-image${RESET}"
+    echo -e "${DIM}  pytorch-cpu index (Linux) · port 7860 · precomputes vocab_embeddings.npz in-image${RESET}"
     docker build -t vhectorlab-3d:latest .
     if [ $? -ne 0 ]; then
         echo -e "${RED}${BOLD}❌ Docker build failed.${RESET}"
@@ -860,11 +860,13 @@ load_dotenv() {
 
 # Push HEAD tree to a Space remote, but with README.md = frontmatter + project README.
 # Uses a temp GIT_INDEX_FILE + commit-tree so the working tree and GitHub branch stay clean.
+# Strips GitHub-only binaries (e.g. demo GIFs) — HF rejects non-Xet binaries on Space git push.
 push_hf_space_commit() {
     local space_url="$1"
     local force_push="$2"
     local composed_readme="$3"
     local blob tree commit idx ec=0
+    local stripped=0 path
 
     idx="$(mktemp)"
     export GIT_INDEX_FILE="$idx"
@@ -874,6 +876,16 @@ push_hf_space_commit() {
         echo -e "${RED}❌ git read-tree HEAD failed.${RESET}"
         return 1
     fi
+
+    # HF Hub pre-receive rejects large/non-Xet binaries. Demo assets are README-only on GitHub.
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        if git rm --cached -f -- "$path" >/dev/null 2>&1; then
+            echo -e "${DIM}  Stripped from Space tip (HF binary policy): ${path}${RESET}"
+            stripped=$((stripped + 1))
+        fi
+    done < <(git ls-files -c -- 'demo/*' '*.gif' '*.mp4' '*.webm' '*.mov' 2>/dev/null)
+
     blob="$(git hash-object -w "$composed_readme")" || ec=$?
     if [ "$ec" -ne 0 ] || [ -z "$blob" ]; then
         unset GIT_INDEX_FILE
@@ -894,6 +906,9 @@ push_hf_space_commit() {
     if [ "$ec" -ne 0 ] || [ -z "$tree" ]; then
         echo -e "${RED}❌ git write-tree failed.${RESET}"
         return 1
+    fi
+    if [ "$stripped" -gt 0 ]; then
+        echo -e "${DIM}  Removed ${stripped} binary path(s) from ephemeral Space tip (GitHub tree unchanged).${RESET}"
     fi
 
     commit="$(git commit-tree "$tree" -p HEAD -m "$(cat <<'EOF'

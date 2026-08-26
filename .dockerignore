@@ -4,6 +4,8 @@
 backend/.venv
 node_modules
 dist
+# GitHub README demo assets — not needed in Space image; HF also rejects non-Xet binaries on git push
+demo
 **/__pycache__
 **/*.py[cod]
 **/.pytest_cache

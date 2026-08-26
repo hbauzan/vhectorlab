@@ -17,12 +17,14 @@ if [ ! -f "$src" ]; then
 fi
 
 # Strip a leading YAML frontmatter block from the project README if present.
+# Also drop local demo GIF embeds — Space tip excludes demo/ (HF binary / Xet policy).
 strip_leading_frontmatter() {
     awk '
         BEGIN { in_fm = 0; started = 0 }
         NR == 1 && /^---[[:space:]]*$/ { in_fm = 1; next }
         in_fm && /^---[[:space:]]*$/ { in_fm = 0; started = 1; next }
         in_fm { next }
+        /demo\/.*\.(gif|mp4|webm|mov)/ { next }
         started && /^[[:space:]]*$/ && !printed { next }
         { printed = 1; print }
     ' "$1"

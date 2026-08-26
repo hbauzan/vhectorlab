@@ -452,10 +452,12 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 ### 8.5. HF Space cpu-basic packaging
 - **Problema**: `uv sync` en Linux tira wheels NVIDIA; encode de ~10k vocab en cada cold start OOMea o tarda demasiado.
 - **Problema 2**: HF exige YAML frontmatter en el `README.md` del Space (`sdk: docker`, `app_port: 7860`); ensuciar el README de GitHub rompe el contrato “README estándar de producto”.
-- **Solución Obligatoria**: `UV_TORCH_BACKEND=cpu` en Dockerfile; precompute `public/vocab_embeddings.npz` en build; `.dockerignore`; `UVICORN_RELOAD=0`; contrato Space en **`deploy/hf/space-frontmatter.yml`**; option 8 compone README vía `scripts/compose_hf_space_readme.sh` y pushea un tip efímero (`commit-tree` + temp `GIT_INDEX_FILE`) sin mutar el working tree ni GitHub `main`.
+- **Problema 3**: `UV_TORCH_BACKEND=cpu` **no** aplica a `uv sync` (solo a `uv pip`) — el lock PyPI Linux seguía jalando `nvidia-*` multi-GB.
+- **Problema 4**: push al Space rechaza binarios no-Xet (p.ej. `demo/vhectorlab-gui-tour.gif`).
+- **Solución Obligatoria**: Linux torch vía `[tool.uv.sources]` → index `pytorch-cpu` en `backend/pyproject.toml` + `uv.lock`; Dockerfile `uv sync --frozen` (sin confiar en `UV_TORCH_BACKEND`); precompute `public/vocab_embeddings.npz` en build; `.dockerignore` incluye `demo/`; option 8 compone README y pushea tip efímero **stripping** `demo/*` / gifs del index; contrato Space en **`deploy/hf/space-frontmatter.yml`**.
 - **Runtime device**: `/health.device` + navbar `ONLINE (model · cpu|cuda|mps)`.
 - **ARITHMETIC persist**: por visitante en `localStorage` (`vl3d.arithmetic.*`) — no disco del Space.
-- **Invariante**: no asumir GPU en Spaces Docker; ZeroGPU no aplica a sdk docker. **No** force-pushear `HEAD` crudo al Space si el README de producto no lleva frontmatter — siempre inyectar desde `deploy/hf/`.
+- **Invariante**: no asumir GPU en Spaces Docker; ZeroGPU no aplica a sdk docker. **No** force-pushear `HEAD` crudo al Space si el README de producto no lleva frontmatter — siempre inyectar desde `deploy/hf/`. Option 7 necesita disco libre local (BuildKit I/O); option 8 no necesita Docker Desktop.
 
 ### 8.5. Local folder / clone name = `vhectorlab`
 - **Problema**: el working copy histórico se llamaba `lsv2`, luego `VHectorLab-3D`, mientras el remoto GitHub pasó a **`vhectorlab`**.

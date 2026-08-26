@@ -4,6 +4,10 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **HF Space publish (option 8)**: ephemeral tip strips `demo/` binaries (HF rejects non-Xet GIFs like `vhectorlab-gui-tour.gif`); composed Space README drops local demo media embeds.
+- **HF / Docker torch CPU**: Linux installs `torch` from `pytorch-cpu` index via `[tool.uv.sources]` (nvidia-* no longer pulled). `UV_TORCH_BACKEND` alone never affected `uv sync`.
+
 ### Added
 - **HF Space README inject**: `deploy/hf/space-frontmatter.yml` + `scripts/compose_hf_space_readme.sh`; option 8 pushes an ephemeral tip with `sdk: docker` / `app_port: 7860` without polluting the GitHub product README.
 - **Compare group cosine panel**: with ≥2 `GROUP_*`, the lower list shows group-centroid cosine vs the first group in the textarea (mean of L2 unit vectors → re-L2 → dot); flat / single group stays token-vs-first. 3D viewer unchanged.
