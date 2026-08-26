@@ -47,7 +47,7 @@ Compact tap “i” control next to an editable field; shows a short English pop
 Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS`. Distinct from 1px WebGL lines.
 
 ### Visualization Controls
-Bottom-HUD glass panel for global sign filter, divergent color anchors, Zero Coverage, and Group contrast (Compare ≥2 groups).
+Bottom-HUD glass panel for global sign filter, divergent color anchors, Zero Coverage, Shared noise (Compare ≥2 tokens), and Group contrast (Compare ≥2 groups).
 
 ### Sign Filter
 Global show mode `all | positive | negative` over **normalized** activations (post z-score/tanh); near-zero `|t| < 0.01` is treated as neutral and hidden by +/− only.
@@ -56,10 +56,13 @@ Global show mode `all | positive | negative` over **normalized** activations (po
 User-editable hex for normalized activations at +1, 0, and −1; replaces the former fixed dual mid-stop ramp via linear RGB lerp.
 
 ### Zero Coverage
-Percent of the |t| range held at the zero color (default black) before blending toward ±1 anchors; capped at 90%.
+Percent of the |t| range held at the zero color (default black) before blending toward ±1 anchors; range 30%…100%, edited via A/mA knobs + readout.
+
+### Shared Noise
+Compare paint that blackens dims where **all tokens in view** agree in sign and magnitude (min/max over embeddings; `groupId` ignored). Sits with Zero coverage; Similarity uses the same A/mA coverage chrome. Default OFF.
 
 ### Group Contrast
-Visualization paint for Compare with ≥2 groups: **Shared noise** blackens same-sign dims by similarity; **Sign conflict** highlights opposite-sign dims (custom color × |Δ|) and can blacken them by difference. Uses group means on raw embeddings; geometry Y unchanged.
+Visualization paint for Compare with ≥2 groups: **Sign conflict** highlights opposite-sign dims (G1↔G2 means, custom color × |Δ|) and can blacken them by difference; **Group hue** optional. Geometry Y unchanged.
 
 ### Workbench Theme
 Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and bevelled panels on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**. Value fields use dark fills (not white).

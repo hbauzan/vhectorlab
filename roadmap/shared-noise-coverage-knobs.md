@@ -1,11 +1,11 @@
 # Roadmap — Shared noise ship + coverage A/mA knobs
 
-**Status:** Plan (ready for agent)  
+**Status:** Shipped (2.4.3)  
 **Date:** 2026-08-26  
 **Product:** VHectorLab 3D (`/` legacy UI only)  
 **Prompt companion:** [`PROMPT-shared-noise-coverage-knobs.md`](./PROMPT-shared-noise-coverage-knobs.md)  
 **Predecessor (archived, partial):** [`archivo/shared-noise-common-mode.md`](./archivo/shared-noise-common-mode.md)  
-**Version on ship:** **PATCH** `2.4.2` → `2.4.3` (confirm with human + SemVer in `lessons-learned.md` §7). Use **MINOR** only if the human says so.
+**Version on ship:** **PATCH** `2.4.2` → `2.4.3`
 
 > **Goal (one sentence):** Finish Shared noise as **token-batch common-mode** (not G1↔G2), place it with Zero coverage, and replace the high-coverage slider UX with **Workbench-styled dual knobs (A + mA)** on both Zero coverage and Shared noise — techo **100%**, readout editable, defaults OFF + 30%.
 
