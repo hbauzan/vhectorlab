@@ -188,9 +188,16 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('data-viz-layout="edge"');
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('▼');
-    expect(html).toContain('viz-zero-coverage-slider');
+    expect(html).toContain('viz-zero-coverage-a');
+    expect(html).toContain('viz-zero-coverage-ma');
+    expect(html).toContain('viz-zero-coverage-val');
+    expect(html).toContain('viz-am-knobs-row');
+    expect(html).not.toContain('viz-zero-coverage-slider');
     expect(html).toContain('viz-zero-coverage-enabled');
     expect(html).toContain('Zero coverage');
+    expect(html).toContain('viz-same-sign-coverage-a');
+    expect(html).toContain('data-field-info="Coarse percent (A)."');
+    expect(html).toContain('data-field-info="Tenths of a % (mA)."');
     expect(html).toContain('viz-group-contrast');
     expect(html).toContain('Group contrast');
     expect(html).toContain('Group hue');

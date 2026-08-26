@@ -18,17 +18,10 @@ import {
   VIZ_STORAGE_PREFIX,
   CONFLICT_COVER_MIN,
   CONFLICT_COVER_MAX,
-  HIGH_COVERAGE_MIN,
-  HIGH_COVERAGE_MAX,
-  HIGH_COVERAGE_SLIDER_MAX,
   HIGHLIGHT_STRENGTH_MIN,
   HIGHLIGHT_STRENGTH_MAX,
   RULER_THICKNESS_MIN,
   RULER_THICKNESS_MAX,
-  highCoverageFromSlider,
-  highCoverageToSlider,
-  formatHighCoverageEdit,
-  parseHighCoverageInput,
 } from './visualizationControlsDefaults.js';
 import {
   readCollapsedPreference,
@@ -36,6 +29,12 @@ import {
   isMobileViewport,
 } from './CollapsibleDock.js';
 import { FIELD_INFO, infoTipMarkup, escapeHtmlAttr } from './fieldInfo.js';
+import {
+  coverageAmKnobsMarkup,
+  wireCoverageAmKnobs,
+  setCoverageAmKnobsEnabled,
+  syncCoverageAmKnobsFromPercent,
+} from './coverageAmKnobs.js';
 import { normalizeGroupHueRowSpecs } from '../visualizer/groupHuePaint.js';
 import {
   createDimRulerState,
@@ -178,16 +177,14 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
         <input type="checkbox" id="viz-zero-coverage-enabled" ${s.zeroCoverageEnabled ? 'checked' : ''}>
         <span class="field-label-text">Zero coverage</span>${infoTipMarkup(FIELD_INFO.zeroCoverage)}
       </label>
-      <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="zero-coverage">
-          <div class="slider-header">
-          <label for="viz-zero-coverage-slider"><span class="field-label-text">Coverage:</span>${infoTipMarkup(FIELD_INFO.zeroCoverageAmount)}</label>
-          <span class="viz-coverage-edit-wrap">
-            <input type="number" id="viz-zero-coverage-val" class="slider-val viz-coverage-edit" min="${HIGH_COVERAGE_MIN}" max="${HIGH_COVERAGE_MAX}" step="any" value="${formatHighCoverageEdit(s.zeroCoverage)}" ${s.zeroCoverageEnabled ? '' : 'disabled'} inputmode="decimal" aria-label="Zero coverage percent">
-            <span class="viz-coverage-unit" aria-hidden="true">%</span>
-          </span>
-        </div>
-        <input type="range" id="viz-zero-coverage-slider" min="0" max="${HIGH_COVERAGE_SLIDER_MAX}" step="1" value="${highCoverageToSlider(s.zeroCoverage)}" ${s.zeroCoverageEnabled ? '' : 'disabled'} title="30% … 100% held at zero color">
-      </div>
+      ${coverageAmKnobsMarkup({
+        idPrefix: 'viz-zero-coverage',
+        amountLabel: 'Coverage',
+        amountTip: FIELD_INFO.zeroCoverageAmount,
+        percent: s.zeroCoverage,
+        disabled: !s.zeroCoverageEnabled,
+        requires: 'zero-coverage',
+      })}
     </div>
 
     <div id="viz-group-contrast" class="viz-group-contrast is-disabled" aria-disabled="true">
@@ -201,16 +198,14 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           <input type="checkbox" id="viz-same-sign-enabled" ${s.sameSignCancelEnabled ? 'checked' : ''}>
           <span class="field-label-text">Shared noise</span>${infoTipMarkup(FIELD_INFO.sameSignCancel)}
         </label>
-        <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="same-sign">
-          <div class="slider-header">
-            <label for="viz-same-sign-coverage"><span class="field-label-text">Similarity:</span>${infoTipMarkup(FIELD_INFO.sameSignCoverage)}</label>
-            <span class="viz-coverage-edit-wrap">
-              <input type="number" id="viz-same-sign-coverage-val" class="slider-val viz-coverage-edit" min="${HIGH_COVERAGE_MIN}" max="${HIGH_COVERAGE_MAX}" step="any" value="${formatHighCoverageEdit(s.sameSignCancelCoverage)}" ${s.sameSignCancelEnabled ? '' : 'disabled'} inputmode="decimal" aria-label="Shared noise similarity percent">
-              <span class="viz-coverage-unit" aria-hidden="true">%</span>
-            </span>
-          </div>
-          <input type="range" id="viz-same-sign-coverage" min="0" max="${HIGH_COVERAGE_SLIDER_MAX}" step="1" value="${highCoverageToSlider(s.sameSignCancelCoverage)}" ${s.sameSignCancelEnabled ? '' : 'disabled'}>
-        </div>
+        ${coverageAmKnobsMarkup({
+          idPrefix: 'viz-same-sign-coverage',
+          amountLabel: 'Similarity',
+          amountTip: FIELD_INFO.sameSignCoverage,
+          percent: s.sameSignCancelCoverage,
+          disabled: !s.sameSignCancelEnabled,
+          requires: 'same-sign',
+        })}
       </div>
 
       <div class="viz-group-fx-block" data-fx="opposite">
@@ -310,17 +305,11 @@ export function syncVisualizationControlsFromConfig(container, config) {
   }
   const zeroOn = container.querySelector('#viz-zero-coverage-enabled');
   if (zeroOn) zeroOn.checked = s.zeroCoverageEnabled;
-  const covInput = container.querySelector('#viz-zero-coverage-slider');
-  const covLabel = container.querySelector('#viz-zero-coverage-val');
-  if (covInput) covInput.value = String(highCoverageToSlider(s.zeroCoverage));
-  if (covLabel) covLabel.value = formatHighCoverageEdit(s.zeroCoverage);
+  syncCoverageAmKnobsFromPercent(container, 'viz-zero-coverage', s.zeroCoverage);
 
   const sameOn = container.querySelector('#viz-same-sign-enabled');
   if (sameOn) sameOn.checked = s.sameSignCancelEnabled;
-  const sameCov = container.querySelector('#viz-same-sign-coverage');
-  const sameCovVal = container.querySelector('#viz-same-sign-coverage-val');
-  if (sameCov) sameCov.value = String(highCoverageToSlider(s.sameSignCancelCoverage));
-  if (sameCovVal) sameCovVal.value = formatHighCoverageEdit(s.sameSignCancelCoverage);
+  syncCoverageAmKnobsFromPercent(container, 'viz-same-sign-coverage', s.sameSignCancelCoverage);
 
   const oppOn = container.querySelector('#viz-opposite-enabled');
   if (oppOn) oppOn.checked = s.oppositeHighlightEnabled;
@@ -464,8 +453,7 @@ export function syncGroupFxSliderEnabled(container, settings) {
 
   setDisabled(container.querySelector('#viz-zero-coverage-enabled'), false);
   const zeroSlidersOn = s.zeroCoverageEnabled;
-  setDisabled(container.querySelector('#viz-zero-coverage-slider'), !zeroSlidersOn);
-  setDisabled(container.querySelector('#viz-zero-coverage-val'), !zeroSlidersOn);
+  setCoverageAmKnobsEnabled(container, 'viz-zero-coverage', zeroSlidersOn);
   for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="zero-coverage"]')) {
     row.classList.toggle('is-inert', !zeroSlidersOn);
   }
@@ -475,8 +463,7 @@ export function syncGroupFxSliderEnabled(container, settings) {
   setDisabled(container.querySelector('#viz-group-hue-enabled'), !groupsOk);
 
   const sameSlidersOn = groupsOk && s.sameSignCancelEnabled;
-  setDisabled(container.querySelector('#viz-same-sign-coverage'), !sameSlidersOn);
-  setDisabled(container.querySelector('#viz-same-sign-coverage-val'), !sameSlidersOn);
+  setCoverageAmKnobsEnabled(container, 'viz-same-sign-coverage', sameSlidersOn);
 
   const oppSlidersOn = groupsOk && s.oppositeHighlightEnabled;
   setDisabled(container.querySelector('#viz-opposite-swatch'), !oppSlidersOn);
@@ -711,32 +698,12 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       emit();
     });
   }
-  const covInput = container.querySelector('#viz-zero-coverage-slider');
-  const covLabel = container.querySelector('#viz-zero-coverage-val');
-  if (covInput) {
-    covInput.addEventListener('input', () => {
-      const next = highCoverageFromSlider(covInput.value);
-      config.zeroCoverage = next;
-      if (covLabel) covLabel.value = formatHighCoverageEdit(next);
-      emit();
-    });
-  }
-  if (covLabel) {
-    const commitZeroEdit = () => {
-      const next = parseHighCoverageInput(covLabel.value);
-      config.zeroCoverage = next;
-      covLabel.value = formatHighCoverageEdit(next);
-      if (covInput) covInput.value = String(highCoverageToSlider(next));
-      emit();
-    };
-    covLabel.addEventListener('change', commitZeroEdit);
-    covLabel.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        commitZeroEdit();
-      }
-    });
-  }
+  wireCoverageAmKnobs(container, {
+    idPrefix: 'viz-zero-coverage',
+    getPercent: () => config.zeroCoverage,
+    setPercent: (v) => { config.zeroCoverage = v; },
+    emit,
+  });
 
   const sameOn = container.querySelector('#viz-same-sign-enabled');
   if (sameOn) {
@@ -746,32 +713,12 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       emit();
     });
   }
-  const sameCov = container.querySelector('#viz-same-sign-coverage');
-  const sameCovVal = container.querySelector('#viz-same-sign-coverage-val');
-  if (sameCov) {
-    sameCov.addEventListener('input', () => {
-      const next = highCoverageFromSlider(sameCov.value);
-      config.sameSignCancelCoverage = next;
-      if (sameCovVal) sameCovVal.value = formatHighCoverageEdit(next);
-      emit();
-    });
-  }
-  if (sameCovVal) {
-    const commitSameEdit = () => {
-      const next = parseHighCoverageInput(sameCovVal.value);
-      config.sameSignCancelCoverage = next;
-      sameCovVal.value = formatHighCoverageEdit(next);
-      if (sameCov) sameCov.value = String(highCoverageToSlider(next));
-      emit();
-    };
-    sameCovVal.addEventListener('change', commitSameEdit);
-    sameCovVal.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        commitSameEdit();
-      }
-    });
-  }
+  wireCoverageAmKnobs(container, {
+    idPrefix: 'viz-same-sign-coverage',
+    getPercent: () => config.sameSignCancelCoverage,
+    setPercent: (v) => { config.sameSignCancelCoverage = v; },
+    emit,
+  });
 
   const oppOn = container.querySelector('#viz-opposite-enabled');
   if (oppOn) {
