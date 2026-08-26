@@ -51,46 +51,49 @@ export class Navbar {
     this.element.className = 'glass-navbar';
     this.element.innerHTML = `
       <div class="navbar-brand">
-        <div class="logo-icon">🌐</div>
         <div class="title-group">
           <h1>VHectorLab <span class="accent-3d">3D</span></h1>
           <span class="version-tag">v3.0.0</span>
         </div>
       </div>
 
-      <div class="navbar-tabs-scroller">
-        <button type="button" class="navbar-tabs-arrow navbar-tabs-prev" aria-label="Scroll tabs left" title="Previous">◀</button>
-        <div class="navbar-center-controls">
-          <div class="workspace-mode-tabs">
-            <span class="tab-label">MODE:</span>
-            <button data-workspace="ARITHMETIC" class="workspace-tab${workspaceActive('ARITHMETIC')}">ARITHMETIC</button>
-            <button data-workspace="COMPARE" class="workspace-tab${workspaceActive('COMPARE')}">COMPARE</button>
-          </div>
+      <div class="navbar-cable-rail" aria-hidden="false">
+        <div class="logo-icon" aria-hidden="true">◈</div>
+        <div class="navbar-cable-seg navbar-cable-lead" aria-hidden="true"></div>
+        <div class="navbar-tabs-scroller">
+          <button type="button" class="navbar-tabs-arrow navbar-tabs-prev" aria-label="Scroll tabs left" title="Previous">◀</button>
+          <div class="navbar-center-controls">
+            <div class="workspace-mode-tabs">
+              <span class="tab-label">MODE:</span>
+              <button data-workspace="ARITHMETIC" class="workspace-tab${workspaceActive('ARITHMETIC')}">ARITHMETIC</button>
+              <button data-workspace="COMPARE" class="workspace-tab${workspaceActive('COMPARE')}">COMPARE</button>
+            </div>
 
-          <div class="view-mode-tabs">
-            <span class="tab-label">VIEW:</span>
-            <button data-view="ANALYSIS" class="view-tab${viewActive('ANALYSIS')}">ANALYSIS</button>
-            <button data-view="NAVIGATION" class="view-tab${viewActive('NAVIGATION')}">NAVIGATION</button>
-            <div class="galaxy-view-cluster">
-              <button data-view="${GALAXY_VIEW}" class="view-tab${viewActive(GALAXY_VIEW)}">GALAXY</button>
-              <div class="galaxy-method-chips" hidden aria-label="Galaxy projection method">
-                ${methodChipsHtml}
+            <div class="view-mode-tabs">
+              <span class="tab-label">VIEW:</span>
+              <button data-view="ANALYSIS" class="view-tab${viewActive('ANALYSIS')}">ANALYSIS</button>
+              <button data-view="NAVIGATION" class="view-tab${viewActive('NAVIGATION')}">NAVIGATION</button>
+              <div class="galaxy-view-cluster">
+                <button data-view="${GALAXY_VIEW}" class="view-tab${viewActive(GALAXY_VIEW)}">GALAXY</button>
+                <div class="galaxy-method-chips" hidden aria-label="Galaxy projection method">
+                  ${methodChipsHtml}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="render-mode-tabs">
-            <span class="tab-label">RENDER:</span>
-            <button data-mode="POINTS" class="mode-tab${renderActive('POINTS')}">POINTS</button>
-            <button data-mode="RIBBONS" class="mode-tab${renderActive('RIBBONS')}">RIBBONS</button>
+            <div class="render-mode-tabs">
+              <span class="tab-label">RENDER:</span>
+              <button data-mode="POINTS" class="mode-tab${renderActive('POINTS')}">POINTS</button>
+              <button data-mode="RIBBONS" class="mode-tab${renderActive('RIBBONS')}">RIBBONS</button>
+            </div>
           </div>
+          <button type="button" class="navbar-tabs-arrow navbar-tabs-next" aria-label="Scroll tabs right" title="Next">▶</button>
         </div>
-        <button type="button" class="navbar-tabs-arrow navbar-tabs-next" aria-label="Scroll tabs right" title="Next">▶</button>
-      </div>
-
-      <div class="status-indicator">
-        <span id="backend-status-dot" class="status-dot offline"></span>
-        <span id="backend-status-text" class="status-text">OFFLINE</span>
+        <div class="navbar-cable-seg navbar-cable-trail" aria-hidden="true"></div>
+        <div class="status-indicator" role="status">
+          <span id="backend-status-dot" class="status-dot offline"></span>
+          <span id="backend-status-text" class="status-text">OFFLINE</span>
+        </div>
       </div>
     `;
 

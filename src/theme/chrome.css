@@ -27,7 +27,7 @@ body.workbench-theme select {
   line-height: 20px !important;
 }
 
-/* Titlebar / navbar */
+/* Titlebar / navbar — solid WB blue; v3 peach cable lives on the rail */
 body.workbench-theme .glass-navbar {
   background: var(--amiga-accent) !important;
   border: 2px solid var(--mwb-black) !important;
@@ -35,6 +35,36 @@ body.workbench-theme .glass-navbar {
   backdrop-filter: none !important;
   box-shadow: none !important;
   color: var(--mwb-white) !important;
+}
+
+body.workbench-theme .logo-icon {
+  color: var(--mwb-peach);
+  font-size: 1.35rem;
+  line-height: 1;
+  text-shadow: none;
+}
+
+/* Continuous peach cable: ◈ ── wrap(MODE/VIEW/RENDER) ── status chip */
+body.workbench-theme .navbar-cable-seg {
+  background: var(--mwb-peach);
+}
+
+body.workbench-theme .navbar-center-controls {
+  border: 2px solid var(--mwb-peach) !important;
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  padding: 4px 6px !important;
+  gap: 10px !important;
+}
+
+body.workbench-theme .status-indicator {
+  border: 2px solid var(--mwb-peach) !important;
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  box-shadow: none !important;
+  padding: 4px 10px !important;
+  color: var(--mwb-white) !important;
+  pointer-events: none;
 }
 
 body.workbench-theme .glass-navbar h1,
@@ -230,4 +260,24 @@ body.workbench-theme .modal-content {
   border-radius: 0 !important;
   color: var(--amiga-fg) !important;
   font-family: var(--amiga-font) !important;
+}
+
+/* Mobile: drop peach cable; keep tabs + status usable */
+@media (max-width: 768px), ((max-height: 500px) and (hover: none)) {
+  body.workbench-theme .navbar-cable-rail .logo-icon,
+  body.workbench-theme .navbar-cable-seg {
+    display: none !important;
+  }
+
+  body.workbench-theme .navbar-center-controls {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  body.workbench-theme .status-indicator {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
 }
