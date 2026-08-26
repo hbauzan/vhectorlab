@@ -65,6 +65,7 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 0 20px;
   z-index: 50;
 }
@@ -73,10 +74,43 @@ canvas {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
 }
 
 .logo-icon {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--accent-cyan);
+  flex: 0 0 auto;
+}
+
+/* ◈ ── center wrap ── status (peach stroke in workbench chrome) */
+.navbar-cable-rail {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0;
+}
+
+.navbar-cable-seg {
+  flex: 1 1 12px;
+  min-width: 8px;
+  max-width: 48px;
+  height: 2px;
+  align-self: center;
+  background: var(--accent-cyan);
+}
+
+.navbar-cable-lead {
+  flex: 1 1 16px;
+  max-width: none;
+}
+
+.navbar-cable-trail {
+  flex: 0 0 14px;
+  max-width: 14px;
+  min-width: 10px;
 }
 
 .title-group h1 {
@@ -101,7 +135,7 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   gap: 0;
 }
@@ -658,6 +692,8 @@ canvas {
   gap: 8px;
   font-size: 0.8rem;
   font-weight: 600;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .status-dot {
@@ -2649,8 +2685,15 @@ body.viz-am-knob-dragging * {
   }
 
   .navbar-brand .version-tag,
-  .navbar-brand .logo-icon {
+  .navbar-cable-rail .logo-icon,
+  .navbar-cable-seg {
     display: none;
+  }
+
+  .navbar-cable-rail {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 4px;
   }
 
   .title-group h1 {
@@ -2681,6 +2724,9 @@ body.viz-am-knob-dragging * {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
   }
 
   .navbar-center-controls::-webkit-scrollbar {
@@ -2730,6 +2776,9 @@ body.viz-am-knob-dragging * {
     margin-left: 0;
     flex-shrink: 0;
     gap: 0;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
   }
 
   /* Dot only — keeps the strip as thin as the brand line */
