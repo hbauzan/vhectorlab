@@ -200,7 +200,7 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('viz-shared-noise');
     expect(html).toContain('viz-same-sign-coverage-a');
     expect(html).toContain('data-field-info="Coarse percent (A)."');
-    expect(html).toContain('data-field-info="Tenths of a % (mA)."');
+    expect(html).toContain('data-field-info="Fine % · 5 decimals."');
     expect(html).toContain('data-field-info="Sign conflict + Group hue."');
     // Shared noise sits after Zero coverage, outside Group contrast
     const zeroIdx = html.indexOf('viz-zero-coverage-block');
@@ -533,7 +533,8 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(normalizeHighCoverage(10)).toBe(HIGH_COVERAGE_MIN);
     expect(normalizeHighCoverage(100)).toBe(HIGH_COVERAGE_MAX);
     expect(normalizeHighCoverage(150)).toBe(HIGH_COVERAGE_MAX);
-    expect(normalizeHighCoverage(50.12345)).toBeCloseTo(50.1235, 4);
+    expect(normalizeHighCoverage(50.12345)).toBeCloseTo(50.12345, 5);
+    expect(normalizeHighCoverage(50.123456)).toBeCloseTo(50.12346, 5);
   });
 
   it('highCoverage slider maps endpoints', () => {
