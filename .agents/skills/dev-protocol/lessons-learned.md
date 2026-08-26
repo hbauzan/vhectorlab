@@ -495,3 +495,14 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
   1. `config_kwargs={use_memory_efficient_attention: False, unpad_inputs: False}` (sin xformers; unpad sin MEA rompe RoPE).
   2. Post-load `_repair_gte_nonpersistent_buffers`: rearmar `position_ids` + `rotary_emb` (`inv_freq` + `_set_cos_sin_cache`).
 - **Invariante**: no agregar `xformers` como dep de lab/macOS; no asumir que el remote GTE es compatible con transformers 5 sin repair.
+
+### 8.9. Shared noise visibility depends on embedding geometry (not model-specific wiring)
+- **Problema**: Shared noise “funcionaba” en el lab Mac (`local-full` Arctic @256) y en HF con `all-mpnet-base-v2` @768 el knob **no movía nada**. Primera lectura: bug de deploy / cableado distinto por modelo.
+- **Hecho**: el path JS (`groupDimContrast.js`) es **agnóstico al modelo** — solo min/max + sameSign + similarity sobre floats. No hay `if (model === …)`.
+- **Causa real**: veto D4 (un token con signo opuesto anula la dim) + batch diverso ⇒ en mpnet @768 casi no quedan dims same-sign (medido ~7% / ~3% con cancel>0 @77% Similarity); en Arctic @256 el mismo texto deja ~30% same-sign / ~21% cancel>0 → se ve. Densidad de paint ≈ fracción de dims, no conteo absoluto.
+- **Solución Obligatoria**:
+  1. No “arreglar” Shared noise especializando por Hub id sin decisión de producto.
+  2. Para demos alineadas al lab: Space = `MODEL_PROFILE=local-full` (Dockerfile).
+  3. Ante knob “muerto”: medir `sameSign%` / cancel density del batch **antes** de tocar shaders.
+  4. Estudios empíricos de este tipo viven en **`current-research/`** (no en `lessons-learned` ni en `roadmap/` como si fueran tickets). Evidencia completa: `current-research/DISCOVERY-shared-noise-embedding-geometry.md`.
+- **Invariante**: lección de ingeniería acá; ciencia abierta / ablaciones / rediseño de métrica → `current-research/` + handoff omit-common. SAE ON no es el instrumento para cazar “pack compartido” en RAW.

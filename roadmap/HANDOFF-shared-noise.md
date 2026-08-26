@@ -4,6 +4,8 @@ Pegá esto en el chatbot nuevo. Pedile que lea también:
 
 - `.agents/Por acá va la bocha.md` (estilo)
 - `roadmap/shared-noise-omit-common.md` (fuente de verdad del acuerdo, draft)
+- `current-research/DISCOVERY-shared-noise-embedding-geometry.md` (evidencia Arctic@256 vs mpnet@768 — knob “muerto” ≠ wiring roto)
+- `.agents/skills/dev-protocol/lessons-learned.md` §8.9
 - **No implementar** hasta que el humano lo pida explícito.
 
 Repo: `vhectorlab`. Branch de trabajo al corte: `main` @ producto **3.0.0**. UI: COMPARE / ANALYSIS / POINTS, chrome Workbench.

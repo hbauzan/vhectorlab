@@ -11,6 +11,8 @@ These documents are the recovery core of the codebase. Keep them accurate; do no
 | **`architecture_spec.md`** | Contracts change: API shapes, provider interface, data schemas, security/scalability policies, prompt/templating contracts, token/latency expectations. | Implementation details that stay within an existing contract. |
 | **`README.md`** | How to install, configure, or run the system changes (tooling, scripts, prerequisites). | Internal code changes that do not affect first-time setup. |
 | **`CONTEXT.md`** | Domain language changes (new term, renamed concept, retired alias). | Code-only changes that use existing terms. |
+| **`current-research/`** | Accidental or planned **empirical discoveries** (measurements, geometry studies, “why does knob X feel dead on model Y?”) that outgrow a one-line lesson. | Routine bug fixes; put the distilled invariant in `lessons-learned.md` and link here for the evidence dump. |
+| **`lessons-learned.md`** | A durable engineering **invariant** agents must not re-break. Keep it short; point to `current-research/` for long evidence. | Dumping full measurement tables or open science threads into the skill. |
 
 ### Manifest shape (slim)
 
