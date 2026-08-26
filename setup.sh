@@ -924,7 +924,21 @@ EOF
         return 1
     fi
 
-    echo -e "${DIM}  Ephemeral orphan Space tip: ${commit:0:12} (no GitHub history; README injected)${RESET}"
+    # Hard guards — catch stale in-memory setup.sh (option 8 after edit without restart).
+    local parent_n
+    parent_n="$(git rev-list --parents -n 1 "$commit" | awk '{print NF-1}')"
+    if [ "$parent_n" != "0" ]; then
+        echo -e "${RED}❌ Space tip is not orphan (parents=${parent_n}).${RESET}"
+        echo -e "${YELLOW}  Exit setup.sh (0) and re-run ./setup.sh — option 8 was still using an old in-memory function.${RESET}"
+        return 1
+    fi
+    if git rev-list --objects "$commit" | grep -E '(^|/)(demo/|.*\.(gif|mp4|webm|mov))( |$)' >/dev/null; then
+        echo -e "${RED}❌ Space tip still reaches a binary demo asset — aborting push.${RESET}"
+        git rev-list --objects "$commit" | grep -E '(^|/)(demo/|.*\.(gif|mp4|webm|mov))( |$)' | head -20
+        return 1
+    fi
+
+    echo -e "${DIM}  Ephemeral orphan Space tip: ${commit:0:12} (parents=0; no demo binaries; README injected)${RESET}"
     # Always force: orphan tip cannot fast-forward Space main.
     echo -e "${DIM}  Using --force (orphan tip); GitHub main is untouched.${RESET}"
     if ! git push --force "$space_url" "${commit}:main"; then
