@@ -23,4 +23,6 @@ HF Spaces still require YAML frontmatter on the Space repo’s root `README.md`
 
 Linux image builds use `torch` from the PyTorch **cpu** wheel index (`backend/pyproject.toml` `[tool.uv.sources]`), not CUDA/`nvidia-*` from PyPI.
 
+**Space model (cpu-basic):** `MODEL_PROFILE=local-full` → `Snowflake/snowflake-arctic-embed-m-v2.0` with `TRUNCATE_DIM=256` and `public/vocab_en_es.txt`. Weights ~1.2 GB; fits cpu-basic (16 GB RAM / 50 GB disk). Build downloads the Hub model and precomputes the vocab NPZ (several minutes).
+
 Override path with env `HF_SPACE_FRONTMATTER` (default: `deploy/hf/space-frontmatter.yml`).

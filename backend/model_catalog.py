@@ -104,7 +104,8 @@ _MODELS: tuple[_ModelEntry, ...] = (
 
 _MODEL_BY_HUB: dict[str, _ModelEntry] = {m.hub_id: m for m in _MODELS}
 
-# Named profiles (§2.4). hf-demo is a local preset only (same hub as local-comfort).
+# Named profiles (§2.4). Space Docker pins `local-full` (see Dockerfile).
+# `hf-demo` remains a local MiniLM preset (comfort twin), not the live Space model.
 _PROFILES: dict[str, ProfileInfo] = {
     "local-comfort": ProfileInfo(
         id="local-comfort",

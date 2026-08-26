@@ -458,6 +458,7 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **Runtime device**: `/health.device` + navbar `ONLINE (model · cpu|cuda|mps)`.
 - **ARITHMETIC persist**: por visitante en `localStorage` (`vl3d.arithmetic.*`) — no disco del Space.
 - **Invariante**: no asumir GPU en Spaces Docker; ZeroGPU no aplica a sdk docker. **No** force-pushear `HEAD` crudo al Space si el README de producto no lleva frontmatter — siempre inyectar desde `deploy/hf/`. Option 7 necesita disco libre local (BuildKit I/O); option 8 no necesita Docker Desktop.
+- **Space model (2026-08)**: cpu-basic aguanta Arctic-m (~1.2 GB) + truncate 256 + vocab EN∪ES; alinear Dockerfile a `MODEL_PROFILE=local-full` para que Shared noise coincida con el lab Mac. No volver a pinear `all-mpnet` en el Space sin OK explícito.
 
 ### 8.5. Local folder / clone name = `vhectorlab`
 - **Problema**: el working copy histórico se llamaba `lsv2`, luego `VHectorLab-3D`, mientras el remoto GitHub pasó a **`vhectorlab`**.

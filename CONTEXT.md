@@ -93,7 +93,7 @@ The one SentenceTransformer loaded in the backend process; exposed on `/health` 
 ### Truncate Dim
 Optional Matryoshka width (`TRUNCATE_DIM`) applied after encode; effective `embedding_dim` is the truncated width when set.
 
-_Avoid_: generative LLM “embeddings”; multi-model residency; in-app model switcher; HF Space model policy changes without approval gates.
+_Avoid_: generative LLM “embeddings”; multi-model residency; in-app model switcher. HF Space model is pinned in the Dockerfile (currently `local-full` / Arctic @256); changing it needs an explicit approval + republish (option 8).
 
 ### Clean/Denoise (SAE)
 Compare-only toggle that replaces raw 768D embeddings with SAE sparse activations for 3D threads and cosine while ON. Requires Train SAE on current Visualize data; scope changes clear the session model. Not available in Arithmetic.

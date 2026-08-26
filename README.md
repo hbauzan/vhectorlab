@@ -16,7 +16,7 @@
 
 ## Public demo (no install)
 
-Try the hosted **cpu-basic** demo:
+Try the hosted **cpu-basic** demo (same profile as `local-full`: Arctic-m-v2 @ 256-D, EN∪ES vocab):
 
 👉 **https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer**
 

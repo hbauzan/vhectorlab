@@ -1,5 +1,6 @@
 # Monolithic Dockerfile for VHectorLab 3D on Hugging Face Spaces (Port 7860)
-# Target hardware: cpu-basic — Linux torch from pytorch-cpu index (see backend/pyproject.toml).
+# Target hardware: cpu-basic (2 vCPU / 16 GB / 50 GB) — Arctic-m ~1.2 GB fits.
+# Space profile matches local-full so Shared noise / Compare match the Mac lab.
 FROM python:3.10-slim
 
 # Install system dependencies & Node.js
@@ -32,16 +33,20 @@ COPY . .
 ENV VITE_API_BASE_URL=/api
 RUN npm run build
 
-# Precompute vocab embeddings so Space cold start skips encoding ~10k tokens
-ENV MODEL_NAME=all-mpnet-base-v2
-ENV VOCAB_PATH=public/vocab.txt
+# Match local-full: Arctic-m-v2 Matryoshka @ 256 + EN∪ES vocab (precompute at image build).
+ENV MODEL_PROFILE=local-full
+ENV MODEL_NAME=Snowflake/snowflake-arctic-embed-m-v2.0
+ENV TRUNCATE_DIM=256
+ENV VOCAB_PATH=public/vocab_en_es.txt
 ENV VOCAB_EMBEDDINGS_PATH=public/vocab_embeddings.npz
 ENV SAE_DEVICE=CPU
 RUN uv run --directory backend --frozen python /app/scripts/precompute_vocab_embeddings.py \
     --device CPU \
-    --vocab /app/public/vocab.txt \
+    --profile local-full \
+    --truncate-dim 256 \
+    --vocab /app/public/vocab_en_es.txt \
     --out /app/public/vocab_embeddings.npz \
-    --model all-mpnet-base-v2
+    --model Snowflake/snowflake-arctic-embed-m-v2.0
 
 # Expose Hugging Face Space default port 7860
 EXPOSE 7860
@@ -50,8 +55,10 @@ EXPOSE 7860
 ENV HOST=0.0.0.0
 ENV PORT=7860
 ENV UVICORN_RELOAD=0
-ENV MODEL_NAME=all-mpnet-base-v2
-ENV VOCAB_PATH=public/vocab.txt
+ENV MODEL_PROFILE=local-full
+ENV MODEL_NAME=Snowflake/snowflake-arctic-embed-m-v2.0
+ENV TRUNCATE_DIM=256
+ENV VOCAB_PATH=public/vocab_en_es.txt
 ENV VOCAB_EMBEDDINGS_PATH=public/vocab_embeddings.npz
 ENV SAE_DEVICE=CPU
 
