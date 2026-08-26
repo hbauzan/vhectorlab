@@ -1,7 +1,7 @@
 /**
  * Dual A / mA knobs for high-coverage percent (30…100).
  * One persisted percent; knobs are a projection (studio-gear metaphor).
- * Interaction = disguised range sliders (not true angular capture).
+ * Interaction = DAW-style vertical drag (long throw, ns-resize cursor).
  */
 
 import {
@@ -25,6 +25,13 @@ export const COVERAGE_KNOB_ANGLE_MAX = 135;
 
 /** Visual lerp when readout commits / value jumps (ms). */
 export const COVERAGE_KNOB_LERP_MS = 200;
+
+/**
+ * Long vertical throw (px per unit) — grip / slow feel.
+ * Full A 30→100 ≈ 980px; full mA 0→0.9 ≈ 270px.
+ */
+export const COVERAGE_KNOB_PX_PER_A = 14;
+export const COVERAGE_KNOB_PX_PER_MA_STEP = 30;
 
 /**
  * Snap milliamperes metaphor to tenths [0.0, 0.9].
@@ -66,16 +73,22 @@ export function decomposeCoveragePercent(percent) {
 }
 
 /**
- * Compose A + mA → clamped percent (least-effort clamp at edges).
+ * Compose A + mA → clamped percent.
+ * With `{ fromMilli: true }`, A=100 + mA>0 forces A→99 so tenths stay usable.
+ *
  * @param {unknown} a
  * @param {unknown} mA
+ * @param {{ fromMilli?: boolean }} [opts]
  * @returns {number}
  */
-export function composeCoveragePercent(a, mA) {
-  const amps = typeof a === 'number' ? a : Number(a);
+export function composeCoveragePercent(a, mA, opts = {}) {
+  let amps = typeof a === 'number' ? a : Number(a);
+  if (!Number.isFinite(amps)) amps = COVERAGE_A_MIN;
   const milli = normalizeCoverageMilliAmps(mA);
-  const raw = (Number.isFinite(amps) ? amps : COVERAGE_A_MIN) + milli;
-  return normalizeHighCoverage(raw);
+  if (opts.fromMilli === true && amps >= COVERAGE_A_MAX - 1e-9 && milli > 0) {
+    amps = COVERAGE_A_MAX - 1;
+  }
+  return normalizeHighCoverage(amps + milli);
 }
 
 /**
@@ -97,7 +110,20 @@ export function coverageKnobAngleDeg(value, min, max) {
 }
 
 /**
- * Tenths index 0…9 ↔ mA 0.0…0.9 for HTML range.
+ * Screen dy → value delta. Pointer up (negative dy) increases value (DAW).
+ * @param {number} dyPx
+ * @param {number} pxPerUnit
+ * @returns {number}
+ */
+export function coverageKnobValueDeltaFromDy(dyPx, pxPerUnit) {
+  const dy = typeof dyPx === 'number' ? dyPx : Number(dyPx);
+  const px = typeof pxPerUnit === 'number' ? pxPerUnit : Number(pxPerUnit);
+  if (!Number.isFinite(dy) || !Number.isFinite(px) || px <= 0) return 0;
+  return -dy / px;
+}
+
+/**
+ * Tenths index 0…9 ↔ mA 0.0…0.9 for HTML range (a11y fallback).
  * @param {number} mA
  * @returns {number}
  */
@@ -170,20 +196,20 @@ export function coverageAmKnobsMarkup(opts) {
         <div class="viz-am-knobs-row" role="group" aria-label="${amountLabel} A and mA">
           <div class="viz-am-knob viz-am-knob--a">
             <div class="viz-am-knob-label"><span class="field-label-text">A</span>${infoTipMarkup(FIELD_INFO.coverageAmps)}</div>
-            <div class="viz-am-knob-face">
+            <div class="viz-am-knob-face" id="${id}-a-face" role="slider" tabindex="0" aria-valuemin="${COVERAGE_A_MIN}" aria-valuemax="${COVERAGE_A_MAX}" aria-valuenow="${a}" aria-label="${amountLabel} A" title="Drag vertically (DAW)">
               <div class="viz-am-knob-dial" id="${id}-a-dial" style="--knob-angle: ${aAngle}deg" aria-hidden="true">
                 <span class="viz-am-knob-pointer"></span>
               </div>
-              <input type="range" id="${id}-a" class="viz-am-knob-range" min="${COVERAGE_A_MIN}" max="${COVERAGE_A_MAX}" step="1" value="${a}" ${dis} aria-label="${amountLabel} A" title="A (coarse %)">
+              <input type="range" id="${id}-a" class="viz-am-knob-range" min="${COVERAGE_A_MIN}" max="${COVERAGE_A_MAX}" step="1" value="${a}" ${dis} tabindex="-1" aria-hidden="true">
             </div>
           </div>
           <div class="viz-am-knob viz-am-knob--ma">
             <div class="viz-am-knob-label"><span class="field-label-text">mA</span>${infoTipMarkup(FIELD_INFO.coverageMilliAmps)}</div>
-            <div class="viz-am-knob-face">
+            <div class="viz-am-knob-face" id="${id}-ma-face" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="9" aria-valuenow="${maSlider}" aria-label="${amountLabel} mA" title="Drag vertically (DAW)">
               <div class="viz-am-knob-dial" id="${id}-ma-dial" style="--knob-angle: ${mAngle}deg" aria-hidden="true">
                 <span class="viz-am-knob-pointer"></span>
               </div>
-              <input type="range" id="${id}-ma" class="viz-am-knob-range" min="0" max="9" step="1" value="${maSlider}" ${dis} aria-label="${amountLabel} mA" title="mA (tenths %)">
+              <input type="range" id="${id}-ma" class="viz-am-knob-range" min="0" max="9" step="1" value="${maSlider}" ${dis} tabindex="-1" aria-hidden="true">
             </div>
           </div>
         </div>
@@ -191,7 +217,69 @@ export function coverageAmKnobsMarkup(opts) {
 }
 
 /**
- * Bind readout + A/mA ranges for one coverage control.
+ * DAW vertical drag on a knob face (long throw + ns-resize).
+ *
+ * @param {HTMLElement} face
+ * @param {{
+ *   isDisabled: () => boolean,
+ *   getFloat: () => number,
+ *   applyFloat: (v: number) => void,
+ *   pxPerUnit: number,
+ *   min: number,
+ *   max: number,
+ * }} opts
+ */
+export function bindCoverageKnobVerticalDrag(face, opts) {
+  if (!face || !opts) return;
+  let dragging = false;
+  let lastY = 0;
+  let floatVal = 0;
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    face.classList.remove('is-dragging');
+    document.body.classList.remove('viz-am-knob-dragging');
+    try {
+      if (e?.pointerId != null) face.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  face.addEventListener('pointerdown', (e) => {
+    if (opts.isDisabled()) return;
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    dragging = true;
+    lastY = e.clientY;
+    floatVal = opts.getFloat();
+    face.classList.add('is-dragging');
+    document.body.classList.add('viz-am-knob-dragging');
+    face.setPointerCapture(e.pointerId);
+  });
+
+  face.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dy = e.clientY - lastY;
+    lastY = e.clientY;
+    floatVal += coverageKnobValueDeltaFromDy(dy, opts.pxPerUnit);
+    floatVal = Math.max(opts.min, Math.min(opts.max, floatVal));
+    opts.applyFloat(floatVal);
+  });
+
+  face.addEventListener('pointerup', endDrag);
+  face.addEventListener('pointercancel', endDrag);
+  face.addEventListener('lostpointercapture', () => {
+    if (!dragging) return;
+    dragging = false;
+    face.classList.remove('is-dragging');
+    document.body.classList.remove('viz-am-knob-dragging');
+  });
+}
+
+/**
+ * Bind readout + A/mA DAW knobs for one coverage control.
  *
  * @param {HTMLElement} container
  * @param {{
@@ -209,6 +297,8 @@ export function wireCoverageAmKnobs(container, opts) {
   const maRange = container.querySelector(`#${id}-ma`);
   const aDial = container.querySelector(`#${id}-a-dial`);
   const maDial = container.querySelector(`#${id}-ma-dial`);
+  const aFace = container.querySelector(`#${id}-a-face`);
+  const maFace = container.querySelector(`#${id}-ma-face`);
   if (!readout || !aRange || !maRange) return;
 
   const paint = (percent, animate) => {
@@ -217,12 +307,31 @@ export function wireCoverageAmKnobs(container, opts) {
     readout.value = formatHighCoverageEdit(v);
     aRange.value = String(a);
     maRange.value = String(milliAmpsToSlider(mA));
+    if (aFace) {
+      aFace.setAttribute('aria-valuenow', String(a));
+      aFace.toggleAttribute('aria-disabled', aRange.disabled);
+    }
+    if (maFace) {
+      maFace.setAttribute('aria-valuenow', String(milliAmpsToSlider(mA)));
+      maFace.toggleAttribute('aria-disabled', maRange.disabled);
+    }
     setCoverageKnobDialAngle(aDial, coverageKnobAngleDeg(a, COVERAGE_A_MIN, COVERAGE_A_MAX), { animate });
     setCoverageKnobDialAngle(maDial, coverageKnobAngleDeg(mA, COVERAGE_MA_MIN, COVERAGE_MA_MAX), { animate });
   };
 
-  const commitFromKnobs = () => {
-    const next = composeCoveragePercent(aRange.value, milliAmpsFromSlider(maRange.value));
+  const commitAmps = (floatA) => {
+    const a = normalizeCoverageAmps(floatA);
+    const mA = milliAmpsFromSlider(maRange.value);
+    const next = composeCoveragePercent(a, mA);
+    opts.setPercent(next);
+    paint(next, false);
+    opts.emit();
+  };
+
+  const commitMilli = (floatMa) => {
+    const mA = normalizeCoverageMilliAmps(floatMa);
+    const a = Number(aRange.value);
+    const next = composeCoveragePercent(a, mA, { fromMilli: true });
     opts.setPercent(next);
     paint(next, false);
     opts.emit();
@@ -235,8 +344,43 @@ export function wireCoverageAmKnobs(container, opts) {
     opts.emit();
   };
 
-  aRange.addEventListener('input', commitFromKnobs);
-  maRange.addEventListener('input', commitFromKnobs);
+  bindCoverageKnobVerticalDrag(aFace, {
+    isDisabled: () => aRange.disabled,
+    getFloat: () => Number(aRange.value) || COVERAGE_A_MIN,
+    applyFloat: commitAmps,
+    pxPerUnit: COVERAGE_KNOB_PX_PER_A,
+    min: COVERAGE_A_MIN,
+    max: COVERAGE_A_MAX,
+  });
+
+  bindCoverageKnobVerticalDrag(maFace, {
+    isDisabled: () => maRange.disabled,
+    getFloat: () => milliAmpsFromSlider(maRange.value),
+    applyFloat: commitMilli,
+    // 30px per tenth → pxPerUnit on 0…0.9 scale
+    pxPerUnit: COVERAGE_KNOB_PX_PER_MA_STEP / COVERAGE_MA_STEP,
+    min: COVERAGE_MA_MIN,
+    max: COVERAGE_MA_MAX,
+  });
+
+  // Keyboard a11y on faces
+  const onFaceKey = (which) => (e) => {
+    const range = which === 'a' ? aRange : maRange;
+    if (range.disabled) return;
+    let dir = 0;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') dir = 1;
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') dir = -1;
+    else return;
+    e.preventDefault();
+    if (which === 'a') {
+      commitAmps(Number(aRange.value) + dir);
+    } else {
+      commitMilli(milliAmpsFromSlider(maRange.value) + dir * COVERAGE_MA_STEP);
+    }
+  };
+  aFace?.addEventListener('keydown', onFaceKey('a'));
+  maFace?.addEventListener('keydown', onFaceKey('ma'));
+
   readout.addEventListener('change', commitFromReadout);
   readout.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -262,6 +406,8 @@ export function syncCoverageAmKnobsFromPercent(container, idPrefix, percent, opt
   const maRange = container.querySelector(`#${idPrefix}-ma`);
   const aDial = container.querySelector(`#${idPrefix}-a-dial`);
   const maDial = container.querySelector(`#${idPrefix}-ma-dial`);
+  const aFace = container.querySelector(`#${idPrefix}-a-face`);
+  const maFace = container.querySelector(`#${idPrefix}-ma-face`);
   if (!readout || !aRange || !maRange) return;
   const v = normalizeHighCoverage(percent);
   const { a, mA } = decomposeCoveragePercent(v);
@@ -269,6 +415,8 @@ export function syncCoverageAmKnobsFromPercent(container, idPrefix, percent, opt
   readout.value = formatHighCoverageEdit(v);
   aRange.value = String(a);
   maRange.value = String(milliAmpsToSlider(mA));
+  if (aFace) aFace.setAttribute('aria-valuenow', String(a));
+  if (maFace) maFace.setAttribute('aria-valuenow', String(milliAmpsToSlider(mA)));
   setCoverageKnobDialAngle(aDial, coverageKnobAngleDeg(a, COVERAGE_A_MIN, COVERAGE_A_MAX), { animate });
   setCoverageKnobDialAngle(maDial, coverageKnobAngleDeg(mA, COVERAGE_MA_MIN, COVERAGE_MA_MAX), { animate });
 }
@@ -285,5 +433,12 @@ export function setCoverageAmKnobsEnabled(container, idPrefix, enabled) {
   for (const sel of [`#${idPrefix}-val`, `#${idPrefix}-a`, `#${idPrefix}-ma`]) {
     const el = container.querySelector(sel);
     if (el) el.disabled = disabled;
+  }
+  for (const sel of [`#${idPrefix}-a-face`, `#${idPrefix}-ma-face`]) {
+    const face = container.querySelector(sel);
+    if (!face) continue;
+    face.toggleAttribute('aria-disabled', disabled);
+    face.tabIndex = disabled ? -1 : 0;
+    face.classList.toggle('is-disabled', disabled);
   }
 }
