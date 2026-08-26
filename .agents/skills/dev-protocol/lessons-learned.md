@@ -451,10 +451,11 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 
 ### 8.5. HF Space cpu-basic packaging
 - **Problema**: `uv sync` en Linux tira wheels NVIDIA; encode de ~10k vocab en cada cold start OOMea o tarda demasiado.
-- **Solución Obligatoria**: `UV_TORCH_BACKEND=cpu` en Dockerfile; precompute `public/vocab_embeddings.npz` en build; `.dockerignore`; `UVICORN_RELOAD=0`; README YAML `sdk: docker` + `app_port: 7860`.
+- **Problema 2**: HF exige YAML frontmatter en el `README.md` del Space (`sdk: docker`, `app_port: 7860`); ensuciar el README de GitHub rompe el contrato “README estándar de producto”.
+- **Solución Obligatoria**: `UV_TORCH_BACKEND=cpu` en Dockerfile; precompute `public/vocab_embeddings.npz` en build; `.dockerignore`; `UVICORN_RELOAD=0`; contrato Space en **`deploy/hf/space-frontmatter.yml`**; option 8 compone README vía `scripts/compose_hf_space_readme.sh` y pushea un tip efímero (`commit-tree` + temp `GIT_INDEX_FILE`) sin mutar el working tree ni GitHub `main`.
 - **Runtime device**: `/health.device` + navbar `ONLINE (model · cpu|cuda|mps)`.
 - **ARITHMETIC persist**: por visitante en `localStorage` (`vl3d.arithmetic.*`) — no disco del Space.
-- **Invariante**: no asumir GPU en Spaces Docker; ZeroGPU no aplica a sdk docker.
+- **Invariante**: no asumir GPU en Spaces Docker; ZeroGPU no aplica a sdk docker. **No** force-pushear `HEAD` crudo al Space si el README de producto no lleva frontmatter — siempre inyectar desde `deploy/hf/`.
 
 ### 8.5. Local folder / clone name = `vhectorlab`
 - **Problema**: el working copy histórico se llamaba `lsv2`, luego `VHectorLab-3D`, mientras el remoto GitHub pasó a **`vhectorlab`**.

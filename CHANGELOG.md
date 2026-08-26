@@ -5,6 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **HF Space README inject**: `deploy/hf/space-frontmatter.yml` + `scripts/compose_hf_space_readme.sh`; option 8 pushes an ephemeral tip with `sdk: docker` / `app_port: 7860` without polluting the GitHub product README.
 - **Compare group cosine panel**: with ≥2 `GROUP_*`, the lower list shows group-centroid cosine vs the first group in the textarea (mean of L2 unit vectors → re-L2 → dot); flat / single group stays token-vs-first. 3D viewer unchanged.
 - **Multi-embedding catalog (local)**: profiles `local-comfort` / `local-full` / `hf-demo`, setup.sh **option 11** swap (stage `.env` → rebuild vocab NPZ → restart), EN∪ES vocab merge, `/health` fields (`model_profile`, `short_label`, `embedding_dim`, `truncate_dim`), navbar ONLINE chip shows profile · label · dim · device. Cross-lingual smoke: `scripts/smoke_crosslingual_cosine.py` (non-blocking; `--strict` optional). Default `.env.example` remains **all-mpnet-base-v2**. HF Space model policy unchanged.
 - **Galaxy / boot progress overlay**: full-viewport card over the canvas (`#boot-progress`) so encode→UMAP progress stays visible when the left dock is collapsed (e.g. switching ARITHMETIC → GALAXY on mobile).
