@@ -1,15 +1,15 @@
 # Roadmap — Shared noise: common-mode (token batch)
 
 > **Archivado:** 2026-08-26  
-> **Estado:** Parcial — Slice 1 (engine token-batch + split paint) en WIP local / rama `feat/shared-noise-common-mode`, **sin commit/merge**. Experimento UI: techo **100%** + input `%` editable (usabilidad rechazada). Slice 2 (mover control, gate ≥2 tokens, docs/PATCH) **no hecho**.  
-> **Sucesor:** [`../shared-noise-coverage-knobs.md`](../shared-noise-coverage-knobs.md) · [`../PROMPT-shared-noise-coverage-knobs.md`](../PROMPT-shared-noise-coverage-knobs.md).  
+> **Estado:** Parcial — sucedido y cerrado por [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md) (shipped **2.4.3**).  
+> **Sucesor (archivado):** [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md) · [`PROMPT-shared-noise-coverage-knobs.md`](./PROMPT-shared-noise-coverage-knobs.md).  
 > No editar salvo corrección histórica.
 
-**Status:** Archived (partial)  
+**Status:** Archived (partial → closed by 2.4.3 successor)  
 **Date:** 2026-08-26  
 **Product:** VHectorLab 3D (`/` legacy UI only)  
 **Prompt companion (archived):** [`PROMPT-shared-noise-common-mode.md`](./PROMPT-shared-noise-common-mode.md)  
-**Version on ship:** was **PATCH** `2.4.2` → `2.4.3` — continue in successor.
+**Version on ship:** superseded — see [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md) (**2.4.3**).
 
 > **Goal (one sentence):** Shared noise hides dimensions that fire with the **same sign and similar value across all tokens in the current Compare batch**, via the existing On/Off + Similarity slider (most-alike first, then more), so what remains is what actually differentiates tokens — groups stay a **reading** aid, not the metric.
 
