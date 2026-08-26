@@ -79,11 +79,11 @@ export const DEFAULT_VIZ_FILTER = /** @type {VizFilterMode} */ ('all');
 export const DEFAULT_LABELS_VISIBLE = true;
 
 /**
- * Zero coverage + Shared noise similarity: 30% … 99.9999%.
+ * Zero coverage + Shared noise similarity: 30% … 100%.
  * Slider uses 0…10000 positions for usable fine control near the top.
  */
 export const HIGH_COVERAGE_MIN = 30;
-export const HIGH_COVERAGE_MAX = 99.9999;
+export const HIGH_COVERAGE_MAX = 100;
 export const HIGH_COVERAGE_SLIDER_MAX = 10000;
 export const DEFAULT_HIGH_COVERAGE = HIGH_COVERAGE_MIN;
 export const COVERAGE_UNIT_MAX = HIGH_COVERAGE_MAX / 100;
@@ -335,7 +335,7 @@ export function normalizeZeroCoverage(value) {
 }
 
 /**
- * Clamp Zero coverage / Shared noise percent to [30, 99.9999].
+ * Clamp Zero coverage / Shared noise percent to [30, 100].
  * @param {unknown} value
  * @returns {number}
  */
@@ -343,7 +343,7 @@ export function normalizeHighCoverage(value) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return DEFAULT_HIGH_COVERAGE;
   const clamped = Math.max(HIGH_COVERAGE_MIN, Math.min(HIGH_COVERAGE_MAX, n));
-  // Keep up to 4 decimal places (matches 99.9999)
+  // Keep up to 4 decimal places
   return Math.round(clamped * 10000) / 10000;
 }
 
@@ -387,7 +387,31 @@ export function formatHighCoverage(percent) {
 }
 
 /**
- * Coverage % → unit fraction for ramp remapping (supports up to ~0.999999).
+ * Numeric string for editable high-coverage inputs (no %).
+ * @param {unknown} percent
+ * @returns {string}
+ */
+export function formatHighCoverageEdit(percent) {
+  const v = normalizeHighCoverage(percent);
+  const rounded = Math.round(v * 10000) / 10000;
+  if (Math.abs(rounded - Math.round(rounded)) < 1e-9) {
+    return String(Math.round(rounded));
+  }
+  return String(parseFloat(rounded.toFixed(4)));
+}
+
+/**
+ * Parse typed coverage ("100", "100%", "50.5") → clamped percent.
+ * @param {unknown} raw
+ * @returns {number}
+ */
+export function parseHighCoverageInput(raw) {
+  const s = String(raw ?? '').trim().replace(/%\s*$/, '');
+  return normalizeHighCoverage(Number(s));
+}
+
+/**
+ * Coverage % → unit fraction for ramp remapping (supports up to 1.0).
  * @param {number} percent
  * @returns {number}
  */

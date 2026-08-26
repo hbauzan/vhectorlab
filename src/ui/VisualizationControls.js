@@ -18,6 +18,8 @@ import {
   VIZ_STORAGE_PREFIX,
   CONFLICT_COVER_MIN,
   CONFLICT_COVER_MAX,
+  HIGH_COVERAGE_MIN,
+  HIGH_COVERAGE_MAX,
   HIGH_COVERAGE_SLIDER_MAX,
   HIGHLIGHT_STRENGTH_MIN,
   HIGHLIGHT_STRENGTH_MAX,
@@ -25,7 +27,8 @@ import {
   RULER_THICKNESS_MAX,
   highCoverageFromSlider,
   highCoverageToSlider,
-  formatHighCoverage,
+  formatHighCoverageEdit,
+  parseHighCoverageInput,
 } from './visualizationControlsDefaults.js';
 import {
   readCollapsedPreference,
@@ -176,11 +179,14 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
         <span class="field-label-text">Zero coverage</span>${infoTipMarkup(FIELD_INFO.zeroCoverage)}
       </label>
       <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="zero-coverage">
-        <div class="slider-header">
+          <div class="slider-header">
           <label for="viz-zero-coverage-slider"><span class="field-label-text">Coverage:</span>${infoTipMarkup(FIELD_INFO.zeroCoverageAmount)}</label>
-          <span id="viz-zero-coverage-val" class="slider-val">${formatHighCoverage(s.zeroCoverage)}</span>
+          <span class="viz-coverage-edit-wrap">
+            <input type="number" id="viz-zero-coverage-val" class="slider-val viz-coverage-edit" min="${HIGH_COVERAGE_MIN}" max="${HIGH_COVERAGE_MAX}" step="any" value="${formatHighCoverageEdit(s.zeroCoverage)}" ${s.zeroCoverageEnabled ? '' : 'disabled'} inputmode="decimal" aria-label="Zero coverage percent">
+            <span class="viz-coverage-unit" aria-hidden="true">%</span>
+          </span>
         </div>
-        <input type="range" id="viz-zero-coverage-slider" min="0" max="${HIGH_COVERAGE_SLIDER_MAX}" step="1" value="${highCoverageToSlider(s.zeroCoverage)}" ${s.zeroCoverageEnabled ? '' : 'disabled'} title="30% … 99.9999% held at zero color">
+        <input type="range" id="viz-zero-coverage-slider" min="0" max="${HIGH_COVERAGE_SLIDER_MAX}" step="1" value="${highCoverageToSlider(s.zeroCoverage)}" ${s.zeroCoverageEnabled ? '' : 'disabled'} title="30% … 100% held at zero color">
       </div>
     </div>
 
@@ -198,7 +204,10 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
         <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="same-sign">
           <div class="slider-header">
             <label for="viz-same-sign-coverage"><span class="field-label-text">Similarity:</span>${infoTipMarkup(FIELD_INFO.sameSignCoverage)}</label>
-            <span id="viz-same-sign-coverage-val" class="slider-val">${formatHighCoverage(s.sameSignCancelCoverage)}</span>
+            <span class="viz-coverage-edit-wrap">
+              <input type="number" id="viz-same-sign-coverage-val" class="slider-val viz-coverage-edit" min="${HIGH_COVERAGE_MIN}" max="${HIGH_COVERAGE_MAX}" step="any" value="${formatHighCoverageEdit(s.sameSignCancelCoverage)}" ${s.sameSignCancelEnabled ? '' : 'disabled'} inputmode="decimal" aria-label="Shared noise similarity percent">
+              <span class="viz-coverage-unit" aria-hidden="true">%</span>
+            </span>
           </div>
           <input type="range" id="viz-same-sign-coverage" min="0" max="${HIGH_COVERAGE_SLIDER_MAX}" step="1" value="${highCoverageToSlider(s.sameSignCancelCoverage)}" ${s.sameSignCancelEnabled ? '' : 'disabled'}>
         </div>
@@ -304,14 +313,14 @@ export function syncVisualizationControlsFromConfig(container, config) {
   const covInput = container.querySelector('#viz-zero-coverage-slider');
   const covLabel = container.querySelector('#viz-zero-coverage-val');
   if (covInput) covInput.value = String(highCoverageToSlider(s.zeroCoverage));
-  if (covLabel) covLabel.textContent = formatHighCoverage(s.zeroCoverage);
+  if (covLabel) covLabel.value = formatHighCoverageEdit(s.zeroCoverage);
 
   const sameOn = container.querySelector('#viz-same-sign-enabled');
   if (sameOn) sameOn.checked = s.sameSignCancelEnabled;
   const sameCov = container.querySelector('#viz-same-sign-coverage');
   const sameCovVal = container.querySelector('#viz-same-sign-coverage-val');
   if (sameCov) sameCov.value = String(highCoverageToSlider(s.sameSignCancelCoverage));
-  if (sameCovVal) sameCovVal.textContent = formatHighCoverage(s.sameSignCancelCoverage);
+  if (sameCovVal) sameCovVal.value = formatHighCoverageEdit(s.sameSignCancelCoverage);
 
   const oppOn = container.querySelector('#viz-opposite-enabled');
   if (oppOn) oppOn.checked = s.oppositeHighlightEnabled;
@@ -456,6 +465,7 @@ export function syncGroupFxSliderEnabled(container, settings) {
   setDisabled(container.querySelector('#viz-zero-coverage-enabled'), false);
   const zeroSlidersOn = s.zeroCoverageEnabled;
   setDisabled(container.querySelector('#viz-zero-coverage-slider'), !zeroSlidersOn);
+  setDisabled(container.querySelector('#viz-zero-coverage-val'), !zeroSlidersOn);
   for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="zero-coverage"]')) {
     row.classList.toggle('is-inert', !zeroSlidersOn);
   }
@@ -466,6 +476,7 @@ export function syncGroupFxSliderEnabled(container, settings) {
 
   const sameSlidersOn = groupsOk && s.sameSignCancelEnabled;
   setDisabled(container.querySelector('#viz-same-sign-coverage'), !sameSlidersOn);
+  setDisabled(container.querySelector('#viz-same-sign-coverage-val'), !sameSlidersOn);
 
   const oppSlidersOn = groupsOk && s.oppositeHighlightEnabled;
   setDisabled(container.querySelector('#viz-opposite-swatch'), !oppSlidersOn);
@@ -706,8 +717,24 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     covInput.addEventListener('input', () => {
       const next = highCoverageFromSlider(covInput.value);
       config.zeroCoverage = next;
-      if (covLabel) covLabel.textContent = formatHighCoverage(next);
+      if (covLabel) covLabel.value = formatHighCoverageEdit(next);
       emit();
+    });
+  }
+  if (covLabel) {
+    const commitZeroEdit = () => {
+      const next = parseHighCoverageInput(covLabel.value);
+      config.zeroCoverage = next;
+      covLabel.value = formatHighCoverageEdit(next);
+      if (covInput) covInput.value = String(highCoverageToSlider(next));
+      emit();
+    };
+    covLabel.addEventListener('change', commitZeroEdit);
+    covLabel.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitZeroEdit();
+      }
     });
   }
 
@@ -725,8 +752,24 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     sameCov.addEventListener('input', () => {
       const next = highCoverageFromSlider(sameCov.value);
       config.sameSignCancelCoverage = next;
-      if (sameCovVal) sameCovVal.textContent = formatHighCoverage(next);
+      if (sameCovVal) sameCovVal.value = formatHighCoverageEdit(next);
       emit();
+    });
+  }
+  if (sameCovVal) {
+    const commitSameEdit = () => {
+      const next = parseHighCoverageInput(sameCovVal.value);
+      config.sameSignCancelCoverage = next;
+      sameCovVal.value = formatHighCoverageEdit(next);
+      if (sameCov) sameCov.value = String(highCoverageToSlider(next));
+      emit();
+    };
+    sameCovVal.addEventListener('change', commitSameEdit);
+    sameCovVal.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitSameEdit();
+      }
     });
   }
 

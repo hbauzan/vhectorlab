@@ -2007,6 +2007,37 @@ canvas {
   font-weight: 700;
 }
 
+#visualization-controls-container .viz-coverage-edit-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+#visualization-controls-container .viz-coverage-edit {
+  width: 3.4rem;
+  font-family: monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-align: right;
+  color: var(--accent-gold);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  padding: 2px 3px;
+}
+
+#visualization-controls-container .viz-coverage-edit:disabled {
+  opacity: 0.45;
+}
+
+#visualization-controls-container .viz-coverage-unit {
+  font-family: monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
 .slider-group input[type="range"] {
   width: 100%;
   accent-color: var(--accent-cyan);

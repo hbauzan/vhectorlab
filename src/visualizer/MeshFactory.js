@@ -26,6 +26,7 @@ function resolveVizOptions(options = {}) {
     zeroCoverage: effectiveZeroCoveragePercent(viz),
     viz,
     groupDimMetrics: options.groupDimMetrics || null,
+    tokenSharedNoiseMetrics: options.tokenSharedNoiseMetrics || null,
     sourceDims: options.sourceDims || null,
     groupId: options.groupId || null,
   };
@@ -70,7 +71,9 @@ export class MeshFactory {
     const positions = [];
     const rawActivations = [];
     const resolved = resolveVizOptions(options);
-    const { filterMode, anchors, zeroCoverage, viz, groupDimMetrics } = resolved;
+    const {
+      filterMode, anchors, zeroCoverage, viz, groupDimMetrics, tokenSharedNoiseMetrics,
+    } = resolved;
 
     pointsData.forEach((item) => {
       const pos = item.position;
@@ -79,7 +82,12 @@ export class MeshFactory {
     });
 
     const normIntensities = calculateZScoreNormalized(rawActivations, 0.85);
-    const { cancel, highlight } = buildPointGroupPaintAttributes(pointsData, groupDimMetrics, viz);
+    const { cancel, highlight } = buildPointGroupPaintAttributes(
+      pointsData,
+      tokenSharedNoiseMetrics,
+      groupDimMetrics,
+      viz
+    );
 
     const useGroupHue = Boolean(viz.groupHueEnabled);
     const baseColors = new Float32Array(pointsData.length * 3);
