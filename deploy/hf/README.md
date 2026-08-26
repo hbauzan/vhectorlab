@@ -18,8 +18,8 @@ HF Spaces still require YAML frontmatter on the Space repo’s root `README.md`
 
 1. Builds production frontend (smoke).
 2. Composes `frontmatter + README.md` body via `scripts/compose_hf_space_readme.sh` (drops local `demo/*` media embeds).
-3. Creates an ephemeral git commit with `commit-tree` (working tree / GitHub `main` unchanged), **stripping** GitHub-only binaries (`demo/*`, gifs, etc. — HF rejects non-Xet binaries).
-4. Force-pushes that tip to the Space remote (`HF_SPACE_FORCE_PUSH=1` by default).
+3. Creates an **orphan** ephemeral commit with `commit-tree` (no parent — so GitHub history with demo GIFs is not packed), stripping `demo/*` / gifs from the tree. Working tree / GitHub `main` unchanged.
+4. Force-pushes that orphan tip to the Space remote (always `--force`; orphan cannot fast-forward).
 
 Linux image builds use `torch` from the PyTorch **cpu** wheel index (`backend/pyproject.toml` `[tool.uv.sources]`), not CUDA/`nvidia-*` from PyPI.
 

@@ -5,7 +5,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **HF Space publish (option 8)**: ephemeral tip strips `demo/` binaries (HF rejects non-Xet GIFs like `vhectorlab-gui-tour.gif`); composed Space README drops local demo media embeds.
+- **HF Space publish (option 8)**: ephemeral tip strips `demo/` binaries and is an **orphan** commit (no `-p HEAD`) so the push pack does not include GitHub history that still has the GIF; HF rejects non-Xet binaries in the whole pack. Composed Space README drops local demo media embeds.
 - **HF / Docker torch CPU**: Linux installs `torch` from `pytorch-cpu` index via `[tool.uv.sources]` (nvidia-* no longer pulled). `UV_TORCH_BACKEND` alone never affected `uv sync`.
 
 ### Added

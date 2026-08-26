@@ -911,10 +911,12 @@ push_hf_space_commit() {
         echo -e "${DIM}  Removed ${stripped} binary path(s) from ephemeral Space tip (GitHub tree unchanged).${RESET}"
     fi
 
-    commit="$(git commit-tree "$tree" -p HEAD -m "$(cat <<'EOF'
+    # Orphan commit (no -p HEAD): a parented tip still packs GitHub history that
+    # contains demo GIFs; HF pre-receive scans the whole pack, not only the tip tree.
+    commit="$(git commit-tree "$tree" -m "$(cat <<'EOF'
 publish(hf): Space snapshot with injected README frontmatter
 
-Ephemeral tip for Hugging Face only — not merged to GitHub main.
+Orphan tip for Hugging Face only — not merged to GitHub main.
 EOF
 )")" || ec=$?
     if [ "$ec" -ne 0 ] || [ -z "$commit" ]; then
@@ -922,20 +924,13 @@ EOF
         return 1
     fi
 
-    echo -e "${DIM}  Ephemeral Space tip: ${commit:0:12} (README frontmatter injected)${RESET}"
-    if [ "$force_push" = "1" ] || [ "$force_push" = "true" ] || [ "$force_push" = "yes" ]; then
-        echo -e "${DIM}  Using --force (HF_SPACE_FORCE_PUSH=${force_push}); GitHub main is untouched.${RESET}"
-        if ! git push --force "$space_url" "${commit}:main"; then
-            echo -e "${RED}❌ git push --force to Space failed.${RESET}"
-            echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
-            return 1
-        fi
-    else
-        if ! git push "$space_url" "${commit}:main"; then
-            echo -e "${RED}❌ git push to Space failed (divergent history?).${RESET}"
-            echo -e "${DIM}  Set HF_SPACE_FORCE_PUSH=1 in .env to overwrite the Space remote.${RESET}"
-            return 1
-        fi
+    echo -e "${DIM}  Ephemeral orphan Space tip: ${commit:0:12} (no GitHub history; README injected)${RESET}"
+    # Always force: orphan tip cannot fast-forward Space main.
+    echo -e "${DIM}  Using --force (orphan tip); GitHub main is untouched.${RESET}"
+    if ! git push --force "$space_url" "${commit}:main"; then
+        echo -e "${RED}❌ git push --force to Space failed.${RESET}"
+        echo -e "${DIM}  Tip: hf auth login --force --add-to-git-credential ; token needs Write scope.${RESET}"
+        return 1
     fi
     return 0
 }
