@@ -20,6 +20,7 @@ import {
   highCoverageFromSlider,
   highCoverageToSlider,
   formatHighCoverage,
+  parseHighCoverageInput,
   effectiveZeroCoveragePercent,
   HIGH_COVERAGE_MIN,
   HIGH_COVERAGE_MAX,
@@ -433,10 +434,11 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(remapAbsTWithZeroCoverage(1, 0.5)).toBeCloseTo(1, 5);
   });
 
-  it('supports near-100% coverage', () => {
+  it('supports 100% coverage (full zero band)', () => {
     const c = HIGH_COVERAGE_MAX / 100;
+    expect(c).toBe(1);
     expect(remapAbsTWithZeroCoverage(0.99, c)).toBe(0);
-    expect(remapAbsTWithZeroCoverage(1, c)).toBeCloseTo(1, 5);
+    expect(remapAbsTWithZeroCoverage(1, c)).toBe(0);
   });
 
   it('normalizeZeroCoverage clamps conflict cover 0–90', () => {
@@ -445,9 +447,10 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(normalizeZeroCoverage('40')).toBe(40);
   });
 
-  it('normalizeHighCoverage clamps 30…99.9999', () => {
+  it('normalizeHighCoverage clamps 30…100', () => {
     expect(normalizeHighCoverage(10)).toBe(HIGH_COVERAGE_MIN);
     expect(normalizeHighCoverage(100)).toBe(HIGH_COVERAGE_MAX);
+    expect(normalizeHighCoverage(150)).toBe(HIGH_COVERAGE_MAX);
     expect(normalizeHighCoverage(50.12345)).toBeCloseTo(50.1235, 4);
   });
 
@@ -456,7 +459,14 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(highCoverageFromSlider(HIGH_COVERAGE_SLIDER_MAX)).toBe(HIGH_COVERAGE_MAX);
     expect(highCoverageToSlider(HIGH_COVERAGE_MIN)).toBe(0);
     expect(highCoverageToSlider(HIGH_COVERAGE_MAX)).toBe(HIGH_COVERAGE_SLIDER_MAX);
-    expect(formatHighCoverage(HIGH_COVERAGE_MAX)).toBe('99.9999%');
+    expect(formatHighCoverage(HIGH_COVERAGE_MAX)).toBe('100%');
+  });
+
+  it('parseHighCoverageInput accepts typed percents', () => {
+    expect(parseHighCoverageInput('100')).toBe(100);
+    expect(parseHighCoverageInput('100%')).toBe(100);
+    expect(parseHighCoverageInput(' 55.5 ')).toBe(55.5);
+    expect(parseHighCoverageInput('bogus')).toBe(HIGH_COVERAGE_MIN);
   });
 
   it('effectiveZeroCoveragePercent is 0 when Off', () => {

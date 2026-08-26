@@ -225,7 +225,7 @@ void main() {
         return;
     }
 
-    float c = clamp(uZeroCoverage, 0.0, 0.999999);
+    float c = clamp(uZeroCoverage, 0.0, 1.0);
     float k = absT;
     if (c > 1e-8) {
         k = absT <= c ? 0.0 : (absT - c) / max(1.0 - c, 1e-8);
@@ -296,7 +296,7 @@ void main() {
         return;
     }
 
-    float c = clamp(uZeroCoverage, 0.0, 0.999999);
+    float c = clamp(uZeroCoverage, 0.0, 1.0);
     float k = absT;
     if (c > 1e-8) {
         k = absT <= c ? 0.0 : (absT - c) / max(1.0 - c, 1e-8);

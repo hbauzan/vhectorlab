@@ -1,7 +1,7 @@
 /**
- * Group-dim shared-noise cancel + opposite-sign highlight (paint only).
- * Means from raw embeddings; cancel/highlight applied in color space after divergent shading.
- * Active only when ≥2 groups (first two distinct groupIds = G1 vs G2).
+ * Dim paint: Shared-noise cancel (token-batch common-mode) + Sign-conflict highlight (G1↔G2).
+ * Cancel uses min/max across all Compare tokens; highlight uses group means.
+ * Paint only — Y / geometry untouched.
  */
 
 import { countDistinctGroups, listDistinctGroupIds } from './groupStackLayout.js';
@@ -16,6 +16,15 @@ import { hexToRgb01, normalizeConflictCover, highCoverageToUnit } from '../ui/vi
  *   difference: number,
  *   conflictBalance: number,
  * }} DimRelationMetric
+ */
+
+/**
+ * @typedef {{
+ *   min: number,
+ *   max: number,
+ *   sameSign: boolean,
+ *   similarity: number,
+ * }} TokenSharedNoiseMetric
  */
 
 /**
@@ -87,12 +96,12 @@ export function oppositeCoverCancel(coveragePercent) {
  * coverage=0 → never; coverage=0.5 → metric≤0.5 untouched, metric→1 fully cancelled.
  *
  * @param {number} metric01
- * @param {number} coverage01 - [0, 0.9]
+ * @param {number} coverage01 - [0, 1]
  * @returns {number} cancel amount [0, 1]
  */
 export function cancelAmountFromMetric(metric01, coverage01) {
   const m = Math.max(0, Math.min(1, Number(metric01) || 0));
-  const c = Math.max(0, Math.min(0.999999, Number(coverage01) || 0));
+  const c = Math.max(0, Math.min(1, Number(coverage01) || 0));
   if (c <= 1e-12) return 0;
   const floor = 1 - c;
   if (m <= floor) return 0;
@@ -105,6 +114,20 @@ export function cancelAmountFromMetric(metric01, coverage01) {
  */
 export function hasGroupsForDimContrast(items) {
   return countDistinctGroups(items) >= 2;
+}
+
+/**
+ * Compare batch has ≥2 equal-width embeddings (groupId ignored).
+ * @param {Array<{ embedding?: number[] }|null|undefined>|null|undefined} items
+ * @returns {boolean}
+ */
+export function hasEnoughTokensForSharedNoise(items) {
+  const list = (items || []).filter(
+    (it) => Array.isArray(it?.embedding) && it.embedding.length
+  );
+  if (list.length < 2) return false;
+  const dim = list[0].embedding.length;
+  return list.every((it) => it.embedding.length === dim);
 }
 
 /**
@@ -159,8 +182,53 @@ export function computeDimRelationMetrics(items) {
 }
 
 /**
- * Paint weights for one dim given resolved viz settings.
- * @param {DimRelationMetric|null|undefined} metric
+ * Per-dim min/max across all tokens with embeddings (groupId ignored).
+ * @param {Array<{ embedding?: number[] }|null|undefined>|null|undefined} items
+ * @returns {TokenSharedNoiseMetric[]}
+ */
+export function computeTokenSharedNoiseMetrics(items) {
+  const list = (items || []).filter(
+    (it) => Array.isArray(it?.embedding) && it.embedding.length
+  );
+  if (list.length < 2) return [];
+  const dim = list[0].embedding.length;
+  if (!list.every((it) => it.embedding.length === dim)) return [];
+
+  const lo = new Float64Array(dim);
+  const hi = new Float64Array(dim);
+  for (let d = 0; d < dim; d++) {
+    lo[d] = list[0].embedding[d];
+    hi[d] = list[0].embedding[d];
+  }
+  for (let i = 1; i < list.length; i++) {
+    const emb = list[i].embedding;
+    for (let d = 0; d < dim; d++) {
+      const v = emb[d];
+      if (v < lo[d]) lo[d] = v;
+      if (v > hi[d]) hi[d] = v;
+    }
+  }
+
+  /** @type {TokenSharedNoiseMetric[]} */
+  const out = new Array(dim);
+  for (let d = 0; d < dim; d++) {
+    const min = lo[d];
+    const max = hi[d];
+    out[d] = {
+      min,
+      max,
+      sameSign: signedUnit(min) === signedUnit(max),
+      similarity: sharedNoiseSimilarity(min, max),
+    };
+  }
+  return out;
+}
+
+/**
+ * Paint weights for one dim: cancel from token-batch, highlight from G1↔G2.
+ *
+ * @param {TokenSharedNoiseMetric|null|undefined} tokenMetric
+ * @param {DimRelationMetric|null|undefined} groupMetric
  * @param {{
  *   sameSignCancelEnabled?: boolean,
  *   sameSignCancelCoverage?: number,
@@ -170,22 +238,20 @@ export function computeDimRelationMetrics(items) {
  * }} settings
  * @returns {{ cancel: number, highlight: number }}
  */
-export function paintWeightsForDim(metric, settings = {}) {
-  if (!metric) return { cancel: 0, highlight: 0 };
-
+export function paintWeightsForDim(tokenMetric, groupMetric, settings = {}) {
   let cancel = 0;
   let highlight = 0;
 
-  if (metric.sameSign && settings.sameSignCancelEnabled) {
+  if (tokenMetric?.sameSign && settings.sameSignCancelEnabled) {
     const c = highCoverageToUnit(settings.sameSignCancelCoverage ?? 30);
-    cancel = Math.max(cancel, cancelAmountFromMetric(metric.similarity, c));
+    cancel = Math.max(cancel, cancelAmountFromMetric(tokenMetric.similarity, c));
   }
 
-  if (!metric.sameSign && settings.oppositeHighlightEnabled) {
+  if (groupMetric && !groupMetric.sameSign && settings.oppositeHighlightEnabled) {
     const strength = Math.max(0, Math.min(100, Number(settings.oppositeHighlightStrength) || 0)) / 100;
-    const balance = metric.conflictBalance != null
-      ? metric.conflictBalance
-      : oppositeConflictBalance(metric.meanA, metric.meanB);
+    const balance = groupMetric.conflictBalance != null
+      ? groupMetric.conflictBalance
+      : oppositeConflictBalance(groupMetric.meanA, groupMetric.meanB);
     highlight = Math.max(0, Math.min(1, strength * balance));
     cancel = Math.max(cancel, oppositeCoverCancel(settings.oppositeCancelCoverage ?? 0));
   }
@@ -209,17 +275,25 @@ function lerpRgb(color, target, k) {
 }
 
 /**
- * Apply group-dim paint on top of a divergent CPU color (Y/geometry untouched).
+ * Apply Shared-noise cancel + Sign-conflict highlight on top of a divergent CPU color.
  *
  * @param {{ r: number, g: number, b: number, alpha?: number }} baseColor
- * @param {DimRelationMetric|null|undefined} metric
+ * @param {TokenSharedNoiseMetric|null|undefined} tokenMetric
+ * @param {DimRelationMetric|null|undefined} groupMetric
  * @param {object} settings - VisualizationSettings-like
  * @param {{ r: number, g: number, b: number }|null} [zeroRgb]
  * @param {{ r: number, g: number, b: number }|null} [highlightRgb]
  * @returns {{ r: number, g: number, b: number, alpha?: number }}
  */
-export function applyGroupDimPaint(baseColor, metric, settings, zeroRgb = null, highlightRgb = null) {
-  const weights = paintWeightsForDim(metric, settings);
+export function applyGroupDimPaint(
+  baseColor,
+  tokenMetric,
+  groupMetric,
+  settings,
+  zeroRgb = null,
+  highlightRgb = null
+) {
+  const weights = paintWeightsForDim(tokenMetric, groupMetric, settings);
   if (weights.cancel <= 1e-9 && weights.highlight <= 1e-9) {
     return { ...baseColor };
   }
@@ -246,23 +320,30 @@ export function applyGroupDimPaint(baseColor, metric, settings, zeroRgb = null, 
  * Build parallel cancel/highlight attribute arrays for POINTS (length = points).
  *
  * @param {Array<{ meta?: { dim?: number } }>} pointsData
- * @param {DimRelationMetric[]|null|undefined} metrics
+ * @param {TokenSharedNoiseMetric[]|null|undefined} tokenMetrics
+ * @param {DimRelationMetric[]|null|undefined} groupMetrics
  * @param {object} settings
  * @returns {{ cancel: Float32Array, highlight: Float32Array }}
  */
-export function buildPointGroupPaintAttributes(pointsData, metrics, settings) {
+export function buildPointGroupPaintAttributes(pointsData, tokenMetrics, groupMetrics, settings) {
   const n = pointsData?.length || 0;
   const cancel = new Float32Array(n);
   const highlight = new Float32Array(n);
-  if (!n || !metrics?.length) return { cancel, highlight };
+  if (!n) return { cancel, highlight };
 
-  const groupFxOn = settings?.sameSignCancelEnabled || settings?.oppositeHighlightEnabled;
-  if (!groupFxOn) return { cancel, highlight };
+  const fxOn = settings?.sameSignCancelEnabled || settings?.oppositeHighlightEnabled;
+  if (!fxOn) return { cancel, highlight };
+  if (!tokenMetrics?.length && !groupMetrics?.length) return { cancel, highlight };
 
   for (let i = 0; i < n; i++) {
     const dim = pointsData[i]?.meta?.dim;
-    const metric = typeof dim === 'number' ? metrics[dim] : null;
-    const w = paintWeightsForDim(metric, settings);
+    const tokenMetric = typeof dim === 'number' && tokenMetrics?.length
+      ? tokenMetrics[dim]
+      : null;
+    const groupMetric = typeof dim === 'number' && groupMetrics?.length
+      ? groupMetrics[dim]
+      : null;
+    const w = paintWeightsForDim(tokenMetric, groupMetric, settings);
     cancel[i] = w.cancel;
     highlight[i] = w.highlight;
   }

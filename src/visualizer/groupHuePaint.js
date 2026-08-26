@@ -61,6 +61,7 @@ export function getGroupHueColor(tNorm, groupHex, zeroCoveragePercent = 0) {
  *   anchors: object,
  *   zeroCoverage: number,
  *   groupDimMetrics?: Array|null,
+ *   tokenSharedNoiseMetrics?: Array|null,
  *   groupId?: string|null,
  * }} resolved
  */
@@ -76,12 +77,15 @@ export function colorForActivationWithGroupHue(normVal, sourceDim, resolved) {
     ? getGroupHueColor(normVal, hex, resolved.zeroCoverage)
     : getDivergentColor(normVal, 1.0, resolved.anchors, resolved.zeroCoverage);
 
-  const metrics = resolved.groupDimMetrics;
-  if (!metrics?.length || sourceDim == null) return base;
-  const metric = metrics[sourceDim];
+  const tokenMetrics = resolved.tokenSharedNoiseMetrics;
+  const groupMetrics = resolved.groupDimMetrics;
+  if (sourceDim == null) return base;
+  if (!tokenMetrics?.length && !groupMetrics?.length) return base;
+  const tokenMetric = tokenMetrics?.length ? tokenMetrics[sourceDim] : null;
+  const groupMetric = groupMetrics?.length ? groupMetrics[sourceDim] : null;
   const zero = resolved.anchors?.zero || BLACK;
   const hi = hexToRgb01(viz?.oppositeHighlightColor);
-  return applyGroupDimPaint(base, metric, viz, zero, hi);
+  return applyGroupDimPaint(base, tokenMetric, groupMetric, viz, zero, hi);
 }
 
 /**

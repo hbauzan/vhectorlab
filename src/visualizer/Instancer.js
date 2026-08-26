@@ -11,6 +11,8 @@ import {
 } from './dimContrastSort.js';
 import {
   computeDimRelationMetrics,
+  computeTokenSharedNoiseMetrics,
+  hasEnoughTokensForSharedNoise,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
@@ -286,6 +288,13 @@ export class Instancer {
     const groupDimMetrics = hasGroupsForDimContrast(items)
       ? computeDimRelationMetrics(items)
       : null;
+    const tokenSharedNoiseMetrics = hasEnoughTokensForSharedNoise(items)
+      ? computeTokenSharedNoiseMetrics(items)
+      : null;
+    const paintOpts = {
+      ...(tokenSharedNoiseMetrics?.length ? { tokenSharedNoiseMetrics } : {}),
+      ...(groupDimMetrics?.length ? { groupDimMetrics } : {}),
+    };
     const sourceDimsForVec = (len) => {
       if (dimPerm && dimPerm.length === len) return dimPerm.slice();
       return Array.from({ length: len }, (_, i) => i);
@@ -342,7 +351,10 @@ export class Instancer {
 
       const vizOpts = {
         ...(vizConfig ? { vizConfig } : {}),
-        ...(groupDimMetrics?.length ? { groupDimMetrics, sourceDims } : {}),
+        ...paintOpts,
+        ...(paintOpts.tokenSharedNoiseMetrics || paintOpts.groupDimMetrics
+          ? { sourceDims }
+          : {}),
         ...(item.groupId ? { groupId: item.groupId } : {}),
       };
       let ribbonMesh = null;
@@ -408,7 +420,7 @@ export class Instancer {
       pointsMesh = MeshFactory.createPointsMesh(pointsData, {
         pointSize: 15.0 * thicknessFactor,
         ...(vizConfig ? { vizConfig } : {}),
-        ...(groupDimMetrics?.length ? { groupDimMetrics } : {}),
+        ...paintOpts,
       });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);

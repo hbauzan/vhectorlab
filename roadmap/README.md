@@ -4,10 +4,10 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
-| [`shared-noise-common-mode.md`](./shared-noise-common-mode.md) | Shared noise = common-mode across **all Compare tokens** (min/max), not G1↔G2 means | **Activo (plan)** |
-| [`PROMPT-shared-noise-common-mode.md`](./PROMPT-shared-noise-common-mode.md) | Prompt serial Slice 1→2 para el agente | **Activo** |
+| [`shared-noise-coverage-knobs.md`](./shared-noise-coverage-knobs.md) | Shared noise token-batch (finish) + Zero/Shared coverage dual knobs A/mA (Workbench), techo 100% | **Activo (plan)** |
+| [`PROMPT-shared-noise-coverage-knobs.md`](./PROMPT-shared-noise-coverage-knobs.md) | Prompt serial Slice 1→3 para el agente | **Activo** |
 | [`multillm/`](./multillm/) | Multi-embedding catalog + profiles + `setup.sh` option 11 (local; HF deferred) | **Activo (plan)** |
-| [`archivo/`](./archivo/) | Epics ya ejecutados o superados (Galaxy, Group hue, SAE, viz filters, v25/amiga, …) | Archivado |
+| [`archivo/`](./archivo/) | Epics ya ejecutados o superados (incl. shared-noise-common-mode parcial) | Archivado |
 
 Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `main` @ SemVer en `manifest.json`.
 
