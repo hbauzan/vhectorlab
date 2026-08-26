@@ -2038,6 +2038,131 @@ canvas {
   color: var(--accent-gold);
 }
 
+/* Dual A / mA coverage knobs (Workbench amp metaphor; range = disguised dial) */
+#visualization-controls-container .viz-coverage-knobs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+#visualization-controls-container .viz-am-knobs-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 14px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+#visualization-controls-container .viz-am-knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+#visualization-controls-container .viz-am-knob-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-transform: none;
+}
+
+#visualization-controls-container .viz-am-knob-face {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+#visualization-controls-container .viz-am-knob--ma .viz-am-knob-face {
+  width: 36px;
+  height: 36px;
+}
+
+#visualization-controls-container .viz-am-knob-dial {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.14), transparent 42%),
+    linear-gradient(145deg, var(--mwb-halfshine, #3d3d3d), var(--mwb-halfshadow, #1a1a1a));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+  transform: rotate(var(--knob-angle, -135deg));
+  pointer-events: none;
+}
+
+#visualization-controls-container .viz-am-knob-dial.is-lerping {
+  transition: transform 200ms ease-out;
+}
+
+#visualization-controls-container .viz-am-knob-pointer {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  width: 2px;
+  height: 34%;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--accent-gold, #e8c547);
+  box-shadow: 0 0 4px rgba(232, 197, 71, 0.35);
+}
+
+#visualization-controls-container .viz-am-knob--ma .viz-am-knob-pointer {
+  top: 10%;
+  height: 32%;
+  background: var(--amiga-accent, var(--mwb-blue, #3b67a2));
+  box-shadow: none;
+}
+
+#visualization-controls-container .viz-am-knob-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+#visualization-controls-container .viz-am-knob-range:disabled {
+  cursor: not-allowed;
+}
+
+#visualization-controls-container .viz-coverage-knobs.is-inert .viz-am-knob-dial {
+  opacity: 0.45;
+}
+
+@media (max-width: 280px) {
+  #visualization-controls-container .viz-am-knobs-row {
+    gap: 8px;
+  }
+
+  #visualization-controls-container .viz-am-knob-face {
+    width: 44px;
+    height: 44px;
+  }
+
+  #visualization-controls-container .viz-am-knob--ma .viz-am-knob-face {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .slider-group input[type="range"] {
   width: 100%;
   accent-color: var(--accent-cyan);
