@@ -10,9 +10,9 @@ import {
   hasEnoughGroupsForDimSort,
 } from './dimContrastSort.js';
 import {
+  cachedSharedNoiseMetrics,
   computeDimRelationMetrics,
-  computeTokenSharedNoiseMetrics,
-  hasEnoughTokensForSharedNoise,
+  createSharedNoiseCache,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
@@ -42,6 +42,8 @@ export class Instancer {
     this.compareRuntime = null;
     this._reorderRaf = null;
     this._reorderBusy = false;
+    /** Median/relDist cache — invalidated by embedding fingerprint, not viz ticks. */
+    this._sharedNoiseCache = createSharedNoiseCache();
   }
 
   /**
@@ -288,15 +290,17 @@ export class Instancer {
     const { slots: ySlots, span: ySlotSpan } = computeGroupAwareYSlots(items, { gapSlots: 1 });
     const dimSortOn = options.dimSortByContrast === true && hasEnoughGroupsForDimSort(items);
     const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
+    const isSaeActive = options.isSaeActive === true;
     const groupDimMetrics = hasGroupsForDimContrast(items)
       ? computeDimRelationMetrics(items)
       : null;
-    const tokenSharedNoiseMetrics = hasEnoughTokensForSharedNoise(items)
-      ? computeTokenSharedNoiseMetrics(items)
-      : null;
+    const sharedNoiseMetrics = isSaeActive
+      ? null
+      : cachedSharedNoiseMetrics(this._sharedNoiseCache, items);
     const paintOpts = {
-      ...(tokenSharedNoiseMetrics?.length ? { tokenSharedNoiseMetrics } : {}),
+      ...(sharedNoiseMetrics ? { sharedNoiseMetrics } : {}),
       ...(groupDimMetrics?.length ? { groupDimMetrics } : {}),
+      isSaeActive,
     };
     const sourceDimsForVec = (len) => {
       if (dimPerm && dimPerm.length === len) return dimPerm.slice();
@@ -342,6 +346,7 @@ export class Instancer {
             type: "compare",
             token: item.text,
             dim: sourceDim,
+            itemIndex: idx,
             val,
             groupId: item.groupId,
             groupLabel: item.groupLabel,
@@ -355,7 +360,8 @@ export class Instancer {
       const vizOpts = {
         ...(vizConfig ? { vizConfig } : {}),
         ...paintOpts,
-        ...(paintOpts.tokenSharedNoiseMetrics || paintOpts.groupDimMetrics
+        itemIndex: idx,
+        ...(paintOpts.sharedNoiseMetrics || paintOpts.groupDimMetrics
           ? { sourceDims }
           : {}),
         ...(item.groupId ? { groupId: item.groupId } : {}),

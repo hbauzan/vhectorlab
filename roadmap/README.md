@@ -8,6 +8,8 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 | [`HANDOFF-shared-noise.md`](./HANDOFF-shared-noise.md) | Handoff 2026-08-26 (auditoría + acuerdo Shared noise) | **Para pegar en otro chat** |
 | [`../current-research/DISCOVERY-shared-noise-embedding-geometry.md`](../current-research/DISCOVERY-shared-noise-embedding-geometry.md) | Evidencia: Shared noise vivo en Arctic@256 vs “muerto” en mpnet@768 (misma UI) | **Research** (no ticket) |
 | [`shared-noise-omit-common.md`](./shared-noise-omit-common.md) | Shared noise: ocultar el pack, dejar el punto distinto (float nativo); SAE capa dudosa | **Draft (hablando — no implementar)** |
+| [`multiplatform-setup.md`](./multiplatform-setup.md) | Linux/Windows setup (`setup-linux` / `setup.ps1`); opción A–D pendiente | **Parking (después de lo importante)** |
+| [`PROMPT-multiplatform-setup.md`](./PROMPT-multiplatform-setup.md) | Kickoff: revalidar §3 → re-mostrar opciones → esperar elección | **Para pegar cuando se reabra** |
 | [`open-shared-noise-knob.md`](./open-shared-noise-knob.md) | Parking knob-feel — sucedido por el draft de omit | **Superseded** |
 | [`archivo/`](./archivo/) | Epics ya ejecutados o superados | Archivado |
 

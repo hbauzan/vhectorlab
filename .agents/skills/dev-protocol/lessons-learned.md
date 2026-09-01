@@ -310,9 +310,9 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 | Layout axes (ANALYSIS) | X=dim, Y=thread stack + val×amp, Z=0 | Soft Y gap between `GROUP_*` blocks (+1× spacing) aids domain reading |
 
 ### 4.11b. Group contrast paint (shared noise / sign conflict)
-- **Problema**: En Compare, dims “chatas” compartidas por todos los tokens son ruido común; dims G1↔G2 de signo opuesto son señal — sin controles de paint dedicados.
-- **Solución**: Deep module `groupDimContrast.js` — **Shared noise** = min/max crudo sobre **todos** los embeddings del batch (`groupId` ignored; gate ≥2 tokens); `sim = 1−|Δ|/(|a|+|b|)`; cancel ZC-style. **Sign conflict** = means G1↔G2; highlight + conflict cover. Solo paint (Y intacto). UI: Shared noise junto a Zero coverage; Group contrast = Sign conflict + Group hue (≥2 grupos). Coverage 30…100% vía knobs A/mA (`coverageAmKnobs.js`).
-- **Invariante**: Zero coverage y Shared noise independientes; On habilita knobs (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`; métrica Shared noise = valores **crudos** del embedding visualizado (no t normalizado).
+- **Problema**: En Compare, dims “chatas” compartidas son ruido común; un veto same-sign sobre min/max del batch anulaba **toda** la dim si un solo token cruzaba cero (mpnet@768 / batches diversos).
+- **Solución**: Deep module `groupDimContrast.js` — **Shared noise** = per-point median-distance on **RAW** floats (`relDist = |x−median_d|/maxDist_d`; `groupId` ignored; gate ≥2 tokens). Cancel 2D `item×dim`; closest to median first; coverage 1 cancels everyone including outliers. Cache median per Compare embeddings (not per viz tick). **SAE ON → cancel 0** + UI lockout. **Sign conflict** = means G1↔G2; highlight + conflict cover. Solo paint (Y intacto). UI: Shared noise junto a Zero coverage; Group contrast = Sign conflict + Group hue (≥2 grupos). Coverage 30…100% vía knobs A/mA (`coverageAmKnobs.js`).
+- **Invariante**: Zero coverage y Shared noise independientes; On habilita knobs (Off = grisado); shader POINTS usa `aCancel`/`aHighlight` + `uColorHighlight`; métrica Shared noise = valores **crudos RAW** (no t normalizado, no SAE); `aCancel` es per-point (`itemIndex` + `sourceDim`), no un vector 1D por dim.
 
 ### 4.11c. Group hue (per-group black → color)
 - **Problema**: Rampa divergente global no distingue dominios `GROUP_*` en Galaxy/Compare.
@@ -449,6 +449,12 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **Solución Obligatoria**: README marca Docker como **optional**; menú etiqueta option 7 con Docker Desktop; `ensure_docker` antes del build; option 8 usa `ensure_hf_cli` + `hf auth`.
 - **Invariante**: no meter Docker en `ensure_prerequisites` de option 1.
 
+### 8.5. AI context dump (`vhectorlab-context.txt`)
+- **Problema**: External LLMs require clean, aggregated context & codebase dumps without binary bloat or transient artifacts.
+- **Solución Obligatoria**: Option 12 in `setup.sh` runs `scripts/dump_context.py` to remove any stale `vhectorlab-context.txt` and generate a fresh structured text file with headers, metadata, priority docs, file tree, and source code.
+- **Invariante**: `vhectorlab-context.txt` must be gitignored; exclude binaries, logs, and `node_modules`.
+
+
 ### 8.5. HF Space cpu-basic packaging
 - **Problema**: `uv sync` en Linux tira wheels NVIDIA; encode de ~10k vocab en cada cold start OOMea o tarda demasiado.
 - **Problema 2**: HF exige YAML frontmatter en el `README.md` del Space (`sdk: docker`, `app_port: 7860`); ensuciar el README de GitHub rompe el contrato “README estándar de producto”.
@@ -496,13 +502,10 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
   2. Post-load `_repair_gte_nonpersistent_buffers`: rearmar `position_ids` + `rotary_emb` (`inv_freq` + `_set_cos_sin_cache`).
 - **Invariante**: no agregar `xformers` como dep de lab/macOS; no asumir que el remote GTE es compatible con transformers 5 sin repair.
 
-### 8.9. Shared noise visibility depends on embedding geometry (not model-specific wiring)
-- **Problema**: Shared noise “funcionaba” en el lab Mac (`local-full` Arctic @256) y en HF con `all-mpnet-base-v2` @768 el knob **no movía nada**. Primera lectura: bug de deploy / cableado distinto por modelo.
-- **Hecho**: el path JS (`groupDimContrast.js`) es **agnóstico al modelo** — solo min/max + sameSign + similarity sobre floats. No hay `if (model === …)`.
-- **Causa real**: veto D4 (un token con signo opuesto anula la dim) + batch diverso ⇒ en mpnet @768 casi no quedan dims same-sign (medido ~7% / ~3% con cancel>0 @77% Similarity); en Arctic @256 el mismo texto deja ~30% same-sign / ~21% cancel>0 → se ve. Densidad de paint ≈ fracción de dims, no conteo absoluto.
-- **Solución Obligatoria**:
-  1. No “arreglar” Shared noise especializando por Hub id sin decisión de producto.
-  2. Para demos alineadas al lab: Space = `MODEL_PROFILE=local-full` (Dockerfile).
-  3. Ante knob “muerto”: medir `sameSign%` / cancel density del batch **antes** de tocar shaders.
-  4. Estudios empíricos de este tipo viven en **`current-research/`** (no en `lessons-learned` ni en `roadmap/` como si fueran tickets). Evidencia completa: `current-research/DISCOVERY-shared-noise-embedding-geometry.md`.
-- **Invariante**: lección de ingeniería acá; ciencia abierta / ablaciones / rediseño de métrica → `current-research/` + handoff omit-common. SAE ON no es el instrumento para cazar “pack compartido” en RAW.
+### 8.9. Shared noise = per-point median-distance (RAW only)
+- **Problema**: Shared noise “funcionaba” en Arctic@256 y en HF con mpnet@768 el knob **no movía nada**. Primera lectura: bug de deploy. Causa real del motor **viejo**: veto same-sign (un token cruzando 0 anulaba la dim entera) + min/max de batch diverso.
+- **Hecho**: el path JS es **agnóstico al modelo**. No hay `if (model === …)`.
+- **Solución Obligatoria (motor actual)**: cancel per `(item, dim)` anclado a `median_d`; `relDist = |x−median|/maxDist`; sin veto de signo. SAE ON → pesos 0 + toggle grey “Shared noise disabled in SAE mode”. Cache de medianas por fingerprint de embeddings (no cada tick de viz).
+- **No hacer**: especializar Shared noise por Hub id; usar SAE como instrumento para cazar el pack compartido en RAW.
+- Evidencia del síntoma viejo (same-sign density): `current-research/DISCOVERY-shared-noise-embedding-geometry.md`.
+- **Invariante**: lección de ingeniería acá; ciencia abierta / ablaciones → `current-research/`. Shared noise = **RAW only**.

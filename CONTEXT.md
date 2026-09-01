@@ -59,7 +59,12 @@ User-editable hex for normalized activations at +1, 0, and −1; replaces the fo
 Percent of the |t| range held at the zero color (default black) before blending toward ±1 anchors; range 30%…100%, edited via A/mA knobs + readout.
 
 ### Shared Noise
-Compare paint that blackens dims where **all tokens in view** agree in sign and magnitude (min/max over embeddings; `groupId` ignored). Sits with Zero coverage; Similarity uses the same A/mA coverage chrome. Default OFF.
+Compare paint that blackens tokens close to the **batch median** on each RAW embedding dimension (per-point `|x − median|/maxDist`). Coverage 0 = none; 100% cancels every token including outliers. Disabled while SAE is active. Default OFF.
+
+### Shared Noise Similarity
+UI amount for Shared Noise (A/mA knobs, 30%…100%). Maps to coverage in [0.3, 1.0]: near-median tokens cancel first; farthest tokens resist until 100%.
+
+_Avoid_: treating Shared Noise as a same-sign whole-dim veto or as G1↔G2 group means; running Shared Noise on SAE activations.
 
 ### Group Contrast
 Visualization paint for Compare with ≥2 groups: **Sign conflict** highlights opposite-sign dims (G1↔G2 means, custom color × |Δ|) and can blacken them by difference; **Group hue** optional. Geometry Y unchanged.
@@ -74,9 +79,6 @@ Galaxy VIEW uses a larger UMAP world scale and a slower flight profile (WASD/QE 
 Optional Visualization → Group contrast mode: each `GROUP_*` paints black (−1) → a picked color (+1), coexisting with Shared noise / Sign conflict. Default OFF.
 
 _Avoid_: parallel MPA skins (`/v25/`, `/amiga/` — retired in 2.4.1); multi-zone lab grids as the primary layout.
-
-### Shared Noise Similarity
-`1 − |mean_G1 − mean_G2| / (|mean_G1| + |mean_G2|)` per dimension — high values mean shared-sign “noise” between groups.
 
 ### Top‑K SAE
 Trained sparse autoencoder with exactly K active latents per input (ReLU + Top‑K, no L1 shrinkage). Trained on the **current workspace scope** (Compare/Arithmetic batch); ephemeral in-RAM session model. Default caps 768 → 8192 with K=32 (auto-scaled for small N).

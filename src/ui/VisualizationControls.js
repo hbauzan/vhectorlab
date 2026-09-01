@@ -500,18 +500,30 @@ export function syncGroupFxSliderEnabled(container, settings) {
 }
 
 /**
- * Gate Shared noise: usable with ≥2 Compare tokens (embeddings).
+ * Gate Shared noise: usable with ≥2 Compare tokens (embeddings). Locked out in SAE mode.
  * @param {HTMLElement|null|undefined} container
  * @param {boolean} enabled
  * @param {import('./visualizationControlsDefaults.js').VisualizationSettings} [config]
+ * @param {{ saeLockout?: boolean }} [options]
  */
-export function setSharedNoiseControlsEnabled(container, enabled, config = null) {
+export function setSharedNoiseControlsEnabled(container, enabled, config = null, options = {}) {
   if (!container) return;
   const section = container.querySelector('#viz-shared-noise');
   if (!section) return;
-  const on = Boolean(enabled);
+  const saeLockout = options.saeLockout === true;
+  const on = Boolean(enabled) && !saeLockout;
   section.classList.toggle('is-disabled', !on);
   section.setAttribute('aria-disabled', on ? 'false' : 'true');
+  const saeMsg = 'Shared noise disabled in SAE mode';
+  const hint = section.querySelector('.viz-shared-noise-hint');
+  if (hint) {
+    hint.textContent = saeLockout ? saeMsg : 'Requires ≥2 compare tokens.';
+  }
+  section.title = saeLockout ? saeMsg : '';
+  const toggle = section.querySelector('#viz-same-sign-enabled');
+  if (toggle) {
+    toggle.title = saeLockout ? saeMsg : '';
+  }
   const settings = config || resolveVisualizationSettings(null);
   syncGroupFxSliderEnabled(container, settings);
 }

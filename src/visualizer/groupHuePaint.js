@@ -14,7 +14,11 @@ import {
   ensureGroupHueColors,
 } from '../ui/visualizationControlsDefaults.js';
 import { getDivergentColor } from './DivergentShading.js';
-import { applyGroupDimPaint } from './groupDimContrast.js';
+import {
+  applyGroupDimPaint,
+  getPointCancel,
+  sharedNoiseCoverage01,
+} from './groupDimContrast.js';
 
 export {
   DEFAULT_GROUP_HUE_PALETTE,
@@ -61,7 +65,10 @@ export function getGroupHueColor(tNorm, groupHex, zeroCoveragePercent = 0) {
  *   anchors: object,
  *   zeroCoverage: number,
  *   groupDimMetrics?: Array|null,
- *   tokenSharedNoiseMetrics?: Array|null,
+ *   sharedNoiseMetrics?: object|null,
+ *   tokenSharedNoiseMetrics?: object|null,
+ *   itemIndex?: number|null,
+ *   isSaeActive?: boolean,
  *   groupId?: string|null,
  * }} resolved
  */
@@ -77,15 +84,24 @@ export function colorForActivationWithGroupHue(normVal, sourceDim, resolved) {
     ? getGroupHueColor(normVal, hex, resolved.zeroCoverage)
     : getDivergentColor(normVal, 1.0, resolved.anchors, resolved.zeroCoverage);
 
-  const tokenMetrics = resolved.tokenSharedNoiseMetrics;
+  const metrics = resolved.sharedNoiseMetrics || resolved.tokenSharedNoiseMetrics;
   const groupMetrics = resolved.groupDimMetrics;
   if (sourceDim == null) return base;
-  if (!tokenMetrics?.length && !groupMetrics?.length) return base;
-  const tokenMetric = tokenMetrics?.length ? tokenMetrics[sourceDim] : null;
+  if (!metrics && !groupMetrics?.length) return base;
+  const sae = resolved.isSaeActive === true || viz?.isSaeActive === true;
+  const paintSettings = { ...viz, isSaeActive: sae };
+  const coverage = sharedNoiseCoverage01(paintSettings);
+  const sharedCancel = getPointCancel(
+    metrics,
+    resolved.itemIndex,
+    sourceDim,
+    coverage,
+    { isSaeActive: sae }
+  );
   const groupMetric = groupMetrics?.length ? groupMetrics[sourceDim] : null;
   const zero = resolved.anchors?.zero || BLACK;
   const hi = hexToRgb01(viz?.oppositeHighlightColor);
-  return applyGroupDimPaint(base, tokenMetric, groupMetric, viz, zero, hi);
+  return applyGroupDimPaint(base, sharedCancel, groupMetric, paintSettings, zero, hi);
 }
 
 /**

@@ -99,4 +99,50 @@ describe('Compare Mode Sequence Engine', () => {
     expect(yAfter[1]).toBeGreaterThan(yBefore[1]);
     expect(labels.map((l) => l.id)).toEqual(['tok_0', 'tok_1', 'tok_2']);
   });
+
+  it('POINTS aCancel is per itemIndex (median cancels, mixed-sign outlier waits)', () => {
+    const scene = new THREE.Scene();
+    const instancer = new Instancer(scene);
+    instancer.renderCompareData(
+      {
+        items: [
+          { id: 'tok_0', text: 'a', embedding: [0.90] },
+          { id: 'tok_1', text: 'b', embedding: [0.90] },
+          { id: 'tok_2', text: 'c', embedding: [-0.70] },
+        ],
+      },
+      'POINTS',
+      null,
+      'ANALYSIS',
+      { sameSignCancelEnabled: true, sameSignCancelCoverage: 50 },
+    );
+    const pointsMesh = instancer.compareRuntime.pointsMesh;
+    const pd = pointsMesh.userData.pointsData;
+    expect(pd[0].meta.itemIndex).toBe(0);
+    expect(pd[2].meta.itemIndex).toBe(2);
+    const cancel = pointsMesh.geometry.getAttribute('aCancel');
+    expect(cancel.getX(0)).toBeGreaterThan(0.5);
+    expect(cancel.getX(2)).toBe(0);
+  });
+
+  it('SAE active → aCancel stays 0', () => {
+    const scene = new THREE.Scene();
+    const instancer = new Instancer(scene);
+    instancer.renderCompareData(
+      {
+        items: [
+          { id: 'tok_0', text: 'a', embedding: [0.90] },
+          { id: 'tok_1', text: 'b', embedding: [0.90] },
+        ],
+      },
+      'POINTS',
+      null,
+      'ANALYSIS',
+      { sameSignCancelEnabled: true, sameSignCancelCoverage: 100 },
+      { isSaeActive: true },
+    );
+    const cancel = instancer.compareRuntime.pointsMesh.geometry.getAttribute('aCancel');
+    expect(cancel.getX(0)).toBe(0);
+    expect(cancel.getX(1)).toBe(0);
+  });
 });

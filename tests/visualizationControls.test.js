@@ -265,6 +265,8 @@ describe('Visualization panel collapse tab', () => {
         },
       },
       setAttribute: () => {},
+      querySelector: () => null,
+      title: '',
       get disabled() { return Boolean(disabled.get(id)); },
       set disabled(v) { disabled.set(id, Boolean(v)); },
     });
@@ -311,6 +313,58 @@ describe('Visualization panel collapse tab', () => {
     setGroupContrastControlsEnabled(container, true, config, ['G1', 'G2']);
     expect(contrast.classList.contains('is-disabled')).toBe(false);
     expect(oppOn.disabled).toBe(false);
+  });
+
+  it('Shared noise SAE lockout greys toggle and sets tooltip', () => {
+    const classBag = new Set();
+    const disabled = new Map();
+    const hint = { textContent: 'Requires ≥2 compare tokens.' };
+    const sameOn = {
+      id: 'viz-same-sign-enabled',
+      classList: { contains: () => false, toggle: () => {} },
+      setAttribute: () => {},
+      title: '',
+      get disabled() { return Boolean(disabled.get('viz-same-sign-enabled')); },
+      set disabled(v) { disabled.set('viz-same-sign-enabled', Boolean(v)); },
+    };
+    const shared = {
+      id: 'viz-shared-noise',
+      title: '',
+      classList: {
+        contains: (c) => classBag.has(c),
+        toggle: (c, on) => {
+          if (on) classBag.add(c);
+          else classBag.delete(c);
+        },
+      },
+      setAttribute: () => {},
+      querySelector: (sel) => {
+        if (sel === '.viz-shared-noise-hint') return hint;
+        if (sel === '#viz-same-sign-enabled') return sameOn;
+        return null;
+      },
+    };
+    const container = {
+      querySelector: (sel) => {
+        if (sel === '#viz-shared-noise') return shared;
+        if (sel === '#viz-same-sign-enabled') return sameOn;
+        if (sel === '#viz-zero-coverage-enabled') {
+          return { disabled: false, set disabled(_v) {} };
+        }
+        if (sel === '#viz-group-contrast') {
+          return { classList: { contains: () => true } };
+        }
+        return null;
+      },
+      querySelectorAll: () => [],
+    };
+    const config = resolveVisualizationSettings({ ...DEFAULT_VISUALIZATION_SETTINGS });
+    setSharedNoiseControlsEnabled(container, true, config, { saeLockout: true });
+    expect(shared.classList.contains('is-disabled')).toBe(true);
+    expect(sameOn.disabled).toBe(true);
+    expect(hint.textContent).toBe('Shared noise disabled in SAE mode');
+    expect(shared.title).toBe('Shared noise disabled in SAE mode');
+    expect(sameOn.title).toBe('Shared noise disabled in SAE mode');
   });
 
   it('viz panel body uses taller HUD-capped height with side scrollbar', () => {

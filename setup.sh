@@ -482,6 +482,7 @@ show_menu() {
     echo -e " ${CYAN}9.${RESET} ${BOLD}View Logs${RESET} ${DIM}(Live backend logs)${RESET}"
     echo -e " ${RED}10.${RESET} ${BOLD}Stop / Clean Services${RESET}"
     echo -e " ${MAGENTA}11.${RESET} ${BOLD}Select Embedding Model / Profile${RESET} ${DIM}(catalog · rebuild NPZ · restart backend)${RESET}"
+    echo -e " ${CYAN}12.${RESET} ${BOLD}Dump Context & Codebase to TXT${RESET} ${DIM}(vhectorlab-context.txt for AI assistant)${RESET}"
     echo -e " ${DIM}0. Exit${RESET}"
     echo -e "${CYAN}${BOLD}====================================================${RESET}"
 }
@@ -1078,9 +1079,37 @@ view_logs() {
     read -p "Press Enter..."
 }
 
+dump_context_codebase() {
+    local dump_file="vhectorlab-context.txt"
+    echo ""
+    echo -e "${MAGENTA}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${MAGENTA}${BOLD}║${RESET}  ${BOLD}Dump Context & Codebase to TXT (${dump_file})${RESET}    ${MAGENTA}${BOLD}║${RESET}"
+    echo -e "${MAGENTA}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${DIM}  Generates a full architectural and source code context dump for AI analysis.${RESET}"
+    echo ""
+
+    if [ -f "$dump_file" ]; then
+        echo -e "  ${YELLOW}⚠️  Found existing ${dump_file}. Removing previous dump...${RESET}"
+        rm -f "$dump_file"
+        echo -e "  ${GREEN}✓ Previous dump removed.${RESET}"
+    fi
+
+    echo -e "  ${BLUE}▶ Gathering context documents, specs, and source code files...${RESET}"
+    python3 scripts/dump_context.py --output "$dump_file"
+    if [ $? -eq 0 ] && [ -f "$dump_file" ]; then
+        echo ""
+        echo -e "  ${GREEN}${BOLD}✅ Context dump complete: ${dump_file}${RESET}"
+        echo -e "  ${DIM}File path: $(pwd)/${dump_file}${RESET}"
+    else
+        echo -e "  ${RED}${BOLD}❌ Failed to generate context dump.${RESET}"
+    fi
+    echo ""
+    read -p "Press Enter to return to menu..."
+}
+
 while true; do
     show_menu
-    echo -ne "${BOLD}Choose an option [0-11]: ${RESET}"
+    echo -ne "${BOLD}Choose an option [0-12]: ${RESET}"
     read choice
     case $choice in
         1)
@@ -1118,6 +1147,9 @@ while true; do
             ;;
         11)
             select_embedding_model
+            ;;
+        12)
+            dump_context_codebase
             ;;
         0)
             exit_panel_keep_services

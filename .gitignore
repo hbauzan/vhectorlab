@@ -42,3 +42,4 @@ demo/**
 # Logs & temp
 *.log
 .DS_Store
+vhectorlab-context.txt

@@ -1,6 +1,6 @@
 # Discovery Note — Shared Noise Is Embedding-Geometry Dependent
 
-**Status:** Research / evidence dump (not a product roadmap; not an implementation ticket)  
+**Status:** Research / evidence dump (not a product roadmap). **Engineering follow-up shipped 2026-08-26:** same-sign veto replaced by per-point median-distance cancel on RAW (`lessons-learned` §4.11b / §8.9). This file stays the evidence dump for *why* the old metric died on mpnet@768.  
 **Date:** 2026-08-26 (UTC)  
 **Repo:** `vhectorlab`  
 **Authors of the session:** human (Hector) + coding agent (Cursor)  
