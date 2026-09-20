@@ -28,7 +28,7 @@ Using dev-protocol, execute the roadmap for Dual-Engine Deep Dimensional Inspect
 
 ## Slices Overview
 - Slice 1: Backend Memory Hygiene & Sequential Cache Clearance (clear_runtime_cache, unload_model)
-- Slice 2: SHA-256 Matrix Checksum & Coordinate Extrema Contract (vocab_sha256 in /health, extrema in /compare)
+- Slice 2: Storage Integrity Checksums, Device Metadata & Coordinate Extrema Contract (vocab_source_sha256, device in /health, extrema in /compare)
 - Slice 3: Catalog Expansion — Integrate BAAI/bge-m3 (1024-D unban, local-bge profile)
 - Slice 4: Frontend Adaptive Coordinate Scaling & Extrema Ingestion (LayoutEngine & DivergentShading dynamic range)
 - Slice 5: Contrast Metric — Interval Gap & Quantile Disjointness (dimContrastSort.js interval-gap)
