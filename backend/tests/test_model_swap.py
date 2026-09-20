@@ -128,7 +128,8 @@ def test_format_menu_has_profiles_and_models():
     assert "local-comfort" in text
     assert "MiniLM-multi" in text
     assert "Arctic-m-v2" in text
-    assert "BAAI/bge-m3" not in text
+    assert "BGE-M3" in text
+    assert "jina-embeddings-v3" not in text
     assert "Cancel" in text
 
 

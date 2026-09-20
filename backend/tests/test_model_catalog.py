@@ -24,12 +24,12 @@ REQUIRED_HUB_IDS = frozenset(
         "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         "intfloat/multilingual-e5-base",
         "sentence-transformers/distiluse-base-multilingual-cased-v2",
+        "BAAI/bge-m3",
     }
 )
 
 NO_GO_EXAMPLES = frozenset(
     {
-        "BAAI/bge-m3",
         "jinaai/jina-embeddings-v3",
     }
 )
@@ -94,7 +94,15 @@ def test_get_model_embeddinggemma_gated():
 
 def test_get_model_unknown_raises():
     with pytest.raises(ValueError, match="unknown model"):
-        get_model("BAAI/bge-m3")
+        get_model("invalid/non-existent-model")
+
+
+def test_get_model_bge_m3():
+    sel = get_model("BAAI/bge-m3")
+    assert sel.hub_id == "BAAI/bge-m3"
+    assert sel.short_label == "BGE-M3"
+    assert sel.trust_remote_code is False
+    assert sel.gated is False
 
 
 def test_catalog_completeness_required_ids_present():

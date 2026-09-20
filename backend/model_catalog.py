@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 # Explicit no-go list from roadmap §2.3 (must never appear in list_models).
 NO_GO_HUB_IDS: frozenset[str] = frozenset(
     {
-        "BAAI/bge-m3",
         "jinaai/jina-embeddings-v3",
     }
 )
@@ -99,6 +98,10 @@ _MODELS: tuple[_ModelEntry, ...] = (
     _ModelEntry(
         hub_id="sentence-transformers/distiluse-base-multilingual-cased-v2",
         short_label="distiluse-multi",
+    ),
+    _ModelEntry(
+        hub_id="BAAI/bge-m3",
+        short_label="BGE-M3",
     ),
 )
 
