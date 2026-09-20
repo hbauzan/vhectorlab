@@ -5,10 +5,16 @@ import {
   relativeDifference,
   oppositeConflictBalance,
   cancelAmountFromMetric,
+  cancelFromRelDist,
+  medianValue,
   hasGroupsForDimContrast,
   hasEnoughTokensForSharedNoise,
   computeDimRelationMetrics,
-  computeTokenSharedNoiseMetrics,
+  computeSharedNoiseBatchMetrics,
+  getPointRelDist,
+  getPointCancel,
+  createSharedNoiseCache,
+  cachedSharedNoiseMetrics,
   paintWeightsForDim,
   applyGroupDimPaint,
   buildPointGroupPaintAttributes,
@@ -22,7 +28,6 @@ describe('groupDimContrast math', () => {
   });
 
   it('sharedNoiseSimilarity is formula (b)', () => {
-    // a=0.002, b=0.018 → 1 - 0.016/0.020 = 0.2
     expect(sharedNoiseSimilarity(0.002, 0.018)).toBeCloseTo(0.2, 5);
     expect(sharedNoiseSimilarity(0.1, 0.1)).toBeCloseTo(1, 5);
     expect(sharedNoiseSimilarity(0, 0)).toBe(1);
@@ -35,11 +40,51 @@ describe('groupDimContrast math', () => {
 
   it('cancelAmountFromMetric mirrors zero-coverage on high metric', () => {
     expect(cancelAmountFromMetric(0.4, 0)).toBe(0);
-    expect(cancelAmountFromMetric(0.4, 0.5)).toBe(0); // floor=0.5
+    expect(cancelAmountFromMetric(0.4, 0.5)).toBe(0);
     expect(cancelAmountFromMetric(0.75, 0.5)).toBeCloseTo(0.5, 5);
     expect(cancelAmountFromMetric(1, 0.5)).toBeCloseTo(1, 5);
     expect(cancelAmountFromMetric(0.5, 1)).toBeCloseTo(0.5, 5);
     expect(cancelAmountFromMetric(1, 1)).toBeCloseTo(1, 5);
+  });
+
+  it('medianValue is odd-middle / even-average', () => {
+    expect(medianValue([0.1, 0.5, 0.9])).toBeCloseTo(0.5, 12);
+    expect(medianValue([1, 2, 3, 4])).toBeCloseTo(2.5, 12);
+    expect(medianValue([-0.7, 0.9, 0.9])).toBeCloseTo(0.9, 12);
+    expect(medianValue([])).toBe(0);
+  });
+});
+
+describe('cancelFromRelDist', () => {
+  it('coverage 0 → cancel 0 for every relDist', () => {
+    expect(cancelFromRelDist(0, 0)).toBe(0);
+    expect(cancelFromRelDist(0.5, 0)).toBe(0);
+    expect(cancelFromRelDist(1, 0)).toBe(0);
+    expect(cancelFromRelDist(0, 1e-12)).toBe(0);
+  });
+
+  it('coverage 1 → cancel 1 including outlier (relDist=1)', () => {
+    expect(cancelFromRelDist(0, 1)).toBe(1);
+    expect(cancelFromRelDist(0.5, 1)).toBe(1);
+    expect(cancelFromRelDist(1, 1)).toBe(1);
+    expect(cancelFromRelDist(1, 1 - 1e-12)).toBe(1);
+  });
+
+  it('median (relDist→0) cancels before outlier at intermediate coverage', () => {
+    const coverage = 0.4;
+    const medianCancel = cancelFromRelDist(0, coverage);
+    const edgeCancel = cancelFromRelDist(coverage, coverage);
+    const outlierCancel = cancelFromRelDist(1, coverage);
+    expect(medianCancel).toBe(1);
+    expect(edgeCancel).toBeCloseTo(0.5, 5);
+    expect(outlierCancel).toBe(0);
+    expect(medianCancel).toBeGreaterThan(outlierCancel);
+  });
+
+  it('clamps to [0, 1]', () => {
+    expect(cancelFromRelDist(-1, 0.5)).toBeGreaterThanOrEqual(0);
+    expect(cancelFromRelDist(2, 0.5)).toBeLessThanOrEqual(1);
+    expect(cancelFromRelDist(0, 2)).toBe(1);
   });
 });
 
@@ -67,69 +112,147 @@ describe('computeDimRelationMetrics', () => {
   });
 });
 
-describe('computeTokenSharedNoiseMetrics', () => {
+describe('computeSharedNoiseBatchMetrics (median-distance)', () => {
   it('requires ≥2 equal-width embeddings', () => {
     expect(hasEnoughTokensForSharedNoise([{ embedding: [1] }])).toBe(false);
-    expect(computeTokenSharedNoiseMetrics([{ embedding: [1] }])).toEqual([]);
-    expect(computeTokenSharedNoiseMetrics([
+    expect(computeSharedNoiseBatchMetrics([{ embedding: [1] }])).toBeNull();
+    expect(computeSharedNoiseBatchMetrics([
       { embedding: [1, 2] },
       { embedding: [1] },
-    ])).toEqual([]);
+    ])).toBeNull();
   });
 
-  it('computes with 1 group (ignores groupId)', () => {
+  it('computes median / maxDist / relDist (groupId ignored)', () => {
     const items = [
-      { groupId: 'G1', embedding: [0.80, 0.10] },
-      { groupId: 'G1', embedding: [0.80, 0.50] },
-      { groupId: 'G1', embedding: [0.81, 0.90] },
+      { groupId: 'G1', embedding: [0.10, 0.80] },
+      { groupId: 'G1', embedding: [0.50, 0.80] },
+      { groupId: 'G1', embedding: [0.90, 0.81] },
     ];
     expect(hasEnoughTokensForSharedNoise(items)).toBe(true);
-    const m = computeTokenSharedNoiseMetrics(items);
-    expect(m).toHaveLength(2);
-    expect(m[0].sameSign).toBe(true);
-    expect(m[0].similarity).toBeCloseTo(sharedNoiseSimilarity(0.80, 0.81), 5);
-    expect(m[1].similarity).toBeCloseTo(0.2, 5); // min 0.10 max 0.90
+    const m = computeSharedNoiseBatchMetrics(items);
+    expect(m.itemCount).toBe(3);
+    expect(m.dim).toBe(2);
+    expect(m.median[0]).toBeCloseTo(0.50, 12);
+    expect(m.maxDist[0]).toBeCloseTo(0.40, 12);
+    expect(getPointRelDist(m, 1, 0)).toBeCloseTo(0, 12);
+    expect(getPointRelDist(m, 0, 0)).toBeCloseTo(1, 12);
+    expect(getPointRelDist(m, 2, 0)).toBeCloseTo(1, 12);
+    expect(m.median[1]).toBeCloseTo(0.80, 12);
   });
 
-  it('uses all tokens across 3 groups (G3 outlier blocks high sim)', () => {
+  it('identical column → relDist 0 (no divide-by-zero)', () => {
+    const items = [0, 0, 0].map((v) => ({ embedding: [v] }));
+    const m = computeSharedNoiseBatchMetrics(items);
+    expect(m.maxDist[0]).toBeLessThanOrEqual(1e-12);
+    expect(getPointRelDist(m, 0, 0)).toBe(0);
+    expect(getPointRelDist(m, 1, 0)).toBe(0);
+    expect(getPointRelDist(m, 2, 0)).toBe(0);
+  });
+
+  it('mixed-sign outlier does not veto the dim (no same-sign gate)', () => {
     const items = [
-      { groupId: 'happy', embedding: [0.80] },
-      { groupId: 'sad', embedding: [0.80] },
-      { groupId: 'angry', embedding: [-0.90] },
+      { groupId: 'happy', embedding: [0.90] },
+      { groupId: 'sad', embedding: [0.90] },
+      { groupId: 'angry', embedding: [-0.70] },
     ];
-    const m = computeTokenSharedNoiseMetrics(items);
-    expect(m).toHaveLength(1);
-    expect(m[0].sameSign).toBe(false);
-    expect(m[0].similarity).toBeCloseTo(0, 1);
+    const m = computeSharedNoiseBatchMetrics(items);
+    expect(m.median[0]).toBeCloseTo(0.90, 12);
+    expect(getPointRelDist(m, 0, 0)).toBeCloseTo(0, 12);
+    expect(getPointRelDist(m, 1, 0)).toBeCloseTo(0, 12);
+    expect(getPointRelDist(m, 2, 0)).toBeCloseTo(1, 12);
   });
 
-  it('locks worked examples (§3.3)', () => {
-    const batch = (vals) => vals.map((v) => ({ embedding: [v] }));
-    const near = computeTokenSharedNoiseMetrics(batch([0.80, 0.80, 0.81]));
-    expect(near[0].sameSign).toBe(true);
-    expect(near[0].similarity).toBeGreaterThan(0.98);
+  it('itemIndex is the original list index (skips holes without embeddings)', () => {
+    const items = [
+      { embedding: [0.90] },
+      { embedding: [] },
+      { embedding: [0.90] },
+      { embedding: [-0.70] },
+    ];
+    const m = computeSharedNoiseBatchMetrics(items);
+    expect(m.itemCount).toBe(4);
+    expect(getPointRelDist(m, 0, 0)).toBeCloseTo(0, 12);
+    expect(getPointRelDist(m, 1, 0)).toBe(0);
+    expect(getPointRelDist(m, 2, 0)).toBeCloseTo(0, 12);
+    expect(getPointRelDist(m, 3, 0)).toBeCloseTo(1, 12);
+  });
+});
 
-    const zeros = computeTokenSharedNoiseMetrics(batch([0, 0, 0]));
-    expect(zeros[0].similarity).toBe(1);
-    expect(zeros[0].sameSign).toBe(true);
+describe('getPointCancel (per-point, coverage knob)', () => {
+  const mixed = () => computeSharedNoiseBatchMetrics([
+    { embedding: [0.90] },
+    { embedding: [0.90] },
+    { embedding: [-0.70] },
+  ]);
 
-    const spread = computeTokenSharedNoiseMetrics(batch([0.10, 0.50, 0.90]));
-    expect(spread[0].similarity).toBeCloseTo(0.2, 5);
+  it('knob 0.0 → all cancel = 0.0', () => {
+    const m = mixed();
+    expect(getPointCancel(m, 0, 0, 0)).toBe(0);
+    expect(getPointCancel(m, 1, 0, 0)).toBe(0);
+    expect(getPointCancel(m, 2, 0, 0)).toBe(0);
+  });
 
-    const mixed = computeTokenSharedNoiseMetrics(batch([0.90, 0.90, -0.70]));
-    expect(mixed[0].sameSign).toBe(false);
-    expect(mixed[0].similarity).toBeCloseTo(0, 1);
+  it('knob 1.0 → all cancel = 1.0 including outlier', () => {
+    const m = mixed();
+    expect(getPointCancel(m, 0, 0, 1)).toBe(1);
+    expect(getPointCancel(m, 1, 0, 1)).toBe(1);
+    expect(getPointCancel(m, 2, 0, 1)).toBe(1);
+  });
+
+  it('median token cancels before outlier at intermediate knob', () => {
+    const m = mixed();
+    const coverage = 0.5;
+    const near = getPointCancel(m, 0, 0, coverage);
+    const outlier = getPointCancel(m, 2, 0, coverage);
+    expect(near).toBeGreaterThan(0.5);
+    expect(outlier).toBe(0);
+  });
+
+  it('behavior is consistent regardless of dimension sign', () => {
+    const pos = computeSharedNoiseBatchMetrics([
+      { embedding: [0.90] },
+      { embedding: [0.90] },
+      { embedding: [-0.70] },
+    ]);
+    const neg = computeSharedNoiseBatchMetrics([
+      { embedding: [-0.90] },
+      { embedding: [-0.90] },
+      { embedding: [0.70] },
+    ]);
+    const c = 0.45;
+    expect(getPointCancel(pos, 0, 0, c)).toBeCloseTo(getPointCancel(neg, 0, 0, c), 12);
+    expect(getPointCancel(pos, 2, 0, c)).toBeCloseTo(getPointCancel(neg, 2, 0, c), 12);
+    expect(getPointRelDist(pos, 2, 0)).toBeCloseTo(getPointRelDist(neg, 2, 0), 12);
+  });
+
+  it('SAE active → cancel 0 even at coverage 1', () => {
+    const m = mixed();
+    expect(getPointCancel(m, 0, 0, 1, { isSaeActive: true })).toBe(0);
+    expect(getPointCancel(m, 2, 0, 1, { isSaeActive: true })).toBe(0);
+  });
+});
+
+describe('shared-noise cache', () => {
+  it('reuses metrics for the same embeddings; recomputes when values change', () => {
+    const items = [
+      { embedding: [0.1, 0.2] },
+      { embedding: [0.3, 0.4] },
+    ];
+    const cache = createSharedNoiseCache();
+    const a = cachedSharedNoiseMetrics(cache, items);
+    const b = cachedSharedNoiseMetrics(cache, items);
+    expect(a).not.toBeNull();
+    expect(b).toBe(a);
+
+    items[1].embedding[0] = 0.99;
+    const c = cachedSharedNoiseMetrics(cache, items);
+    expect(c).not.toBe(a);
+    expect(c.median[0]).not.toBeCloseTo(a.median[0], 8);
   });
 });
 
 describe('paintWeightsForDim / applyGroupDimPaint', () => {
-  it('same-sign cancel reads TOKEN metric only', () => {
-    const token = {
-      min: 0.1,
-      max: 0.1,
-      sameSign: true,
-      similarity: 1,
-    };
+  it('shared-noise cancel uses per-point amount, not group same-sign', () => {
     const group = {
       meanA: 0.1,
       meanB: -0.1,
@@ -138,20 +261,19 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
       difference: 1,
       conflictBalance: 1,
     };
-    expect(paintWeightsForDim(token, group, {
+    expect(paintWeightsForDim(0.9, group, {
       sameSignCancelEnabled: false,
       sameSignCancelCoverage: 90,
     })).toEqual({ cancel: 0, highlight: 0 });
 
-    const on = paintWeightsForDim(token, null, {
+    const on = paintWeightsForDim(0.9, null, {
       sameSignCancelEnabled: true,
       sameSignCancelCoverage: 90,
     });
-    expect(on.cancel).toBeGreaterThan(0.9);
+    expect(on.cancel).toBeCloseTo(0.9, 5);
     expect(on.highlight).toBe(0);
 
-    // Group same-sign must NOT drive cancel when token metric is absent / mixed
-    const groupOnly = paintWeightsForDim(null, {
+    const groupOnly = paintWeightsForDim(0, {
       meanA: 0.1,
       meanB: 0.1,
       sameSign: true,
@@ -161,16 +283,11 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
     expect(groupOnly.cancel).toBe(0);
   });
 
-  it('mixed-sign token metric → cancel 0 even at high coverage', () => {
-    const token = {
-      min: 0.9,
-      max: -0.7,
-      sameSign: false,
-      similarity: 0,
-    };
-    const w = paintWeightsForDim(token, null, {
+  it('SAE lockout zeros shared cancel in paint weights', () => {
+    const w = paintWeightsForDim(1, null, {
       sameSignCancelEnabled: true,
-      sameSignCancelCoverage: 90,
+      sameSignCancelCoverage: 100,
+      isSaeActive: true,
     });
     expect(w.cancel).toBe(0);
   });
@@ -184,7 +301,7 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
       difference: 1,
       conflictBalance: 1,
     };
-    const w = paintWeightsForDim(null, group, {
+    const w = paintWeightsForDim(0, group, {
       oppositeHighlightEnabled: true,
       oppositeHighlightStrength: 50,
       oppositeCancelCoverage: 0,
@@ -202,7 +319,7 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
       difference: 1,
       conflictBalance: 1,
     };
-    const at0 = paintWeightsForDim(null, group, {
+    const at0 = paintWeightsForDim(0, group, {
       oppositeHighlightEnabled: true,
       oppositeHighlightStrength: 100,
       oppositeCancelCoverage: 0,
@@ -210,7 +327,7 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
     expect(at0.cancel).toBe(0);
     expect(at0.highlight).toBeCloseTo(1, 5);
 
-    const at45 = paintWeightsForDim(null, group, {
+    const at45 = paintWeightsForDim(0, group, {
       oppositeHighlightEnabled: true,
       oppositeHighlightStrength: 100,
       oppositeCancelCoverage: 45,
@@ -218,7 +335,7 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
     expect(at45.cancel).toBeCloseTo(0.5, 5);
     expect(at45.highlight).toBeCloseTo(1, 5);
 
-    const at90 = paintWeightsForDim(null, group, {
+    const at90 = paintWeightsForDim(0, group, {
       oppositeHighlightEnabled: true,
       oppositeHighlightStrength: 100,
       oppositeCancelCoverage: 90,
@@ -242,7 +359,7 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
     };
     const painted = applyGroupDimPaint(
       base,
-      null,
+      0,
       group,
       {
         oppositeHighlightEnabled: true,
@@ -257,50 +374,45 @@ describe('paintWeightsForDim / applyGroupDimPaint', () => {
     expect(painted.b).toBeCloseTo(1, 5);
   });
 
-  it('buildPointGroupPaintAttributes: cancel=token, highlight=group', () => {
+  it('buildPointGroupPaintAttributes: per-item cancel + group highlight', () => {
     const items = [
-      { groupId: 'G1', embedding: [0.1, -0.1] },
-      { groupId: 'G2', embedding: [0.1, 0.1] },
+      { groupId: 'G1', embedding: [0.90, -0.1] },
+      { groupId: 'G2', embedding: [0.90, 0.1] },
+      { groupId: 'G3', embedding: [-0.70, 0.0] },
     ];
-    const tokenMetrics = computeTokenSharedNoiseMetrics(items);
+    const metrics = computeSharedNoiseBatchMetrics(items);
     const groupMetrics = computeDimRelationMetrics(items);
     const points = [
-      { meta: { dim: 0 } },
-      { meta: { dim: 1 } },
+      { meta: { itemIndex: 0, dim: 0 } },
+      { meta: { itemIndex: 2, dim: 0 } },
+      { meta: { itemIndex: 0, dim: 1 } },
     ];
     const { cancel, highlight } = buildPointGroupPaintAttributes(
       points,
-      tokenMetrics,
+      metrics,
       groupMetrics,
       {
         sameSignCancelEnabled: true,
-        sameSignCancelCoverage: 90,
+        sameSignCancelCoverage: 50,
         oppositeHighlightEnabled: true,
         oppositeHighlightStrength: 100,
         oppositeCancelCoverage: 0,
       }
     );
-    expect(cancel[0]).toBeGreaterThan(0.5); // same-sign across tokens dim0
-    expect(highlight[0]).toBe(0);
-    expect(highlight[1]).toBeGreaterThan(0.5); // opposite G1↔G2 dim1
+    expect(cancel[0]).toBeGreaterThan(0.5);
+    expect(cancel[1]).toBe(0);
+    expect(highlight[2]).toBeGreaterThan(0.5);
   });
 
-  it('3-group outlier: token cancel stays 0 while G1↔G2 would have cancelled', () => {
+  it('3-group mixed-sign: median tokens cancel, outlier waits for 100%', () => {
     const items = [
       { groupId: 'G1', embedding: [0.80] },
       { groupId: 'G2', embedding: [0.80] },
       { groupId: 'G3', embedding: [-0.90] },
     ];
-    const token = computeTokenSharedNoiseMetrics(items)[0];
-    const group = computeDimRelationMetrics(items)[0];
-    expect(group.sameSign).toBe(true);
-    expect(group.similarity).toBeCloseTo(1, 5);
-    expect(token.sameSign).toBe(false);
-
-    const w = paintWeightsForDim(token, group, {
-      sameSignCancelEnabled: true,
-      sameSignCancelCoverage: 90,
-    });
-    expect(w.cancel).toBe(0);
+    const metrics = computeSharedNoiseBatchMetrics(items);
+    expect(getPointCancel(metrics, 0, 0, 0.5)).toBeGreaterThan(0.5);
+    expect(getPointCancel(metrics, 2, 0, 0.5)).toBe(0);
+    expect(getPointCancel(metrics, 2, 0, 1)).toBe(1);
   });
 });

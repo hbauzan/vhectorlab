@@ -535,7 +535,10 @@ class VHectorLabApp {
           this.sliderConfig,
           this.viewMode,
           this.vizConfig,
-          { dimSortByContrast: this.dimSortByContrast }
+          {
+            dimSortByContrast: this.dimSortByContrast,
+            isSaeActive: this.isSaeActive(),
+          }
         );
         this.setCompareOverlayLabels(labels);
         this.comparePanel.updateGroupLegend(data.items);
@@ -729,7 +732,15 @@ class VHectorLabApp {
   }
 
   /**
-   * Gate Shared noise (≥2 tokens) and Group contrast (≥2 groups).
+   * SAE is painting Compare (toggle ON + trained). Shared noise is RAW-only.
+   * @returns {boolean}
+   */
+  isSaeActive() {
+    return !!(this.saeSettings?.enabled && this.saeStatus?.is_trained);
+  }
+
+  /**
+   * Gate Shared noise (≥2 tokens, locked out in SAE) and Group contrast (≥2 groups).
    */
   syncGroupContrastGate() {
     if (!this.vizEl || !this.vizConfig) return;
@@ -737,10 +748,12 @@ class VHectorLabApp {
       ? (this.rawCompareData?.items || state.compareData?.items || [])
       : [];
     const groups = groupsForHueUi(items);
+    const saeLockout = this.isSaeActive();
     setSharedNoiseControlsEnabled(
       this.vizEl,
       hasEnoughTokensForSharedNoise(items),
       this.vizConfig,
+      { saeLockout },
     );
     setGroupContrastControlsEnabled(
       this.vizEl,
@@ -1125,6 +1138,7 @@ class VHectorLabApp {
     this.saeSettings = { ...this.saeSettings, enabled };
     saveSaeSettings(this.saeSettings);
     this.comparePanel.saeUi.syncFromSettings();
+    this.syncGroupContrastGate();
 
     if (!enabled) {
       if (isGalaxyView(this.viewMode)) {
@@ -1403,7 +1417,10 @@ class VHectorLabApp {
         this.sliderConfig,
         this.viewMode,
         this.vizConfig,
-        { dimSortByContrast: this.dimSortByContrast }
+        {
+          dimSortByContrast: this.dimSortByContrast,
+          isSaeActive: this.isSaeActive(),
+        }
       );
       this.setCompareOverlayLabels(labels);
       await this.onCompareDataRefreshed();

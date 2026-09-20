@@ -4,15 +4,15 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 
 | Doc | Tema | Estado |
 |---|---|---|
-| [`multillm/`](./multillm/) | Multi-embedding catalog + profiles + `setup.sh` option 11 (local; HF deferred) | **Activo (plan)** |
-| [`HANDOFF-shared-noise.md`](./HANDOFF-shared-noise.md) | Handoff 2026-08-26 (auditoría + acuerdo Shared noise) | **Para pegar en otro chat** |
-| [`../current-research/DISCOVERY-shared-noise-embedding-geometry.md`](../current-research/DISCOVERY-shared-noise-embedding-geometry.md) | Evidencia: Shared noise vivo en Arctic@256 vs “muerto” en mpnet@768 (misma UI) | **Research** (no ticket) |
-| [`shared-noise-omit-common.md`](./shared-noise-omit-common.md) | Shared noise: ocultar el pack, dejar el punto distinto (float nativo); SAE capa dudosa | **Draft (hablando — no implementar)** |
-| [`open-shared-noise-knob.md`](./open-shared-noise-knob.md) | Parking knob-feel — sucedido por el draft de omit | **Superseded** |
-| [`archivo/`](./archivo/) | Epics ya ejecutados o superados | Archivado |
+| **[`dual-engine-inspection-integration.md`](./dual-engine-inspection-integration.md)** | **Integración de Deep Dimensional Inspection: BGE-M3, memoria, hash SHA-256, brechas de intervalo y diagnóstico 3D** | **ACTIVO (En primer plano — listo para ejecución)** |
+| **[`PROMPT-dual-engine-inspection-integration.md`](./PROMPT-dual-engine-inspection-integration.md)** | **Prompt ejecutable para agentes de IA (arranque en Slice 1 con dev-protocol)** | **Kickoff para sesión nueva** |
+| [`../current-research/DISCOVERY-shared-noise-embedding-geometry.md`](../current-research/DISCOVERY-shared-noise-embedding-geometry.md) | Evidencia empírica de colapso geométrico y sensibilidad de signo | **Research de soporte** |
+| [`archivo/`](./archivo/) | Epics ejecutados o archivados (`multillm`, `shared-noise`, `multiplatform-setup`) | Archivado |
 
-Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `main` @ SemVer en `manifest.json`.
+---
 
-**UI default (2.4.1+):** una sola app en `/` con chrome Magic Workbench (`src/theme/`). Rutas `/v25/` y `/amiga/` **retiradas**.
+## Cómo ejecutar el Roadmap Activo
 
-Para una aventura nueva: agregá `roadmap/<slug>.md` (+ `PROMPT-…` si hace falta) y una fila en esta tabla.
+1. Abrir una sesión nueva de IA con el prompt definido en **[`PROMPT-dual-engine-inspection-integration.md`](./PROMPT-dual-engine-inspection-integration.md)**.
+2. Cada agente ejecuta **un solo Slice por sesión** de manera serial siguiendo TDD estricto y deteniéndose en el Approval Gate.
+3. Fuente de verdad del código: `CHANGELOG.md`, `CONTEXT.md`, `architecture_spec.md`, `main` @ SemVer en `manifest.json`.

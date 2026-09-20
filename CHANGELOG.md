@@ -27,6 +27,11 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - Galaxy default camera pose: POS `25.5, 155.2, 328.9` / ROT `-23.2, 14.0, 0` (captured CAM POSE).
 - Startup chrome defaults: **ARITHMETIC | ANALYSIS | POINTS** (desktop + mobile; was COMPARE | GALAXY).
 
+## [3.1.0] - 2026-08-26
+
+### Changed
+- **Shared noise**: per-point **median-distance** cancel on RAW embeddings (`|x − median_d| / maxDist_d`). No same-sign batch veto — a single outlier no longer blacks out the whole dim. Knob 0 = no cancel; 100% cancels every token including outliers; near-median tokens cancel first. **SAE mode** greys the toggle (`Shared noise disabled in SAE mode`) and forces cancel weights to 0.
+
 ## [3.0.1] - 2026-08-26
 
 ### Added

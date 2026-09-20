@@ -111,7 +111,10 @@ Option **8** publishes a **Docker** Space on **cpu-basic** via the `hf` CLI. It 
 | **8** | Publish HF Space: inject `deploy/hf/space-frontmatter.yml` into README at push (GitHub README stays clean) |
 | **9** | View backend logs |
 | **10** | **Stop** / clean services (always kills; not idempotent) |
+| **11** | Select Embedding Model / Profile (catalog · rebuild NPZ · restart backend) |
+| **12** | **Dump Context & Codebase to TXT** (`vhectorlab-context.txt` for AI assistant analysis) |
 | **0** | Exit |
+
 
 ---
 
