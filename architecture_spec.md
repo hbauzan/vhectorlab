@@ -11,15 +11,15 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 - **Vocabulary Acceleration**: Pre-computed L2-normalized embedding matrix $(N \times D)$ kept in RAM for instant matrix-vector dot product cosine similarity calculation:
   $$\text{Sim}(V_{res}, V_{vocab}) = V_{vocab} \cdot V_{res}^T$$
 - **SAE dim safety**: On load, if session SAE `input_dim` ≠ active `embedding_dim`, SAE RAM + checkpoint are cleared automatically.
-- **Vocab NPZ**: Prefer `VOCAB_EMBEDDINGS_PATH` when present. Keys: `words`, `embeddings`, `model_name`, `embedding_dim`, optional `truncate_dim`. **Mismatch strategy**: if `model_name` or effective width disagrees with the active catalog selection, log a loud warning, re-encode from `VOCAB_PATH` via `encode_texts`, and overwrite the NPZ (local DX auto-rebuild — not a hard fail).
+- **Vocab NPZ**: Prefer `VOCAB_EMBEDDINGS_PATH` when present. Keys: `words`, `embeddings`, `model_name`, `embedding_dim`, optional `truncate_dim`, `vocab_source_sha256` (SHA-256 of the source vocabulary text file), and `computed_device` (`'mps'`|`'cpu'`|`'cuda'`). **Mismatch strategy**: if `model_name`, effective width, or `vocab_source_sha256` disagrees with the active catalog selection or source text, log a warning, re-encode from `VOCAB_PATH` via `encode_texts`, and overwrite the NPZ (local DX auto-rebuild). Precomputation on Mac utilizes MPS for high performance and numerical harmony with live queries; Linux/Docker uses CPU. Cross-platform equivalence is governed by geometric tolerance ($\text{cosine\_drift} < 10^{-6}$), never by byte-level SHA-256.
 - **CORS Policy**: `allow_origins=["*"]` with `allow_credentials=False` for cross-origin WebGL clients.
 
 ### API Surface
-- `GET /health`: Server status, model Hub id, optional `model_profile`, `embedding_dim`, `truncate_dim`, vocabulary size, and runtime `device` (`cpu`|`cuda`|`mps`).
+- `GET /health`: Server status, model Hub id, optional `model_profile`, `embedding_dim`, `truncate_dim`, vocabulary size, runtime `device` (`cpu`|`cuda`|`mps`), `vocab_source_sha256`, `vocab_file_sha256`, and `vocab_device`.
 - `POST /embed`: Computes embedding vector for input text.
 - `POST /tokenize`: Returns tokenization details.
 - `POST /arithmetic`: Computes $V_{res} = V_A - V_B + V_C$ and returns top-$K$ nearest vocabulary words and component vectors.
-- `POST /compare`: Batch-encodes 1–1024 texts, L2-normalizes embeddings, and returns per-item cosine vs the first token (anchor).
+- `POST /compare`: Batch-encodes 1–1024 texts, L2-normalizes embeddings, and returns per-item cosine vs the first token (anchor), plus batch coordinate `extrema` (`min`, `max`).
 - `POST /project`: Projects precomputed embedding vectors to 2D/3D (does **not** re-encode text). v1 method = **`umap` only**; `pca` / `tsne` → **501**; other methods → **400**. Default seed `42`. When `dim > 50`, internal PCA→50 before UMAP. Positions are zero-mean and RMS-scaled server-side.
 
 ### Data Contracts
@@ -35,7 +35,10 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
   "truncate_dim": null,
   "device": "mps",
   "is_loaded": true,
-  "vocab_size": 12345
+  "vocab_size": 12345,
+  "vocab_source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "vocab_file_sha256": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+  "vocab_device": "mps"
 }
 ```
 `model_profile` / `truncate_dim` / `short_label` may be `null` when unset. `embedding_dim` is the effective width after truncate. Navbar ONLINE chip uses profile (if any) · short_label · `{D}D` · device.
@@ -70,6 +73,7 @@ Returns:
 {
   "count": 3,
   "anchor": { "index": 0, "text": "king" },
+  "extrema": { "min": -0.1852, "max": 0.2140 },
   "items": [
     {
       "id": "tok_0",
@@ -81,7 +85,7 @@ Returns:
   ]
 }
 ```
-`cosine_vs_first` is $\text{dot}(\hat{e}_i, \hat{e}_0)$ on L2-normalized embeddings. Frontend reorders may recompute scores in memory without re-calling `/compare`.
+`cosine_vs_first` is $\text{dot}(\hat{e}_i, \hat{e}_0)$ on L2-normalized embeddings. `extrema` reports global $\min$ and $\max$ coordinates across the encoded batch for adaptive frontend amplitude scaling. Frontend reorders may recompute scores in memory without re-calling `/compare`.
 
 #### Project (Galaxy / UMAP)
 ```json

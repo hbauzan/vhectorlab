@@ -31,8 +31,8 @@ Incorporate the hardened engineering practices, metrics, and data artifacts of t
 
 1. **Sequential Isolation & Memory Hygiene (D1)**:
    Any model swap or heavy encoding loop must explicitly trigger PyTorch cache clearance on CUDA and MPS, followed by Python garbage collection (`gc.collect()`). No leaked tensor graphs between model swaps.
-2. **Deterministic Tensor Verification via SHA-256 (D2)**:
-   All precomputed vocabulary matrices (`vocab_embeddings.npz`) and batch embeddings must compute and expose an exact SHA-256 byte digest (`np.ascontiguousarray(tensor).tobytes()`). This guarantees byte-for-byte parity between local macOS environments and remote HF Spaces.
+2. **Payload Storage Integrity & Geometric Parity Contract (D2)**:
+   Cryptographic hashing (SHA-256) is strictly reserved for storage and file I/O integrity (`vocab_source_sha256` of `vocab_en_es.txt` and disk checksum of `vocab_embeddings.npz`). Due to IEEE 754 non-associativity and hardware-level microarchitecture differences (Apple Silicon ARM64/NEON FMA vs Linux x86_64 AVX2/AVX-512 and BLAS tiling), cross-platform tensor byte parity is mathematically unattainable and functionally irrelevant for 3D visualization. Parity between nodes is evaluated geometrically ($\text{cosine\_drift} < 10^{-6}$ and `allclose(rtol=1e-4, atol=1e-5)`), never via bitwise SHA-256.
 3. **Model Catalog Re-Alignment (D3)**:
    Remove `BAAI/bge-m3` from `NO_GO_HUB_IDS`. Add it as a first-class catalog model and profile (`local-bge` / `high-density-1024`). Reject `gte-Qwen2-1.5B` for default tiers due to its 4.2 GB RSS footprint.
 4. **Adaptive Coordinate Scaling (D4)**:
@@ -110,9 +110,9 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 
 ---
 
-### Slice 2: SHA-256 Matrix Checksum & Coordinate Extrema Contract
+### Slice 2: Storage Integrity Checksums, Device Metadata & Coordinate Extrema Contract
 
-- **Goal**: Guarantee embedding determinism between nodes (Mac vs Space) and report batch coordinate extrema for dynamic frontend scaling.
+- **Goal**: Implement storage-level integrity verification, device metadata tracking, and report batch coordinate extrema for dynamic frontend scaling.
 - **Affected Files**:
   - `backend/vocab_embeddings.py` [MODIFY]
   - `backend/state.py` [MODIFY]
@@ -122,18 +122,19 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 - **Specification**:
   1. In `backend/vocab_embeddings.py`:
      - In `save_vocab_embeddings_npz()`:
-       Compute SHA-256 over contiguous float32 bytes:
-       ```python
-       import hashlib
-       tensor_bytes = np.ascontiguousarray(embeddings, dtype=np.float32).tobytes()
-       sha256_hash = hashlib.sha256(tensor_bytes).hexdigest()
-       ```
-       Save `sha256_hash` into the `.npz` archive.
+       Accept and persist:
+       - `vocab_source_sha256`: SHA-256 hex digest of the source text file (`public/vocab_en_es.txt` or active `vocab.txt`).
+       - `computed_device`: Runtime device string (`'mps'`, `'cpu'`, `'cuda'`).
+       - `model_name`, `embedding_dim`, `truncate_dim`.
      - In `load_vocab_embeddings_npz()`:
-       Read `sha256_hash` if present; if missing (legacy archive), compute it dynamically from the loaded array.
+       Extract `vocab_source_sha256` and `computed_device` (with graceful fallback for legacy archives).
+     - In `npz_compatible_with_selection()`:
+       If `vocab_source_sha256` is recorded in the cache and differs from the active source vocab file on disk, return `(False, reason)` to trigger an automatic local rebuild.
   2. In `backend/state.py` & `backend/routers/core.py`:
      - Update `/health` response schema to include:
-       `"vocab_sha256": str | None`
+       `"vocab_source_sha256": str | None`
+       `"vocab_file_sha256": str | None`
+       `"vocab_device": str | None`
      - Update `perform_compare(texts)` in `state.py`:
        Calculate coordinate extrema across the normalized batch:
        ```python
@@ -141,9 +142,13 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
        coord_max = float(np.max(normalized))
        ```
        Include `"extrema": {"min": coord_min, "max": coord_max}` in the `/compare` response JSON.
+  3. **Platform Autonomy & Geometric Parity Policy**:
+     - macOS generates its `.npz` on **MPS** via `setup.sh` option 11. This is the first-class, official local artifact and guarantees zero numerical drift against live MPS queries.
+     - Linux / Docker builds precompute on **CPU**.
+     - Neither platform invalidates the other. Parity is enforced in tests via geometric invariants ($\text{cosine\_drift} < 10^{-6}$ and `allclose(rtol=1e-4, atol=1e-5)`), preserving local DX without requiring Docker on macOS.
 - **Verification & Tests**:
   - Run `uv run pytest backend/tests/test_vocab_embeddings.py backend/tests/test_core_api.py`.
-  - Verify `/health` reports `vocab_sha256` matching the hash of `public/vocab_embeddings.npz`.
+  - Verify `/health` reports `vocab_source_sha256`, `vocab_file_sha256`, and `vocab_device`.
   - Verify `/compare` returns correct `extrema.min` and `extrema.max`.
 - **DoD**:
   - Contract updated in `architecture_spec.md`.
@@ -225,7 +230,9 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 - **Goal**: Implement interval disjointness and quantile gap sorting in `dimContrastSort.js` to allow instant identification of separating dimensions between token groups.
 - **Affected Files**:
   - `src/visualizer/dimContrastSort.js` [MODIFY]
+  - `src/ui/fieldInfo.js` [MODIFY]
   - `tests/dimContrastSort.test.js` [MODIFY/NEW]
+  - `tests/fieldInfo.test.js` [MODIFY]
 - **Specification**:
   1. In `src/visualizer/dimContrastSort.js`:
      - Implement `computeDimIntervalGaps(vectorsG1, vectorsG2, quantile = 0.0)`:
@@ -243,8 +250,11 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
        - `'interval-gap'`: Sorts dimensions by absolute positive gap descending.
        - `'quantile-gap'`: Sorts by 10% quantile gap descending.
   2. Dimensions with clean disjoint barriers bubble to the front ($Z=0$).
+  3. In `src/ui/fieldInfo.js`:
+     - Register `intervalGap: 'Order by clean [lo, hi] gap.'` and `quantileGap: 'P05-P95 robust gap.'` in `FIELD_INFO`.
+     - Render the standard `(i)` button beside the sort selector in the UI.
 - **Verification & Tests**:
-  - Run `npm test tests/dimContrastSort.test.js`.
+  - Run `npm test tests/dimContrastSort.test.js tests/fieldInfo.test.js`.
   - Test synthetic datasets:
     - Fully separated distributions $\implies gap > 0$, ranked first.
     - Fully overlapping distributions $\implies gap \le 0$, ranked last.
@@ -261,7 +271,9 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
   - `src/visualizer/MeshFactory.js` [MODIFY]
   - `src/visualizer/Instancer.js` [MODIFY]
   - `src/ui/workbench/` or `src/ui/visualizationControls.js` [MODIFY]
+  - `src/ui/fieldInfo.js` [MODIFY]
   - `tests/meshFactory.test.js` [MODIFY]
+  - `tests/fieldInfo.test.js` [MODIFY]
 - **Specification**:
   1. In `src/visualizer/MeshFactory.js`:
      - Implement `createGroupEnvelopeGeometry(dimCount, loBounds, hiBounds, layoutConfig)`:
@@ -271,8 +283,11 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
      - Color envelopes according to the group hue with an alpha of $\sim 0.15$.
   3. In `src/ui/visualizationControls.js`:
      - Add checkbox toggle in Workbench: `"Group Envelopes [lo, hi]"`.
+  4. In `src/ui/fieldInfo.js`:
+     - Register `groupEnvelopes: 'Translucent [lo, hi] band.'` in `FIELD_INFO`.
+     - Render matching `(i)` button beside the checkbox using existing Workbench styling.
 - **Verification & Tests**:
-  - Run `npm test tests/meshFactory.test.js`.
+  - Run `npm test tests/meshFactory.test.js tests/fieldInfo.test.js`.
   - Manual verification in browser: load Compare sample with 2 groups; enable Group Envelopes; verify transparent ribbons encompass all points for each group.
 - **DoD**:
   - Visuals clean, zero shader errors in console, tests pass. Approval Gate.
@@ -285,9 +300,11 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 - **Affected Files**:
   - `src/visualizer/activationFilter.js` [MODIFY]
   - `src/ui/workbench/censusDropHandler.js` [NEW]
+  - `src/ui/fieldInfo.js` [MODIFY]
   - `src/main.js` [MODIFY]
   - `tests/activationFilter.test.js` [MODIFY]
   - `tests/censusDropHandler.test.js` [NEW]
+  - `tests/fieldInfo.test.js` [MODIFY]
 - **Specification**:
   1. In `src/ui/workbench/censusDropHandler.js`:
      - Implement drag-and-drop listener and file selector for `.csv` and `.json`.
@@ -300,8 +317,11 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
      - Implement `applyDimensionMask(maskSet)`:
        When active, dimensions not present in `maskSet` have opacity forced to $0.05$ or are collapsed to $Y=0$.
   3. Display active mask chip in Navbar or Status HUD: e.g. `"MASK: Top-500 (python)"`.
+  4. In `src/ui/fieldInfo.js`:
+     - Register `censusMask: 'Filter by excited dims CSV.'` in `FIELD_INFO`.
+     - Render standard `(i)` tooltip button on the HUD chip and drop zone.
 - **Verification & Tests**:
-  - Run `npm test tests/censusDropHandler.test.js tests/activationFilter.test.js`.
+  - Run `npm test tests/censusDropHandler.test.js tests/activationFilter.test.js tests/fieldInfo.test.js`.
   - Verify dropping a synthetic CSV isolates the specified dimensions and mutes others.
 - **DoD**:
   - Complete end-to-end integration tested. Documentation updated. Approval Gate.
@@ -313,7 +333,7 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 | Stage | Automated Test Command | Manual Check |
 | :--- | :--- | :--- |
 | **Backend Memory** | `uv run pytest backend/tests/test_memory_hygiene.py` | Verify RSS does not climb monotonically over 5 model swaps |
-| **Backend Integrity** | `uv run pytest backend/tests/test_vocab_embeddings.py` | Inspect `GET /api/health` output for `vocab_sha256` |
+| **Backend Integrity** | `uv run pytest backend/tests/test_vocab_embeddings.py` | Inspect `GET /api/health` output for `vocab_source_sha256`, `vocab_file_sha256`, `vocab_device` |
 | **Catalog** | `uv run pytest backend/tests/test_model_catalog.py` | Run `./setup.sh` option 11; verify BGE-M3 is selectable |
 | **Frontend Math** | `npm test tests/dimContrastSort.test.js` | Check console for NaN/Infinity on extreme vector inputs |
 | **3D Rendering** | `npm test` | Toggle "Group Envelopes" in Compare mode; check camera frame |
@@ -324,7 +344,7 @@ Each slice is a self-contained, test-driven vertical slice designed for an indep
 ## 5. Documentation & Lessons Learned Sync
 
 Upon completion of each slice:
-1. Update `architecture_spec.md` with any new endpoint parameters (`vocab_sha256`, `extrema`).
+1. Update `architecture_spec.md` with any new endpoint parameters (`vocab_source_sha256`, `vocab_file_sha256`, `vocab_device`, `extrema`).
 2. Update `CHANGELOG.md` under `[Unreleased]` following SemVer rules.
 3. Record any new technical invariants in `.agents/skills/dev-protocol/lessons-learned.md`:
    - §8.10: Memory hygiene and tensor eviction protocol.

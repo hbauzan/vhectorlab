@@ -123,6 +123,22 @@ User-editable hex anchors replace the former fixed dual ramp (no product mid-sto
   }
   ```
 
+### 2.5. Determinismo en Punto Flotante: Integridad de Archivo vs. Paridad Numérica Cross-Platform
+- **Problema**: Intentar validar tensores o matrices de embeddings generadas en hardware heterogéneo (Apple Silicon arm64 con MPS vs Linux x86_64 con CPU) usando hashes criptográficos binarios de salida (`hashlib.sha256(tensor.tobytes())`).
+  - La suma IEEE 754 float32 no es asociativa: $(a+b)+c \neq a+(b+c)$.
+  - Metal en Mac (MPS) y AVX2/AVX-512 en Linux utilizan instrucciones vectoriales distintas, diferente fusión FMA (`fmla` en ARM vs doble redondeo en x86 sin FMA) y diferente tamaño de bloques de memoria cache (*tiling*) en BLAS.
+  - Esto produce fluctuaciones en los últimos bits de la mantisa ($\approx 10^{-7}$). Un cambio en 1 bit de 30 MB de floats cambia el 100% del hash SHA-256 por efecto avalancha.
+  - Forzar CPU en Mac tampoco resuelve la discrepancia de bits (ARM64 vs x86_64), pero ralentiza $5\times$ a $10\times$ el swap de modelo en `setup.sh` opción 11.
+- **Impacto en VHectorLab 3D**:
+  - **Despreciable**: Un drift de $10^{-7}$ representa un desplazamiento 3D de $40 \times 10^{-7} = 0.00004$ unidades Three.js (menos de $1/5000$ de un píxel en pantalla).
+  - Los colores RGB de 8 bits (paso 1/255) son idénticos.
+  - Los rankings Top-K en `/arithmetic` y las 4 cifras decimales de `/compare` son invariantes.
+- **Solución Obligatoria**:
+  1. **SHA-256 solo para I/O y Definición**: Usar SHA-256 exclusivamente para la fuente de texto (`vocab_source_sha256` de `vocab_en_es.txt`) y la integridad física del archivo en disco (`file_sha256` para evitar bit-rot).
+  2. **PROHIBIDO**: Exigir o testear paridad bit-a-bit (`tensor.tobytes()`) entre diferentes backends o sistemas operativos.
+  3. **Tolerancia Geométrica**: La equivalencia numérica cross-platform se valida mediante deriva coseno ($\max \delta_{\cos} < 10^{-6}$) y `np.allclose(rtol=1e-4, atol=1e-5)`.
+  4. **Soberanía Local**: El archivo `vocab_embeddings.npz` generado en Mac con MPS es 100% válido y funcionalmente superior para la inferencia local (garantiza armonía numérica con queries en vivo). Docker en Linux genera su propio NPZ en CPU sin invalidar a macOS.
+
 ---
 
 ## 3. Navegación y Controles 3D (WASDQE)
