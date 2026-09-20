@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="VHectorLab 3D API",
     description="Backend API for 3D Vector Arithmetic & Semantic Embedding Visualizer",
-    version="3.1.0",
+    version="3.2.0",
     lifespan=lifespan,
 )
 

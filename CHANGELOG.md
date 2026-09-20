@@ -4,6 +4,12 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-09-20
+
+### Added
+- **Catalog expansion**: re-admit `BAAI/bge-m3` (1024-D) as a first-class supported model in catalog and model swap menu (`setup.sh` option 11).
+- **Architecture & Determinism contracts**: formalize float32 non-determinism invariants (MPS vs. CPU); decouple storage integrity (`vocab_source_sha256`, file checksum) from cross-platform numerical parity (geometric tolerance with $\text{cosine\_drift} < 10^{-6}$). Expose coordinate `extrema` in `/compare`.
+
 ### Fixed
 - **HF Space publish (option 8)**: ephemeral tip strips `demo/` binaries and is an **orphan** commit (no `-p HEAD`) so the push pack does not include GitHub history that still has the GIF; HF rejects non-Xet binaries in the whole pack. Composed Space README drops local demo media embeds.
 - **HF / Docker torch CPU**: Linux installs `torch` from `pytorch-cpu` index via `[tool.uv.sources]` (nvidia-* no longer pulled). `UV_TORCH_BACKEND` alone never affected `uv sync`.
