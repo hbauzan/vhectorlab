@@ -48,7 +48,7 @@ The agent **owns the full git lifecycle and executes it automatically** — bran
 Default sequence once the user approves:
 1. `git checkout -b <type>/<short-name>` — if not already on a dedicated task branch.
 2. Stage **only files relevant to the task**. Leave unrelated untracked/modified files alone; if scope is unclear, ask (see §3.3).
-3. `git commit` using the metadata format from §1, ending with the `Co-Authored-By` trailer.
+3. `git commit` using the metadata format from §1 (sin trailers de co-autoría de IA como `Co-Authored-By`; las contribuciones en repositorios de `hbauzan` son de autoría exclusiva de `hbauzan`).
 4. `git push -u origin <branch>`.
 5. `git checkout <base>` → `git merge --no-ff <branch>` → `git push origin <base>`. (`<base>` is usually `main`.)
 6. *(Optional, ask first)* delete the merged branch locally and on the remote.
