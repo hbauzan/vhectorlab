@@ -47,6 +47,6 @@ demo/**
 .DS_Store
 vhectorlab-context.txt
 
-# Agent skills / customizations
-.agents/skills/
+# Agent configuration, skills and customizations
+.agents/
 skills/
