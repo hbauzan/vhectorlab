@@ -36,8 +36,11 @@ CONTEXT_HAB.MD
 
 # Demo GIF capture tooling / scratch (published tour GIF is tracked)
 scripts/capture-galaxy-demo.mjs
+scripts/capture-spectral-demo.mjs
 demo/**
 !demo/vhectorlab-gui-tour.gif
+!demo/spectral-*.gif
+!demo/spectral-*.mp4
 
 # Logs & temp
 *.log

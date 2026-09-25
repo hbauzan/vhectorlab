@@ -99,6 +99,10 @@ class VHectorLabApp {
     document.body.classList.add('workbench-theme');
 
     this.appContainer = document.getElementById('app');
+    if (typeof window !== 'undefined') {
+      window.__vlApp = this;
+      window.__vlDemo = this;
+    }
 
     // 1. Core 3D Scene Engine
     this.sceneSetup = new SceneSetup(this.appContainer);
