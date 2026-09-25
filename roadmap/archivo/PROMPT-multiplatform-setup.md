@@ -10,7 +10,7 @@ Canonical roadmap: [`multiplatform-setup.md`](./multiplatform-setup.md).
 ## Session kickoff — paste this
 
 ```text
-Using dev-protocol + style from `.agents/Por acá va la bocha.md`.
+Using dev-protocol.
 
 ## Task
 Re-open the parked epic: multiplatform setup (Linux / Windows) for VHectorLab 3D.

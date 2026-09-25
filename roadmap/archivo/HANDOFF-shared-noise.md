@@ -2,7 +2,7 @@
 
 Pegá esto en el chatbot nuevo. Pedile que lea también:
 
-- `.agents/Por acá va la bocha.md` (estilo)
+- `dev-protocol` (estilo y protocolo)
 - `roadmap/shared-noise-omit-common.md` (fuente de verdad del acuerdo, draft)
 - `current-research/DISCOVERY-shared-noise-embedding-geometry.md` (evidencia Arctic@256 vs mpnet@768 — knob “muerto” ≠ wiring roto)
 - `.agents/skills/dev-protocol/lessons-learned.md` §8.9

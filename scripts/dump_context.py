@@ -28,7 +28,8 @@ BINARY_EXTENSIONS = {
 # Directories to strictly exclude from code scan
 EXCLUDE_DIRS = {
     ".git", "node_modules", ".venv", "venv", "dist", ".pnpm-store",
-    ".pytest_cache", "__pycache__", ".vite", "htmlcov", ".DS_Store", "demo", "archivo"
+    ".pytest_cache", "__pycache__", ".vite", "htmlcov", ".DS_Store", "demo", "archivo",
+    ".agents", "skills", ".claude", ".gemini"
 }
 
 # Files to explicitly exclude from code scan
@@ -47,13 +48,6 @@ PRIORITY_DOCS = [
     "CONTEXT.md",
     "architecture_spec.md",
     "CHANGELOG.md",
-    ".agents/skills/dev-protocol/SKILL.md",
-    ".agents/skills/dev-protocol/lessons-learned.md",
-    ".agents/skills/dev-protocol/documentation.md",
-    ".agents/skills/dev-protocol/git-workflow.md",
-    ".agents/skills/dev-protocol/code-design.md",
-    ".agents/skills/dev-protocol/debugging.md",
-    ".agents/skills/dev-protocol/qa-review.md",
     "roadmap/README.md",
     "roadmap/gui-art.md",
     "roadmap/sae-denoise.md",
