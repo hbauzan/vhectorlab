@@ -5,6 +5,11 @@
 
 import { countDistinctGroups, listDistinctGroupIds } from './groupStackLayout.js';
 import { hexToRgb01, normalizeConflictCover, highCoverageToUnit } from '../ui/visualizationControlsDefaults.js';
+import {
+  paintWeightsForSpectralQuorum,
+  computeSpectralQuorumMetrics,
+  hasEnoughGroupsForSpectralQuorum,
+} from './spectralQuorum.js';
 
 const REL_DIST_EPS = 1e-12;
 const COVERAGE_EPS = 1e-9;
@@ -214,54 +219,15 @@ export function cachedSharedNoiseMetrics(cache, items) {
 }
 
 /**
- * Per-dim G1 vs G2 means (first two distinct groupIds in encounter order).
+ * Per-dim G1 vs G2 means (first two distinct groupIds in encounter order) enriched
+ * with ddi-fw Spectral Quorum metrics (isQuorum, rank, separability, deltaMean).
  * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
+ * @param {{ quorumPercent?: number, decimalGain?: number }} [options]
  * @returns {DimRelationMetric[]}
  */
-export function computeDimRelationMetrics(items) {
-  const list = (items || []).filter(
-    (it) => it?.groupId && Array.isArray(it.embedding) && it.embedding.length
-  );
-  const groupIds = listDistinctGroupIds(list);
-  if (groupIds.length < 2) return [];
-
-  const idA = groupIds[0];
-  const idB = groupIds[1];
-  const dim = list[0].embedding.length;
-  if (!list.every((it) => it.embedding.length === dim)) return [];
-
-  const sumA = new Float64Array(dim);
-  const sumB = new Float64Array(dim);
-  let countA = 0;
-  let countB = 0;
-
-  for (const it of list) {
-    if (it.groupId === idA) {
-      for (let d = 0; d < dim; d++) sumA[d] += it.embedding[d];
-      countA += 1;
-    } else if (it.groupId === idB) {
-      for (let d = 0; d < dim; d++) sumB[d] += it.embedding[d];
-      countB += 1;
-    }
-  }
-  if (countA < 1 || countB < 1) return [];
-
-  /** @type {DimRelationMetric[]} */
-  const out = new Array(dim);
-  for (let d = 0; d < dim; d++) {
-    const meanA = sumA[d] / countA;
-    const meanB = sumB[d] / countB;
-    const sameSign = signedUnit(meanA) === signedUnit(meanB);
-    out[d] = {
-      meanA,
-      meanB,
-      sameSign,
-      similarity: sharedNoiseSimilarity(meanA, meanB),
-      difference: relativeDifference(meanA, meanB),
-      conflictBalance: oppositeConflictBalance(meanA, meanB),
-    };
-  }
-  return out;
+export function computeDimRelationMetrics(items, options = {}) {
+  const res = computeSpectralQuorumMetrics(items, options);
+  return res?.metrics || [];
 }
 
 /**
@@ -358,7 +324,7 @@ export function sharedNoiseCoverage01(settings) {
 }
 
 /**
- * Paint weights for one point: shared cancel (scalar) + G1↔G2 highlight.
+ * Paint weights for one point: shared cancel (scalar) + G1↔G2 highlight + Spectral Quorum.
  *
  * @param {number|null|undefined} sharedCancel
  * @param {DimRelationMetric|null|undefined} groupMetric
@@ -369,10 +335,15 @@ export function sharedNoiseCoverage01(settings) {
  *   oppositeHighlightEnabled?: boolean,
  *   oppositeHighlightStrength?: number,
  *   oppositeCancelCoverage?: number,
+ *   spectralQuorumEnabled?: boolean,
+ *   spectralHighlightStrength?: number,
+ *   spectralPajaCancelCoverage?: number,
+ *   spectralDecimalGain?: number,
  * }} settings
+ * @param {string|null|undefined} [groupId]
  * @returns {{ cancel: number, highlight: number }}
  */
-export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}) {
+export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}, groupId = null) {
   let cancel = 0;
   let highlight = 0;
 
@@ -380,7 +351,11 @@ export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}) {
     cancel = Math.max(0, Math.min(1, Number(sharedCancel) || 0));
   }
 
-  if (groupMetric && !groupMetric.sameSign && settings.oppositeHighlightEnabled) {
+  if (settings.spectralQuorumEnabled && groupMetric && (groupMetric.isQuorum !== undefined || groupMetric.groupSignatures)) {
+    const sp = paintWeightsForSpectralQuorum(groupMetric, settings, groupId);
+    highlight = Math.max(highlight, sp.highlight);
+    cancel = Math.max(cancel, sp.cancel);
+  } else if (groupMetric && !groupMetric.sameSign && settings.oppositeHighlightEnabled) {
     const strength = Math.max(0, Math.min(100, Number(settings.oppositeHighlightStrength) || 0)) / 100;
     const balance = groupMetric.conflictBalance != null
       ? groupMetric.conflictBalance
@@ -408,7 +383,7 @@ function lerpRgb(color, target, k) {
 }
 
 /**
- * Apply Shared-noise cancel + Sign-conflict highlight on top of a divergent CPU color.
+ * Apply Shared-noise cancel + Sign-conflict / Spectral-quorum highlight on top of a divergent CPU color.
  *
  * @param {{ r: number, g: number, b: number, alpha?: number }} baseColor
  * @param {number|null|undefined} sharedCancel
@@ -416,6 +391,7 @@ function lerpRgb(color, target, k) {
  * @param {object} settings - VisualizationSettings-like
  * @param {{ r: number, g: number, b: number }|null} [zeroRgb]
  * @param {{ r: number, g: number, b: number }|null} [highlightRgb]
+ * @param {string|null|undefined} [groupId]
  * @returns {{ r: number, g: number, b: number, alpha?: number }}
  */
 export function applyGroupDimPaint(
@@ -424,9 +400,10 @@ export function applyGroupDimPaint(
   groupMetric,
   settings,
   zeroRgb = null,
-  highlightRgb = null
+  highlightRgb = null,
+  groupId = null
 ) {
-  const weights = paintWeightsForDim(sharedCancel, groupMetric, settings);
+  const weights = paintWeightsForDim(sharedCancel, groupMetric, settings, groupId);
   if (weights.cancel <= 1e-9 && weights.highlight <= 1e-9) {
     return { ...baseColor };
   }
@@ -435,8 +412,11 @@ export function applyGroupDimPaint(
   let out = { ...baseColor };
 
   if (weights.highlight > 1e-9) {
+    const hiColorHex = settings?.spectralQuorumEnabled
+      ? (settings?.spectralHighlightColor || settings?.oppositeHighlightColor)
+      : settings?.oppositeHighlightColor;
     const hi = highlightRgb
-      || hexToRgb01(settings?.oppositeHighlightColor)
+      || hexToRgb01(hiColorHex)
       || { r: 0, g: 229 / 255, b: 1 };
     out = lerpRgb(out, hi, weights.highlight);
   }
@@ -453,7 +433,7 @@ export function applyGroupDimPaint(
  * Build parallel cancel/highlight attribute arrays for POINTS (length = points).
  * Looks up cancel via meta.itemIndex + meta.dim (source dim).
  *
- * @param {Array<{ meta?: { dim?: number, itemIndex?: number } }>} pointsData
+ * @param {Array<{ meta?: { dim?: number, itemIndex?: number, groupId?: string }, groupId?: string }>} pointsData
  * @param {SharedNoiseBatchMetrics|null|undefined} sharedNoiseMetrics
  * @param {DimRelationMetric[]|null|undefined} groupMetrics
  * @param {object} settings
@@ -465,7 +445,7 @@ export function buildPointGroupPaintAttributes(pointsData, sharedNoiseMetrics, g
   const highlight = new Float32Array(n);
   if (!n) return { cancel, highlight };
 
-  const fxOn = settings?.sameSignCancelEnabled || settings?.oppositeHighlightEnabled;
+  const fxOn = settings?.sameSignCancelEnabled || settings?.oppositeHighlightEnabled || settings?.spectralQuorumEnabled;
   if (!fxOn) return { cancel, highlight };
   if (!sharedNoiseMetrics && !groupMetrics?.length) return { cancel, highlight };
 
@@ -473,17 +453,21 @@ export function buildPointGroupPaintAttributes(pointsData, sharedNoiseMetrics, g
   const sae = isSaeActiveSettings(settings);
 
   for (let i = 0; i < n; i++) {
-    const dim = pointsData[i]?.meta?.dim;
-    const itemIndex = pointsData[i]?.meta?.itemIndex;
+    const pt = pointsData[i];
+    const dim = pt?.meta?.dim !== undefined ? pt.meta.dim : pt?.dim;
+    const itemIndex = pt?.meta?.itemIndex !== undefined ? pt.meta.itemIndex : pt?.itemIndex;
+    const groupId = pt?.groupId || pt?.meta?.groupId || null;
+
     const sharedCancel = typeof dim === 'number'
       ? getPointCancel(sharedNoiseMetrics, itemIndex, dim, coverage, { isSaeActive: sae })
       : 0;
     const groupMetric = typeof dim === 'number' && groupMetrics?.length
       ? groupMetrics[dim]
       : null;
-    const w = paintWeightsForDim(sharedCancel, groupMetric, settings);
+    const w = paintWeightsForDim(sharedCancel, groupMetric, settings, groupId);
     cancel[i] = w.cancel;
     highlight[i] = w.highlight;
   }
   return { cancel, highlight };
 }
+

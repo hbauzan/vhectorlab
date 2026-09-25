@@ -4,6 +4,24 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-09-24
+
+### Added
+- **Directional Spectral Quorum (10%) & Decimal Sensitivity (`ddi-fw` port)**:
+  - Deep module `src/visualizer/spectralQuorum.js` implementing per-group directional spectral signatures:
+    $$\Delta_g(d) = \mu_g(d) - \max_{h \neq g} \mu_h(d)$$
+    $$S_g(d) = \frac{\Delta_g(d)}{\sigma_g(d) + \sigma_{\text{comp}}(d) + 10^{-6}}$$
+    ranking embedding dimensions into each group's exclusive top 10% most discriminative dimensions ("Trigos") vs. the remaining common mode baseline noise ("Paja").
+  - **Mutual exclusivity**: On dimension $d$ belonging to Group $A$'s signature, Group $A$'s points/ribbons glow brightly while competing groups are cancelled to black, eliminating uniform vertical stripes across groups.
+  - **Decimal Precision ($10^{-4}$ to $10^{-6}$)**: Directional separability normalized by each group's peak discriminance, enabling delicate variations down to the 6th decimal place to be amplified cleanly by the **Decimal Gain** slider (1×–50×, default 10×).
+  - **Baseline silence** slider (0%–100%, default 100%) attenuating non-discriminative common mode noise to create clean constellations (replacing "Paja silence").
+  - **Electric Amber navbar cable**: Continuous cable line starting at the logo/title, wrapping the center controls, and bordering the Online/engine status chip updated to Electric Amber (`#FFBF00`) for high-contrast illumination over Workbench blue.
+  - **Spectral Quorum %** slider (1%–50%, default 10%) allowing runtime adjustment of the quorum threshold.
+  - Swapped active backend engine to native `BAAI/bge-m3` (1024-D) matching `ddi-fw`, rebuilt `vocab_embeddings.npz` (10,338 words × 1024D).
+  - Visualization controls under `Group contrast` with toggle `#viz-spectral-enabled`, hex/swatch pickers, and real-time GPU shader / ribbon tinting integration.
+  - Comprehensive unit test suite with 9 tests in `tests/spectralQuorum.test.js` and full UI sync/gating/wiring tests in `tests/visualizationControls.test.js`.
+
+
 ## [3.2.0] - 2026-09-20
 
 ### Added

@@ -22,6 +22,13 @@ import {
   HIGHLIGHT_STRENGTH_MAX,
   RULER_THICKNESS_MIN,
   RULER_THICKNESS_MAX,
+  SPECTRAL_QUORUM_MIN,
+  SPECTRAL_QUORUM_MAX,
+  SPECTRAL_DECIMAL_GAIN_MIN,
+  SPECTRAL_DECIMAL_GAIN_MAX,
+  normalizeSpectralQuorumPercent,
+  normalizeSpectralDecimalGain,
+  normalizeSpectralPajaCoverage,
 } from './visualizationControlsDefaults.js';
 import {
   readCollapsedPreference,
@@ -242,6 +249,46 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
         </div>
       </div>
 
+      <div class="viz-group-fx-block" data-fx="spectral">
+        <label class="viz-toggle-row">
+          <input type="checkbox" id="viz-spectral-enabled" ${s.spectralQuorumEnabled ? 'checked' : ''}>
+          <span class="field-label-text">Spectral Quorum</span>${infoTipMarkup(FIELD_INFO.spectralQuorum)}
+        </label>
+        <div class="viz-color-row viz-fx-slider" data-requires="spectral">
+          <label for="viz-spectral-hex"><span class="field-label-text">Tint</span>${infoTipMarkup(FIELD_INFO.spectralColor)}</label>
+          <input type="color" id="viz-spectral-swatch" class="viz-color-swatch" value="${s.spectralHighlightColor}" ${s.spectralQuorumEnabled ? '' : 'disabled'} title="Spectral quorum tint" aria-label="Spectral tint swatch">
+          <input type="text" id="viz-spectral-hex" class="viz-color-hex" value="${s.spectralHighlightColor}" maxlength="7" spellcheck="false" ${s.spectralQuorumEnabled ? '' : 'disabled'} placeholder="#00E5FF">
+        </div>
+        <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="spectral">
+          <div class="slider-header">
+            <label for="viz-spectral-quorum"><span class="field-label-text">Quorum:</span>${infoTipMarkup(FIELD_INFO.spectralQuorumPercent)}</label>
+            <span id="viz-spectral-quorum-val" class="slider-val">${s.spectralQuorumPercent}%</span>
+          </div>
+          <input type="range" id="viz-spectral-quorum" min="${SPECTRAL_QUORUM_MIN}" max="${SPECTRAL_QUORUM_MAX}" step="1" value="${s.spectralQuorumPercent}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+        </div>
+        <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="spectral">
+          <div class="slider-header">
+            <label for="viz-spectral-gain"><span class="field-label-text">Decimal gain:</span>${infoTipMarkup(FIELD_INFO.spectralDecimalGain)}</label>
+            <span id="viz-spectral-gain-val" class="slider-val">${s.spectralDecimalGain}×</span>
+          </div>
+          <input type="range" id="viz-spectral-gain" min="${SPECTRAL_DECIMAL_GAIN_MIN}" max="${SPECTRAL_DECIMAL_GAIN_MAX}" step="1" value="${s.spectralDecimalGain}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+        </div>
+        <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="spectral">
+          <div class="slider-header">
+            <label for="viz-spectral-strength"><span class="field-label-text">Highlight:</span>${infoTipMarkup(FIELD_INFO.spectralHighlight)}</label>
+            <span id="viz-spectral-strength-val" class="slider-val">${s.spectralHighlightStrength}%</span>
+          </div>
+          <input type="range" id="viz-spectral-strength" min="${HIGHLIGHT_STRENGTH_MIN}" max="${HIGHLIGHT_STRENGTH_MAX}" step="1" value="${s.spectralHighlightStrength}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+        </div>
+        <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="spectral">
+          <div class="slider-header">
+            <label for="viz-spectral-paja-cancel"><span class="field-label-text">Baseline silence:</span>${infoTipMarkup(FIELD_INFO.spectralBaselineCancel || FIELD_INFO.spectralPajaCancel)}</label>
+            <span id="viz-spectral-paja-cancel-val" class="slider-val">${s.spectralPajaCancelCoverage}%</span>
+          </div>
+          <input type="range" id="viz-spectral-paja-cancel" min="0" max="100" step="1" value="${s.spectralPajaCancelCoverage}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+        </div>
+      </div>
+
       <div class="viz-group-fx-block" data-fx="group-hue">
         <label class="viz-toggle-row">
           <input type="checkbox" id="viz-group-hue-enabled" ${s.groupHueEnabled ? 'checked' : ''}>
@@ -336,6 +383,29 @@ export function syncVisualizationControlsFromConfig(container, config) {
   const oppCovVal = container.querySelector('#viz-opposite-coverage-val');
   if (oppCov) oppCov.value = String(s.oppositeCancelCoverage);
   if (oppCovVal) oppCovVal.textContent = `${s.oppositeCancelCoverage}%`;
+
+  const specOn = container.querySelector('#viz-spectral-enabled');
+  if (specOn) specOn.checked = s.spectralQuorumEnabled;
+  const specSwatch = container.querySelector('#viz-spectral-swatch');
+  const specHex = container.querySelector('#viz-spectral-hex');
+  if (specSwatch) specSwatch.value = s.spectralHighlightColor;
+  if (specHex) specHex.value = s.spectralHighlightColor;
+  const specQuorum = container.querySelector('#viz-spectral-quorum');
+  const specQuorumVal = container.querySelector('#viz-spectral-quorum-val');
+  if (specQuorum) specQuorum.value = String(s.spectralQuorumPercent);
+  if (specQuorumVal) specQuorumVal.textContent = `${s.spectralQuorumPercent}%`;
+  const specGain = container.querySelector('#viz-spectral-gain');
+  const specGainVal = container.querySelector('#viz-spectral-gain-val');
+  if (specGain) specGain.value = String(s.spectralDecimalGain);
+  if (specGainVal) specGainVal.textContent = `${s.spectralDecimalGain}×`;
+  const specStr = container.querySelector('#viz-spectral-strength');
+  const specStrVal = container.querySelector('#viz-spectral-strength-val');
+  if (specStr) specStr.value = String(s.spectralHighlightStrength);
+  if (specStrVal) specStrVal.textContent = `${s.spectralHighlightStrength}%`;
+  const specCancel = container.querySelector('#viz-spectral-paja-cancel');
+  const specCancelVal = container.querySelector('#viz-spectral-paja-cancel-val');
+  if (specCancel) specCancel.value = String(s.spectralPajaCancelCoverage);
+  if (specCancelVal) specCancelVal.textContent = `${s.spectralPajaCancelCoverage}%`;
 
   const hueOn = container.querySelector('#viz-group-hue-enabled');
   if (hueOn) hueOn.checked = s.groupHueEnabled;
@@ -484,6 +554,15 @@ export function syncGroupFxSliderEnabled(container, settings) {
   setDisabled(container.querySelector('#viz-opposite-strength'), !oppSlidersOn);
   setDisabled(container.querySelector('#viz-opposite-coverage'), !oppSlidersOn);
 
+  setDisabled(container.querySelector('#viz-spectral-enabled'), !groupsOk);
+  const specSlidersOn = groupsOk && s.spectralQuorumEnabled;
+  setDisabled(container.querySelector('#viz-spectral-swatch'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-hex'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-quorum'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-gain'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-strength'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-paja-cancel'), !specSlidersOn);
+
   const hueSlidersOn = groupsOk && s.groupHueEnabled;
   for (const el of container.querySelectorAll('#viz-group-hue-rows input')) {
     setDisabled(el, !hueSlidersOn);
@@ -494,6 +573,9 @@ export function syncGroupFxSliderEnabled(container, settings) {
   }
   for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="opposite"]')) {
     row.classList.toggle('is-inert', !oppSlidersOn);
+  }
+  for (const row of container.querySelectorAll('.viz-fx-slider[data-requires="spectral"]')) {
+    row.classList.toggle('is-inert', !specSlidersOn);
   }
   const hueRows = container.querySelector('#viz-group-hue-rows');
   if (hueRows) hueRows.classList.toggle('is-inert', !hueSlidersOn);
@@ -824,6 +906,84 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       const next = normalizeConflictCover(oppCov.value);
       config.oppositeCancelCoverage = next;
       if (oppCovVal) oppCovVal.textContent = `${next}%`;
+      emit();
+    });
+  }
+
+  const specOn = container.querySelector('#viz-spectral-enabled');
+  if (specOn) {
+    specOn.addEventListener('change', () => {
+      config.spectralQuorumEnabled = Boolean(specOn.checked);
+      syncGroupFxSliderEnabled(container, config);
+      emit();
+    });
+  }
+  const specSwatch = container.querySelector('#viz-spectral-swatch');
+  const specHex = container.querySelector('#viz-spectral-hex');
+  if (specSwatch && specHex) {
+    specSwatch.addEventListener('input', () => {
+      const hex = normalizeHex(specSwatch.value);
+      if (!hex) return;
+      config.spectralHighlightColor = hex;
+      specHex.value = hex;
+      emit();
+    });
+    const commitSpecHex = () => {
+      const hex = normalizeHex(specHex.value);
+      if (!hex) {
+        specHex.value = config.spectralHighlightColor;
+        return;
+      }
+      config.spectralHighlightColor = hex;
+      specSwatch.value = hex;
+      specHex.value = hex;
+      emit();
+    };
+    specHex.addEventListener('change', commitSpecHex);
+    specHex.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitSpecHex();
+      }
+    });
+  }
+  const specQuorum = container.querySelector('#viz-spectral-quorum');
+  const specQuorumVal = container.querySelector('#viz-spectral-quorum-val');
+  if (specQuorum) {
+    specQuorum.addEventListener('input', () => {
+      const next = normalizeSpectralQuorumPercent(specQuorum.value);
+      config.spectralQuorumPercent = next;
+      if (specQuorumVal) specQuorumVal.textContent = `${next}%`;
+      emit();
+    });
+  }
+  const specGain = container.querySelector('#viz-spectral-gain');
+  const specGainVal = container.querySelector('#viz-spectral-gain-val');
+  if (specGain) {
+    specGain.addEventListener('input', () => {
+      const next = normalizeSpectralDecimalGain(specGain.value);
+      config.spectralDecimalGain = next;
+      if (specGainVal) specGainVal.textContent = `${next}×`;
+      emit();
+    });
+  }
+  const specStr = container.querySelector('#viz-spectral-strength');
+  const specStrVal = container.querySelector('#viz-spectral-strength-val');
+  if (specStr) {
+    specStr.addEventListener('input', () => {
+      const next = normalizeHighlightStrength(specStr.value);
+      config.spectralHighlightStrength = next;
+      if (specStrVal) specStrVal.textContent = `${next}%`;
+      emit();
+    });
+  }
+  const specCancel = container.querySelector('#viz-spectral-paja-cancel');
+  const specCancelVal = container.querySelector('#viz-spectral-paja-cancel-val');
+  if (specCancel) {
+    specCancel.addEventListener('input', () => {
+      const next = normalizeSpectralPajaCoverage(specCancel.value);
+      config.spectralPajaCancelCoverage = next;
+      if (specCancelVal) specCancelVal.textContent = `${next}%`;
       emit();
     });
   }

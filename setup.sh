@@ -86,6 +86,13 @@ refresh_path() {
     export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
     # shellcheck disable=SC1090
     [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+
+    # Fallback to macOS native user cache if ~/.cache/uv is root-owned or unwritable
+    if [ -n "$UV_CACHE_DIR" ] && [ ! -w "$UV_CACHE_DIR" ]; then
+        export UV_CACHE_DIR="${HOME}/Library/Caches/uv"
+    elif [ -d "$HOME/.cache/uv" ] && [ ! -w "$HOME/.cache/uv" ]; then
+        export UV_CACHE_DIR="${HOME}/Library/Caches/uv"
+    fi
 }
 
 warn_if_unsupported_platform() {

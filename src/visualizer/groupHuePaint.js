@@ -101,7 +101,7 @@ export function colorForActivationWithGroupHue(normVal, sourceDim, resolved) {
   const groupMetric = groupMetrics?.length ? groupMetrics[sourceDim] : null;
   const zero = resolved.anchors?.zero || BLACK;
   const hi = hexToRgb01(viz?.oppositeHighlightColor);
-  return applyGroupDimPaint(base, sharedCancel, groupMetric, paintSettings, zero, hi);
+  return applyGroupDimPaint(base, sharedCancel, groupMetric, paintSettings, zero, hi, groupId);
 }
 
 /**

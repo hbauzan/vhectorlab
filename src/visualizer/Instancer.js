@@ -291,8 +291,12 @@ export class Instancer {
     const dimSortOn = options.dimSortByContrast === true && hasEnoughGroupsForDimSort(items);
     const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
     const isSaeActive = options.isSaeActive === true;
+    const resolvedViz = resolveVisualizationSettings(vizConfig);
     const groupDimMetrics = hasGroupsForDimContrast(items)
-      ? computeDimRelationMetrics(items)
+      ? computeDimRelationMetrics(items, {
+          quorumPercent: resolvedViz.spectralQuorumPercent,
+          decimalGain: resolvedViz.spectralDecimalGain,
+        })
       : null;
     const sharedNoiseMetrics = isSaeActive
       ? null

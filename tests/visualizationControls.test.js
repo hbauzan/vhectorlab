@@ -36,6 +36,9 @@ import {
   syncGroupHueColorRows,
   setSharedNoiseControlsEnabled,
   setGroupContrastControlsEnabled,
+  syncVisualizationControlsFromConfig,
+  syncGroupFxSliderEnabled,
+  wireVisualizationControls,
 } from '../src/ui/VisualizationControls.js';
 import {
   NEAR_ZERO_EPS,
@@ -77,6 +80,12 @@ describe('visualizationControlsDefaults', () => {
       oppositeHighlightColor: '#00E5FF',
       oppositeHighlightStrength: 70,
       oppositeCancelCoverage: 0,
+      spectralQuorumEnabled: false,
+      spectralQuorumPercent: 10,
+      spectralHighlightColor: '#00E5FF',
+      spectralHighlightStrength: 100,
+      spectralPajaCancelCoverage: 100,
+      spectralDecimalGain: 10,
       groupHueEnabled: false,
       groupHueColors: {},
       rulerColor: '#FFFFFF',
@@ -249,6 +258,15 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('data-field-info="Which signs show."');
     expect(html).toContain('data-field-info="Hold range at zero."');
     expect(html).not.toContain('data-field-info="Groups only (G1↔G2)."');
+    // Spectral Quorum
+    expect(html).toContain('viz-spectral-enabled');
+    expect(html).toContain('Spectral Quorum');
+    expect(html).toContain('viz-spectral-swatch');
+    expect(html).toContain('viz-spectral-hex');
+    expect(html).toContain('viz-spectral-quorum');
+    expect(html).toContain('viz-spectral-gain');
+    expect(html).toContain('viz-spectral-strength');
+    expect(html).toContain('viz-spectral-paja-cancel');
   });
 
   it('Shared noise gate is independent of Group contrast (≥2 tokens)', () => {
@@ -666,5 +684,179 @@ describe('remapAbsTWithZeroCoverage', () => {
     expect(rowsHtml).toContain('>G1<');
     expect(rowsHtml).toContain('>G4<');
     expect(scrollable).toBe(true);
+  });
+
+  describe('Spectral Quorum UI and wiring', () => {
+    function createMockElement(initial = {}) {
+      const listeners = {};
+      const classes = new Set(initial.classes || []);
+      return {
+        value: initial.value ?? '',
+        checked: initial.checked ?? false,
+        disabled: initial.disabled ?? false,
+        textContent: initial.textContent ?? '',
+        classList: {
+          contains: (cls) => classes.has(cls),
+          add: (cls) => classes.add(cls),
+          remove: (cls) => classes.delete(cls),
+          toggle: (cls, on) => (on ? classes.add(cls) : classes.delete(cls)),
+        },
+        addEventListener: (type, fn) => {
+          listeners[type] = listeners[type] || [];
+          listeners[type].push(fn);
+        },
+        trigger: (type, eventObj = {}) => {
+          (listeners[type] || []).forEach((fn) => fn(eventObj));
+        },
+      };
+    }
+
+    function createMockContainer(contrastDisabled = false) {
+      const elements = {
+        '#viz-spectral-enabled': createMockElement(),
+        '#viz-spectral-swatch': createMockElement({ value: '#00E5FF' }),
+        '#viz-spectral-hex': createMockElement({ value: '#00E5FF' }),
+        '#viz-spectral-quorum': createMockElement({ value: '10' }),
+        '#viz-spectral-quorum-val': createMockElement({ textContent: '10%' }),
+        '#viz-spectral-gain': createMockElement({ value: '10' }),
+        '#viz-spectral-gain-val': createMockElement({ textContent: '10×' }),
+        '#viz-spectral-strength': createMockElement({ value: '100' }),
+        '#viz-spectral-strength-val': createMockElement({ textContent: '100%' }),
+        '#viz-spectral-paja-cancel': createMockElement({ value: '100' }),
+        '#viz-spectral-paja-cancel-val': createMockElement({ textContent: '100%' }),
+        '#viz-group-contrast': createMockElement({ classes: contrastDisabled ? ['is-disabled'] : [] }),
+        '#viz-shared-noise': createMockElement({ classes: ['is-disabled'] }),
+        '#viz-same-sign-enabled': createMockElement(),
+        '#viz-opposite-enabled': createMockElement(),
+        '#viz-group-hue-enabled': createMockElement(),
+      };
+
+      const spectralRow = createMockElement();
+      const rows = {
+        '.viz-fx-slider[data-requires="spectral"]': [spectralRow],
+        '.viz-fx-slider[data-requires="opposite"]': [],
+        '.viz-fx-slider[data-requires="same-sign"]': [],
+        '.viz-fx-slider[data-requires="zero-coverage"]': [],
+        'input[name="viz-filter-mode"]': [],
+        '#viz-group-hue-rows input': [],
+      };
+
+      return {
+        elements,
+        spectralRow,
+        querySelector: (sel) => elements[sel] || null,
+        querySelectorAll: (sel) => rows[sel] || [],
+      };
+    }
+
+    it('syncVisualizationControlsFromConfig populates spectral inputs and labels', () => {
+      const container = createMockContainer();
+      const custom = {
+        ...DEFAULT_VISUALIZATION_SETTINGS,
+        spectralQuorumEnabled: true,
+        spectralHighlightColor: '#FF0055',
+        spectralQuorumPercent: 20,
+        spectralDecimalGain: 25,
+        spectralHighlightStrength: 80,
+        spectralPajaCancelCoverage: 75,
+      };
+      syncVisualizationControlsFromConfig(container, custom);
+
+      expect(container.querySelector('#viz-spectral-enabled').checked).toBe(true);
+      expect(container.querySelector('#viz-spectral-swatch').value).toBe('#FF0055');
+      expect(container.querySelector('#viz-spectral-hex').value).toBe('#FF0055');
+      expect(container.querySelector('#viz-spectral-quorum').value).toBe('20');
+      expect(container.querySelector('#viz-spectral-quorum-val').textContent).toBe('20%');
+      expect(container.querySelector('#viz-spectral-gain').value).toBe('25');
+      expect(container.querySelector('#viz-spectral-gain-val').textContent).toBe('25×');
+      expect(container.querySelector('#viz-spectral-strength').value).toBe('80');
+      expect(container.querySelector('#viz-spectral-strength-val').textContent).toBe('80%');
+      expect(container.querySelector('#viz-spectral-paja-cancel').value).toBe('75');
+      expect(container.querySelector('#viz-spectral-paja-cancel-val').textContent).toBe('75%');
+    });
+
+    it('syncGroupFxSliderEnabled gates spectral controls based on groupsOk & enabled', () => {
+      // 1. Group contrast disabled
+      const c1 = createMockContainer(true);
+      syncGroupFxSliderEnabled(c1, { ...DEFAULT_VISUALIZATION_SETTINGS, spectralQuorumEnabled: true });
+      expect(c1.querySelector('#viz-spectral-enabled').disabled).toBe(true);
+      expect(c1.querySelector('#viz-spectral-swatch').disabled).toBe(true);
+      expect(c1.querySelector('#viz-spectral-quorum').disabled).toBe(true);
+      expect(c1.querySelector('#viz-spectral-gain').disabled).toBe(true);
+      expect(c1.spectralRow.classList.contains('is-inert')).toBe(true);
+
+      // 2. Group contrast enabled, but spectralQuorumEnabled = false
+      const c2 = createMockContainer(false);
+      syncGroupFxSliderEnabled(c2, { ...DEFAULT_VISUALIZATION_SETTINGS, spectralQuorumEnabled: false });
+      expect(c2.querySelector('#viz-spectral-enabled').disabled).toBe(false);
+      expect(c2.querySelector('#viz-spectral-swatch').disabled).toBe(true);
+      expect(c2.querySelector('#viz-spectral-quorum').disabled).toBe(true);
+      expect(c2.querySelector('#viz-spectral-gain').disabled).toBe(true);
+      expect(c2.spectralRow.classList.contains('is-inert')).toBe(true);
+
+      // 3. Group contrast enabled, and spectralQuorumEnabled = true
+      const c3 = createMockContainer(false);
+      syncGroupFxSliderEnabled(c3, { ...DEFAULT_VISUALIZATION_SETTINGS, spectralQuorumEnabled: true });
+      expect(c3.querySelector('#viz-spectral-enabled').disabled).toBe(false);
+      expect(c3.querySelector('#viz-spectral-swatch').disabled).toBe(false);
+      expect(c3.querySelector('#viz-spectral-quorum').disabled).toBe(false);
+      expect(c3.querySelector('#viz-spectral-gain').disabled).toBe(false);
+      expect(c3.querySelector('#viz-spectral-strength').disabled).toBe(false);
+      expect(c3.querySelector('#viz-spectral-paja-cancel').disabled).toBe(false);
+      expect(c3.spectralRow.classList.contains('is-inert')).toBe(false);
+    });
+
+    it('wireVisualizationControls updates config and emits on spectral input events', () => {
+      const container = createMockContainer(false);
+      const config = { ...DEFAULT_VISUALIZATION_SETTINGS };
+      let emitCount = 0;
+      wireVisualizationControls(container, config, () => { emitCount += 1; });
+
+      // Toggle enabled
+      const specOn = container.querySelector('#viz-spectral-enabled');
+      specOn.checked = true;
+      specOn.trigger('change');
+      expect(config.spectralQuorumEnabled).toBe(true);
+      expect(emitCount).toBe(1);
+
+      // Slider Quorum %
+      const specQuorum = container.querySelector('#viz-spectral-quorum');
+      specQuorum.value = '15';
+      specQuorum.trigger('input');
+      expect(config.spectralQuorumPercent).toBe(15);
+      expect(container.querySelector('#viz-spectral-quorum-val').textContent).toBe('15%');
+      expect(emitCount).toBe(2);
+
+      // Slider Decimal gain
+      const specGain = container.querySelector('#viz-spectral-gain');
+      specGain.value = '20';
+      specGain.trigger('input');
+      expect(config.spectralDecimalGain).toBe(20);
+      expect(container.querySelector('#viz-spectral-gain-val').textContent).toBe('20×');
+      expect(emitCount).toBe(3);
+
+      // Slider Strength
+      const specStr = container.querySelector('#viz-spectral-strength');
+      specStr.value = '50';
+      specStr.trigger('input');
+      expect(config.spectralHighlightStrength).toBe(50);
+      expect(container.querySelector('#viz-spectral-strength-val').textContent).toBe('50%');
+      expect(emitCount).toBe(4);
+
+      // Slider Paja cancel
+      const specCancel = container.querySelector('#viz-spectral-paja-cancel');
+      specCancel.value = '80';
+      specCancel.trigger('input');
+      expect(config.spectralPajaCancelCoverage).toBe(80);
+      expect(container.querySelector('#viz-spectral-paja-cancel-val').textContent).toBe('80%');
+      expect(emitCount).toBe(5);
+
+      // Swatch color
+      const specSwatch = container.querySelector('#viz-spectral-swatch');
+      specSwatch.value = '#112233';
+      specSwatch.trigger('input');
+      expect(config.spectralHighlightColor).toBe('#112233');
+      expect(emitCount).toBe(6);
+    });
   });
 });

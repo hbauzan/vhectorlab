@@ -38,19 +38,19 @@ body.workbench-theme .glass-navbar {
 }
 
 body.workbench-theme .logo-icon {
-  color: var(--mwb-peach);
+  color: var(--mwb-amber);
   font-size: 1.35rem;
   line-height: 1;
   text-shadow: none;
 }
 
-/* Continuous peach cable: ◈ ── wrap(MODE/VIEW/RENDER) ── status chip */
+/* Continuous amber cable: ◈ ── wrap(MODE/VIEW/RENDER) ── status chip */
 body.workbench-theme .navbar-cable-seg {
-  background: var(--mwb-peach);
+  background: var(--mwb-amber);
 }
 
 body.workbench-theme .navbar-center-controls {
-  border: 2px solid var(--mwb-peach) !important;
+  border: 2px solid var(--mwb-amber) !important;
   border-radius: 0 !important;
   background: rgba(0, 0, 0, 0.28) !important;
   padding: 4px 6px !important;
@@ -58,7 +58,7 @@ body.workbench-theme .navbar-center-controls {
 }
 
 body.workbench-theme .status-indicator {
-  border: 2px solid var(--mwb-peach) !important;
+  border: 2px solid var(--mwb-amber) !important;
   border-radius: 0 !important;
   background: rgba(0, 0, 0, 0.28) !important;
   box-shadow: none !important;

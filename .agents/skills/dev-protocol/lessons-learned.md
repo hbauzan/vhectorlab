@@ -353,6 +353,19 @@ Portable findings from VHectorLab 3D `v2.1.0` — apply if the older app shares 
 - **Roadmap**: `roadmap/gui-art.md` + prompt `roadmap/PROMPT-gui-art.md` — cerrar A1–A6 (tipo, glass, emoji, rampa, motion, scope) **antes** de codear.
 - **Invariante**: polish visual no puede romper §4.1 Top-10, §4.1b mobile MQ, §3.4 startup ANALYSIS, ni WebGL §1.
 
+### 4.15. Spectral Quorum (10%) & Decimal Gain (DDI-FW Port)
+- **Problema**: En embeddings densos de LLMs (`all-mpnet-base-v2`, etc.), los vectores de diferentes grupos temáticos (“mazos” / “almas” de palabras) comparten un modo común positivo y casi nunca alternan de signo algebraico ($+ \leftrightarrow -$, con medias $\approx +0.025$ y similitud coseno inter-grupos $\approx 0.55$). El efecto histórico de "Sign conflict" resultaba completamente ciego a estas diferencias al exigir signos opuestos ($mean_A \cdot mean_B < 0$).
+- **Hallazgo DDI-FW**: Las diferencias que distinguen a un grupo de otro residen en los decimales ($\Delta_\mu \in [0.01, 0.08]$), altamente concentradas en el top 10% de dimensiones con mayor separabilidad ("Trigos" / Quorum $\lceil 0.10 \times D \rceil$, ej. 77 de 768 dims), mientras que el 90% restante ("Paja") aporta ruido no informativo o modo común.
+- **Solución Obligatoria**:
+  - Módulo profundo `src/visualizer/spectralQuorum.js` integrando la métrica de separabilidad:
+    $$S_d = \frac{\Delta_{max}}{\sigma_A + \sigma_B + \epsilon}$$
+    con $\epsilon = 10^{-6}$ (estándar 6 decimales de `ddi-fw`).
+  - Dims clasificadas en `isTrigo` ($d \in \text{Top } 10\%$) vs `isPaja` ($d \notin \text{Top } 10\%$).
+  - **Decimal Gain**: amplificación lineal ($1\times - 50\times$, default $10\times$) sobre el delta decimal para entintar visualmente los Trigos en cian (`#00E5FF`) u otro color configurable.
+  - **Paja Silence**: atenuación/cancelación ($0\% - 100\%$, default $100\%$) sobre el 90% de ruido compartido para destacar con alto contraste la huella espectral.
+  - Compatibilidad: `SpectralDimMetric` actúa como superset 100% compatible de `DimRelationMetric`, preservando los shaders de GPU (`MeshFactory.js`, `DivergentShading.js`) y las cintas (`createWideRibbonMesh`).
+- **Invariante**: Requiere $\ge 2$ grupos con $\ge 1$ item cada uno. Controles en panel de Visualización bajo `#viz-group-contrast [data-fx="spectral"]`.
+
 ---
 
 ## 5. Protocolo de Mantenimiento de Lecciones Aprendidas
@@ -525,3 +538,18 @@ Options considered: `1.5.0+42`, `1.5.0.42`, CI build id in the Navbar.
 - **No hacer**: especializar Shared noise por Hub id; usar SAE como instrumento para cazar el pack compartido en RAW.
 - Evidencia del síntoma viejo (same-sign density): `current-research/DISCOVERY-shared-noise-embedding-geometry.md`.
 - **Invariante**: lección de ingeniería acá; ciencia abierta / ablaciones → `current-research/`. Shared noise = **RAW only**.
+
+### 8.10. Directional Spectral Quorum (`ddi-fw` port) & Precision Decimal ($10^{-4} \dots 10^{-6}$)
+- **Problema ("Se ve todo lo contrario")**: En la primera implementación, el cálculo de separabilidad del Quorum se realizaba como varianza global entre grupos, marcando una dimensión como "Quorum" para toda la escena sin distinguir el origen del token. Como consecuencia, al activarse una dimensión discriminante de un grupo (ej. SQL/código), todos los grupos (incluyendo vehículos y nombres) se pintaban de cian en esa misma columna, generando franjas verticales continuas que hacían parecer que todos los grupos compartían la misma señal.
+- **Formulación Direccional Correcta (`ddi-fw` model)**:
+  - En `ddi-fw` (`cruce.py` / `python_firma_espectral.json`), cada "alma" / "pack" de palabras posee su **propia firma espectral direccional**:
+    $$\Delta_g(d) = \mu_g(d) - \max_{h \neq g} \mu_h(d)$$
+    $$S_g(d) = \frac{\Delta_g(d)}{\sigma_g(d) + \sigma_{\text{comp}}(d) + 10^{-6}}$$
+  - Solo las dimensiones donde $\Delta_g(d) > 0$ califican para el Quorum (top 10%) del grupo $g$.
+  - En espacios de alta dimensionalidad (como `BAAI/bge-m3` a 1024-D), las coordenadas del Quorum top 10% entre grupos léxicamente distintos son **mutuamente excluyentes** (0 dimensiones superpuestas entre las firmas top de `it_core`, `vehicles` y `women`).
+- **Sensibilidad Decimal ($10^{-4} \dots 10^{-6}$)**:
+  - Las diferencias entre almas léxicas residen en el 4º a 6º decimal ($\Delta \in [10^{-6}, 10^{-4}]$).
+  - La normalización por el pico de discriminancia de cada grupo ($\text{relScore}_g(d) = S_g(d) / \max S_g$) garantiza que incluso variaciones de orden $10^{-5}$ ocupen el rango dinámico $[0.2, 1.0]$.
+  - El slider **Decimal Gain** (1× a 50×, baseline 10×) escala linealmente la luminiscencia para encender de forma incandescente las dimensiones distintivas de cada pack en sus coordenadas exclusivas, mientras la supresión de Paja (100%) cancela a negro el ruido común.
+- **Invariante**: Nunca tintar una dimensión de Quorum de forma global a todos los puntos. `paintWeightsForSpectralQuorum` y `buildPointGroupPaintAttributes` **deben** evaluar `groupId` para encender exclusivamente los puntos pertenecientes a la firma del grupo correspondiente.
+

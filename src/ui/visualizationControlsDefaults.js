@@ -22,6 +22,12 @@ import { normalizePaintedDims } from '../visualizer/dimRuler.js';
  *   oppositeHighlightColor: string,
  *   oppositeHighlightStrength: number,
  *   oppositeCancelCoverage: number,
+ *   spectralQuorumEnabled: boolean,
+ *   spectralQuorumPercent: number,
+ *   spectralHighlightColor: string,
+ *   spectralHighlightStrength: number,
+ *   spectralPajaCancelCoverage: number,
+ *   spectralDecimalGain: number,
  *   groupHueEnabled: boolean,
  *   groupHueColors: Record<string, string>,
  *   rulerColor: string,
@@ -48,6 +54,12 @@ export const VIZ_STORAGE_KEYS = Object.freeze({
   oppositeHighlightColor: `${VIZ_STORAGE_PREFIX}oppositeHighlightColor`,
   oppositeHighlightStrength: `${VIZ_STORAGE_PREFIX}oppositeHighlightStrength`,
   oppositeCancelCoverage: `${VIZ_STORAGE_PREFIX}oppositeCancelCoverage`,
+  spectralQuorumEnabled: `${VIZ_STORAGE_PREFIX}spectralQuorumEnabled`,
+  spectralQuorumPercent: `${VIZ_STORAGE_PREFIX}spectralQuorumPercent`,
+  spectralHighlightColor: `${VIZ_STORAGE_PREFIX}spectralHighlightColor`,
+  spectralHighlightStrength: `${VIZ_STORAGE_PREFIX}spectralHighlightStrength`,
+  spectralPajaCancelCoverage: `${VIZ_STORAGE_PREFIX}spectralPajaCancelCoverage`,
+  spectralDecimalGain: `${VIZ_STORAGE_PREFIX}spectralDecimalGain`,
   groupHueEnabled: `${VIZ_STORAGE_PREFIX}groupHueEnabled`,
   groupHueColors: `${VIZ_STORAGE_PREFIX}groupHueColors`,
   rulerColor: `${VIZ_STORAGE_PREFIX}rulerColor`,
@@ -112,6 +124,17 @@ export const HIGHLIGHT_STRENGTH_MIN = 0;
 export const HIGHLIGHT_STRENGTH_MAX = 100;
 export const DEFAULT_OPPOSITE_HIGHLIGHT_STRENGTH = 70;
 
+export const DEFAULT_SPECTRAL_QUORUM_ENABLED = false;
+export const DEFAULT_SPECTRAL_QUORUM_PERCENT = 10;
+export const SPECTRAL_QUORUM_MIN = 1;
+export const SPECTRAL_QUORUM_MAX = 50;
+export const DEFAULT_SPECTRAL_HIGHLIGHT_COLOR = '#00E5FF';
+export const DEFAULT_SPECTRAL_HIGHLIGHT_STRENGTH = 100;
+export const DEFAULT_SPECTRAL_PAJA_COVERAGE = 100;
+export const DEFAULT_SPECTRAL_DECIMAL_GAIN = 10;
+export const SPECTRAL_DECIMAL_GAIN_MIN = 1;
+export const SPECTRAL_DECIMAL_GAIN_MAX = 50;
+
 /** @type {VisualizationSettings} */
 export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   vizFilterMode: DEFAULT_VIZ_FILTER,
@@ -126,6 +149,12 @@ export const DEFAULT_VISUALIZATION_SETTINGS = Object.freeze({
   oppositeHighlightColor: DEFAULT_OPPOSITE_HIGHLIGHT_COLOR,
   oppositeHighlightStrength: DEFAULT_OPPOSITE_HIGHLIGHT_STRENGTH,
   oppositeCancelCoverage: DEFAULT_CONFLICT_COVER,
+  spectralQuorumEnabled: DEFAULT_SPECTRAL_QUORUM_ENABLED,
+  spectralQuorumPercent: DEFAULT_SPECTRAL_QUORUM_PERCENT,
+  spectralHighlightColor: DEFAULT_SPECTRAL_HIGHLIGHT_COLOR,
+  spectralHighlightStrength: DEFAULT_SPECTRAL_HIGHLIGHT_STRENGTH,
+  spectralPajaCancelCoverage: DEFAULT_SPECTRAL_PAJA_COVERAGE,
+  spectralDecimalGain: DEFAULT_SPECTRAL_DECIMAL_GAIN,
   groupHueEnabled: false,
   groupHueColors: Object.freeze({}),
   rulerColor: DEFAULT_RULER_COLOR,
@@ -146,6 +175,27 @@ export function normalizeRulerThickness(value) {
   if (!Number.isFinite(n)) return DEFAULT_RULER_THICKNESS;
   return Math.max(RULER_THICKNESS_MIN, Math.min(RULER_THICKNESS_MAX, Math.round(n)));
 }
+
+export function normalizeSpectralQuorumPercent(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_SPECTRAL_QUORUM_PERCENT;
+  return Math.max(SPECTRAL_QUORUM_MIN, Math.min(SPECTRAL_QUORUM_MAX, Math.round(n)));
+}
+
+export function normalizeSpectralDecimalGain(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_SPECTRAL_DECIMAL_GAIN;
+  return Math.max(SPECTRAL_DECIMAL_GAIN_MIN, Math.min(SPECTRAL_DECIMAL_GAIN_MAX, Math.round(n)));
+}
+
+export function normalizeSpectralPajaCoverage(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_SPECTRAL_PAJA_COVERAGE;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+export const normalizeSpectralBaselineCoverage = normalizeSpectralPajaCoverage;
+export const DEFAULT_SPECTRAL_BASELINE_COVERAGE = DEFAULT_SPECTRAL_PAJA_COVERAGE;
 
 /**
  * Map thickness slider → world-space strip half-depth (Z).
@@ -536,6 +586,20 @@ export function resolveVisualizationSettings(partial = null) {
         ? src.oppositeCancelCoverage
         : DEFAULT_CONFLICT_COVER
     ),
+    spectralQuorumEnabled: normalizeBoolFlag(
+      src.spectralQuorumEnabled,
+      DEFAULT_VISUALIZATION_SETTINGS.spectralQuorumEnabled
+    ),
+    spectralQuorumPercent: normalizeSpectralQuorumPercent(src.spectralQuorumPercent),
+    spectralHighlightColor:
+      normalizeHex(src.spectralHighlightColor) || DEFAULT_SPECTRAL_HIGHLIGHT_COLOR,
+    spectralHighlightStrength: normalizeHighlightStrength(
+      src.spectralHighlightStrength !== undefined && src.spectralHighlightStrength !== null
+        ? src.spectralHighlightStrength
+        : DEFAULT_SPECTRAL_HIGHLIGHT_STRENGTH
+    ),
+    spectralPajaCancelCoverage: normalizeSpectralPajaCoverage(src.spectralPajaCancelCoverage),
+    spectralDecimalGain: normalizeSpectralDecimalGain(src.spectralDecimalGain),
     groupHueEnabled: normalizeBoolFlag(
       src.groupHueEnabled,
       DEFAULT_VISUALIZATION_SETTINGS.groupHueEnabled
@@ -604,6 +668,12 @@ export function loadVisualizationSettings(storage = typeof localStorage !== 'und
       oppositeHighlightColor: storage.getItem(VIZ_STORAGE_KEYS.oppositeHighlightColor),
       oppositeHighlightStrength: storage.getItem(VIZ_STORAGE_KEYS.oppositeHighlightStrength),
       oppositeCancelCoverage: storage.getItem(VIZ_STORAGE_KEYS.oppositeCancelCoverage),
+      spectralQuorumEnabled: storage.getItem(VIZ_STORAGE_KEYS.spectralQuorumEnabled),
+      spectralQuorumPercent: storage.getItem(VIZ_STORAGE_KEYS.spectralQuorumPercent),
+      spectralHighlightColor: storage.getItem(VIZ_STORAGE_KEYS.spectralHighlightColor),
+      spectralHighlightStrength: storage.getItem(VIZ_STORAGE_KEYS.spectralHighlightStrength),
+      spectralPajaCancelCoverage: storage.getItem(VIZ_STORAGE_KEYS.spectralPajaCancelCoverage),
+      spectralDecimalGain: storage.getItem(VIZ_STORAGE_KEYS.spectralDecimalGain),
       groupHueEnabled: storage.getItem(VIZ_STORAGE_KEYS.groupHueEnabled),
       groupHueColors: (() => {
         try {
@@ -645,6 +715,12 @@ export function saveVisualizationSettings(settings, storage = typeof localStorag
     storage.setItem(VIZ_STORAGE_KEYS.oppositeHighlightColor, resolved.oppositeHighlightColor);
     storage.setItem(VIZ_STORAGE_KEYS.oppositeHighlightStrength, String(resolved.oppositeHighlightStrength));
     storage.setItem(VIZ_STORAGE_KEYS.oppositeCancelCoverage, String(resolved.oppositeCancelCoverage));
+    storage.setItem(VIZ_STORAGE_KEYS.spectralQuorumEnabled, String(resolved.spectralQuorumEnabled));
+    storage.setItem(VIZ_STORAGE_KEYS.spectralQuorumPercent, String(resolved.spectralQuorumPercent));
+    storage.setItem(VIZ_STORAGE_KEYS.spectralHighlightColor, resolved.spectralHighlightColor);
+    storage.setItem(VIZ_STORAGE_KEYS.spectralHighlightStrength, String(resolved.spectralHighlightStrength));
+    storage.setItem(VIZ_STORAGE_KEYS.spectralPajaCancelCoverage, String(resolved.spectralPajaCancelCoverage));
+    storage.setItem(VIZ_STORAGE_KEYS.spectralDecimalGain, String(resolved.spectralDecimalGain));
     storage.setItem(VIZ_STORAGE_KEYS.groupHueEnabled, String(resolved.groupHueEnabled));
     storage.setItem(VIZ_STORAGE_KEYS.groupHueColors, JSON.stringify(resolved.groupHueColors || {}));
     storage.setItem(VIZ_STORAGE_KEYS.rulerColor, resolved.rulerColor);
