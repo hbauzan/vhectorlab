@@ -101,9 +101,9 @@ export function colorForActivationWithGroupHue(normVal, sourceDim, resolved) {
   const groupMetric = groupMetrics?.length ? groupMetrics[sourceDim] : null;
   const zero = resolved.anchors?.zero || BLACK;
   const hiColorHex = viz?.spectralQuorumEnabled
-    ? (viz?.spectralHighlightColor || viz?.oppositeHighlightColor)
+    ? null
     : viz?.oppositeHighlightColor;
-  const hi = hexToRgb01(hiColorHex);
+  const hi = hiColorHex ? hexToRgb01(hiColorHex) : null;
   return applyGroupDimPaint(base, sharedCancel, groupMetric, paintSettings, zero, hi, groupId);
 }
 

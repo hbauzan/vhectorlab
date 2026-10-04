@@ -5,17 +5,20 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1 & 2)**:
+- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2 & 3)**:
   - **Pairwise Nearest-Competitor con Signo**: En `src/visualizer/spectralQuorum.js`, adopción estricta del estadístico bilateral por pares de `ddi-fw` (`cruce.py`) evaluado con la envoltura $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$. Corrige la distorsión del modelo One-vs-Rest y detecta firmas direccionales tanto por elevación (+1) como por depresión (−1).
   - **Permutación Nula Westfall–Young maxT ($M=1000$)**: Auto-calibración empírica del umbral de discriminación ($p_{95}$ del máximo global sobre dimensiones y grupos). Controla el error familiar (FWER) no paramétricamente sobre dimensiones correlacionadas y produce **estrictamente 0 dimensiones admitidas sobre ruido aleatorio** sin necesidad de umbrales mágicos hardcodeados.
   - **Optimización $O(N_{\min} \cdot D)$ y Caching de Payload**: 1000 permutaciones completadas en ~25 ms en JS Float64. Cacheo indexado por huella de Compare en `Instancer.js` (`_spectralNullCache`), reduciendo el costo de arrastrar sliders de UI a 0.0 ms.
   - **Diagnóstico Muestral de 3 Estados**: Validación combinatoria de $p_{\min} = 1/\binom{N_A+N_B}{N_A}$, identificando formalmente $N < 3$ como matemáticamente imposible para $\alpha = 0.05$, $3 \le N < 8$ como baja potencia, y $N \ge 8$ como operativo.
+  - **Renderizado de Polaridad Bicolor y No Colisionante (Slice 3)**: Excitación/elevación (+1) e inhibición/depresión (−1) se renderizan con paletas dedicadas y desacopladas de la base: Cian Eléctrico (`#00E5FF`) y Rosa Neón (`#FF3366`), respetando los invariantes visuales (sin colisionar con amarillo `#FFE600`, violeta `#9900E6`, ni ámbar `#FFBF00`).
+  - **Fallback No Destructivo ante Quórum Vacío (Slice 3)**: Si ninguna dimensión supera el nulo empírico o $N < 3$, el visualizador emite `cancel = 0, highlight = 0`, conservando la rampa divergente estándar sin apagar la escena a negro.
+  - **Soporte GPU / Shader y CPU**: Integración de `uColorHighlightNeg` y atributos firmados de highlight en `DivergentShading.js`, `MeshFactory.js`, `groupDimContrast.js`, y `groupHuePaint.js`.
   - **Guarda Fail-Closed para Dispersión Cero**: Si $\sigma_g(d) + \sigma_h(d) \le 10^{-12}$ (e.g. $N=1$), se devuelve $S_d = 0.0$ exacto y quórum vacío, impidiendo falsos positivos donde la falta de varianza inflaba la separabilidad a millones.
   - **Coherencia Intra-Grupo (`coherencia_signo`)**: Cálculo auditable del conteo y porcentaje de palabras de cada grupo que caen estrictamente de su lado del umbral divisor $\theta = (\mu_g + \mu_{\text{comp}}) / 2$.
   - **PRNG Determinista con Semilla**: Implementación de Mulberry32 en `src/visualizer/spectralPrng.js` para reproducibilidad determinista bit a bit.
   - **Corrección de Métricas en Summary**: `summary.quorumCount` reporta la cantidad real admitida y `summary.quorumCapacity` el techo de capacidad.
   - **Bug B1 & B2 Fixes**: Eliminación del fallback `r === 0` y corrección de `spectralHighlightColor` en el renderizado CPU de `src/visualizer/groupHuePaint.js`.
-  - **Pruebas y Rigor**: Suite de 21 pruebas unitarias en `tests/spectralQuorum.test.js` y regresión en `tests/groupHuePaint.test.js`.
+  - **Pruebas y Rigor**: Suite ampliada a 24 pruebas en `tests/spectralQuorum.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js` (420 pruebas verdes en total).
 
 ## [3.3.0] - 2026-09-24
 

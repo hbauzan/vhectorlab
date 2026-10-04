@@ -723,6 +723,8 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         rank: r,
         isQuorum,
         relativeScore,
+        groupAdmittedCount: topDims.length,
+        quorumCount: topDims.length,
       };
     }
 
@@ -846,6 +848,9 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
   }
 
   const topQuorumDims = Array.from(globalQuorumSet).sort((a, b) => a - b);
+  for (let d = 0; d < dim; d++) {
+    metrics[d].quorumCount = globalQuorumSet.size;
+  }
 
   const summary = {
     quorumCapacity,
@@ -880,7 +885,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
  *   spectralDecimalGain?: number,
  * }} settings
  * @param {string|null|undefined} [groupId]
- * @returns {{ cancel: number, highlight: number }}
+ * @returns {{ cancel: number, highlight: number, polarity?: number }}
  */
 export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId = null) {
   if (!settings?.spectralQuorumEnabled || !dimMetric) {
@@ -889,15 +894,32 @@ export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId 
 
   let isQuorum = false;
   let relScore = 0;
+  let polarity = 1;
+  let admittedCount = dimMetric.quorumCount !== undefined ? dimMetric.quorumCount : 1;
 
   if (groupId && dimMetric.groupSignatures && dimMetric.groupSignatures[groupId]) {
     const sig = dimMetric.groupSignatures[groupId];
     isQuorum = Boolean(sig.isQuorum);
     relScore = sig.relativeScore ?? 0;
+    polarity = sig.polarity ?? 1;
+    if (typeof sig.groupAdmittedCount === 'number') {
+      admittedCount = sig.groupAdmittedCount;
+    } else if (typeof sig.quorumCount === 'number') {
+      admittedCount = sig.quorumCount;
+    }
   } else {
     // Fallback when groupId is not provided
     isQuorum = Boolean(dimMetric.isQuorum);
     relScore = dimMetric.relativeScore ?? 0;
+    polarity = dimMetric.polarity ?? 1;
+    if (typeof dimMetric.quorumCount === 'number') {
+      admittedCount = dimMetric.quorumCount;
+    }
+  }
+
+  // Quórum vacío no es pantalla rota: fallback a divergent normal si no hay dimensiones admitidas
+  if (admittedCount === 0) {
+    return { cancel: 0, highlight: 0, polarity };
   }
 
   if (isQuorum) {
@@ -906,7 +928,7 @@ export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId 
     // Amplify relative score by decimal gain (10x is baseline 1.0)
     const boostedScore = Math.min(1.0, relScore * (gain / 10));
     const highlight = Math.max(0, Math.min(1, strength * boostedScore));
-    return { cancel: 0, highlight };
+    return { cancel: 0, highlight, polarity };
   }
 
   // Baseline noise dimensions: cancel according to baseline suppression coverage (default 100%)
@@ -918,5 +940,5 @@ export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId 
     : 100;
   const cancel = Math.max(0, Math.min(1, coverage / 100));
 
-  return { cancel, highlight: 0 };
+  return { cancel, highlight: 0, polarity };
 }

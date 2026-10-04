@@ -196,6 +196,7 @@ uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
 uniform vec3 uColorZero;
 uniform vec3 uColorHighlight;
+uniform vec3 uColorHighlightNeg;
 uniform int uFilterMode;
 uniform float uNearZeroEps;
 uniform float uZeroCoverage;
@@ -239,9 +240,10 @@ void main() {
             ? mix(uColorZero, uColorPos, k)
             : mix(uColorZero, uColorNeg, k));
 
-    float hi = clamp(vHighlight, 0.0, 1.0);
+    float hi = clamp(abs(vHighlight), 0.0, 1.0);
+    vec3 hiCol = vHighlight < 0.0 ? uColorHighlightNeg : uColorHighlight;
     float cancel = clamp(vCancel, 0.0, 1.0);
-    color = mix(color, uColorHighlight, hi);
+    color = mix(color, hiCol, hi);
     color = mix(color, uColorZero, cancel);
     dynamicAlpha = max(0.05, dynamicAlpha * (1.0 - 0.85 * cancel));
 
@@ -265,6 +267,7 @@ uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
 uniform vec3 uColorZero;
 uniform vec3 uColorHighlight;
+uniform vec3 uColorHighlightNeg;
 uniform int uFilterMode;
 uniform float uNearZeroEps;
 uniform float uZeroCoverage;
@@ -310,9 +313,10 @@ void main() {
             ? mix(uColorZero, uColorPos, k)
             : mix(uColorZero, uColorNeg, k));
 
-    float hi = clamp(vHighlight, 0.0, 1.0);
+    float hi = clamp(abs(vHighlight), 0.0, 1.0);
+    vec3 hiCol = vHighlight < 0.0 ? uColorHighlightNeg : uColorHighlight;
     float cancel = clamp(vCancel, 0.0, 1.0);
-    color = mix(color, uColorHighlight, hi);
+    color = mix(color, hiCol, hi);
     color = mix(color, uColorZero, cancel);
     dynamicAlpha = max(0.05, dynamicAlpha * (1.0 - 0.85 * cancel));
 
@@ -401,6 +405,14 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       hi = options.highlightColor;
     }
   }
+  let hiNeg = { r: 1.0, g: 51 / 255, b: 102 / 255 }; // default Neon Rose #FF3366
+  if (options.highlightColorNeg) {
+    if (typeof options.highlightColorNeg === 'string') {
+      hiNeg = hexToRgb01(options.highlightColorNeg) || hiNeg;
+    } else if (options.highlightColorNeg.r != null) {
+      hiNeg = options.highlightColorNeg;
+    }
+  }
   const edgeStyle = resolvePointEdgeStyle(options);
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -410,6 +422,7 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       uColorNeg: { value: new THREE.Vector3(A.negative.r, A.negative.g, A.negative.b) },
       uColorZero: { value: new THREE.Vector3(A.zero.r, A.zero.g, A.zero.b) },
       uColorHighlight: { value: new THREE.Vector3(hi.r, hi.g, hi.b) },
+      uColorHighlightNeg: { value: new THREE.Vector3(hiNeg.r, hiNeg.g, hiNeg.b) },
       uFilterMode: { value: filterModeToUniform(options.filterMode) },
       uNearZeroEps: { value: NEAR_ZERO_EPS },
       uZeroCoverage: { value: coverage01 },
@@ -449,6 +462,11 @@ export function updateDivergentMaterialUniforms(material, options = {}) {
     let hi = options.highlightColor;
     if (typeof hi === 'string') hi = hexToRgb01(hi);
     if (hi) material.uniforms.uColorHighlight.value.set(hi.r, hi.g, hi.b);
+  }
+  if (options.highlightColorNeg && material.uniforms.uColorHighlightNeg) {
+    let hiNeg = options.highlightColorNeg;
+    if (typeof hiNeg === 'string') hiNeg = hexToRgb01(hiNeg);
+    if (hiNeg) material.uniforms.uColorHighlightNeg.value.set(hiNeg.r, hiNeg.g, hiNeg.b);
   }
 }
 

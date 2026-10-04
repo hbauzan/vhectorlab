@@ -4,7 +4,13 @@
  */
 
 import { countDistinctGroups, listDistinctGroupIds } from './groupStackLayout.js';
-import { hexToRgb01, normalizeConflictCover, highCoverageToUnit } from '../ui/visualizationControlsDefaults.js';
+import {
+  hexToRgb01,
+  normalizeConflictCover,
+  highCoverageToUnit,
+  DEFAULT_SPECTRAL_ELEVATION_COLOR,
+  DEFAULT_SPECTRAL_DEPRESSION_COLOR,
+} from '../ui/visualizationControlsDefaults.js';
 import {
   paintWeightsForSpectralQuorum,
   computeSpectralQuorumMetrics,
@@ -349,6 +355,7 @@ export function sharedNoiseCoverage01(settings) {
 export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}, groupId = null) {
   let cancel = 0;
   let highlight = 0;
+  let polarity = undefined;
 
   if (settings.sameSignCancelEnabled && !isSaeActiveSettings(settings)) {
     cancel = Math.max(0, Math.min(1, Number(sharedCancel) || 0));
@@ -358,6 +365,9 @@ export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}, gro
     const sp = paintWeightsForSpectralQuorum(groupMetric, settings, groupId);
     highlight = Math.max(highlight, sp.highlight);
     cancel = Math.max(cancel, sp.cancel);
+    if (sp.polarity !== undefined) {
+      polarity = sp.polarity;
+    }
   } else if (groupMetric && !groupMetric.sameSign && settings.oppositeHighlightEnabled) {
     const strength = Math.max(0, Math.min(100, Number(settings.oppositeHighlightStrength) || 0)) / 100;
     const balance = groupMetric.conflictBalance != null
@@ -367,7 +377,11 @@ export function paintWeightsForDim(sharedCancel, groupMetric, settings = {}, gro
     cancel = Math.max(cancel, oppositeCoverCancel(settings.oppositeCancelCoverage ?? 0));
   }
 
-  return { cancel, highlight };
+  const out = { cancel, highlight };
+  if (polarity !== undefined) {
+    out.polarity = polarity;
+  }
+  return out;
 }
 
 /**
@@ -415,12 +429,17 @@ export function applyGroupDimPaint(
   let out = { ...baseColor };
 
   if (weights.highlight > 1e-9) {
-    const hiColorHex = settings?.spectralQuorumEnabled
-      ? (settings?.spectralHighlightColor || settings?.oppositeHighlightColor)
-      : settings?.oppositeHighlightColor;
-    const hi = highlightRgb
-      || hexToRgb01(hiColorHex)
-      || { r: 0, g: 229 / 255, b: 1 };
+    let hi = highlightRgb;
+    if (settings?.spectralQuorumEnabled) {
+      const isDepression = (weights.polarity !== undefined && weights.polarity < 0);
+      const hiColorHex = isDepression
+        ? (settings.spectralDepressionColor || DEFAULT_SPECTRAL_DEPRESSION_COLOR)
+        : (settings.spectralElevationColor || settings.spectralHighlightColor || DEFAULT_SPECTRAL_ELEVATION_COLOR);
+      hi = hexToRgb01(hiColorHex) || { r: 0, g: 229 / 255, b: 1 };
+    } else if (!hi) {
+      const hiColorHex = settings?.oppositeHighlightColor;
+      hi = hexToRgb01(hiColorHex) || { r: 0, g: 229 / 255, b: 1 };
+    }
     out = lerpRgb(out, hi, weights.highlight);
   }
   if (weights.cancel > 1e-9) {
@@ -469,7 +488,7 @@ export function buildPointGroupPaintAttributes(pointsData, sharedNoiseMetrics, g
       : null;
     const w = paintWeightsForDim(sharedCancel, groupMetric, settings, groupId);
     cancel[i] = w.cancel;
-    highlight[i] = w.highlight;
+    highlight[i] = (w.polarity !== undefined && w.polarity < 0) ? -w.highlight : w.highlight;
   }
   return { cancel, highlight };
 }

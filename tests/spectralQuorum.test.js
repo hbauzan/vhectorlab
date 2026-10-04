@@ -634,4 +634,96 @@ describe('spectralQuorum integration with groupDimContrast', () => {
     expect(highlight[3]).toBeCloseTo(1.0, 2);
     expect(cancel[3]).toBe(0);
   });
+
+  it('paintWeightsForSpectralQuorum returns directional polarity (+1 / -1)', () => {
+    const settings = {
+      spectralQuorumEnabled: true,
+      spectralHighlightStrength: 100,
+      spectralDecimalGain: 10,
+    };
+    const metricElev = {
+      dim: 1,
+      isQuorum: true,
+      relativeScore: 0.8,
+      polarity: 1,
+      quorumCount: 1,
+    };
+    const metricDepr = {
+      dim: 2,
+      isQuorum: true,
+      relativeScore: 0.8,
+      polarity: -1,
+      quorumCount: 1,
+    };
+    const wElev = paintWeightsForSpectralQuorum(metricElev, settings);
+    expect(wElev.polarity).toBe(1);
+    expect(wElev.highlight).toBeCloseTo(0.8, 2);
+    expect(wElev.cancel).toBe(0);
+
+    const wDepr = paintWeightsForSpectralQuorum(metricDepr, settings);
+    expect(wDepr.polarity).toBe(-1);
+    expect(wDepr.highlight).toBeCloseTo(0.8, 2);
+    expect(wDepr.cancel).toBe(0);
+  });
+
+  it('empty quorum fallback: paintWeightsForSpectralQuorum produces cancel=0, highlight=0 when admittedCount is 0', () => {
+    const settings = {
+      spectralQuorumEnabled: true,
+      spectralPajaCancelCoverage: 100,
+    };
+    const emptyGlobal = {
+      dim: 1,
+      isQuorum: false,
+      relativeScore: 0,
+      quorumCount: 0,
+    };
+    const wGlobal = paintWeightsForSpectralQuorum(emptyGlobal, settings);
+    expect(wGlobal.cancel).toBe(0);
+    expect(wGlobal.highlight).toBe(0);
+
+    const emptyGroup = {
+      dim: 1,
+      isQuorum: false,
+      relativeScore: 0,
+      quorumCount: 1,
+      groupSignatures: {
+        G1: { isQuorum: false, relativeScore: 0, groupAdmittedCount: 0 },
+      },
+    };
+    const wGroup = paintWeightsForSpectralQuorum(emptyGroup, settings, 'G1');
+    expect(wGroup.cancel).toBe(0);
+    expect(wGroup.highlight).toBe(0);
+  });
+
+  it('buildPointGroupPaintAttributes encodes signed highlight for depression on GPU', async () => {
+    const { buildPointGroupPaintAttributes } = await import('../src/visualizer/groupDimContrast.js');
+    const pointsData = [
+      { meta: { itemIndex: 0, dim: 2, groupId: 'G1' } },
+      { meta: { itemIndex: 1, dim: 2, groupId: 'G2' } },
+    ];
+    const groupMetrics = [
+      null,
+      null,
+      {
+        dim: 2,
+        isQuorum: true,
+        groupSignatures: {
+          G1: { isQuorum: true, relativeScore: 1.0, polarity: 1, groupAdmittedCount: 1 },
+          G2: { isQuorum: true, relativeScore: 1.0, polarity: -1, groupAdmittedCount: 1 },
+        },
+      },
+    ];
+    const settings = {
+      spectralQuorumEnabled: true,
+      spectralHighlightStrength: 100,
+      spectralDecimalGain: 10,
+    };
+    const { cancel, highlight } = buildPointGroupPaintAttributes(pointsData, null, groupMetrics, settings);
+    // G1 has elevation (+1) -> positive highlight
+    expect(highlight[0]).toBeCloseTo(1.0, 2);
+    // G2 has depression (-1) -> negative highlight for GPU shader branch
+    expect(highlight[1]).toBeCloseTo(-1.0, 2);
+    expect(cancel[0]).toBe(0);
+    expect(cancel[1]).toBe(0);
+  });
 });

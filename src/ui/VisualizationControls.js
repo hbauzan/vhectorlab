@@ -255,9 +255,16 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           <span class="field-label-text">Spectral Quorum</span>${infoTipMarkup(FIELD_INFO.spectralQuorum)}
         </label>
         <div class="viz-color-row viz-fx-slider" data-requires="spectral">
-          <label for="viz-spectral-hex"><span class="field-label-text">Tint</span>${infoTipMarkup(FIELD_INFO.spectralColor)}</label>
-          <input type="color" id="viz-spectral-swatch" class="viz-color-swatch" value="${s.spectralHighlightColor}" ${s.spectralQuorumEnabled ? '' : 'disabled'} title="Spectral quorum tint" aria-label="Spectral tint swatch">
-          <input type="text" id="viz-spectral-hex" class="viz-color-hex" value="${s.spectralHighlightColor}" maxlength="7" spellcheck="false" ${s.spectralQuorumEnabled ? '' : 'disabled'} placeholder="#00E5FF">
+          <label for="viz-spectral-elevation-hex"><span class="field-label-text">Elevation (+1)</span>${infoTipMarkup(FIELD_INFO.spectralColor)}</label>
+          <input type="color" id="viz-spectral-elevation-swatch" class="viz-color-swatch" value="${s.spectralElevationColor}" ${s.spectralQuorumEnabled ? '' : 'disabled'} title="Spectral elevation (+1) tint" aria-label="Spectral elevation swatch">
+          <input type="text" id="viz-spectral-elevation-hex" class="viz-color-hex" value="${s.spectralElevationColor}" maxlength="7" spellcheck="false" ${s.spectralQuorumEnabled ? '' : 'disabled'} placeholder="#00E5FF">
+          <input type="color" id="viz-spectral-swatch" class="viz-color-swatch" value="${s.spectralHighlightColor}" style="display:none" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+          <input type="text" id="viz-spectral-hex" class="viz-color-hex" value="${s.spectralHighlightColor}" style="display:none" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
+        </div>
+        <div class="viz-color-row viz-fx-slider" data-requires="spectral">
+          <label for="viz-spectral-depression-hex"><span class="field-label-text">Depression (-1)</span>${infoTipMarkup(FIELD_INFO.spectralColor)}</label>
+          <input type="color" id="viz-spectral-depression-swatch" class="viz-color-swatch" value="${s.spectralDepressionColor}" ${s.spectralQuorumEnabled ? '' : 'disabled'} title="Spectral depression (-1) tint" aria-label="Spectral depression swatch">
+          <input type="text" id="viz-spectral-depression-hex" class="viz-color-hex" value="${s.spectralDepressionColor}" maxlength="7" spellcheck="false" ${s.spectralQuorumEnabled ? '' : 'disabled'} placeholder="#FF3366">
         </div>
         <div class="viz-coverage-row slider-group viz-fx-slider" data-requires="spectral">
           <div class="slider-header">
@@ -386,6 +393,14 @@ export function syncVisualizationControlsFromConfig(container, config) {
 
   const specOn = container.querySelector('#viz-spectral-enabled');
   if (specOn) specOn.checked = s.spectralQuorumEnabled;
+  const specElevSwatch = container.querySelector('#viz-spectral-elevation-swatch');
+  const specElevHex = container.querySelector('#viz-spectral-elevation-hex');
+  if (specElevSwatch) specElevSwatch.value = s.spectralElevationColor;
+  if (specElevHex) specElevHex.value = s.spectralElevationColor;
+  const specDeprSwatch = container.querySelector('#viz-spectral-depression-swatch');
+  const specDeprHex = container.querySelector('#viz-spectral-depression-hex');
+  if (specDeprSwatch) specDeprSwatch.value = s.spectralDepressionColor;
+  if (specDeprHex) specDeprHex.value = s.spectralDepressionColor;
   const specSwatch = container.querySelector('#viz-spectral-swatch');
   const specHex = container.querySelector('#viz-spectral-hex');
   if (specSwatch) specSwatch.value = s.spectralHighlightColor;
@@ -556,6 +571,10 @@ export function syncGroupFxSliderEnabled(container, settings) {
 
   setDisabled(container.querySelector('#viz-spectral-enabled'), !groupsOk);
   const specSlidersOn = groupsOk && s.spectralQuorumEnabled;
+  setDisabled(container.querySelector('#viz-spectral-elevation-swatch'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-elevation-hex'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-depression-swatch'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-depression-hex'), !specSlidersOn);
   setDisabled(container.querySelector('#viz-spectral-swatch'), !specSlidersOn);
   setDisabled(container.querySelector('#viz-spectral-hex'), !specSlidersOn);
   setDisabled(container.querySelector('#viz-spectral-quorum'), !specSlidersOn);
@@ -918,32 +937,87 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       emit();
     });
   }
+  const specElevSwatch = container.querySelector('#viz-spectral-elevation-swatch');
+  const specElevHex = container.querySelector('#viz-spectral-elevation-hex');
   const specSwatch = container.querySelector('#viz-spectral-swatch');
   const specHex = container.querySelector('#viz-spectral-hex');
+  const syncElevColor = (hex) => {
+    config.spectralElevationColor = hex;
+    config.spectralHighlightColor = hex;
+    if (specElevSwatch) specElevSwatch.value = hex;
+    if (specElevHex) specElevHex.value = hex;
+    if (specSwatch) specSwatch.value = hex;
+    if (specHex) specHex.value = hex;
+    emit();
+  };
+  if (specElevSwatch && specElevHex) {
+    specElevSwatch.addEventListener('input', () => {
+      const hex = normalizeHex(specElevSwatch.value);
+      if (hex) syncElevColor(hex);
+    });
+    const commitElev = () => {
+      const hex = normalizeHex(specElevHex.value);
+      if (!hex) {
+        specElevHex.value = config.spectralElevationColor;
+        return;
+      }
+      syncElevColor(hex);
+    };
+    specElevHex.addEventListener('change', commitElev);
+    specElevHex.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitElev();
+      }
+    });
+  }
   if (specSwatch && specHex) {
     specSwatch.addEventListener('input', () => {
       const hex = normalizeHex(specSwatch.value);
-      if (!hex) return;
-      config.spectralHighlightColor = hex;
-      specHex.value = hex;
-      emit();
+      if (hex) syncElevColor(hex);
     });
-    const commitSpecHex = () => {
+    const commitLegacy = () => {
       const hex = normalizeHex(specHex.value);
       if (!hex) {
         specHex.value = config.spectralHighlightColor;
         return;
       }
-      config.spectralHighlightColor = hex;
-      specSwatch.value = hex;
-      specHex.value = hex;
-      emit();
+      syncElevColor(hex);
     };
-    specHex.addEventListener('change', commitSpecHex);
+    specHex.addEventListener('change', commitLegacy);
     specHex.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        commitSpecHex();
+        commitLegacy();
+      }
+    });
+  }
+  const specDeprSwatch = container.querySelector('#viz-spectral-depression-swatch');
+  const specDeprHex = container.querySelector('#viz-spectral-depression-hex');
+  if (specDeprSwatch && specDeprHex) {
+    specDeprSwatch.addEventListener('input', () => {
+      const hex = normalizeHex(specDeprSwatch.value);
+      if (!hex) return;
+      config.spectralDepressionColor = hex;
+      specDeprHex.value = hex;
+      emit();
+    });
+    const commitDepr = () => {
+      const hex = normalizeHex(specDeprHex.value);
+      if (!hex) {
+        specDeprHex.value = config.spectralDepressionColor;
+        return;
+      }
+      config.spectralDepressionColor = hex;
+      specDeprSwatch.value = hex;
+      specDeprHex.value = hex;
+      emit();
+    };
+    specDeprHex.addEventListener('change', commitDepr);
+    specDeprHex.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitDepr();
       }
     });
   }

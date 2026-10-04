@@ -119,8 +119,11 @@ export class MeshFactory {
       filterMode,
       zeroCoverage,
       highlightColor: viz.spectralQuorumEnabled
-        ? (viz.spectralHighlightColor || viz.oppositeHighlightColor)
+        ? (viz.spectralElevationColor || viz.spectralHighlightColor || viz.oppositeHighlightColor)
         : viz.oppositeHighlightColor,
+      highlightColorNeg: viz.spectralQuorumEnabled
+        ? (viz.spectralDepressionColor || undefined)
+        : undefined,
       softStar: options.softStar === true,
       galaxy: options.galaxy === true,
       useGroupHueBase: useGroupHue,

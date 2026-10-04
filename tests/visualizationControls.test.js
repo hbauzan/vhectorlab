@@ -83,6 +83,8 @@ describe('visualizationControlsDefaults', () => {
       spectralQuorumEnabled: false,
       spectralQuorumPercent: 10,
       spectralHighlightColor: '#00E5FF',
+      spectralElevationColor: '#00E5FF',
+      spectralDepressionColor: '#FF3366',
       spectralHighlightStrength: 100,
       spectralPajaCancelCoverage: 100,
       spectralDecimalGain: 10,

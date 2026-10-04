@@ -150,5 +150,120 @@ describe('groupHuePaint', () => {
     expect(col.r).toBeCloseTo(1, 1);
     expect(col.b).toBeCloseTo(0, 1);
   });
+
+  it('empty quorum fallback: preserves base divergent color without cancellation when admittedCount is 0', () => {
+    const viz = resolveVisualizationSettings({
+      spectralQuorumEnabled: true,
+      spectralPajaCancelCoverage: 100,
+    });
+    const anchors = anchorsFromSettings(viz);
+    const emptyQuorumMetric = {
+      dim: 0,
+      isQuorum: false,
+      relativeScore: 0.0,
+      quorumCount: 0,
+      groupSignatures: {
+        G1: { isQuorum: false, relativeScore: 0.0, groupAdmittedCount: 0 },
+      },
+    };
+    const col = colorForActivationWithGroupHue(1.0, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [emptyQuorumMetric],
+      groupId: 'G1',
+    });
+    // With admittedCount = 0, fallback does not cancel to black: preserves positive anchor (yellow #FFE600)
+    expect(col.r).toBeCloseTo(anchors.positive.r, 4);
+    expect(col.g).toBeCloseTo(anchors.positive.g, 4);
+    expect(col.b).toBeCloseTo(anchors.positive.b, 4);
+  });
+
+  it('bicolor polarity rendering: elevation (+1) gets cyan and depression (-1) gets neon rose', () => {
+    const viz = resolveVisualizationSettings({
+      spectralQuorumEnabled: true,
+      spectralElevationColor: '#00E5FF',
+      spectralDepressionColor: '#FF3366',
+      spectralHighlightStrength: 100,
+      spectralDecimalGain: 10,
+    });
+    const anchors = anchorsFromSettings(viz);
+    const metric = {
+      dim: 0,
+      isQuorum: true,
+      relativeScore: 1.0,
+      quorumCount: 1,
+      groupSignatures: {
+        G_elev: { isQuorum: true, relativeScore: 1.0, polarity: 1, groupAdmittedCount: 1 },
+        G_depr: { isQuorum: true, relativeScore: 1.0, polarity: -1, groupAdmittedCount: 1 },
+      },
+    };
+
+    const colElev = colorForActivationWithGroupHue(0.5, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [metric],
+      groupId: 'G_elev',
+    });
+    // Elevation receives #00E5FF (Electric Cyan: r=0, g=0.9, b=1.0)
+    expect(colElev.r).toBeCloseTo(0, 1);
+    expect(colElev.g).toBeGreaterThan(0.7);
+    expect(colElev.b).toBeCloseTo(1, 1);
+
+    const colDepr = colorForActivationWithGroupHue(0.5, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [metric],
+      groupId: 'G_depr',
+    });
+    // Depression receives #FF3366 (Neon Rose: r=1.0, g=0.2, b=0.4)
+    expect(colDepr.r).toBeCloseTo(1, 1);
+    expect(colDepr.g).toBeLessThan(0.4);
+    expect(colDepr.b).toBeGreaterThan(0.2);
+    expect(colDepr.b).toBeLessThan(0.6);
+  });
+
+  it('custom polarity anchors: user-defined elevation and depression hexes are respected', () => {
+    const viz = resolveVisualizationSettings({
+      spectralQuorumEnabled: true,
+      spectralElevationColor: '#00FF00',
+      spectralDepressionColor: '#0000FF',
+      spectralHighlightStrength: 100,
+      spectralDecimalGain: 10,
+    });
+    const anchors = anchorsFromSettings(viz);
+    const metric = {
+      dim: 0,
+      isQuorum: true,
+      relativeScore: 1.0,
+      quorumCount: 1,
+      groupSignatures: {
+        G_elev: { isQuorum: true, relativeScore: 1.0, polarity: 1, groupAdmittedCount: 1 },
+        G_depr: { isQuorum: true, relativeScore: 1.0, polarity: -1, groupAdmittedCount: 1 },
+      },
+    };
+
+    const colElev = colorForActivationWithGroupHue(0.5, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [metric],
+      groupId: 'G_elev',
+    });
+    expect(colElev.g).toBeCloseTo(1, 1);
+    expect(colElev.b).toBeCloseTo(0, 1);
+
+    const colDepr = colorForActivationWithGroupHue(0.5, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [metric],
+      groupId: 'G_depr',
+    });
+    expect(colDepr.b).toBeCloseTo(1, 1);
+    expect(colDepr.r).toBeCloseTo(0, 1);
+  });
 });
 
