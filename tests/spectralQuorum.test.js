@@ -3,9 +3,11 @@ import {
   hasEnoughGroupsForSpectralQuorum,
   computeSpectralQuorumMetrics,
   paintWeightsForSpectralQuorum,
+  createMulberry32,
+  DEFAULT_MIN_SEPARABILITY,
 } from '../src/visualizer/spectralQuorum.js';
 
-describe('spectralQuorum math and classification', () => {
+describe('spectralQuorum math and classification (ddi-fw port)', () => {
   it('requires ≥2 distinct groups with valid embeddings', () => {
     expect(hasEnoughGroupsForSpectralQuorum(null)).toBe(false);
     expect(hasEnoughGroupsForSpectralQuorum([])).toBe(false);
@@ -44,7 +46,8 @@ describe('spectralQuorum math and classification', () => {
     const result = computeSpectralQuorumMetrics(items, { quorumPercent: 10 });
     expect(result).not.toBeNull();
     expect(result.metrics).toHaveLength(10);
-    expect(result.summary.quorumCount).toBe(1); // ceil(10 * 0.1) = 1
+    expect(result.summary.quorumCapacity).toBe(1); // ceil(10 * 0.1) = 1
+    expect(result.summary.quorumCount).toBe(1);
     expect(result.summary.totalDim).toBe(10);
     expect(result.summary.topQuorumDims).toEqual([4]);
 
@@ -65,15 +68,19 @@ describe('spectralQuorum math and classification', () => {
   it('supports configurable quorum percentage (e.g. 20% = 2 dims on 10D)', () => {
     const items = [
       { groupId: 'A', embedding: [0.10, 0.00, 0.05, 0.00, 0.00] },
+      { groupId: 'A', embedding: [0.102, 0.001, 0.051, 0.00, 0.00] },
       { groupId: 'B', embedding: [0.00, 0.00, 0.00, 0.00, 0.00] },
+      { groupId: 'B', embedding: [0.001, 0.00, 0.001, 0.00, 0.00] },
     ];
     // 5 dims, 20% quorum => ceil(5 * 0.2) = 1 dim (dim0).
     // 40% quorum => ceil(5 * 0.4) = 2 dims (dim0, dim2).
     const res20 = computeSpectralQuorumMetrics(items, { quorumPercent: 20 });
+    expect(res20.summary.quorumCapacity).toBe(1);
     expect(res20.summary.quorumCount).toBe(1);
     expect(res20.summary.topQuorumDims).toEqual([0]);
 
     const res40 = computeSpectralQuorumMetrics(items, { quorumPercent: 40 });
+    expect(res40.summary.quorumCapacity).toBe(2);
     expect(res40.summary.quorumCount).toBe(2);
     expect(res40.summary.topQuorumDims).toEqual([0, 2]);
     expect(res40.metrics[0].isQuorum).toBe(true);
@@ -185,7 +192,7 @@ describe('spectralQuorum math and classification', () => {
     const gSig = res.summary.groupSignatures;
     expect(gSig).toBeDefined();
 
-    // Verify per-group quorum dimensions are directional and non-overlapping
+    // Verify per-group quorum dimensions are directional and identify the primary peaks
     expect(gSig.it_core.quorumDims).toEqual([2]);
     expect(gSig.vehicles.quorumDims).toEqual([5]);
     expect(gSig.women.quorumDims).toEqual([8]);
@@ -247,11 +254,13 @@ describe('spectralQuorum math and classification', () => {
     expect(wWomOnDim0.cancel).toBe(1.0);
   });
 
-  it('accurately resolves subtle 4th to 6th decimal variations (order 10^-5)', () => {
-    // 2 groups where difference is in the 5th decimal place (0.000040)
+  it('accurately resolves subtle 4th to 6th decimal variations (order 10^-5) with bilateral polarity', () => {
+    // 2 groups with variance where difference is in the 5th decimal place (0.000040)
     const items = [
-      { groupId: 'alpha', embedding: [0.020000, 0.020050] },
-      { groupId: 'beta',  embedding: [0.020000, 0.020010] },
+      { groupId: 'alpha', embedding: [0.020000, 0.020049] },
+      { groupId: 'alpha', embedding: [0.020000, 0.020051] },
+      { groupId: 'beta',  embedding: [0.020000, 0.020009] },
+      { groupId: 'beta',  embedding: [0.020000, 0.020011] },
     ];
 
     const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50 });
@@ -259,24 +268,152 @@ describe('spectralQuorum math and classification', () => {
     expect(res.summary.maxDelta).toBeCloseTo(0.000040, 6);
     expect(res.metrics[1].deltaMean).toBeCloseTo(0.000040, 6);
 
-    // Alpha leads on dim 1, beta leads on dim 0 (or delta <= 0)
+    // Alpha leads positively on dim 1 (polarity +1)
     expect(res.metrics[1].groupSignatures.alpha.isQuorum).toBe(true);
+    expect(res.metrics[1].groupSignatures.alpha.polarity).toBe(1);
     expect(res.metrics[1].groupSignatures.alpha.relativeScore).toBeCloseTo(1.0, 2);
-    expect(res.metrics[1].groupSignatures.beta.isQuorum).toBe(false);
 
-    // Paint weights with 10x gain: alpha lights up on dim 1, beta cancels
-    const settings = {
-      spectralQuorumEnabled: true,
-      spectralHighlightStrength: 100,
-      spectralPajaCancelCoverage: 100,
-      spectralDecimalGain: 10,
-    };
-    const wAlpha = paintWeightsForSpectralQuorum(res.metrics[1], settings, 'alpha');
-    const wBeta = paintWeightsForSpectralQuorum(res.metrics[1], settings, 'beta');
-    expect(wAlpha.highlight).toBeCloseTo(1.0, 2);
-    expect(wAlpha.cancel).toBe(0);
-    expect(wBeta.highlight).toBe(0);
-    expect(wBeta.cancel).toBe(1.0);
+    // Beta contrasts negatively on dim 1 (polarity -1)
+    expect(res.metrics[1].groupSignatures.beta.isQuorum).toBe(true);
+    expect(res.metrics[1].groupSignatures.beta.polarity).toBe(-1);
+    expect(res.metrics[1].groupSignatures.beta.relativeScore).toBeCloseTo(1.0, 2);
+
+    // Dim 0 has delta = 0, neither group has it in Quorum
+    expect(res.metrics[0].groupSignatures.alpha.isQuorum).toBe(false);
+    expect(res.metrics[0].groupSignatures.beta.isQuorum).toBe(false);
+  });
+
+  it('evaluates bilateral nearest-competitor signed separability for 3 groups (elevation vs depression)', () => {
+    // 3 groups, 4 dimensions:
+    // dim 1: it_core is depressed (-1) below vehicles (0.08) and women (0.085)
+    // dim 2: vehicles is elevated (+1) above it_core (0.01) and women (0.01)
+    // dim 3: vehicles is in the middle (between it_core 0.09 and women 0.02)
+    const items = [
+      { groupId: 'it_core',  embedding: [0.01, 0.010, 0.01, 0.09] },
+      { groupId: 'it_core',  embedding: [0.01, 0.011, 0.01, 0.091] },
+      { groupId: 'vehicles', embedding: [0.01, 0.080, 0.09, 0.05] },
+      { groupId: 'vehicles', embedding: [0.01, 0.081, 0.091, 0.051] },
+      { groupId: 'women',    embedding: [0.01, 0.085, 0.01, 0.02] },
+      { groupId: 'women',    embedding: [0.01, 0.086, 0.01, 0.021] },
+    ];
+
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 25 }); // 25% of 4 dims = 1 dim
+    expect(res).not.toBeNull();
+
+    // On dim 1: it_core is depressed below both vehicles (0.08) and women (0.085)
+    expect(res.metrics[1].groupSignatures.it_core.isQuorum).toBe(true);
+    expect(res.metrics[1].groupSignatures.it_core.polarity).toBe(-1);
+    expect(res.metrics[1].groupSignatures.it_core.separability).toBeGreaterThan(1.0);
+
+    // On dim 2: vehicles is elevated above both it_core (0.01) and women (0.01)
+    expect(res.metrics[2].groupSignatures.vehicles.isQuorum).toBe(true);
+    expect(res.metrics[2].groupSignatures.vehicles.polarity).toBe(1);
+    expect(res.metrics[2].groupSignatures.vehicles.separability).toBeGreaterThan(1.0);
+
+    // On dim 3: vehicles is sandwiched between it_core and women -> no quorum signature
+    expect(res.metrics[3].groupSignatures.vehicles.isQuorum).toBe(false);
+  });
+
+  it('fails closed when N=1 (sigma_g + sigma_h <= 1e-12) producing Sd = 0 and empty quorum', () => {
+    // Fail-closed rule from ddi-fw cruce.py: with 1 token per group, dispersion cannot be estimated
+    const items = [
+      { groupId: 'A', embedding: [0.10, 0.20, 0.30] },
+      { groupId: 'B', embedding: [0.01, 0.02, 0.03] },
+    ];
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50 });
+    expect(res).not.toBeNull();
+    expect(res.summary.quorumCount).toBe(0);
+    expect(res.summary.topQuorumDims).toEqual([]);
+    for (let d = 0; d < 3; d++) {
+      expect(res.metrics[d].isQuorum).toBe(false);
+      expect(res.metrics[d].separability).toBe(0.0);
+      expect(res.metrics[d].groupSignatures.A.separability).toBe(0.0);
+      expect(res.metrics[d].groupSignatures.B.separability).toBe(0.0);
+    }
+  });
+
+  it('accurately computes intra-group directional coherence percentage (ddi-fw coherencia_signo)', () => {
+    // Group A has 10 items. On dim 0:
+    // 9 items have activation 0.08..0.085, 1 item has 0.02 (outlier)
+    // Group B has 10 items with activation 0.01..0.015
+    const gA = Array.from({ length: 10 }, (_, i) => ({
+      groupId: 'A',
+      embedding: [i === 0 ? 0.02 : 0.08 + i * 0.0005],
+    }));
+    const gB = Array.from({ length: 10 }, (_, i) => ({
+      groupId: 'B',
+      embedding: [0.01 + i * 0.0005],
+    }));
+
+    const res = computeSpectralQuorumMetrics([...gA, ...gB], { quorumPercent: 100 });
+    expect(res).not.toBeNull();
+    const sigA = res.metrics[0].groupSignatures.A;
+    expect(sigA.coherenceTotal).toBe(10);
+    expect(sigA.coherenceCount).toBe(9); // 9 out of 10 words on its side of threshold
+    expect(sigA.coherencePct).toBe(90);
+    expect(sigA.polarity).toBe(1);
+
+    const sigB = res.metrics[0].groupSignatures.B;
+    expect(sigB.coherenceTotal).toBe(10);
+    expect(sigB.coherenceCount).toBe(10); // 10 out of 10 words on its side of threshold
+    expect(sigB.coherencePct).toBe(100);
+    expect(sigB.polarity).toBe(-1);
+  });
+
+  it('createMulberry32 generates deterministic, reproducible pseudo-random numbers', () => {
+    const prng1 = createMulberry32(0x12345678);
+    const prng2 = createMulberry32(0x12345678);
+    const seq1 = Array.from({ length: 10 }, () => prng1());
+    const seq2 = Array.from({ length: 10 }, () => prng2());
+    expect(seq1).toEqual(seq2);
+
+    for (const v of seq1) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+
+    const prngOther = createMulberry32(0x99999999);
+    const seqOther = Array.from({ length: 10 }, () => prngOther());
+    expect(seq1).not.toEqual(seqOther);
+  });
+
+  it('regression Bug B1: dominated group does not receive a fake quorum with relativeScore 1.0', () => {
+    // 3 groups where group C has zero contrast or below minSeparability across all dimensions
+    const items = [
+      { groupId: 'A', embedding: [0.09, 0.01, 0.01] },
+      { groupId: 'A', embedding: [0.091, 0.01, 0.01] },
+      { groupId: 'B', embedding: [0.01, 0.09, 0.01] },
+      { groupId: 'B', embedding: [0.01, 0.091, 0.01] },
+      // Group C is in the middle with minimal separation
+      { groupId: 'C', embedding: [0.05, 0.05, 0.01] },
+      { groupId: 'C', embedding: [0.051, 0.051, 0.01] },
+    ];
+
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 33, minSeparability: 2.0 });
+    expect(res).not.toBeNull();
+    // Group C should NOT be assigned any fake quorum
+    const cQuorum = res.summary.groupSignatures.C.quorumDims;
+    expect(cQuorum).toHaveLength(0);
+    for (let d = 0; d < 3; d++) {
+      expect(res.metrics[d].groupSignatures.C.isQuorum).toBe(false);
+      expect(res.metrics[d].groupSignatures.C.relativeScore).toBe(0);
+    }
+  });
+
+  it('preserves exact Float64 precision down to 10^-6 without truncation', () => {
+    // Difference is strictly 1.5e-6 (6th decimal place)
+    const items = [
+      { groupId: 'A', embedding: [0.0200000, 0.0200014] },
+      { groupId: 'A', embedding: [0.0200000, 0.0200016] },
+      { groupId: 'B', embedding: [0.0200000, 0.0199999] },
+      { groupId: 'B', embedding: [0.0200000, 0.0200001] },
+    ];
+
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50 });
+    expect(res).not.toBeNull();
+    expect(res.summary.maxDelta).toBeCloseTo(0.0000015, 7);
+    expect(res.metrics[1].deltaMean).toBeCloseTo(0.0000015, 7);
+    expect(res.metrics[1].groupSignatures.A.isQuorum).toBe(true);
   });
 });
 
@@ -374,5 +511,3 @@ describe('spectralQuorum integration with groupDimContrast', () => {
     expect(cancel[3]).toBe(0);
   });
 });
-
-

@@ -18,26 +18,26 @@
 
 > *"¡LA PUTA MADRE AHORA SÍ CARAJO SE VE LO QUE TENÍAMOS EN LA CABEZA HACE MESES! Las diferencias entre mazos de palabras están en los decimales finos."*
 
-Durante meses nos quemamos las pestañas preguntándonos por qué conceptos de universos tan dispares —como fierros de autos (`VEHICLES`), nombres de personas (`WOMEN`) o arquitectura de software (`IT_CORE`)— parecían una masa indistinguible en las proyecciones visuales clásicas de embeddings. 
+Durante meses nos preguntamos por qué conceptos de universos dispares —como fierros de autos (`VEHICLES`), nombres de personas (`WOMEN`) o arquitectura de software (`IT_CORE`)— parecían una masa indistinguible en las proyecciones visuales clásicas de embeddings.
 
-¿Dónde estaba la trampa? **La posta está en los decimales.** En modelos densos como `BAAI/bge-m3` (1024 dimensiones), más del 80% de la masa vectorial es estructura sintáctica basal y ruido compartido. La verdadera firma semántica (el *alma léxica* que distingue un mazo del otro) vive agazapada allá abajo, en las micro-diferencias del 4º al 6º orden decimal ($10^{-4}$ a $10^{-6}$).
+La causa reside en el fuerte modo común y la estructura sintáctica compartida que domina los espacios densos como `BAAI/bge-m3` (1024 dimensiones). La verdadera firma semántica que distingue a cada mazo de palabras se encuentra en las dimensiones de alta separabilidad estadística ($S_d$), operadas en `Float64` con cero redondeos siguiendo el estándar de **DDI-FW**.
 
-En la versión **v3.3.0** encendimos el microscopio con **Spectral Quorum**:
+En la versión **v3.3.0** incorporamos **Spectral Quorum**:
 
 ### 1. Vista frontal en ANALYSIS: Picos fijos de excitación temática y silencio base
 ![Spectral Quorum Analysis — Picos fijos y silencio base](./demo/spectral-quorum-analysis.gif)
 
-*Fijate acá:* tres grupos en paralelo (`IT_CORE`, `VEHICLES`, `WOMEN`). Con **Baseline silence** al 100%, todo el ruido común se manda a negro absoluto. Lo que queda encendido son columnas verticales fijas: cada temática excita dimensiones radicalmente distintas en el espacio de 1024-D. La columna cian es exclusiva de software; la naranja pertenece a la mecánica; la violeta responde al universo femenino.
+*Fijate acá:* tres grupos en paralelo (`IT_CORE`, `VEHICLES`, `WOMEN`). Con **Baseline silence** al 100%, el ruido común y las dimensiones sin separabilidad se mandan a negro absoluto. Lo que queda encendido son columnas verticales representativas: cada temática destaca en las dimensiones que la diferencian del resto, permitiendo aislar con nitidez las coordenadas clave de cada universo semántico.
 
 ### 2. Órbita 3D en NAVIGATION: Relieve y aislamiento espectral
 ![Spectral Quorum 3D Orbit](./demo/spectral-quorum-orbit.gif)
 
-*Metete adentro del espacio:* en modo `NAVIGATION` rotás la cámara y ves el relieve tridimensional real de los 1024 tensores de BGE-M3. Las dimensiones activas se elevan como rascacielos mientras el ruido silenciado descansa aplastado en el piso.
+*Metete adentro del espacio:* en modo `NAVIGATION` rotás la cámara y ves el relieve tridimensional real de los 1024 tensores de BGE-M3. Las dimensiones activas se elevan como rascacielos mientras el ruido silenciado descansa en el piso.
 
 ### 3. Barrido de Decimal Gain: El microscopio vectorial
 ![Spectral Decimal Gain Sweep](./demo/spectral-decimal-gain-sweep.gif)
 
-*Mirá cómo enfoca:* arrancamos con ganancia baja (apenas se intuye la dispersión) y barremos el `Decimal Gain` (hasta 40×) y el `Baseline silence`. Es tal cual girar la perilla de enfoque de un microscopio: la señal temática emerge nítida y pura sobre el ruido. No es truco de render: es pura matemática de micro-diferencias vectoriales.
+*Mirá cómo enfoca:* arrancamos con ganancia baja y barremos el `Decimal Gain` (hasta 50×) y el `Baseline silence`. Funciona como la perilla de enfoque de un microscopio: amplifica el contraste relativo de la señal discriminante sobre el fondo silenciado, revelando la estructura interna de los grupos.
 
 ---
 

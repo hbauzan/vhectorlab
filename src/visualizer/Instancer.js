@@ -295,7 +295,6 @@ export class Instancer {
     const groupDimMetrics = hasGroupsForDimContrast(items)
       ? computeDimRelationMetrics(items, {
           quorumPercent: resolvedViz.spectralQuorumPercent,
-          decimalGain: resolvedViz.spectralDecimalGain,
         })
       : null;
     const sharedNoiseMetrics = isSaeActive

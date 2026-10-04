@@ -1,24 +1,38 @@
 /**
- * Spectral Quorum (ddi-fw): Isolates the top 10% discriminant dimensions (Trigos)
- * separating different token groups/almas in their decimals, while suppressing
- * the common baseline noise (Paja).
+ * Spectral Quorum (ddi-fw): Deterministic identification of discriminant dimensions
+ * separating token groups/almas using bilateral separability (Sd) and baseline noise silencing.
  *
- * Grounded in Deep Dimensional Inspector Firewall (ddi-fw) v0.3.0:
- * - Differences across token groups/almas reside in subtle decimals (10^-4 to 10^-6).
- * - Each group possesses its own directional spectral signature (distinct peak dimensions).
- * - Universal 10% Quorum (ceil(0.10 * D)) captures domain discriminance.
- * - Paja (structural noise) is silenced; each group's Trigos are highlighted on their own coordinates.
+ * Grounded in Deep Dimensional Inspector Firewall (ddi-fw) v0.3.0 & Protocolos 01–04:
+ * - Differences across token groups are evaluated in Float64 precision (zero roundoff).
+ * - Pairwise nearest-competitor bilateral separability Sd against closest competing group (cruce.py).
+ * - Fail-closed dispersion rule: if sigma_g + sigma_h <= 1e-12 (e.g. N=1), Sd = 0.0 exact.
+ * - Sign/polarity is preserved: dimensions discriminate both by elevation (+1) and depression (-1).
+ * - Intra-group directional coherence (% of words on the group's side of the boundary).
+ * - Signal threshold: dimensions must exceed minSeparability to qualify.
+ * - Quorum capacity: at most ceil((quorumPercent / 100) * D) dimensions per group.
+ * - Groups can naturally share discriminative coordinates without artificial argmax exclusion.
  */
 
 import { countDistinctGroups, listDistinctGroupIds } from './groupStackLayout.js';
+import { createMulberry32 } from './spectralPrng.js';
 
-const EPS_STD = 1e-6; // Aligned with ddi-fw universal 6-decimal standard
+export const EPS_STD = 1e-6; // Aligned with ddi-fw universal 6-decimal standard
+export const DEFAULT_MIN_SEPARABILITY = 0.5; // ddi-fw Protocol 03: baseline cutoff for paja
+export const DEFAULT_PRNG_SEED = 0xDEADBEEF;
+
+export { createMulberry32 };
 
 /**
  * @typedef {{
  *   dim: number,
  *   delta: number,
+ *   absDelta: number,
+ *   polarity: number,
  *   separability: number,
+ *   competitorId: string,
+ *   coherenceCount: number,
+ *   coherenceTotal: number,
+ *   coherencePct: number,
  *   rank: number,
  *   isQuorum: boolean,
  *   relativeScore: number,
@@ -33,6 +47,7 @@ const EPS_STD = 1e-6; // Aligned with ddi-fw universal 6-decimal standard
  *   deltaMean: number,
  *   separability: number,
  *   relativeScore: number,
+ *   polarity?: number,
  *   meanA?: number,
  *   meanB?: number,
  *   sameSign?: boolean,
@@ -45,12 +60,21 @@ const EPS_STD = 1e-6; // Aligned with ddi-fw universal 6-decimal standard
 
 /**
  * @typedef {{
+ *   quorumCapacity: number,
  *   quorumCount: number,
  *   totalDim: number,
  *   maxDelta: number,
  *   avgDelta: number,
  *   topQuorumDims: number[],
- *   groupSignatures?: Record<string, { quorumDims: number[], maxDelta: number, avgDelta: number }>,
+ *   minSeparability: number,
+ *   groupSignatures?: Record<string, {
+ *     quorumDims: number[],
+ *     maxDelta: number,
+ *     avgDelta: number,
+ *     positiveDims: number[],
+ *     negativeDims: number[],
+ *     admittedCount: number,
+ *   }>,
  * }} SpectralQuorumSummary
  */
 
@@ -69,14 +93,18 @@ export function hasEnoughGroupsForSpectralQuorum(items) {
 }
 
 /**
- * Computes per-dimension directional spectral metrics, separability (Sd), and identifies the Quorum.
- * In accordance with ddi-fw:
- * - Each group's signature is directional: delta_g(d) = mu_g(d) - max_{h != g} mu_h(d).
- * - Top quorumPercent dimensions where delta_g(d) > 0 constitute group g's exclusive Quorum.
- * - Multi-group Quorums are naturally distinct / mutually exclusive across coordinates.
+ * Computes per-dimension bilateral spectral metrics, separability (Sd), and identifies the Quorum.
+ * In accordance with ddi-fw cruce.py & Protocolos 01–04:
+ * - Pairwise nearest-competitor contrast: Delta_g(d) against competitor minimizing Sd.
+ * - Bilateral Sd: Sd = |Delta_g(d)| / (sigma_g(d) + sigma_comp(d) + EPS_STD).
+ * - Fail-closed: if sigma_g(d) + sigma_comp(d) <= 1e-12, Sd = 0.0 exact.
+ * - Polarity: +1 if elevated above competitor, -1 if depressed below competitor.
+ * - Intra-group coherence: % of group tokens on the group's side of midpoint threshold.
+ * - Signal gating: Sd >= minSeparability (default 0.5) is required for Quorum admission.
+ * - Quorum capacity: at most ceil((quorumPercent / 100) * D) dimensions per group.
  *
  * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
- * @param {{ quorumPercent?: number, decimalGain?: number }} [options]
+ * @param {{ quorumPercent?: number, minSeparability?: number }} [options]
  * @returns {{ metrics: SpectralDimMetric[], summary: SpectralQuorumSummary } | null}
  */
 export function computeSpectralQuorumMetrics(items, options = {}) {
@@ -90,16 +118,20 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
   if (!list.every((it) => it.embedding.length === dim)) return null;
 
   const quorumPercent = Math.max(1, Math.min(100, Number(options.quorumPercent) || 10));
-  const quorumCount = Math.max(1, Math.min(dim, Math.ceil((quorumPercent / 100) * dim)));
+  const quorumCapacity = Math.max(1, Math.min(dim, Math.ceil((quorumPercent / 100) * dim)));
+  const minSeparability = Number.isFinite(options.minSeparability)
+    ? Math.max(0, Number(options.minSeparability))
+    : DEFAULT_MIN_SEPARABILITY;
 
-  // Accumulate sums and sums of squares per group
-  /** @type {Map<string, { count: number, sum: Float64Array, sumSq: Float64Array }>} */
+  // Group tokens and accumulate sums and sums of squares per group in Float64
+  /** @type {Map<string, { count: number, sum: Float64Array, sumSq: Float64Array, embeddings: number[][] }>} */
   const groupStats = new Map();
   for (const gid of groupIds) {
     groupStats.set(gid, {
       count: 0,
       sum: new Float64Array(dim),
       sumSq: new Float64Array(dim),
+      embeddings: [],
     });
   }
 
@@ -108,6 +140,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     if (!stats) continue;
     const emb = it.embedding;
     stats.count += 1;
+    stats.embeddings.push(emb);
     for (let d = 0; d < dim; d++) {
       const v = emb[d];
       stats.sum[d] += v;
@@ -139,105 +172,191 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     groupStds.set(gid, std);
   }
 
-  // Compute directional spectral signatures per group (ddi-fw model)
+  // Compute pairwise nearest-competitor bilateral signatures per group (cruce.py model)
   /** @type {Map<string, GroupDimSignature[]>} */
   const groupSignatures = new Map();
-  /** @type {Record<string, { quorumDims: number[], maxDelta: number, avgDelta: number }>} */
+  /** @type {Record<string, { quorumDims: number[], maxDelta: number, avgDelta: number, positiveDims: number[], negativeDims: number[], admittedCount: number }>} */
   const groupSummary = {};
 
   for (const gid of validGroups) {
+    const myStats = groupStats.get(gid);
     const myMean = groupMeans.get(gid);
     const myStd = groupStds.get(gid);
-    const otherGids = validGroups.filter((g) => g !== gid);
+    const myEmbeddings = myStats.embeddings;
 
-    /** @type {Array<{ dim: number, delta: number, separability: number }>} */
+    /** @type {Array<{ dim: number, delta: number, absDelta: number, polarity: number, separability: number, competitorId: string, coherenceCount: number, coherenceTotal: number, coherencePct: number }>} */
     const rawGroupDims = new Array(dim);
-    let maxDelta = 0;
-    let totalPositiveDelta = 0;
+    let maxAbsDelta = 0;
     let maxSeparability = 0;
 
     for (let d = 0; d < dim; d++) {
-      // Find the strongest competitor group on dimension d
-      let compMaxMean = -Infinity;
-      let compStd = 0;
-      for (const otherGid of otherGids) {
-        const otherMean = groupMeans.get(otherGid)[d];
-        if (otherMean > compMaxMean) {
-          compMaxMean = otherMean;
-          compStd = groupStds.get(otherGid)[d];
+      let minSPlus = Infinity;
+      let minSMinus = Infinity;
+      let bestHPlus = '';
+      let bestHMinus = '';
+      let bestDeltaPlus = 0;
+      let bestDeltaMinus = 0;
+
+      for (const hid of validGroups) {
+        if (hid === gid) continue;
+        const hMean = groupMeans.get(hid)[d];
+        const hStd = groupStds.get(hid)[d];
+        const denom = myStd[d] + hStd;
+
+        let sPlus = 0;
+        let sMinus = 0;
+        const diff = myMean[d] - hMean;
+
+        if (denom > 1e-12) {
+          sPlus = diff / (denom + EPS_STD);
+          sMinus = -diff / (denom + EPS_STD);
+        } else {
+          // Fail-closed rule from ddi-fw cruce.py: zero dispersion -> zero separability
+          sPlus = 0.0;
+          sMinus = 0.0;
+        }
+
+        if (sPlus < minSPlus) {
+          minSPlus = sPlus;
+          bestHPlus = hid;
+          bestDeltaPlus = diff;
+        }
+        if (sMinus < minSMinus) {
+          minSMinus = sMinus;
+          bestHMinus = hid;
+          bestDeltaMinus = diff;
         }
       }
 
-      // Directional Delta: how much this group leads above its best competitor
-      const delta = myMean[d] - compMaxMean;
-      // Sd = directional separability (only positive leads count as discriminant)
-      const sd = delta > 0 ? delta / (myStd[d] + compStd + EPS_STD) : 0;
+      let minSd = 0;
+      let polarity = 1;
+      let nearestCompetitorId = '';
+      let nearestDelta = 0;
 
-      if (delta > maxDelta) maxDelta = delta;
-      if (delta > 0) totalPositiveDelta += delta;
-      if (sd > maxSeparability) maxSeparability = sd;
+      if (minSPlus >= minSMinus) {
+        minSd = Math.max(0, minSPlus);
+        polarity = 1;
+        nearestCompetitorId = bestHPlus;
+        nearestDelta = bestDeltaPlus;
+      } else {
+        minSd = Math.max(0, minSMinus);
+        polarity = -1;
+        nearestCompetitorId = bestHMinus;
+        nearestDelta = bestDeltaMinus;
+      }
+
+      const absDelta = Math.abs(nearestDelta);
+
+      // Intra-group directional coherence (ddi-fw coherencia_signo)
+      const compMean = nearestCompetitorId ? groupMeans.get(nearestCompetitorId)[d] : 0;
+      const theta = (myMean[d] + compMean) * 0.5;
+      let cCount = 0;
+      for (let i = 0; i < myEmbeddings.length; i++) {
+        const v = myEmbeddings[i][d];
+        if (polarity >= 0 ? v >= theta : v < theta) {
+          cCount++;
+        }
+      }
+      const coherenceTotal = myEmbeddings.length;
+      const coherencePct = coherenceTotal > 0 ? (cCount / coherenceTotal) * 100 : 0;
+
+      if (absDelta > maxAbsDelta) maxAbsDelta = absDelta;
+      if (minSd > maxSeparability) maxSeparability = minSd;
 
       rawGroupDims[d] = {
         dim: d,
-        delta,
-        separability: sd,
+        delta: nearestDelta,
+        absDelta,
+        polarity,
+        separability: minSd,
+        competitorId: nearestCompetitorId,
+        coherenceCount: cCount,
+        coherenceTotal,
+        coherencePct,
       };
     }
 
-    // Rank dimensions for this group: highest separability first; then highest delta; then dim index
+    // Rank dimensions for this group: highest separability first; then highest absDelta; then dim index
     const rankedDims = Array.from({ length: dim }, (_, i) => i).sort((a, b) => {
       const diffSd = rawGroupDims[b].separability - rawGroupDims[a].separability;
       if (Math.abs(diffSd) > 1e-9) return diffSd;
-      const diffDelta = rawGroupDims[b].delta - rawGroupDims[a].delta;
+      const diffDelta = rawGroupDims[b].absDelta - rawGroupDims[a].absDelta;
       if (Math.abs(diffDelta) > 1e-9) return diffDelta;
       return a - b;
     });
 
     const groupDims = new Array(dim);
     const topDims = [];
+    const positiveDims = [];
+    const negativeDims = [];
+    let sumQuorumDelta = 0;
+
+    // Find the peak separability among dimensions that qualify
+    let peakQualifyingSd = 0;
+    for (let r = 0; r < dim; r++) {
+      const d = rankedDims[r];
+      const raw = rawGroupDims[d];
+      if (r < quorumCapacity && raw.separability >= minSeparability && raw.absDelta > 1e-9) {
+        if (raw.separability > peakQualifyingSd) {
+          peakQualifyingSd = raw.separability;
+        }
+      }
+    }
 
     for (let r = 0; r < dim; r++) {
       const d = rankedDims[r];
       const raw = rawGroupDims[d];
-      // Quorum member if within quorumCount and delta > 0 (or r === 0 fallback)
-      const isQuorum = r < quorumCount && (raw.delta > 0 || r === 0);
-      if (isQuorum) topDims.push(d);
+      // Deterministic Quorum member: within capacity ceiling AND meets minimal separability
+      const isQuorum = r < quorumCapacity && raw.separability >= minSeparability && raw.absDelta > 1e-9;
+      if (isQuorum) {
+        topDims.push(d);
+        sumQuorumDelta += raw.absDelta;
+        if (raw.polarity > 0) positiveDims.push(d);
+        else negativeDims.push(d);
+      }
 
-      const relativeScore = maxSeparability > 1e-12
-        ? Math.max(0, Math.min(1, raw.separability / maxSeparability))
-        : (maxDelta > 1e-12 ? Math.max(0, Math.min(1, raw.delta / maxDelta)) : 1.0);
+      const relativeScore = isQuorum && peakQualifyingSd > 1e-12
+        ? Math.max(0, Math.min(1, raw.separability / peakQualifyingSd))
+        : 0;
 
       groupDims[d] = {
         dim: d,
         delta: raw.delta,
+        absDelta: raw.absDelta,
+        polarity: raw.polarity,
         separability: raw.separability,
+        competitorId: raw.competitorId,
+        coherenceCount: raw.coherenceCount,
+        coherenceTotal: raw.coherenceTotal,
+        coherencePct: raw.coherencePct,
         rank: r,
         isQuorum,
-        relativeScore: isQuorum ? relativeScore : 0,
+        relativeScore,
       };
     }
 
     groupSignatures.set(gid, groupDims);
     groupSummary[gid] = {
       quorumDims: topDims,
-      maxDelta,
-      avgDelta: totalPositiveDelta / Math.max(1, dim),
+      maxDelta: maxAbsDelta,
+      avgDelta: topDims.length > 0 ? sumQuorumDelta / topDims.length : 0,
+      positiveDims,
+      negativeDims,
+      admittedCount: topDims.length,
     };
   }
 
-  // Calculate pairwise max delta and global separability for top-level metrics
+  // Calculate pairwise max delta and global separability across all pairs for top-level metrics
   let globalMaxDelta = 0;
   let totalDeltaSum = 0;
   const rawGlobalMetrics = new Array(dim);
 
   const mean0 = groupMeans.get(validGroups[0]);
   const mean1 = groupMeans.get(validGroups[1]);
-  const std0 = groupStds.get(validGroups[0]);
-  const std1 = groupStds.get(validGroups[1]);
 
   for (let d = 0; d < dim; d++) {
     let peakDelta = 0;
-    let peakPairStdSum = 0;
+    let peakPairSd = 0;
 
     for (let i = 0; i < validGroups.length; i++) {
       const mi = groupMeans.get(validGroups[i])[d];
@@ -246,9 +365,11 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         const mj = groupMeans.get(validGroups[j])[d];
         const sj = groupStds.get(validGroups[j])[d];
         const delta = Math.abs(mi - mj);
+        const denom = si + sj;
+        const sd = denom > 1e-12 ? delta / (denom + EPS_STD) : 0.0;
         if (delta > peakDelta) {
           peakDelta = delta;
-          peakPairStdSum = si + sj;
+          peakPairSd = sd;
         }
       }
     }
@@ -256,15 +377,14 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     if (peakDelta > globalMaxDelta) globalMaxDelta = peakDelta;
     totalDeltaSum += peakDelta;
 
-    const sd = peakDelta / (peakPairStdSum + EPS_STD);
     rawGlobalMetrics[d] = {
       dim: d,
       deltaMean: peakDelta,
-      separability: sd,
+      separability: peakPairSd,
     };
   }
 
-  // Global ranking
+  // Global ranking by separability
   const rankedIndices = Array.from({ length: dim }, (_, i) => i).sort((a, b) => {
     const diffSd = rawGlobalMetrics[b].separability - rawGlobalMetrics[a].separability;
     if (Math.abs(diffSd) > 1e-9) return diffSd;
@@ -273,38 +393,42 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     return a - b;
   });
 
-  const maxGlobalSd = rawGlobalMetrics[rankedIndices[0]]?.separability || 1.0;
   const metrics = new Array(dim);
-  const topQuorumDims = [];
+  const globalQuorumSet = new Set();
 
+  // Populate per-group signature map and determine global quorum
   for (let rank = 0; rank < dim; rank++) {
     const d = rankedIndices[rank];
-    const isQuorum = rank < quorumCount;
-    if (isQuorum) topQuorumDims.push(d);
 
-    // Populate per-group signature map for this dimension
     const sigMap = {};
+    let isQuorumAny = false;
     let maxGroupRelScore = 0;
+    let dominantPolarity = 1;
 
     for (const gid of validGroups) {
       const gDim = groupSignatures.get(gid)[d];
       sigMap[gid] = gDim;
-      if (gDim.relativeScore > maxGroupRelScore) {
-        maxGroupRelScore = gDim.relativeScore;
+      if (gDim.isQuorum) {
+        isQuorumAny = true;
+        if (gDim.relativeScore > maxGroupRelScore) {
+          maxGroupRelScore = gDim.relativeScore;
+          dominantPolarity = gDim.polarity;
+        }
       }
     }
 
-    const relativeScore = maxGlobalSd > 1e-12
-      ? Math.max(0, Math.min(1, rawGlobalMetrics[d].separability / maxGlobalSd))
-      : (globalMaxDelta > 1e-12 ? rawGlobalMetrics[d].deltaMean / globalMaxDelta : 1.0);
+    if (isQuorumAny) {
+      globalQuorumSet.add(d);
+    }
 
     metrics[d] = {
       dim: d,
-      isQuorum,
+      isQuorum: isQuorumAny,
       rank,
       deltaMean: rawGlobalMetrics[d].deltaMean,
       separability: rawGlobalMetrics[d].separability,
-      relativeScore: Math.max(relativeScore, maxGroupRelScore),
+      relativeScore: maxGroupRelScore,
+      polarity: dominantPolarity,
       meanA: mean0[d],
       meanB: mean1[d],
       sameSign: (mean0[d] >= 0) === (mean1[d] >= 0),
@@ -330,12 +454,16 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     };
   }
 
+  const topQuorumDims = Array.from(globalQuorumSet).sort((a, b) => a - b);
+
   const summary = {
-    quorumCount,
+    quorumCapacity,
+    quorumCount: globalQuorumSet.size,
     totalDim: dim,
     maxDelta: globalMaxDelta,
     avgDelta: totalDeltaSum / Math.max(1, dim),
     topQuorumDims,
+    minSeparability,
     groupSignatures: groupSummary,
   };
 
@@ -353,6 +481,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
  *   spectralQuorumEnabled?: boolean,
  *   spectralHighlightStrength?: number,
  *   spectralPajaCancelCoverage?: number,
+ *   spectralBaselineCancelCoverage?: number,
  *   spectralDecimalGain?: number,
  * }} settings
  * @param {string|null|undefined} [groupId]
@@ -373,7 +502,7 @@ export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId 
   } else {
     // Fallback when groupId is not provided
     isQuorum = Boolean(dimMetric.isQuorum);
-    relScore = dimMetric.relativeScore ?? 1.0;
+    relScore = dimMetric.relativeScore ?? 0;
   }
 
   if (isQuorum) {
@@ -396,4 +525,3 @@ export function paintWeightsForSpectralQuorum(dimMetric, settings = {}, groupId 
 
   return { cancel, highlight: 0 };
 }
-

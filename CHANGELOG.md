@@ -4,6 +4,16 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1)**:
+  - **Pairwise Nearest-Competitor con Signo**: En `src/visualizer/spectralQuorum.js`, adopción estricta del estadístico bilateral por pares de `ddi-fw` (`cruce.py`) evaluado con la envoltura $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$. Corrige la distorsión del modelo One-vs-Rest y detecta firmas direccionales tanto por elevación (+1) como por depresión (−1).
+  - **Guarda Fail-Closed para Dispersión Cero**: Si $\sigma_g(d) + \sigma_h(d) \le 10^{-12}$ (e.g. $N=1$), se devuelve $S_d = 0.0$ exacto y quórum vacío, impidiendo falsos positivos donde la falta de varianza inflaba la separabilidad a millones.
+  - **Coherencia Intra-Grupo (`coherencia_signo`)**: Cálculo auditable del conteo y porcentaje de palabras de cada grupo que caen estrictamente de su lado del umbral divisor $\theta = (\mu_g + \mu_{\text{comp}}) / 2$.
+  - **PRNG Determinista con Semilla**: Implementación de Mulberry32 en `src/visualizer/spectralPrng.js` para reproducibilidad determinista bit a bit.
+  - **Corrección de Métricas en Summary**: `summary.quorumCount` reporta la cantidad real admitida y `summary.quorumCapacity` el techo de capacidad.
+  - **Bug B1 & B2 Fixes**: Eliminación del fallback `r === 0` y corrección de `spectralHighlightColor` en el renderizado CPU de `src/visualizer/groupHuePaint.js`.
+  - **Pruebas y Rigor**: Suite de 15 pruebas unitarias en `tests/spectralQuorum.test.js` y regresión en `tests/groupHuePaint.test.js`.
+
 ## [3.3.0] - 2026-09-24
 
 ### Added

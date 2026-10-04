@@ -121,4 +121,34 @@ describe('groupHuePaint', () => {
     });
     expect(missing.r).toBeCloseTo(anchorsFromSettings(vizOn).positive.r, 5);
   });
+
+  it('regression Bug B2: uses spectralHighlightColor for highlight when spectralQuorumEnabled is on', () => {
+    const viz = resolveVisualizationSettings({
+      spectralQuorumEnabled: true,
+      spectralHighlightColor: '#FF0000',
+      oppositeHighlightColor: '#00E5FF',
+      spectralHighlightStrength: 100,
+      spectralDecimalGain: 10,
+    });
+    const anchors = anchorsFromSettings(viz);
+    const groupMetric = {
+      dim: 0,
+      isQuorum: true,
+      relativeScore: 1.0,
+      groupSignatures: {
+        G1: { isQuorum: true, relativeScore: 1.0 },
+      },
+    };
+    const col = colorForActivationWithGroupHue(0.5, 0, {
+      viz,
+      anchors,
+      zeroCoverage: 0,
+      groupDimMetrics: [groupMetric],
+      groupId: 'G1',
+    });
+    // Should be tinted with spectral red (#FF0000), not opposite cian (#00E5FF)
+    expect(col.r).toBeCloseTo(1, 1);
+    expect(col.b).toBeCloseTo(0, 1);
+  });
 });
+
