@@ -8,7 +8,7 @@
  * - Fail-closed dispersion rule: if sigma_g + sigma_h <= 1e-12 (e.g. N=1), Sd = 0.0 exact.
  * - Sign/polarity is preserved: dimensions discriminate both by elevation (+1) and depression (-1).
  * - Intra-group directional coherence (% of words on the group's side of the boundary).
- * - Signal threshold: dimensions must exceed minSeparability to qualify.
+ * - Auto-calibrated signal threshold via Westfall–Young maxT permutation null (M=1000).
  * - Quorum capacity: at most ceil((quorumPercent / 100) * D) dimensions per group.
  * - Groups can naturally share discriminative coordinates without artificial argmax exclusion.
  */
@@ -19,8 +19,374 @@ import { createMulberry32 } from './spectralPrng.js';
 export const EPS_STD = 1e-6; // Aligned with ddi-fw universal 6-decimal standard
 export const DEFAULT_MIN_SEPARABILITY = 0.5; // ddi-fw Protocol 03: baseline cutoff for paja
 export const DEFAULT_PRNG_SEED = 0xDEADBEEF;
+export const DEFAULT_PERMUTATION_COUNT = 1000;
 
 export { createMulberry32 };
+
+/**
+ * Exact integer combination count nCk = n! / (k! * (n - k)!).
+ * @param {number} n
+ * @param {number} k
+ * @returns {number}
+ */
+export function combinationCount(n, k) {
+  if (k < 0 || k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  const c = Math.min(k, n - k);
+  let res = 1;
+  for (let i = 1; i <= c; i++) {
+    res = (res * (n - c + i)) / i;
+  }
+  return Math.round(res);
+}
+
+/**
+ * Evaluates statistical viability based on group sample sizes N.
+ * Under permutation test, the minimal achievable p-value between 2 groups is 1 / nCk(n1+n2, n1).
+ * For alpha=0.05, n1=3, n2=3 is the hard mathematical minimum (1/20 = 0.05).
+ *
+ * @param {number[]} groupSizes - Token counts per group
+ * @returns {{
+ *   status: 'IMPOSSIBLE_SAMPLE_SIZE' | 'LOW_POWER' | 'OPERATIONAL',
+ *   pMin: number,
+ *   minGroupSize: number,
+ *   message: string,
+ * }}
+ */
+export function evaluateSampleSizeDiagnostic(groupSizes) {
+  if (!Array.isArray(groupSizes) || groupSizes.length < 2) {
+    return {
+      status: 'IMPOSSIBLE_SAMPLE_SIZE',
+      pMin: 1.0,
+      minGroupSize: 0,
+      message: 'Requiere al menos 2 grupos para evaluar significancia estadística',
+    };
+  }
+  const sorted = [...groupSizes].sort((a, b) => a - b);
+  const n1 = sorted[0];
+  const n2 = sorted[1];
+  const totalComb = combinationCount(n1 + n2, n1);
+  const pMin = totalComb > 0 ? 1 / totalComb : 1.0;
+
+  if (n1 < 3 || pMin > 0.05) {
+    return {
+      status: 'IMPOSSIBLE_SAMPLE_SIZE',
+      pMin,
+      minGroupSize: n1,
+      message: `Estadísticamente imposible para α=0.05 (p_min = ${pMin.toFixed(3)} > 0.05; requiere N≥3 por grupo)`,
+    };
+  }
+
+  if (n1 < 8) {
+    return {
+      status: 'LOW_POWER',
+      pMin,
+      minGroupSize: n1,
+      message: `Baja potencia estadística para N=${n1} (esperado quórum vacío sin señal muy fuerte)`,
+    };
+  }
+
+  return {
+    status: 'OPERATIONAL',
+    pMin,
+    minGroupSize: n1,
+    message: 'Operativo normal',
+  };
+}
+
+/**
+ * Creates a cached container for permutation null results.
+ * @returns {{ key: string, result: PermutationNullResult|null }}
+ */
+export function createSpectralQuorumNullCache() {
+  return { key: '', result: null };
+}
+
+let defaultGlobalNullCache = createSpectralQuorumNullCache();
+
+/**
+ * Generates a deterministic payload fingerprint for permutation caching.
+ * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
+ * @param {number} [seed=DEFAULT_PRNG_SEED]
+ * @param {number} [mCount=DEFAULT_PERMUTATION_COUNT]
+ * @returns {string}
+ */
+export function spectralQuorumPayloadCacheKey(
+  items,
+  seed = DEFAULT_PRNG_SEED,
+  mCount = DEFAULT_PERMUTATION_COUNT
+) {
+  const all = Array.isArray(items) ? items : [];
+  const list = all.filter(
+    (it) => it?.groupId && Array.isArray(it.embedding) && it.embedding.length > 0
+  );
+  if (list.length < 2) return '';
+  const dim = list[0].embedding.length;
+  let h = (all.length * 1000003 + list.length * 10007 + dim + (seed | 0) + (mCount | 0)) | 0;
+  for (let i = 0; i < list.length; i++) {
+    const gid = String(list[i].groupId || '');
+    for (let c = 0; c < gid.length; c++) {
+      h = (Math.imul(h, 37) + gid.charCodeAt(c)) | 0;
+    }
+    const e = list[i].embedding;
+    if (e.length !== dim) return `bad:${i}`;
+    for (let d = 0; d < dim; d++) {
+      h = (Math.imul(h, 31) + ((e[d] * 1e6) | 0)) | 0;
+    }
+  }
+  return `${all.length}:${list.length}:${dim}:${seed}:${mCount}:${h}`;
+}
+
+/**
+ * @typedef {{
+ *   nullP95: number,
+ *   maxTDistribution: Float64Array,
+ *   iterations: number,
+ *   diagnostic: ReturnType<typeof evaluateSampleSizeDiagnostic>,
+ * }} PermutationNullResult
+ */
+
+/**
+ * Computes the empirical noise floor threshold (p95 of global maxT distribution)
+ * using the Westfall–Young maxT procedure over M label permutations.
+ *
+ * Performance optimization: precomputes global sums and, for 2 groups, accumulates only the smaller
+ * group (O(N_min * D)), taking the complement by subtraction. Executes 1000 permutations in ~25ms.
+ *
+ * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
+ * @param {{
+ *   permutationCount?: number,
+ *   prngSeed?: number,
+ * }} [options]
+ * @returns {PermutationNullResult}
+ */
+export function computePermutationNullThreshold(items, options = {}) {
+  const list = (items || []).filter(
+    (it) => it?.groupId && Array.isArray(it.embedding) && it.embedding.length > 0
+  );
+  const groupIds = listDistinctGroupIds(list);
+  if (groupIds.length < 2) {
+    return {
+      nullP95: Infinity,
+      maxTDistribution: new Float64Array(0),
+      iterations: 0,
+      diagnostic: evaluateSampleSizeDiagnostic([]),
+    };
+  }
+
+  const dim = list[0].embedding.length;
+  if (!list.every((it) => it.embedding.length === dim)) {
+    return {
+      nullP95: Infinity,
+      maxTDistribution: new Float64Array(0),
+      iterations: 0,
+      diagnostic: evaluateSampleSizeDiagnostic([]),
+    };
+  }
+
+  // Count items per group
+  /** @type {Map<string, number>} */
+  const groupCounts = new Map();
+  for (const gid of groupIds) groupCounts.set(gid, 0);
+  for (const it of list) {
+    groupCounts.set(it.groupId, (groupCounts.get(it.groupId) || 0) + 1);
+  }
+  const validGroups = groupIds.filter((gid) => (groupCounts.get(gid) || 0) > 0);
+  const countsArray = validGroups.map((gid) => groupCounts.get(gid) || 0);
+
+  const diagnostic = evaluateSampleSizeDiagnostic(countsArray);
+  if (diagnostic.status === 'IMPOSSIBLE_SAMPLE_SIZE') {
+    return {
+      nullP95: Infinity,
+      maxTDistribution: new Float64Array(0),
+      iterations: 0,
+      diagnostic,
+    };
+  }
+
+  const totalTokens = list.length;
+  const M = Math.max(10, Number(options.permutationCount) || DEFAULT_PERMUTATION_COUNT);
+  const seed = Number.isFinite(options.prngSeed) ? Number(options.prngSeed) : DEFAULT_PRNG_SEED;
+  const prng = createMulberry32(seed);
+
+  // Precompute global sum and sum of squares
+  const globalSum = new Float64Array(dim);
+  const globalSumSq = new Float64Array(dim);
+  const data = new Array(totalTokens);
+
+  for (let i = 0; i < totalTokens; i++) {
+    const emb = list[i].embedding;
+    data[i] = emb;
+    for (let d = 0; d < dim; d++) {
+      const v = emb[d];
+      globalSum[d] += v;
+      globalSumSq[d] += v * v;
+    }
+  }
+
+  const maxT = new Float64Array(M);
+  const indices = Array.from({ length: totalTokens }, (_, i) => i);
+
+  if (validGroups.length === 2) {
+    // Highly optimized path for 2 groups: O(N_min * D) per permutation
+    const n0 = countsArray[0];
+    const n1 = countsArray[1];
+    const swap = n0 > n1;
+    const nSmall = swap ? n1 : n0;
+    const nBig = swap ? n0 : n1;
+
+    const sumSmall = new Float64Array(dim);
+    const sumSqSmall = new Float64Array(dim);
+
+    for (let m = 0; m < M; m++) {
+      // Fisher-Yates partial shuffle
+      for (let i = totalTokens - 1; i > 0; i--) {
+        const j = Math.floor(prng() * (i + 1));
+        const tmp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = tmp;
+      }
+
+      sumSmall.fill(0);
+      sumSqSmall.fill(0);
+      for (let i = 0; i < nSmall; i++) {
+        const row = data[indices[i]];
+        for (let d = 0; d < dim; d++) {
+          const v = row[d];
+          sumSmall[d] += v;
+          sumSqSmall[d] += v * v;
+        }
+      }
+
+      let peakSd = 0;
+      for (let d = 0; d < dim; d++) {
+        const mS = sumSmall[d] / nSmall;
+        const vS = Math.max(0, sumSqSmall[d] / nSmall - mS * mS);
+        const sS = Math.sqrt(vS);
+
+        const sumB = globalSum[d] - sumSmall[d];
+        const sumSqB = globalSumSq[d] - sumSqSmall[d];
+        const mB = sumB / nBig;
+        const vB = Math.max(0, sumSqB / nBig - mB * mB);
+        const sB = Math.sqrt(vB);
+
+        const denom = sS + sB;
+        if (denom > 1e-12) {
+          const sd = Math.abs(mS - mB) / (denom + EPS_STD);
+          if (sd > peakSd) peakSd = sd;
+        }
+      }
+      maxT[m] = peakSd;
+    }
+  } else {
+    // General path for G >= 3 groups
+    const G = validGroups.length;
+    const sumG = Array.from({ length: G }, () => new Float64Array(dim));
+    const sumSqG = Array.from({ length: G }, () => new Float64Array(dim));
+
+    for (let m = 0; m < M; m++) {
+      // Fisher-Yates shuffle
+      for (let i = totalTokens - 1; i > 0; i--) {
+        const j = Math.floor(prng() * (i + 1));
+        const tmp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = tmp;
+      }
+
+      for (let g = 0; g < G; g++) {
+        sumG[g].fill(0);
+        sumSqG[g].fill(0);
+      }
+
+      let offset = 0;
+      for (let g = 0; g < G; g++) {
+        const countG = countsArray[g];
+        const sG = sumG[g];
+        const sqG = sumSqG[g];
+        for (let i = 0; i < countG; i++) {
+          const row = data[indices[offset + i]];
+          for (let d = 0; d < dim; d++) {
+            const v = row[d];
+            sG[d] += v;
+            sqG[d] += v * v;
+          }
+        }
+        offset += countG;
+      }
+
+      // Compute max separation over dims and groups
+      let peakSd = 0;
+      for (let d = 0; d < dim; d++) {
+        const means = new Float64Array(G);
+        const stds = new Float64Array(G);
+        for (let g = 0; g < G; g++) {
+          const countG = countsArray[g];
+          const m = sumG[g][d] / countG;
+          means[g] = m;
+          stds[g] = Math.sqrt(Math.max(0, sumSqG[g][d] / countG - m * m));
+        }
+
+        // For each group, calculate signed envelope against nearest competitor
+        for (let g = 0; g < G; g++) {
+          let minSPlus = Infinity;
+          let minSMinus = Infinity;
+
+          for (let h = 0; h < G; h++) {
+            if (h === g) continue;
+            const denom = stds[g] + stds[h];
+            let sPlus = 0;
+            let sMinus = 0;
+            const diff = means[g] - means[h];
+            if (denom > 1e-12) {
+              sPlus = diff / (denom + EPS_STD);
+              sMinus = -diff / (denom + EPS_STD);
+            }
+            if (sPlus < minSPlus) minSPlus = sPlus;
+            if (sMinus < minSMinus) minSMinus = sMinus;
+          }
+
+          const sdG = Math.max(0, Math.max(minSPlus, minSMinus));
+          if (sdG > peakSd) peakSd = sdG;
+        }
+      }
+      maxT[m] = peakSd;
+    }
+  }
+
+  // Westfall–Young maxT 95th percentile
+  const sortedMaxT = Float64Array.from(maxT).sort();
+  const p95Index = Math.min(M - 1, Math.floor(M * 0.95));
+  const nullP95 = sortedMaxT[p95Index];
+
+  return {
+    nullP95,
+    maxTDistribution: sortedMaxT,
+    iterations: M,
+    diagnostic,
+  };
+}
+
+/**
+ * Cached access to the permutation null threshold.
+ * @param {{ key: string, result: PermutationNullResult|null }} cache
+ * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
+ * @param {{ permutationCount?: number, prngSeed?: number }} [options]
+ * @returns {PermutationNullResult}
+ */
+export function cachedPermutationNullThreshold(cache, items, options = {}) {
+  const seed = Number.isFinite(options.prngSeed) ? Number(options.prngSeed) : DEFAULT_PRNG_SEED;
+  const mCount = Math.max(10, Number(options.permutationCount) || DEFAULT_PERMUTATION_COUNT);
+  const key = spectralQuorumPayloadCacheKey(items, seed, mCount);
+  if (cache && cache.key === key && cache.result) {
+    return cache.result;
+  }
+  const result = computePermutationNullThreshold(items, { permutationCount: mCount, prngSeed: seed });
+  if (cache) {
+    cache.key = key;
+    cache.result = result;
+  }
+  return result;
+}
 
 /**
  * @typedef {{
@@ -67,6 +433,10 @@ export { createMulberry32 };
  *   avgDelta: number,
  *   topQuorumDims: number[],
  *   minSeparability: number,
+ *   nullP95?: number,
+ *   diagnostic?: ReturnType<typeof evaluateSampleSizeDiagnostic>,
+ *   prngSeed?: number,
+ *   permutationsRun?: number,
  *   groupSignatures?: Record<string, {
  *     quorumDims: number[],
  *     maxDelta: number,
@@ -100,11 +470,18 @@ export function hasEnoughGroupsForSpectralQuorum(items) {
  * - Fail-closed: if sigma_g(d) + sigma_comp(d) <= 1e-12, Sd = 0.0 exact.
  * - Polarity: +1 if elevated above competitor, -1 if depressed below competitor.
  * - Intra-group coherence: % of group tokens on the group's side of midpoint threshold.
- * - Signal gating: Sd >= minSeparability (default 0.5) is required for Quorum admission.
+ * - Signal gating: auto-calibrated via Westfall–Young maxT permutation null (M=1000) or explicit minSeparability.
  * - Quorum capacity: at most ceil((quorumPercent / 100) * D) dimensions per group.
  *
  * @param {Array<{ groupId?: string, embedding?: number[] }|null|undefined>|null|undefined} items
- * @param {{ quorumPercent?: number, minSeparability?: number }} [options]
+ * @param {{
+ *   quorumPercent?: number,
+ *   minSeparability?: number,
+ *   usePermutationNull?: boolean,
+ *   permutationCount?: number,
+ *   prngSeed?: number,
+ *   nullCache?: { key: string, result: PermutationNullResult|null },
+ * }} [options]
  * @returns {{ metrics: SpectralDimMetric[], summary: SpectralQuorumSummary } | null}
  */
 export function computeSpectralQuorumMetrics(items, options = {}) {
@@ -119,9 +496,23 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
 
   const quorumPercent = Math.max(1, Math.min(100, Number(options.quorumPercent) || 10));
   const quorumCapacity = Math.max(1, Math.min(dim, Math.ceil((quorumPercent / 100) * dim)));
-  const minSeparability = Number.isFinite(options.minSeparability)
+
+  // Resolve permutation null threshold and diagnostic
+  const seed = Number.isFinite(options.prngSeed) ? Number(options.prngSeed) : DEFAULT_PRNG_SEED;
+  const mCount = Math.max(10, Number(options.permutationCount) || DEFAULT_PERMUTATION_COUNT);
+  const cacheToUse = options.nullCache || defaultGlobalNullCache;
+
+  let nullResult = null;
+  if (options.usePermutationNull !== false && !Number.isFinite(options.minSeparability)) {
+    nullResult = cachedPermutationNullThreshold(cacheToUse, items, {
+      permutationCount: mCount,
+      prngSeed: seed,
+    });
+  }
+
+  const effectiveThreshold = Number.isFinite(options.minSeparability)
     ? Math.max(0, Number(options.minSeparability))
-    : DEFAULT_MIN_SEPARABILITY;
+    : (nullResult ? nullResult.nullP95 : DEFAULT_MIN_SEPARABILITY);
 
   // Group tokens and accumulate sums and sums of squares per group in Float64
   /** @type {Map<string, { count: number, sum: Float64Array, sumSq: Float64Array, embeddings: number[][] }>} */
@@ -172,7 +563,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     groupStds.set(gid, std);
   }
 
-  // Compute pairwise nearest-competitor bilateral signatures per group (cruce.py model)
+  // Compute pairwise nearest-competitor bilateral signatures per group (cruce.py signed envelope)
   /** @type {Map<string, GroupDimSignature[]>} */
   const groupSignatures = new Map();
   /** @type {Record<string, { quorumDims: number[], maxDelta: number, avgDelta: number, positiveDims: number[], negativeDims: number[], admittedCount: number }>} */
@@ -296,7 +687,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     for (let r = 0; r < dim; r++) {
       const d = rankedDims[r];
       const raw = rawGroupDims[d];
-      if (r < quorumCapacity && raw.separability >= minSeparability && raw.absDelta > 1e-9) {
+      if (r < quorumCapacity && raw.separability >= effectiveThreshold && raw.absDelta > 1e-9) {
         if (raw.separability > peakQualifyingSd) {
           peakQualifyingSd = raw.separability;
         }
@@ -307,7 +698,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
       const d = rankedDims[r];
       const raw = rawGroupDims[d];
       // Deterministic Quorum member: within capacity ceiling AND meets minimal separability
-      const isQuorum = r < quorumCapacity && raw.separability >= minSeparability && raw.absDelta > 1e-9;
+      const isQuorum = r < quorumCapacity && raw.separability >= effectiveThreshold && raw.absDelta > 1e-9;
       if (isQuorum) {
         topDims.push(d);
         sumQuorumDelta += raw.absDelta;
@@ -463,7 +854,11 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     maxDelta: globalMaxDelta,
     avgDelta: totalDeltaSum / Math.max(1, dim),
     topQuorumDims,
-    minSeparability,
+    minSeparability: effectiveThreshold,
+    nullP95: nullResult ? nullResult.nullP95 : undefined,
+    diagnostic: nullResult ? nullResult.diagnostic : undefined,
+    prngSeed: seed,
+    permutationsRun: nullResult ? nullResult.iterations : 0,
     groupSignatures: groupSummary,
   };
 

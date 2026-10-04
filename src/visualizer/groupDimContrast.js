@@ -9,7 +9,10 @@ import {
   paintWeightsForSpectralQuorum,
   computeSpectralQuorumMetrics,
   hasEnoughGroupsForSpectralQuorum,
+  createSpectralQuorumNullCache,
 } from './spectralQuorum.js';
+
+export { createSpectralQuorumNullCache };
 
 const REL_DIST_EPS = 1e-12;
 const COVERAGE_EPS = 1e-9;

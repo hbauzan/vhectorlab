@@ -13,6 +13,7 @@ import {
   cachedSharedNoiseMetrics,
   computeDimRelationMetrics,
   createSharedNoiseCache,
+  createSpectralQuorumNullCache,
   hasGroupsForDimContrast,
 } from './groupDimContrast.js';
 import { layoutGalaxyPoints, resolveGalaxyPointSize, resolveGalaxyWorldScale } from './galaxyLayout.js';
@@ -44,6 +45,8 @@ export class Instancer {
     this._reorderBusy = false;
     /** Median/relDist cache — invalidated by embedding fingerprint, not viz ticks. */
     this._sharedNoiseCache = createSharedNoiseCache();
+    /** Permutation null cache — invalidated by payload fingerprint, not slider drags. */
+    this._spectralNullCache = createSpectralQuorumNullCache();
   }
 
   /**
@@ -295,6 +298,7 @@ export class Instancer {
     const groupDimMetrics = hasGroupsForDimContrast(items)
       ? computeDimRelationMetrics(items, {
           quorumPercent: resolvedViz.spectralQuorumPercent,
+          nullCache: this._spectralNullCache,
         })
       : null;
     const sharedNoiseMetrics = isSaeActive

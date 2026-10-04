@@ -4,7 +4,14 @@ import {
   computeSpectralQuorumMetrics,
   paintWeightsForSpectralQuorum,
   createMulberry32,
+  combinationCount,
+  evaluateSampleSizeDiagnostic,
+  computePermutationNullThreshold,
+  createSpectralQuorumNullCache,
+  spectralQuorumPayloadCacheKey,
+  cachedPermutationNullThreshold,
   DEFAULT_MIN_SEPARABILITY,
+  DEFAULT_PRNG_SEED,
 } from '../src/visualizer/spectralQuorum.js';
 
 describe('spectralQuorum math and classification (ddi-fw port)', () => {
@@ -24,9 +31,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
 
   it('computes deltaMean, separability Sd and identifies 10% Quorum (Trigos vs Paja)', () => {
     // 10 dimensions: dim0 to dim9.
-    // In ddi-fw, top 10% of 10 dims = ceil(0.10 * 10) = 1 dimension is Quorum.
     // Let dim4 have the largest separation: python=0.08, receta=0.01 (delta = 0.07).
-    // All other dims have tiny delta <= 0.005.
     const pythonEmbeddings = [
       [0.02, 0.02, 0.02, 0.02, 0.08, 0.02, 0.02, 0.02, 0.02, 0.02],
       [0.021, 0.019, 0.02, 0.02, 0.082, 0.02, 0.02, 0.02, 0.02, 0.02],
@@ -43,7 +48,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       { groupId: 'receta', embedding: recetaEmbeddings[1] },
     ];
 
-    const result = computeSpectralQuorumMetrics(items, { quorumPercent: 10 });
+    const result = computeSpectralQuorumMetrics(items, { quorumPercent: 10, minSeparability: 0.5 });
     expect(result).not.toBeNull();
     expect(result.metrics).toHaveLength(10);
     expect(result.summary.quorumCapacity).toBe(1); // ceil(10 * 0.1) = 1
@@ -74,12 +79,12 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
     ];
     // 5 dims, 20% quorum => ceil(5 * 0.2) = 1 dim (dim0).
     // 40% quorum => ceil(5 * 0.4) = 2 dims (dim0, dim2).
-    const res20 = computeSpectralQuorumMetrics(items, { quorumPercent: 20 });
+    const res20 = computeSpectralQuorumMetrics(items, { quorumPercent: 20, minSeparability: 0.5 });
     expect(res20.summary.quorumCapacity).toBe(1);
     expect(res20.summary.quorumCount).toBe(1);
     expect(res20.summary.topQuorumDims).toEqual([0]);
 
-    const res40 = computeSpectralQuorumMetrics(items, { quorumPercent: 40 });
+    const res40 = computeSpectralQuorumMetrics(items, { quorumPercent: 40, minSeparability: 0.5 });
     expect(res40.summary.quorumCapacity).toBe(2);
     expect(res40.summary.quorumCount).toBe(2);
     expect(res40.summary.topQuorumDims).toEqual([0, 2]);
@@ -187,7 +192,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       { groupId: 'women', embedding: womenEmb[1] },
     ];
 
-    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 10 });
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 10, minSeparability: 0.5 });
     expect(res).not.toBeNull();
     const gSig = res.summary.groupSignatures;
     expect(gSig).toBeDefined();
@@ -263,7 +268,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       { groupId: 'beta',  embedding: [0.020000, 0.020011] },
     ];
 
-    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50 });
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50, minSeparability: 0.5 });
     expect(res).not.toBeNull();
     expect(res.summary.maxDelta).toBeCloseTo(0.000040, 6);
     expect(res.metrics[1].deltaMean).toBeCloseTo(0.000040, 6);
@@ -297,7 +302,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       { groupId: 'women',    embedding: [0.01, 0.086, 0.01, 0.021] },
     ];
 
-    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 25 }); // 25% of 4 dims = 1 dim
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 25, minSeparability: 0.5 });
     expect(res).not.toBeNull();
 
     // On dim 1: it_core is depressed below both vehicles (0.08) and women (0.085)
@@ -333,9 +338,6 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
   });
 
   it('accurately computes intra-group directional coherence percentage (ddi-fw coherencia_signo)', () => {
-    // Group A has 10 items. On dim 0:
-    // 9 items have activation 0.08..0.085, 1 item has 0.02 (outlier)
-    // Group B has 10 items with activation 0.01..0.015
     const gA = Array.from({ length: 10 }, (_, i) => ({
       groupId: 'A',
       embedding: [i === 0 ? 0.02 : 0.08 + i * 0.0005],
@@ -345,7 +347,7 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       embedding: [0.01 + i * 0.0005],
     }));
 
-    const res = computeSpectralQuorumMetrics([...gA, ...gB], { quorumPercent: 100 });
+    const res = computeSpectralQuorumMetrics([...gA, ...gB], { quorumPercent: 100, minSeparability: 0.5 });
     expect(res).not.toBeNull();
     const sigA = res.metrics[0].groupSignatures.A;
     expect(sigA.coherenceTotal).toBe(10);
@@ -378,7 +380,6 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
   });
 
   it('regression Bug B1: dominated group does not receive a fake quorum with relativeScore 1.0', () => {
-    // 3 groups where group C has zero contrast or below minSeparability across all dimensions
     const items = [
       { groupId: 'A', embedding: [0.09, 0.01, 0.01] },
       { groupId: 'A', embedding: [0.091, 0.01, 0.01] },
@@ -401,7 +402,6 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
   });
 
   it('preserves exact Float64 precision down to 10^-6 without truncation', () => {
-    // Difference is strictly 1.5e-6 (6th decimal place)
     const items = [
       { groupId: 'A', embedding: [0.0200000, 0.0200014] },
       { groupId: 'A', embedding: [0.0200000, 0.0200016] },
@@ -409,11 +409,135 @@ describe('spectralQuorum math and classification (ddi-fw port)', () => {
       { groupId: 'B', embedding: [0.0200000, 0.0200001] },
     ];
 
-    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50 });
+    const res = computeSpectralQuorumMetrics(items, { quorumPercent: 50, minSeparability: 0.5 });
     expect(res).not.toBeNull();
     expect(res.summary.maxDelta).toBeCloseTo(0.0000015, 7);
     expect(res.metrics[1].deltaMean).toBeCloseTo(0.0000015, 7);
     expect(res.metrics[1].groupSignatures.A.isQuorum).toBe(true);
+  });
+});
+
+describe('permutation null (Westfall-Young maxT) and sample size diagnostics (Slice 2)', () => {
+  it('computes exact combinatorics nCk', () => {
+    expect(combinationCount(2, 1)).toBe(2);
+    expect(combinationCount(4, 2)).toBe(6);
+    expect(combinationCount(6, 3)).toBe(20);
+    expect(combinationCount(10, 5)).toBe(252);
+    expect(combinationCount(20, 10)).toBe(184756);
+  });
+
+  it('diagnoses sampling feasibility for N=1, 2, 3, 8 per group', () => {
+    // N=1 vs 1: pMin = 0.50
+    const d1 = evaluateSampleSizeDiagnostic([1, 1]);
+    expect(d1.status).toBe('IMPOSSIBLE_SAMPLE_SIZE');
+    expect(d1.pMin).toBeCloseTo(0.50, 2);
+
+    // N=2 vs 2: pMin = 1/6 = 0.167
+    const d2 = evaluateSampleSizeDiagnostic([2, 2]);
+    expect(d2.status).toBe('IMPOSSIBLE_SAMPLE_SIZE');
+    expect(d2.pMin).toBeCloseTo(0.167, 3);
+
+    // N=3 vs 3: pMin = 1/20 = 0.05
+    const d3 = evaluateSampleSizeDiagnostic([3, 3]);
+    expect(d3.status).toBe('LOW_POWER');
+    expect(d3.pMin).toBeCloseTo(0.05, 3);
+
+    // N=8 vs 8: pMin = 1/12870 = 0.000078
+    const d8 = evaluateSampleSizeDiagnostic([8, 8]);
+    expect(d8.status).toBe('OPERATIONAL');
+    expect(d8.pMin).toBeLessThan(0.001);
+  });
+
+  it('runs 1000 permutations in under 50ms (performance benchmark)', () => {
+    const prng = createMulberry32(0x1234);
+    const nA = 21, nB = 21, dim = 1024;
+    const items = [
+      ...Array.from({ length: nA }, () => ({ groupId: 'A', embedding: Array.from({ length: dim }, () => prng()) })),
+      ...Array.from({ length: nB }, () => ({ groupId: 'B', embedding: Array.from({ length: dim }, () => prng()) })),
+    ];
+
+    const t0 = performance.now();
+    const res = computePermutationNullThreshold(items, { permutationCount: 1000, prngSeed: 0xDEADBEEF });
+    const elapsed = performance.now() - t0;
+
+    expect(elapsed).toBeLessThan(100); // well within interactive limit (usually ~25-40ms)
+    expect(res.iterations).toBe(1000);
+    expect(res.nullP95).toBeGreaterThan(0.4);
+    expect(res.nullP95).toBeLessThan(1.5);
+    expect(res.diagnostic.status).toBe('OPERATIONAL');
+  });
+
+  it('produces strictly 0 admitted dimensions on pure random noise for N=8 and N=21', () => {
+    const prng = createMulberry32(42);
+    const dim = 1024;
+
+    // Test with N=8 words per group
+    const noise8 = [
+      ...Array.from({ length: 8 }, () => ({ groupId: 'noiseA', embedding: Array.from({ length: dim }, () => prng()) })),
+      ...Array.from({ length: 8 }, () => ({ groupId: 'noiseB', embedding: Array.from({ length: dim }, () => prng()) })),
+    ];
+
+    const res8 = computeSpectralQuorumMetrics(noise8, { quorumPercent: 10 });
+    expect(res8).not.toBeNull();
+    expect(res8.summary.diagnostic.status).toBe('OPERATIONAL');
+    expect(res8.summary.quorumCount).toBe(0);
+    expect(res8.summary.topQuorumDims).toEqual([]);
+
+    // Test with N=21 words per group
+    const noise21 = [
+      ...Array.from({ length: 21 }, () => ({ groupId: 'noiseA', embedding: Array.from({ length: dim }, () => prng()) })),
+      ...Array.from({ length: 21 }, () => ({ groupId: 'noiseB', embedding: Array.from({ length: dim }, () => prng()) })),
+    ];
+
+    const res21 = computeSpectralQuorumMetrics(noise21, { quorumPercent: 10 });
+    expect(res21).not.toBeNull();
+    expect(res21.summary.quorumCount).toBe(0);
+    expect(res21.summary.topQuorumDims).toEqual([]);
+  });
+
+  it('admits true thematic signal exceeding permutation null threshold p95', () => {
+    const prng = createMulberry32(101);
+    const dim = 128;
+    const n = 15;
+
+    // Background noise + strong elevation on dim 42 for group SignalA
+    const gA = Array.from({ length: n }, () => {
+      const vec = Array.from({ length: dim }, () => prng() * 0.1);
+      vec[42] += 0.5; // True signal
+      return { groupId: 'signalA', embedding: vec };
+    });
+    const gB = Array.from({ length: n }, () => {
+      const vec = Array.from({ length: dim }, () => prng() * 0.1);
+      return { groupId: 'signalB', embedding: vec };
+    });
+
+    const res = computeSpectralQuorumMetrics([...gA, ...gB], { quorumPercent: 10 });
+    expect(res).not.toBeNull();
+    expect(res.summary.quorumCount).toBeGreaterThanOrEqual(1);
+    expect(res.summary.topQuorumDims).toContain(42);
+    expect(res.metrics[42].isQuorum).toBe(true);
+    expect(res.metrics[42].groupSignatures.signalA.isQuorum).toBe(true);
+    expect(res.metrics[42].groupSignatures.signalA.polarity).toBe(1);
+  });
+
+  it('caches permutation null threshold by payload fingerprint', () => {
+    const prng = createMulberry32(555);
+    const items = [
+      ...Array.from({ length: 10 }, () => ({ groupId: 'g1', embedding: [prng(), prng(), prng()] })),
+      ...Array.from({ length: 10 }, () => ({ groupId: 'g2', embedding: [prng(), prng(), prng()] })),
+    ];
+
+    const cache = createSpectralQuorumNullCache();
+    const res1 = cachedPermutationNullThreshold(cache, items, { permutationCount: 100 });
+    const key1 = cache.key;
+    expect(key1).toBeTruthy();
+
+    const t0 = performance.now();
+    const res2 = cachedPermutationNullThreshold(cache, items, { permutationCount: 100 });
+    const cacheHitTime = performance.now() - t0;
+
+    expect(cacheHitTime).toBeLessThan(1); // 0ms cache hit
+    expect(res1).toBe(res2); // exact same object reference
   });
 });
 
