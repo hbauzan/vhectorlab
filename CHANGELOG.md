@@ -5,7 +5,9 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2, 3 & 4)**:
+- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2, 3, 4 & 5)**:
+  - **Verificación Empírica sobre Tensores Reales (Slice 5)**: Script auditable `scripts/verify_spectral_quorum_npz.py` sobre `public/vocab_embeddings.npz` (10.338 palabras × 1024-D de `BAAI/bge-m3`). Confirma la detección de señal semántica real para los mazos de demostración `vehicles` (38 palabras) vs `women` (25 palabras) con 78 dimensiones admitidas sobre el nulo empírico ($p_{95} = 0.5705$, pico $S_d = 1.2516$ en Dim #917).
+  - **Cero Falsos Positivos Comprobados (Slice 5)**: El control nulo sobre subconjuntos puramente aleatorios del vocabulario ($N=21$ y $N=8$) produce **estrictamente 0 dimensiones admitidas** sobre el umbral de Westfall–Young ($S_d < p_{95}^{\text{null}}$ para las 1024 dimensiones).
   - **Inspección 3D Interactiva y Readout en Vivo (Slice 4)**: Click sobre un punto 3D en el viewport actualiza en tiempo real el desglose de coherencia direccional: `Dim X — G1: A/B (P%) vs G2: C/D (Q%); Sd = S vs umbral nulo U`. Permite contrastar de inmediato cualquier dimensión destacada contra el umbral nulo de Westfall–Young.
   - **Exportación de Auditoría de Precisión Float64 Exacta (Slice 4)**: Generador de auditoría auditable independiente en CSV y JSON (`src/ui/spectralQuorumAuditExport.js`). Formatea todos los estadísticos de punto flotante a 17 dígitos (`toPrecision(17)`), permitiendo reconstruir y recalcular $S_d = \frac{|\mu_g - \mu_{h^*}|}{\sigma_g + \sigma_{h^*} + 10^{-6}}$ de manera idempotente con error $< 10^{-6}$.
   - **Metadatos y Diagnóstico de Muestreo (Slice 4)**: Exportaciones contienen cabecera completa con modelo, dimensiones $D$, iteraciones de permutación $M=1000$, semilla PRNG Mulberry32, $\alpha=0.05$, umbral $p_{95}$, conteos muestrales por grupo, huella de vocabulario y estado diagnóstico (`OPERATIONAL`, `LOW_POWER`, `IMPOSSIBLE_SAMPLE_SIZE`).
@@ -21,7 +23,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
   - **PRNG Determinista con Semilla**: Implementación de Mulberry32 en `src/visualizer/spectralPrng.js` para reproducibilidad determinista bit a bit.
   - **Corrección de Métricas en Summary**: `summary.quorumCount` reporta la cantidad real admitida y `summary.quorumCapacity` el techo de capacidad.
   - **Bug B1 & B2 Fixes**: Eliminación del fallback `r === 0` y corrección de `spectralHighlightColor` en el renderizado CPU de `src/visualizer/groupHuePaint.js`.
-  - **Pruebas y Rigor**: Suite ampliada a 424 pruebas verdes (24 pruebas en `tests/spectralQuorum.test.js`, 4 en `tests/spectralQuorumAuditExport.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js`).
+  - **Pruebas y Rigor**: Suite completa con 424 pruebas verdes (24 pruebas en `tests/spectralQuorum.test.js`, 4 en `tests/spectralQuorumAuditExport.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js`).
 
 ## [3.3.0] - 2026-09-24
 

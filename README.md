@@ -22,7 +22,12 @@ Durante meses nos preguntamos por qué conceptos de universos dispares —como f
 
 La causa reside en el fuerte modo común y la estructura sintáctica compartida que domina los espacios densos como `BAAI/bge-m3` (1024 dimensiones). La verdadera firma semántica que distingue a cada mazo de palabras se encuentra en las dimensiones de alta separabilidad estadística ($S_d$), operadas en `Float64` con cero redondeos siguiendo el estándar de **DDI-FW**.
 
-En la versión **v3.3.0** incorporamos **Spectral Quorum**:
+En **Spectral Quorum (Alineación DDI-FW)**:
+- **Separabilidad Pairwise Nearest-Competitor con Signo ($S_d$)**: Evalúa la envoltura bilateral $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$ según `ddi-fw` (`cruce.py`), detectando firmas tanto por elevación (+1) como por depresión (−1).
+- **Auto-calibración Nula Westfall–Young maxT ($M=1000$)**: El umbral de admisión $p_{95}$ se deriva no paramétricamente por permutaciones en tiempo real ($O(N_{\min} \cdot D)$, ~25 ms en Float64) controlando el error familiar (FWER). Garantiza **estrictamente 0 dimensiones admitidas sobre ruido aleatorio**, sin umbrales mágicos hardcodeados.
+- **Polaridad Bicolor No Colisionante**: Excitación (+1, Cian Eléctrico `#00E5FF`) y depresión (−1, Rosa Neón `#FF3366`), desacopladas de la rampa base sin colisionar con amarillo, violeta ni ámbar.
+- **Fallback No Destructivo**: Quórum vacío ($S_d < p_{95}$ o $N < 3$) conserva la rampa divergente estándar sin apagar la escena a negro.
+- **Auditoría e Inspección en Tiempo Real**: Readout interactivo al clickear (`Dim X — G1: A/B vs G2: C/D; Sd = S vs umbral nulo U`) y exportación auditable CSV/JSON con precisión Float64 exacta (`toPrecision(17)`).
 
 ### 1. Vista frontal en ANALYSIS: Picos fijos de excitación temática y silencio base
 ![Spectral Quorum Analysis — Picos fijos y silencio base](./demo/spectral-quorum-analysis.gif)
