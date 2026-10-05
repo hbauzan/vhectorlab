@@ -17,6 +17,8 @@ import {
   isGalaxyView,
 } from './galaxyChrome.js';
 
+export const APP_VERSION = 'v3.4.0';
+
 export class Navbar {
   constructor(
     containerElement,
@@ -53,7 +55,7 @@ export class Navbar {
       <div class="navbar-brand">
         <div class="title-group">
           <h1>VHectorLab <span class="accent-3d">3D</span></h1>
-          <span class="version-tag">v3.3.0</span>
+          <span class="version-tag">${APP_VERSION}</span>
         </div>
       </div>
 
