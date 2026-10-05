@@ -236,7 +236,11 @@ export function cachedSharedNoiseMetrics(cache, items) {
  */
 export function computeDimRelationMetrics(items, options = {}) {
   const res = computeSpectralQuorumMetrics(items, options);
-  return res?.metrics || [];
+  if (!res) return [];
+  const metrics = res.metrics || [];
+  metrics.summary = res.summary;
+  metrics.rawResult = res;
+  return metrics;
 }
 
 /**

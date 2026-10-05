@@ -91,6 +91,11 @@ import {
   enrichLabelsWithGroupMeta,
   mergeCompareOverlayLabels,
 } from './ui/parseCompareGroups.js';
+import {
+  formatSpectralQuorumInspectionText,
+  downloadSpectralQuorumAudit,
+} from './ui/spectralQuorumAuditExport.js';
+import { resolveHoverTelemetry } from './ui/hoverTelemetry.js';
 
 class VHectorLabApp {
   constructor() {
@@ -264,6 +269,25 @@ class VHectorLabApp {
     this.interaction.onHoverCallback = (hoverData) => {
       this.hud.updateTelemetry(hoverData);
     };
+    this.interaction.onClickCallback = (clickData) => {
+      const t = resolveHoverTelemetry(clickData);
+      if (t && t.dim != null) {
+        const quorumRes = this.instancer.getLastSpectralQuorumResult();
+        if (quorumRes?.metrics) {
+          const inspectText = formatSpectralQuorumInspectionText(
+            t.dim,
+            quorumRes.metrics,
+            quorumRes.summary
+          );
+          if (inspectText && this.vizEl) {
+            const readoutEl = this.vizEl.querySelector('#viz-spectral-inspect-readout');
+            if (readoutEl) {
+              readoutEl.textContent = inspectText;
+            }
+          }
+        }
+      }
+    };
 
     // 7. Clock for animation loop
     this.clock = new THREE.Clock();
@@ -309,10 +333,28 @@ class VHectorLabApp {
     this.vizEl = vizEl;
     this.placeVisualizationControls(vizEl);
 
-    wireVisualizationControls(vizEl, this.vizConfig, () => {
-      this.threadLabels.setVisible(this.vizConfig.labelsVisible);
-      this.refreshRender();
-    });
+    wireVisualizationControls(
+      vizEl,
+      this.vizConfig,
+      () => {
+        this.threadLabels.setVisible(this.vizConfig.labelsVisible);
+        this.refreshRender();
+      },
+      {
+        onExportSpectralQuorum: (format) => {
+          const quorumRes = this.instancer.getLastSpectralQuorumResult();
+          const items = state.compareData?.items || [];
+          if (!quorumRes) {
+            console.warn('[SpectralQuorum] No quorum result available for export');
+            return;
+          }
+          downloadSpectralQuorumAudit(items, quorumRes, format, {
+            modelName: 'BAAI/bge-m3',
+            vocabHash: this.vocabHash || 'N/A',
+          });
+        },
+      }
+    );
     this.threadLabels.setVisible(this.vizConfig.labelsVisible);
     this.syncGroupContrastGate();
 
@@ -765,6 +807,41 @@ class VHectorLabApp {
       this.vizConfig,
       groups,
     );
+    this.syncSpectralQuorumDiagnostic();
+  }
+
+  /**
+   * Sync Spectral Quorum sampling diagnostic status badge in Visualization panel.
+   */
+  syncSpectralQuorumDiagnostic() {
+    if (!this.vizEl) return;
+    const badgeEl = this.vizEl.querySelector('#viz-spectral-diagnostic-badge');
+    if (!badgeEl) return;
+    const quorumRes = this.instancer?.getLastSpectralQuorumResult();
+    const diag = quorumRes?.summary?.diagnostic;
+    if (diag?.status) {
+      badgeEl.textContent = `Diagnostic: ${diag.status}`;
+      if (diag.status === 'OPERATIONAL') {
+        badgeEl.style.background = 'rgba(0, 229, 255, 0.1)';
+        badgeEl.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+        badgeEl.style.color = '#00E5FF';
+      } else if (diag.status === 'LOW_POWER') {
+        badgeEl.style.background = 'rgba(255, 170, 0, 0.1)';
+        badgeEl.style.borderColor = 'rgba(255, 170, 0, 0.3)';
+        badgeEl.style.color = '#FFAA00';
+      } else {
+        badgeEl.style.background = 'rgba(255, 51, 102, 0.1)';
+        badgeEl.style.borderColor = 'rgba(255, 51, 102, 0.3)';
+        badgeEl.style.color = '#FF3366';
+      }
+      badgeEl.title = diag.message || '';
+    } else {
+      badgeEl.textContent = 'Diagnostic: N/A';
+      badgeEl.style.background = 'rgba(128, 128, 128, 0.1)';
+      badgeEl.style.borderColor = 'rgba(128, 128, 128, 0.3)';
+      badgeEl.style.color = '#888888';
+      badgeEl.title = '';
+    }
   }
 
   /**

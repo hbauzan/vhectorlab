@@ -301,6 +301,7 @@ export class Instancer {
           nullCache: this._spectralNullCache,
         })
       : null;
+    this._lastGroupDimMetrics = groupDimMetrics;
     const sharedNoiseMetrics = isSaeActive
       ? null
       : cachedSharedNoiseMetrics(this._sharedNoiseCache, items);
@@ -786,5 +787,10 @@ export class Instancer {
 
   get isReorderBusy() {
     return this._reorderBusy;
+  }
+
+  getLastSpectralQuorumResult() {
+    return this._lastGroupDimMetrics?.rawResult
+      || (this._lastGroupDimMetrics?.summary ? { metrics: this._lastGroupDimMetrics, summary: this._lastGroupDimMetrics.summary } : null);
   }
 }

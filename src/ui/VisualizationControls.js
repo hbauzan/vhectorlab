@@ -294,6 +294,18 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           </div>
           <input type="range" id="viz-spectral-paja-cancel" min="0" max="100" step="1" value="${s.spectralPajaCancelCoverage}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
         </div>
+        <div class="viz-spectral-audit-block viz-fx-slider" data-requires="spectral" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div id="viz-spectral-diagnostic-badge" class="hud-badge" style="font-size: 11px; padding: 4px 8px; text-align: center; border-radius: 4px; background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); color: #00E5FF;">
+            Diagnostic: OPERATIONAL
+          </div>
+          <div id="viz-spectral-inspect-readout" class="hud-val" style="font-size: 11px; line-height: 1.4; color: #E0E0E0; background: rgba(0, 0, 0, 0.4); padding: 6px; border-radius: 4px; min-height: 28px; word-break: break-word;">
+            Click 3D point to inspect quorum coherence
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" id="viz-spectral-export-csv" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 4px 6px;" title="Export full Float64 precision CSV audit">Export CSV</button>
+            <button type="button" id="viz-spectral-export-json" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 4px 6px;" title="Export full Float64 JSON audit">Export JSON</button>
+          </div>
+        </div>
       </div>
 
       <div class="viz-group-fx-block" data-fx="group-hue">
@@ -581,6 +593,8 @@ export function syncGroupFxSliderEnabled(container, settings) {
   setDisabled(container.querySelector('#viz-spectral-gain'), !specSlidersOn);
   setDisabled(container.querySelector('#viz-spectral-strength'), !specSlidersOn);
   setDisabled(container.querySelector('#viz-spectral-paja-cancel'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-export-csv'), !specSlidersOn);
+  setDisabled(container.querySelector('#viz-spectral-export-json'), !specSlidersOn);
 
   const hueSlidersOn = groupsOk && s.groupHueEnabled;
   for (const el of container.querySelectorAll('#viz-group-hue-rows input')) {
@@ -1059,6 +1073,23 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
       config.spectralPajaCancelCoverage = next;
       if (specCancelVal) specCancelVal.textContent = `${next}%`;
       emit();
+    });
+  }
+
+  const exportCsvBtn = container.querySelector('#viz-spectral-export-csv');
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', () => {
+      if (typeof options.onExportSpectralQuorum === 'function') {
+        options.onExportSpectralQuorum('csv');
+      }
+    });
+  }
+  const exportJsonBtn = container.querySelector('#viz-spectral-export-json');
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', () => {
+      if (typeof options.onExportSpectralQuorum === 'function') {
+        options.onExportSpectralQuorum('json');
+      }
     });
   }
 

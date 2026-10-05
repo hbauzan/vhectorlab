@@ -710,6 +710,9 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         ? Math.max(0, Math.min(1, raw.separability / peakQualifyingSd))
         : 0;
 
+      const compMeanVal = raw.competitorId && groupMeans.has(raw.competitorId) ? groupMeans.get(raw.competitorId)[d] : 0;
+      const compStdVal = raw.competitorId && groupStds.has(raw.competitorId) ? groupStds.get(raw.competitorId)[d] : 0;
+
       groupDims[d] = {
         dim: d,
         delta: raw.delta,
@@ -717,6 +720,10 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         polarity: raw.polarity,
         separability: raw.separability,
         competitorId: raw.competitorId,
+        muG: myMean[d],
+        sigmaG: myStd[d],
+        muComp: compMeanVal,
+        sigmaComp: compStdVal,
         coherenceCount: raw.coherenceCount,
         coherenceTotal: raw.coherenceTotal,
         coherencePct: raw.coherencePct,

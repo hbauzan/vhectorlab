@@ -5,7 +5,10 @@ All notable changes to VHectorLab 3D will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
-- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2 & 3)**:
+- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2, 3 & 4)**:
+  - **Inspección 3D Interactiva y Readout en Vivo (Slice 4)**: Click sobre un punto 3D en el viewport actualiza en tiempo real el desglose de coherencia direccional: `Dim X — G1: A/B (P%) vs G2: C/D (Q%); Sd = S vs umbral nulo U`. Permite contrastar de inmediato cualquier dimensión destacada contra el umbral nulo de Westfall–Young.
+  - **Exportación de Auditoría de Precisión Float64 Exacta (Slice 4)**: Generador de auditoría auditable independiente en CSV y JSON (`src/ui/spectralQuorumAuditExport.js`). Formatea todos los estadísticos de punto flotante a 17 dígitos (`toPrecision(17)`), permitiendo reconstruir y recalcular $S_d = \frac{|\mu_g - \mu_{h^*}|}{\sigma_g + \sigma_{h^*} + 10^{-6}}$ de manera idempotente con error $< 10^{-6}$.
+  - **Metadatos y Diagnóstico de Muestreo (Slice 4)**: Exportaciones contienen cabecera completa con modelo, dimensiones $D$, iteraciones de permutación $M=1000$, semilla PRNG Mulberry32, $\alpha=0.05$, umbral $p_{95}$, conteos muestrales por grupo, huella de vocabulario y estado diagnóstico (`OPERATIONAL`, `LOW_POWER`, `IMPOSSIBLE_SAMPLE_SIZE`).
   - **Pairwise Nearest-Competitor con Signo**: En `src/visualizer/spectralQuorum.js`, adopción estricta del estadístico bilateral por pares de `ddi-fw` (`cruce.py`) evaluado con la envoltura $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$. Corrige la distorsión del modelo One-vs-Rest y detecta firmas direccionales tanto por elevación (+1) como por depresión (−1).
   - **Permutación Nula Westfall–Young maxT ($M=1000$)**: Auto-calibración empírica del umbral de discriminación ($p_{95}$ del máximo global sobre dimensiones y grupos). Controla el error familiar (FWER) no paramétricamente sobre dimensiones correlacionadas y produce **estrictamente 0 dimensiones admitidas sobre ruido aleatorio** sin necesidad de umbrales mágicos hardcodeados.
   - **Optimización $O(N_{\min} \cdot D)$ y Caching de Payload**: 1000 permutaciones completadas en ~25 ms en JS Float64. Cacheo indexado por huella de Compare en `Instancer.js` (`_spectralNullCache`), reduciendo el costo de arrastrar sliders de UI a 0.0 ms.
@@ -18,7 +21,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
   - **PRNG Determinista con Semilla**: Implementación de Mulberry32 en `src/visualizer/spectralPrng.js` para reproducibilidad determinista bit a bit.
   - **Corrección de Métricas en Summary**: `summary.quorumCount` reporta la cantidad real admitida y `summary.quorumCapacity` el techo de capacidad.
   - **Bug B1 & B2 Fixes**: Eliminación del fallback `r === 0` y corrección de `spectralHighlightColor` en el renderizado CPU de `src/visualizer/groupHuePaint.js`.
-  - **Pruebas y Rigor**: Suite ampliada a 24 pruebas en `tests/spectralQuorum.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js` (420 pruebas verdes en total).
+  - **Pruebas y Rigor**: Suite ampliada a 424 pruebas verdes (24 pruebas en `tests/spectralQuorum.test.js`, 4 en `tests/spectralQuorumAuditExport.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js`).
 
 ## [3.3.0] - 2026-09-24
 

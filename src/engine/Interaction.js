@@ -34,7 +34,8 @@ export class Interaction {
         if (this.onClickCallback) {
           this.onClickCallback({
             object: this.hoveredObject,
-            index: this.hoveredPointIndex
+            index: this.hoveredPointIndex,
+            userData: this.hoveredObject?.userData,
           });
         }
       }
