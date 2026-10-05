@@ -295,15 +295,15 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
           <input type="range" id="viz-spectral-paja-cancel" min="0" max="100" step="1" value="${s.spectralPajaCancelCoverage}" ${s.spectralQuorumEnabled ? '' : 'disabled'}>
         </div>
         <div class="viz-spectral-audit-block viz-fx-slider" data-requires="spectral" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-          <div id="viz-spectral-diagnostic-badge" class="hud-badge" style="font-size: 11px; padding: 4px 8px; text-align: center; border-radius: 4px; background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); color: #00E5FF;">
+          <div id="viz-spectral-diagnostic-badge" class="hud-badge" style="font-size: 11px; padding: 5px 8px; text-align: center; clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px); background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.4); color: #00E5FF; text-shadow: 0 0 4px rgba(0, 229, 255, 0.3);">
             Diagnostic: OPERATIONAL
           </div>
-          <div id="viz-spectral-inspect-readout" class="hud-val" style="font-size: 11px; line-height: 1.4; color: #E0E0E0; background: rgba(0, 0, 0, 0.4); padding: 6px; border-radius: 4px; min-height: 28px; word-break: break-word;">
+          <div id="viz-spectral-inspect-readout" class="hud-val" style="font-size: 11px; line-height: 1.4; color: #E0E0E0; background: rgba(0, 0, 0, 0.45); padding: 6px; clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px); border: 1px solid rgba(255, 255, 255, 0.1); min-height: 28px; word-break: break-word;">
             Click 3D point to inspect quorum coherence
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" id="viz-spectral-export-csv" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 4px 6px;" title="Export full Float64 precision CSV audit">Export CSV</button>
-            <button type="button" id="viz-spectral-export-json" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 4px 6px;" title="Export full Float64 JSON audit">Export JSON</button>
+            <button type="button" id="viz-spectral-export-csv" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; clip-path: polygon(3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px), 0% 3px); border: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;" title="Export full Float64 precision CSV audit">Export CSV</button>
+            <button type="button" id="viz-spectral-export-json" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; clip-path: polygon(3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px), 0% 3px); border: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;" title="Export full Float64 JSON audit">Export JSON</button>
           </div>
         </div>
       </div>

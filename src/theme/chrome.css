@@ -37,31 +37,35 @@ body.workbench-theme .glass-navbar {
   color: var(--mwb-white) !important;
 }
 
+/* Continuous spectral cyan cable: ◈ ── wrap(MODE/VIEW/RENDER) ── status chip */
 body.workbench-theme .logo-icon {
-  color: var(--mwb-amber);
+  color: var(--mwb-cyan);
   font-size: 1.35rem;
   line-height: 1;
-  text-shadow: none;
+  text-shadow: 0 0 6px rgba(0, 229, 255, 0.45);
 }
 
-/* Continuous amber cable: ◈ ── wrap(MODE/VIEW/RENDER) ── status chip */
 body.workbench-theme .navbar-cable-seg {
-  background: var(--mwb-amber);
+  background: var(--mwb-cyan);
+  box-shadow: 0 0 4px rgba(0, 229, 255, 0.35);
 }
 
 body.workbench-theme .navbar-center-controls {
-  border: 2px solid var(--mwb-amber) !important;
+  border: 2px solid var(--mwb-cyan) !important;
   border-radius: 0 !important;
-  background: rgba(0, 0, 0, 0.28) !important;
+  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0% calc(100% - 6px), 0% 6px);
+  background: rgba(0, 0, 0, 0.32) !important;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15) !important;
   padding: 4px 6px !important;
   gap: 10px !important;
 }
 
 body.workbench-theme .status-indicator {
-  border: 2px solid var(--mwb-amber) !important;
+  border: 2px solid var(--mwb-cyan) !important;
   border-radius: 0 !important;
-  background: rgba(0, 0, 0, 0.28) !important;
-  box-shadow: none !important;
+  clip-path: polygon(5px 0%, calc(100% - 5px) 0%, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0% calc(100% - 5px), 0% 5px);
+  background: rgba(0, 0, 0, 0.32) !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.25) !important;
   padding: 4px 10px !important;
   color: var(--mwb-white) !important;
   pointer-events: none;

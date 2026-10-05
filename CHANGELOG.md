@@ -2,28 +2,48 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
-## [Unreleased]
+## [3.4.0] - 2026-10-05
 
-### Fixed
-- **Spectral Quorum Determinista (Alineación DDI-FW - Slice 1, 2, 3, 4 & 5)**:
-  - **Verificación Empírica sobre Tensores Reales (Slice 5)**: Script auditable `scripts/verify_spectral_quorum_npz.py` sobre `public/vocab_embeddings.npz` (10.338 palabras × 1024-D de `BAAI/bge-m3`). Confirma la detección de señal semántica real para los mazos de demostración `vehicles` (38 palabras) vs `women` (25 palabras) con 78 dimensiones admitidas sobre el nulo empírico ($p_{95} = 0.5705$, pico $S_d = 1.2516$ en Dim #917).
-  - **Cero Falsos Positivos Comprobados (Slice 5)**: El control nulo sobre subconjuntos puramente aleatorios del vocabulario ($N=21$ y $N=8$) produce **estrictamente 0 dimensiones admitidas** sobre el umbral de Westfall–Young ($S_d < p_{95}^{\text{null}}$ para las 1024 dimensiones).
-  - **Inspección 3D Interactiva y Readout en Vivo (Slice 4)**: Click sobre un punto 3D en el viewport actualiza en tiempo real el desglose de coherencia direccional: `Dim X — G1: A/B (P%) vs G2: C/D (Q%); Sd = S vs umbral nulo U`. Permite contrastar de inmediato cualquier dimensión destacada contra el umbral nulo de Westfall–Young.
-  - **Exportación de Auditoría de Precisión Float64 Exacta (Slice 4)**: Generador de auditoría auditable independiente en CSV y JSON (`src/ui/spectralQuorumAuditExport.js`). Formatea todos los estadísticos de punto flotante a 17 dígitos (`toPrecision(17)`), permitiendo reconstruir y recalcular $S_d = \frac{|\mu_g - \mu_{h^*}|}{\sigma_g + \sigma_{h^*} + 10^{-6}}$ de manera idempotente con error $< 10^{-6}$.
-  - **Metadatos y Diagnóstico de Muestreo (Slice 4)**: Exportaciones contienen cabecera completa con modelo, dimensiones $D$, iteraciones de permutación $M=1000$, semilla PRNG Mulberry32, $\alpha=0.05$, umbral $p_{95}$, conteos muestrales por grupo, huella de vocabulario y estado diagnóstico (`OPERATIONAL`, `LOW_POWER`, `IMPOSSIBLE_SAMPLE_SIZE`).
-  - **Pairwise Nearest-Competitor con Signo**: En `src/visualizer/spectralQuorum.js`, adopción estricta del estadístico bilateral por pares de `ddi-fw` (`cruce.py`) evaluado con la envoltura $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$. Corrige la distorsión del modelo One-vs-Rest y detecta firmas direccionales tanto por elevación (+1) como por depresión (−1).
-  - **Permutación Nula Westfall–Young maxT ($M=1000$)**: Auto-calibración empírica del umbral de discriminación ($p_{95}$ del máximo global sobre dimensiones y grupos). Controla el error familiar (FWER) no paramétricamente sobre dimensiones correlacionadas y produce **estrictamente 0 dimensiones admitidas sobre ruido aleatorio** sin necesidad de umbrales mágicos hardcodeados.
-  - **Optimización $O(N_{\min} \cdot D)$ y Caching de Payload**: 1000 permutaciones completadas en ~25 ms en JS Float64. Cacheo indexado por huella de Compare en `Instancer.js` (`_spectralNullCache`), reduciendo el costo de arrastrar sliders de UI a 0.0 ms.
-  - **Diagnóstico Muestral de 3 Estados**: Validación combinatoria de $p_{\min} = 1/\binom{N_A+N_B}{N_A}$, identificando formalmente $N < 3$ como matemáticamente imposible para $\alpha = 0.05$, $3 \le N < 8$ como baja potencia, y $N \ge 8$ como operativo.
-  - **Renderizado de Polaridad Bicolor y No Colisionante (Slice 3)**: Excitación/elevación (+1) e inhibición/depresión (−1) se renderizan con paletas dedicadas y desacopladas de la base: Cian Eléctrico (`#00E5FF`) y Rosa Neón (`#FF3366`), respetando los invariantes visuales (sin colisionar con amarillo `#FFE600`, violeta `#9900E6`, ni ámbar `#FFBF00`).
-  - **Fallback No Destructivo ante Quórum Vacío (Slice 3)**: Si ninguna dimensión supera el nulo empírico o $N < 3$, el visualizador emite `cancel = 0, highlight = 0`, conservando la rampa divergente estándar sin apagar la escena a negro.
-  - **Soporte GPU / Shader y CPU**: Integración de `uColorHighlightNeg` y atributos firmados de highlight en `DivergentShading.js`, `MeshFactory.js`, `groupDimContrast.js`, y `groupHuePaint.js`.
-  - **Guarda Fail-Closed para Dispersión Cero**: Si $\sigma_g(d) + \sigma_h(d) \le 10^{-12}$ (e.g. $N=1$), se devuelve $S_d = 0.0$ exacto y quórum vacío, impidiendo falsos positivos donde la falta de varianza inflaba la separabilidad a millones.
-  - **Coherencia Intra-Grupo (`coherencia_signo`)**: Cálculo auditable del conteo y porcentaje de palabras de cada grupo que caen estrictamente de su lado del umbral divisor $\theta = (\mu_g + \mu_{\text{comp}}) / 2$.
-  - **PRNG Determinista con Semilla**: Implementación de Mulberry32 en `src/visualizer/spectralPrng.js` para reproducibilidad determinista bit a bit.
-  - **Corrección de Métricas en Summary**: `summary.quorumCount` reporta la cantidad real admitida y `summary.quorumCapacity` el techo de capacidad.
-  - **Bug B1 & B2 Fixes**: Eliminación del fallback `r === 0` y corrección de `spectralHighlightColor` en el renderizado CPU de `src/visualizer/groupHuePaint.js`.
-  - **Pruebas y Rigor**: Suite completa con 424 pruebas verdes (24 pruebas en `tests/spectralQuorum.test.js`, 4 en `tests/spectralQuorumAuditExport.test.js`, 11 en `tests/groupHuePaint.test.js`, y 44 en `tests/visualizationControls.test.js`).
+### Fixed & Grounded (Spectral Quorum Determinista — Alineación DDI-FW)
+- **1. Matemática Rigurosa: Signed Nearest-Competitor y Fail-Closed**:
+  - Reemplazo del One-vs-Rest ingenuo por el estadístico bilateral por pares signed nearest-competitor:
+    $$S_g(d) = \max\left(\min_{h \neq g} S_{gh}^+(d), \min_{h \neq g} S_{gh}^-(d)\right)$$
+    donde $S_{gh}(d) = \frac{|\mu_g(d) - \mu_h(d)|}{\sigma_g(d) + \sigma_h(d) + 10^{-6}}$. Evalúa cada grupo contra su competidor más cercano sin mezclar la varianza inter-grupo de terceros en un único fondo común.
+  - Guarda fail-closed ante varianza nula: si $\sigma_g(d) + \sigma_h(d) \le 10^{-12}$ (e.g. $N=1$), se fuerza $S_d = 0.0$ y quórum vacío, eliminando el falso positivo donde una sola palabra producía separabilidades artificiales de millones.
+  - Coherencia intra-grupo auditable (`coherencia_signo`): cálculo exacto del porcentaje de tokens de cada grupo que caen estrictamente de su lado del hiperplano separador $\theta = (\mu_g + \mu_h)/2$.
+  - PRNG determinista Mulberry32 con semilla (`0xDEADBEEF`) en `src/visualizer/spectralPrng.js` para reproducibilidad bit a bit entre navegadores y entornos.
+  - Corrección de bugs heredados B1 (eliminación del fallback distorsivo `r === 0`) y B2 (tinte de ribbons CPU corregido a color configurado).
+
+- **2. Calibración Nula Empírica: Permutación Westfall–Young maxT ($M=1000$)**:
+  - Eliminación de umbrales mágicos hardcodeados ($0.5$ o $1.5$). El umbral de admisión $p_{95}$ se deriva no paramétricamente permutando $M=1000$ veces las etiquetas de grupo y extrayendo el percentil 95 del estadístico máximo global sobre todas las dimensiones y grupos ($\max_{d, g} S_d$). Controla el error familiar (FWER) con dimensionalidad alta y correlacionada.
+  - Optimización algorítmica $O(N_{\min} \cdot D)$ mediante sumas acumulativas y actualización incremental de media/varianza: 1000 permutaciones completadas en ~25 ms en JavaScript Float64.
+  - Diagnóstico combinatorio de viabilidad muestral basado en $p_{\min} = 1/\binom{N_A+N_B}{N_A}$: clasifica $N < 3$ como `IMPOSSIBLE_SAMPLE_SIZE` (matemáticamente incapaz de alcanzar $\alpha=0.05$), $3 \le N < 8$ como `LOW_POWER`, y $N \ge 8$ como `OPERATIONAL`.
+  - Cacheo inteligente indexado por huella del payload (`spectralQuorumPayloadCacheKey`) en `Instancer.js`: recalcula el nulo una sola vez por Compare y reduce el costo de arrastrar sliders de UI a 0.0 ms.
+
+- **3. Polaridad Bicolor No Colisionante y Fallback de UX No Destructivo**:
+  - Distinción visual explícita entre firmas de excitación/elevación (+1) y de inhibición/depresión (−1), desacopladas de la rampa divergente de la base.
+  - Asignación de anclas cromáticas no colisionantes: Cian Eléctrico (`#00E5FF`) para $+1$ y Rosa Neón (`#FF3366`) para $-1$ (evitando colisión con amarillo `#FFE600`, violeta `#9900E6`, ni ámbar `#FFBF00`).
+  - Soporte completo en shaders WebGL (`DivergentShading.js`, uniform `uColorHighlightNeg`, atributo de vértice con signo) y trazado CPU de ribbons (`groupHuePaint.js`).
+  - Fallback no destructivo ante quórum vacío: cuando ninguna dimensión supera el nulo empírico o $N < 3$, el visualizador emite `cancel = 0, highlight = 0`, conservando la rampa divergente estándar sin apagar la escena a negro.
+
+- **4. Inspección 3D Interactiva y Exportación Auditable Float64 Exacta**:
+  - Readout interactivo en vivo al clickear cualquier punto en el espacio 3D (`Interaction.js` $\to$ `main.js`):
+    `Dim X — G1: A/B (P%) vs G2: C/D (Q%); Sd = S vs umbral nulo U`
+  - Badge dinámico de diagnóstico muestral en el panel de visualización (`OPERATIONAL` cian, `LOW_POWER` ámbar, `IMPOSSIBLE_SAMPLE_SIZE` rojo).
+  - Exportación de auditoría completa a CSV y JSON (`src/ui/spectralQuorumAuditExport.js`) con precisión Float64 exacta a 17 dígitos (`toPrecision(17)`). Incluye cabecera completa (modelo, dimensión, $N$, $M$, semilla, $\alpha$, $p_{95}$, diagnóstico, hash de vocabulario) y permite a un auditor independiente verificar y recalcular $S_d$ con error menor a $10^{-6}$.
+
+- **5. Verificación Empírica sobre Tensores Reales (10.338 palabras × 1024-D BGE-M3)**:
+  - Script auditable `scripts/verify_spectral_quorum_npz.py` validado contra `public/vocab_embeddings.npz`:
+    - **Mazo Real Semántico (`vehicles` vs `women`)**: 78 dimensiones admitidas superando el umbral nulo empírico ($p_{95} = 0.5705$), con un pico de separabilidad en Dimensión #917 ($S_d = 1.2516$).
+    - **Control Nulo Aleatorio ($N=21$ vs $N=21$)**: Umbral nulo $p_{95} = 0.7296$, $S_d$ máximo de $0.5515$, arrojando **estrictamente 0 dimensiones admitidas**.
+    - **Control Nulo de Muestra Pequeña ($N=8$ vs $N=8$)**: Umbral nulo $p_{95} = 1.5310$, $S_d$ máximo de $1.1187$, arrojando **estrictamente 0 dimensiones admitidas**.
+    - **Guarda Fail-closed ($N=1$)**: Dispersión cero produce invariablemente $S_d = 0.000000$.
+  - Suite de pruebas completa: **54 test files passed (100%), 424 tests passed (100%)**.
+
+### Added (Classic GUI Evolution)
+- **Cian Espectral & Chamfer Tech (Opción A)**:
+  - Actualización de la línea de cable continuo del navbar, logo de inicio y borde de chips de control a **Cian Espectral (`#00E5FF`)** con leve resplandor cyber neón, unificando la identidad óptica del workbench con la excitación (+1) de Spectral Quorum.
+  - Silueta chamfer tech con bisel angulado a 45 grados en controles centrales del navbar, status chip, badge de diagnóstico muestral y botones de exportación de auditoría.
 
 ## [3.3.0] - 2026-09-24
 

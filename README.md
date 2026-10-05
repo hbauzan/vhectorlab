@@ -14,7 +14,7 @@
 
 ---
 
-## 🔬 Quórum Espectral: Excitación de Dimensiones por Temática (v3.3.0) — *El alma de las palabras*
+## 🔬 Quórum Espectral: Excitación de Dimensiones por Temática (v3.4.0) — *El alma de las palabras*
 
 > *"¡LA PUTA MADRE AHORA SÍ CARAJO SE VE LO QUE TENÍAMOS EN LA CABEZA HACE MESES! Las diferencias entre mazos de palabras están en los decimales finos."*
 
