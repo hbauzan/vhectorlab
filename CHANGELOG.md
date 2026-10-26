@@ -6,6 +6,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ### Added
 - Universal Structural Noise & Outlier Dimensions detection engine (`backend/structural_noise.py`) for dynamic identification of saturated and inert coordinates in embedding models.
+- Engine API: `GET /api/engine/status`, `POST /api/engine/detect-structural-noise`, `GET /api/engine/noise-profile`. A profile is cached in RAM and in gitignored `backend/artifacts/noise_profiles/{model}.json`. The same routes are mounted without the `/api` prefix.
 - Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
 - Local micro-benchmark (`backend/benchmark_runner.py`, `scripts/benchmark_models.py`): cold load, warmup, hot throughput, peak RAM, and a linear projection onto `vocab_en_es.txt`. Results stay in gitignored `backend/artifacts/benchmark_cache.json`. The CLI does not edit `.env` or the model serving the app.
 - Setup option 11 shows the live host banner plus family, memory tier, and cached throughput. `B`, `B <token>`, and `B all` run that benchmark and redraw the menu. Free RAM is checked against the tier weight (500 MB / 1.5 GB / 3 GB). Below the weight, the swap asks for `CONFIRMAR` or `y`. An unmeasured Hub ID does not get an invented weight.

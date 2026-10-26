@@ -115,6 +115,20 @@ Named local preset (`local-comfort`, `local-full`, `hf-demo`) that resolves to a
 ### Active Model
 The one SentenceTransformer loaded in the backend process; exposed on `/health` as `model` / `short_label` / `embedding_dim` / `device` (and `model_profile` when set).
 
+### Structural Noise
+Coordinates in one embedding matrix that the detector classifies as saturated outliers or flat channels.
+
+### Saturated Outlier
+A coordinate whose mean absolute energy has a Z-score of at least 3 against the other coordinates of the same matrix.
+
+### Flat Channel
+A coordinate whose standard deviation is at most 0.010, or at most 0.35 times the mean coordinate standard deviation, and that is not a saturated outlier.
+
+### Noise Profile
+The frozen detection result for one model: index tuples, energy ratio, cosine delta, and a UTC timestamp. Kept on the active model in RAM and as one JSON file per Hub id.
+
+_Avoid_: a fixed list of dimension numbers in application code; treating the profile of one model as the profile of another.
+
 ### Truncate Dim
 Optional Matryoshka width (`TRUNCATE_DIM`) applied after encode; effective `embedding_dim` is the truncated width when set.
 
