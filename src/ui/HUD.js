@@ -6,6 +6,7 @@
 import {
   resolveHoverTelemetry,
   formatActivationValue,
+  formatNoiseRatio,
   activationDisplayBudget,
 } from './hoverTelemetry.js';
 
@@ -31,6 +32,7 @@ export class HUD {
         <span class="hud-label hud-telemetry-label">HOVER TELEMETRY:</span>
         <span id="hud-segment" class="hud-badge">RESULT VECTOR</span>
         <span id="hud-dim" class="hud-val">DIM: --</span>
+        <span id="hud-noise" class="hud-val hud-noise-ratio">NOISE: --</span>
         <span id="hud-activation" class="hud-highlight">ACTIVATION: --</span>
       </div>
     `;
@@ -40,6 +42,7 @@ export class HUD {
     this.coordsEl = this.element.querySelector('#hud-coords');
     this.segmentEl = this.element.querySelector('#hud-segment');
     this.dimEl = this.element.querySelector('#hud-dim');
+    this.noiseEl = this.element.querySelector('#hud-noise');
     this.activationEl = this.element.querySelector('#hud-activation');
     this.tokenEl = this.element.querySelector('#hud-token');
     this.centerEl = this.element.querySelector('.hud-center');
@@ -119,6 +122,7 @@ export class HUD {
       this.activationEl.removeAttribute('title');
       this.tokenEl.textContent = '—';
       this.tokenEl.removeAttribute?.('title');
+      this._renderNoise(null, false);
       return;
     }
 
@@ -133,6 +137,31 @@ export class HUD {
     this.segmentEl.textContent = t.type;
     this.tokenEl.textContent = t.tokenLabel;
     this.tokenEl.title = t.tokenLabel;
+    this._renderNoise(t.noiseRatio, t.isNoiseDim);
+  }
+
+  /**
+   * @param {number|null|undefined} ratio
+   * @param {boolean} isNoiseDim
+   * @private
+   */
+  _renderNoise(ratio, isNoiseDim) {
+    if (!this.noiseEl) return;
+    if (ratio == null) {
+      this.noiseEl.textContent = 'NOISE: --';
+      this.noiseEl.classList.remove('is-rogue-dim');
+      this.noiseEl.removeAttribute?.('title');
+      this.noiseEl.title = '';
+      return;
+    }
+    this.noiseEl.textContent = `NOISE: ${formatNoiseRatio(ratio)}`;
+    if (isNoiseDim) {
+      this.noiseEl.classList.add('is-rogue-dim');
+      this.noiseEl.title = 'Rogue structural noise dimension (Outlier Shield)';
+      return;
+    }
+    this.noiseEl.classList.remove('is-rogue-dim');
+    this.noiseEl.title = 'Instantaneous token noise energy ratio';
   }
 
   /**
@@ -177,8 +206,9 @@ export class HUD {
       || 0;
     const badgeW = this.segmentEl?.offsetWidth || 0;
     const dimW = this.dimEl?.offsetWidth || 0;
+    const noiseW = this.noiseEl?.offsetWidth || 0;
     const gap = 24;
-    const available = centerW - tokenW - labelW - badgeW - dimW - gap;
+    const available = centerW - tokenW - labelW - badgeW - dimW - noiseW - gap;
     // Mobile wrap: if center is tight, allow activation to use most of the bar
     if (available < 64 && this.element?.clientWidth) {
       return Math.max(72, Math.floor(this.element.clientWidth * 0.35));

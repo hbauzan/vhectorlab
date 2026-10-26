@@ -2,6 +2,13 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
+## [4.1.0] - 2026-10-26
+
+### Added
+- Compare outlier shield flattens structural-noise coordinates onto the thread baseline. Point clouds do it in the vertex shader (`aNoiseMask`, `aBaselineY`, `uShieldEnabled`) without reallocating geometry. Ribbon centerlines are clamped on the CPU.
+- Dual-path ribbon: with the shield and the dual-path toggle both on, a peach ghost ribbon (`#FFA997`, opacity 0.28) follows the raw trajectory while the primary ribbon stays flat.
+- Bottom HUD `NOISE:` shows the hovered token's noise energy \(\|e_{\text{noise}}\|_2^2 / \|e\|_2^2\). A noise coordinate is marked in MagicWB peach. On `BAAI/bge-m3`, `car` reads 24.7% and `truck` reads 19.2%. The Engine Manager's 19.8% remains the vocabulary-matrix energy ratio.
+
 ## [4.0.0] - 2026-10-26
 
 ### Added

@@ -13,6 +13,45 @@ import {
 import { colorForActivationWithGroupHue, getGroupHueColor } from './groupHuePaint.js';
 
 /**
+ * Noise coordinates as a number set. Accepts an array, a set, or null.
+ * @param {number[]|Set<number>|null|undefined} noiseIndices
+ * @returns {Set<number>|null}
+ */
+export function noiseCoordinateSet(noiseIndices) {
+  if (!noiseIndices) return null;
+  if (noiseIndices instanceof Set) return noiseIndices.size > 0 ? noiseIndices : null;
+  if (!Array.isArray(noiseIndices) || noiseIndices.length === 0) return null;
+  const set = new Set();
+  for (const item of noiseIndices) {
+    const dim = Number(item);
+    if (Number.isFinite(dim)) set.add(dim);
+  }
+  return set.size > 0 ? set : null;
+}
+
+/**
+ * Copy a ribbon centerline, pinning noise coordinates to the thread baseline.
+ * The input array is left unchanged.
+ * @param {THREE.Vector3[]} points
+ * @param {{ shieldEnabled?: boolean, noiseIndices?: number[]|Set<number>|null, baselineY?: number, sourceDims?: number[]|null }} [options]
+ * @returns {THREE.Vector3[]}
+ */
+export function ribbonPointsWithNoiseShield(points, options = {}) {
+  if (!points?.length || options.shieldEnabled !== true) return points;
+  const noiseSet = noiseCoordinateSet(options.noiseIndices);
+  if (!noiseSet) return points;
+  const baseline = options.baselineY !== undefined && Number.isFinite(Number(options.baselineY))
+    ? Number(options.baselineY)
+    : 0;
+  const sourceDims = options.sourceDims || null;
+  return points.map((point, index) => {
+    const srcDim = sourceDims && sourceDims[index] != null ? Number(sourceDims[index]) : index;
+    if (!noiseSet.has(srcDim)) return point;
+    return new THREE.Vector3(point.x, baseline, point.z);
+  });
+}
+
+/**
  * Resolve optional vizConfig from MeshFactory options into filter mode + RGB anchors.
  * @param {object} [options]
  */
@@ -93,6 +132,18 @@ export class MeshFactory {
     );
 
     const useGroupHue = Boolean(viz.groupHueEnabled);
+    const noiseSet = noiseCoordinateSet(options.noiseIndices);
+    const shieldEnabled = Boolean(options.shieldEnabled);
+    const noiseMask = new Float32Array(pointsData.length);
+    const baselineY = new Float32Array(pointsData.length);
+    for (let i = 0; i < pointsData.length; i++) {
+      const srcDim = pointsData[i].meta?.dim !== undefined
+        ? Number(pointsData[i].meta.dim)
+        : (i % 1024);
+      const isNoise = Boolean(noiseSet && noiseSet.has(srcDim));
+      noiseMask[i] = isNoise ? 0.0 : 1.0;
+      baselineY[i] = pointsData[i].baselineY !== undefined ? Number(pointsData[i].baselineY) : 0.0;
+    }
     const baseColors = new Float32Array(pointsData.length * 3);
     if (useGroupHue) {
       for (let i = 0; i < pointsData.length; i++) {
@@ -112,6 +163,8 @@ export class MeshFactory {
     geometry.setAttribute('aCancel', new THREE.Float32BufferAttribute(cancel, 1));
     geometry.setAttribute('aHighlight', new THREE.Float32BufferAttribute(highlight, 1));
     geometry.setAttribute('aBaseColor', new THREE.Float32BufferAttribute(baseColors, 3));
+    geometry.setAttribute('aNoiseMask', new THREE.Float32BufferAttribute(noiseMask, 1));
+    geometry.setAttribute('aBaselineY', new THREE.Float32BufferAttribute(baselineY, 1));
 
     const pointSize = options.pointSize || 14.0;
     const material = createDivergentMaterial(pointSize, 1.0, {
@@ -127,6 +180,7 @@ export class MeshFactory {
       softStar: options.softStar === true,
       galaxy: options.galaxy === true,
       useGroupHueBase: useGroupHue,
+      shieldEnabled,
     });
 
     const pointsMesh = new THREE.Points(geometry, material);
@@ -145,7 +199,13 @@ export class MeshFactory {
   static createRibbonMesh(points, activations = null, options = {}) {
     const resolved = resolveVizOptions(options);
     const { filterMode, sourceDims } = resolved;
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const ribbonPoints = ribbonPointsWithNoiseShield(points, {
+      shieldEnabled: options.shieldEnabled === true,
+      noiseIndices: options.noiseIndices,
+      baselineY: options.baselineY,
+      sourceDims,
+    });
+    const geometry = new THREE.BufferGeometry().setFromPoints(ribbonPoints);
 
     let normActivations = null;
     if (activations && activations.length === points.length) {
@@ -183,7 +243,7 @@ export class MeshFactory {
     lineMesh.frustumCulled = false;
     lineMesh.userData = {
       kind: 'continuityLine',
-      pointCount: points.length,
+      pointCount: ribbonPoints.length,
       activations: activations ? Array.from(activations) : null,
     };
 
@@ -294,9 +354,15 @@ export class MeshFactory {
     if (!points || points.length < 2) return null;
     const resolved = resolveVizOptions(options);
     const { filterMode, sourceDims } = resolved;
+    const ribbonPoints = ribbonPointsWithNoiseShield(points, {
+      shieldEnabled: options.shieldEnabled === true,
+      noiseIndices: options.noiseIndices,
+      baselineY: options.baselineY,
+      sourceDims,
+    });
     const width = options.width ?? 3.0;
     const half = width * 0.5;
-    const n = points.length;
+    const n = ribbonPoints.length;
     const acts = activations && activations.length === n
       ? activations
       : points.map(() => 0);
@@ -309,10 +375,10 @@ export class MeshFactory {
     const side = new THREE.Vector3();
 
     for (let i = 0; i < n; i++) {
-      const p = points[i];
-      if (i === 0) tangent.subVectors(points[1], points[0]);
-      else if (i === n - 1) tangent.subVectors(points[n - 1], points[n - 2]);
-      else tangent.subVectors(points[i + 1], points[i - 1]);
+      const p = ribbonPoints[i];
+      if (i === 0) tangent.subVectors(ribbonPoints[1], ribbonPoints[0]);
+      else if (i === n - 1) tangent.subVectors(ribbonPoints[n - 1], ribbonPoints[n - 2]);
+      else tangent.subVectors(ribbonPoints[i + 1], ribbonPoints[i - 1]);
       if (tangent.lengthSq() < 1e-10) tangent.set(1, 0, 0);
       else tangent.normalize();
 

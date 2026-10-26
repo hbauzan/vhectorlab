@@ -248,9 +248,9 @@ The visual style for **v4.0.0** is rooted strictly in **Commodore Amiga / MagicW
   - `src/ui/HUD.js`
   - `tests/shaderNoiseMask.test.js` (new Vitest)
 * **Functionality:**
-  - Shaders: Vertex attribute `aNoiseMask` (0.0 for noise axes, 1.0 for valid axes). When Shield is `ON`, the vertex position amplitude $Y$ for noise dimensions is flattened to zero, removing the "skyscraper" artifacts.
+  - Shaders: Vertex attribute `aNoiseMask` (0.0 for noise axes, 1.0 for valid axes). When Shield is `ON`, noise-coordinate amplitude $Y$ flattens onto the thread baseline (the ANALYSIS stack offset, or $0$ in NAVIGATION), removing the skyscraper spikes. The point position buffer stays raw; `uShieldEnabled` updates in place.
   - **Dual-Path Ribbon:** When enabled in Compare mode, renders a ghosted semi-transparent ribbon along the raw trajectory alongside the pure semantic trajectory.
-  - **HUD Hover Telemetry:** Hovering over any 3D point resolves `resolveHoverTelemetry` and displays `NOISE: 15.9%` indicating the instantaneous ratio $\frac{\|e_{\text{noise}}\|_2}{\|e\|_2}$.
+  - **HUD Hover Telemetry:** Hovering over any 3D point resolves `resolveHoverTelemetry` and displays `NOISE: 24.7%` indicating the token's instantaneous noise energy ratio $\frac{\|e_{\text{noise}}\|_2^2}{\|e\|_2^2}$.
 * **TDD Unit Tests:**
   1. Geometry vertex attributes `aNoiseMask` allocate correct length ($N \times D$).
   2. HUD telemetry correctly formats noise ratio percentage.

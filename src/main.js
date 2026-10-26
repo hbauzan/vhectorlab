@@ -392,8 +392,8 @@ class VHectorLabApp {
   }
 
   /**
-   * Compare scene options. Noise coordinates reach Spectral Quorum only while the shield is on.
-   * @returns {{ dimSortByContrast: boolean, isSaeActive: boolean, noiseIndices?: number[] }}
+   * Compare scene options. Noise coordinates reach the shield, the ghost ribbon, and Spectral Quorum while the shield is on.
+   * @returns {{ dimSortByContrast: boolean, isSaeActive: boolean, noiseShieldEnabled: boolean, dualPathEnabled: boolean, noiseIndices?: number[] }}
    */
   compareSceneOptions() {
     const noiseIndices = this.noiseShieldEnabled && Array.isArray(this.activeNoiseProfile?.noise_indices)
@@ -402,6 +402,8 @@ class VHectorLabApp {
     return {
       dimSortByContrast: this.dimSortByContrast,
       isSaeActive: this.isSaeActive(),
+      noiseShieldEnabled: this.noiseShieldEnabled,
+      dualPathEnabled: this.dualPathEnabled,
       ...(noiseIndices && noiseIndices.length ? { noiseIndices } : {}),
     };
   }
@@ -424,11 +426,12 @@ class VHectorLabApp {
   }
 
   /**
-   * Dual-path ribbon is not drawn in this slice. The checkbox preference stays on the sheet.
+   * Mount or unmount the raw-trajectory ghost ribbon.
    * @param {boolean} enabled
    */
   handleDualPathToggle(enabled) {
     this.dualPathEnabled = Boolean(enabled);
+    this.refreshRender();
   }
 
   /**

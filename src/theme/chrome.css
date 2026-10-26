@@ -464,3 +464,12 @@ body.workbench-theme #engine-manager-container .engine-panel-tab.dock-tab {
 .score-delta.rise {
   color: #00E5FF;
 }
+
+body.workbench-theme #hud-noise.hud-noise-ratio {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+body.workbench-theme #hud-noise.is-rogue-dim {
+  color: #FFA997;
+}

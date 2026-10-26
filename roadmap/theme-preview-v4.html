@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VHectorLab 3D — v4.0.0 Authentic 3D Beveled Workbench Themes</title>
+  <style>
+    @font-face {
+      font-family: 'TopazNew';
+      src: url('../src/theme/assets/fonts/Topaz_a1200_v1.0.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'TopazNew', 'Courier New', monospace;
+      font-size: 15px;
+      line-height: 1.3;
+      background: #0a0a0a;
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top switcher header */
+    #theme-switcher-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #141414;
+      border-bottom: 3px solid #000;
+      border-top: 1px solid #333;
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.9);
+    }
+
+    .switcher-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .switcher-tag {
+      background: #000;
+      border-top: 1.5px solid #222;
+      border-left: 1.5px solid #222;
+      border-right: 1.5px solid #666;
+      border-bottom: 1.5px solid #666;
+      color: #fff;
+      padding: 3px 8px;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .theme-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* 3D Embossed Toolbar Button */
+    .theme-btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 7px 16px;
+      cursor: pointer;
+      border-top: 2.5px solid #777;
+      border-left: 2.5px solid #777;
+      border-right: 2.5px solid #000;
+      border-bottom: 2.5px solid #000;
+      background: #2e2e2e;
+      color: #ddd;
+      transition: all 0.08s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+    }
+
+    .theme-btn:hover {
+      background: #383838;
+      color: #fff;
+    }
+
+    .theme-btn:active, .theme-btn.active {
+      border-top: 2.5px solid #000;
+      border-left: 2.5px solid #000;
+      border-right: 2.5px solid #777;
+      border-bottom: 2.5px solid #777;
+      background: #181818;
+      color: #fff;
+      box-shadow: inset 1px 1px 4px rgba(0,0,0,0.9);
+    }
+
+    .theme-dot {
+      width: 10px;
+      height: 10px;
+      border: 1px solid #000;
+      display: inline-block;
+    }
+
+    /* Workbench Stage Frame */
+    #stage-container {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage-wrapper {
+      width: 100%;
+      max-width: 1360px;
+      height: 800px;
+      background: var(--stage-bg);
+      /* Dual-line 3D Amiga Screen Bevel */
+      border-top: 4px solid var(--bevel-light);
+      border-left: 4px solid var(--bevel-light);
+      border-right: 4px solid var(--bevel-dark);
+      border-bottom: 4px solid var(--bevel-dark);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.95);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========================================================
+       THEME 1: WORKBENCH 1.3 / OCS CLASSIC (1987)
+       Blue (#0055AA) & Amber/Orange (#FFAA00) + Pure 3D Chisel
+       ======================================================== */
+    .theme-wb13 {
+      --accent: #FFAA00;
+      --accent-alt: #0055AA;
+      --stage-bg: #002B59;
+      --nav-bg: #0055AA;
+      --nav-text: #FFAA00;
+      --panel-bg: #00376E;
+      --panel-text: #FFAA00;
+      --bevel-light: #FFAA00;
+      --bevel-dark: #000000;
+      --inset-light: #FFAA00;
+      --inset-dark: #000000;
+      --cable-color: #FFAA00;
+      --hud-bg: #001A38;
+      --tag-bg: #FFAA00;
+      --tag-color: #000000;
+      --badge-sat: #FFAA00;
+      --badge-sat-text: #000000;
+      --badge-flat: #0055AA;
+      --badge-flat-text: #FFFFFF;
+      --grid-color: rgba(255, 170, 0, 0.08);
+      --btn-bg: #0055AA;
+      --btn-text: #FFAA00;
+      --bar-stripes: repeating-linear-gradient(90deg, #0055AA, #0055AA 2px, #FFAA00 2px, #FFAA00 4px);
+    }
+
+    /* ========================================================
+       THEME 2: MAGICWB AGA (1993, Martin Huttenloher)
+       8-Pen chiseled metallic workstation (Blue, Tan, Peach)
+       ======================================================== */
+    .theme-magicwb {
+      --accent: #FFA997;         /* MagicWB Peach */
+      --accent-alt: #AA907C;     /* MagicWB Tan / Copper */
+      --stage-bg: #1B1E22;
+      --nav-bg: #3B67A2;         /* MagicWB Cobalt Blue */
+      --nav-text: #FFFFFF;
+      --panel-bg: #2A2A2A;
+      --panel-text: #F0F0F0;
+      --bevel-light: #FFFFFF;
+      --bevel-dark: #000000;
+      --bevel-halfshine: #AAAAAA;
+      --bevel-halfshadow: #1A1A1A;
+      --inset-light: #FFFFFF;
+      --inset-dark: #1A1A1A;
+      --cable-color: #FFA997;
+      --hud-bg: #222222;
+      --tag-bg: #FFA997;
+      --tag-color: #000000;
+      --badge-sat: #FFA997;
+      --badge-sat-text: #000000;
+      --badge-flat: #AA907C;
+      --badge-flat-text: #FFFFFF;
+      --grid-color: rgba(170, 144, 124, 0.08);
+      --btn-bg: #3B67A2;
+      --btn-text: #FFFFFF;
+      --bar-stripes: repeating-linear-gradient(90deg, #3B67A2, #3B67A2 3px, #FFA997 3px, #FFA997 5px);
+    }
+
+    /* ========================================================
+       THEME 3: AMIGA BOING BALL & REACTION 3.9
+       Haage & Partner / Commodore Boing Red & Platinum Slate
+       ======================================================== */
+    .theme-boing {
+      --accent: #E52521;         /* Amiga Boing Red */
+      --accent-alt: #FFFFFF;
+      --stage-bg: #161A20;
+      --nav-bg: #2C3542;         /* ReAction Charcoal Slate */
+      --nav-text: #FFFFFF;
+      --panel-bg: #242C37;
+      --panel-text: #FFFFFF;
+      --bevel-light: #7E8E9F;
+      --bevel-dark: #0A0D12;
+      --inset-light: #7E8E9F;
+      --inset-dark: #0A0D12;
+      --cable-color: #E52521;
+      --hud-bg: #13171D;
+      --tag-bg: #E52521;
+      --tag-color: #FFFFFF;
+      --badge-sat: #E52521;
+      --badge-sat-text: #FFFFFF;
+      --badge-flat: #5A6A80;
+      --badge-flat-text: #FFFFFF;
+      --grid-color: rgba(229, 37, 33, 0.08);
+      --btn-bg: #E52521;
+      --btn-text: #FFFFFF;
+      --bar-stripes: repeating-linear-gradient(90deg, #2C3542, #2C3542 3px, #E52521 3px, #E52521 5px);
+    }
+
+    /* ========================================================
+       AMIGA 3D BEVELED COMPONENT STYLES
+       ======================================================== */
+
+    /* 3D Raised Box (Panels, Windows, Docks) */
+    .amiga-raised-box {
+      background: var(--panel-bg);
+      color: var(--panel-text);
+      border-top: 3px solid var(--bevel-light);
+      border-left: 3px solid var(--bevel-light);
+      border-right: 3px solid var(--bevel-dark);
+      border-bottom: 3px solid var(--bevel-dark);
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.85);
+    }
+
+    /* 3D Inset Box (Inputs, Display Wells, Recessed areas) */
+    .amiga-inset-box {
+      background: rgba(0,0,0,0.5);
+      border-top: 2.5px solid var(--inset-dark);
+      border-left: 2.5px solid var(--inset-dark);
+      border-right: 2.5px solid var(--inset-light);
+      border-bottom: 2.5px solid var(--inset-light);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.9);
+    }
+
+    /* 3D Amiga Gadget Button */
+    .amiga-gadget-btn {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      font-family: inherit;
+      font-weight: bold;
+      font-size: 12px;
+      border-top: 2.5px solid var(--bevel-light);
+      border-left: 2.5px solid var(--bevel-light);
+      border-right: 2.5px solid var(--bevel-dark);
+      border-bottom: 2.5px solid var(--bevel-dark);
+      padding: 6px 10px;
+      cursor: pointer;
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+      text-align: center;
+    }
+
+    .amiga-gadget-btn:active {
+      border-top: 2.5px solid var(--bevel-dark);
+      border-left: 2.5px solid var(--bevel-dark);
+      border-right: 2.5px solid var(--bevel-light);
+      border-bottom: 2.5px solid var(--bevel-light);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.9);
+      padding: 7px 9px 5px 11px; /* physical depress shift */
+    }
+
+    /* Classic Amiga Window Titlebar */
+    .amiga-window-titlebar {
+      height: 24px;
+      background: var(--nav-bg);
+      color: var(--nav-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+      border-bottom: 2px solid var(--bevel-dark);
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* Classic Window Gadgets */
+    .amiga-window-gadget {
+      width: 16px;
+      height: 16px;
+      background: var(--nav-bg);
+      border-top: 1.5px solid var(--bevel-light);
+      border-left: 1.5px solid var(--bevel-light);
+      border-right: 1.5px solid var(--bevel-dark);
+      border-bottom: 1.5px solid var(--bevel-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .amiga-window-gadget:active {
+      border-top: 1.5px solid var(--bevel-dark);
+      border-left: 1.5px solid var(--bevel-dark);
+      border-right: 1.5px solid var(--bevel-light);
+      border-bottom: 1.5px solid var(--bevel-light);
+    }
+
+    .gadget-inner-square {
+      width: 8px;
+      height: 8px;
+      border-top: 1px solid var(--bevel-dark);
+      border-left: 1px solid var(--bevel-dark);
+      border-right: 1px solid var(--bevel-light);
+      border-bottom: 1px solid var(--bevel-light);
+    }
+
+    /* Top Screen Titlebar (Navbar) */
+    .mock-navbar {
+      height: 38px;
+      background: var(--nav-bg);
+      border-bottom: 3px solid var(--bevel-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      color: var(--nav-text);
+      z-index: 10;
+      position: relative;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      color: var(--accent);
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .brand-name {
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .version-pill {
+      background: var(--tag-bg);
+      color: var(--tag-color);
+      font-size: 12px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-top: 1.5px solid var(--bevel-light);
+      border-left: 1.5px solid var(--bevel-light);
+      border-right: 1.5px solid var(--bevel-dark);
+      border-bottom: 1.5px solid var(--bevel-dark);
+    }
+
+    .nav-cable {
+      flex: 1;
+      height: 3px;
+      margin: 0 16px;
+      background: var(--cable-color);
+      border-top: 1px solid var(--bevel-light);
+      border-bottom: 1px solid var(--bevel-dark);
+    }
+
+    /* Chamfered Center Mode Tabs */
+    .nav-center-chamfer {
+      display: flex;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.6);
+      border-top: 2px solid var(--bevel-dark);
+      border-left: 2px solid var(--bevel-dark);
+      border-right: 2px solid var(--bevel-light);
+      border-bottom: 2px solid var(--bevel-light);
+    }
+
+    .chamfer-tab {
+      font-size: 12px;
+      color: #aaa;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+
+    .chamfer-tab.active {
+      color: var(--accent);
+      font-weight: bold;
+      background: rgba(0,0,0,0.4);
+      border-top: 1px solid var(--bevel-light);
+      border-left: 1px solid var(--bevel-light);
+      border-right: 1px solid var(--bevel-dark);
+      border-bottom: 1px solid var(--bevel-dark);
+    }
+
+    .nav-right-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-top: 1px solid var(--bevel-light);
+      border-left: 1px solid var(--bevel-light);
+      border-right: 1px solid var(--bevel-dark);
+      border-bottom: 1px solid var(--bevel-dark);
+    }
+
+    /* Canvas / 3D Simulation Stage */
+    .canvas-stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .tensor-svg {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Top Docks */
+    .mock-dock-top-left {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 260px;
+      z-index: 5;
+    }
+
+    .mock-dock-top-right {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 240px;
+      z-index: 5;
+    }
+
+    .dock-content {
+      padding: 10px;
+    }
+
+    /* BOTTOM DOCK: LLM ENGINE MANAGER (LEFT) */
+    .mock-engine-manager {
+      position: absolute;
+      bottom: 38px;
+      left: 10px;
+      width: 330px;
+      z-index: 20;
+    }
+
+    .engine-content {
+      padding: 10px 12px;
+    }
+
+    .engine-title {
+      font-weight: bold;
+      color: var(--accent);
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+
+    .pills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 8px 0;
+    }
+
+    .noise-pill {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 6px;
+      border-top: 1.5px solid var(--bevel-light);
+      border-left: 1.5px solid var(--bevel-light);
+      border-right: 1.5px solid var(--bevel-dark);
+      border-bottom: 1.5px solid var(--bevel-dark);
+      box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+    }
+
+    .noise-pill.sat {
+      background: var(--badge-sat);
+      color: var(--badge-sat-text);
+    }
+
+    .noise-pill.flat {
+      background: var(--badge-flat);
+      color: var(--badge-flat-text);
+    }
+
+    .shield-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 6px 0;
+    }
+
+    /* Custom 3D Checkbox */
+    .amiga-checkbox {
+      width: 16px;
+      height: 16px;
+      border-top: 2px solid var(--inset-dark);
+      border-left: 2px solid var(--inset-dark);
+      border-right: 2px solid var(--inset-light);
+      border-bottom: 2px solid var(--inset-light);
+      background: rgba(0,0,0,0.6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .amiga-checkbox.checked::after {
+      content: '✓';
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    /* BOTTOM DOCK: VISUALIZATION CONTROLS (RIGHT) */
+    .mock-viz-controls {
+      position: absolute;
+      bottom: 38px;
+      right: 10px;
+      width: 300px;
+      z-index: 20;
+    }
+
+    /* HUD BOTTOM BAR */
+    .mock-hud {
+      height: 30px;
+      background: var(--hud-bg);
+      border-top: 3px solid var(--bevel-dark);
+      border-bottom: 1px solid var(--bevel-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 12px;
+      color: #aaa;
+      z-index: 15;
+    }
+
+    .hud-chip span {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* 3D Meter Bar */
+    .amiga-meter {
+      width: 100%;
+      height: 10px;
+      border-top: 1.5px solid var(--inset-dark);
+      border-left: 1.5px solid var(--inset-dark);
+      border-right: 1.5px solid var(--inset-light);
+      border-bottom: 1.5px solid var(--inset-light);
+      background: #000;
+      position: relative;
+      margin: 4px 0 8px;
+    }
+
+    .amiga-meter-fill {
+      height: 100%;
+      background: var(--accent);
+      border-right: 1px solid #000;
+    }
+
+    /* Information Card under stage */
+    .theme-info-box {
+      max-width: 1360px;
+      width: 100%;
+      margin-top: 14px;
+      background: #141414;
+      border-top: 3px solid #444;
+      border-left: 3px solid #444;
+      border-right: 3px solid #000;
+      border-bottom: 3px solid #000;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .info-card h4 {
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .info-card p {
+      font-size: 12px;
+      color: #ccc;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body class="theme-wb13">
+
+  <!-- Top Switcher -->
+  <div id="theme-switcher-bar">
+    <div class="switcher-title">
+      <span>VHECTORLAB 3D</span>
+      <span class="switcher-tag">WORKBENCH 3D BEVEL LAB (v4.0.0)</span>
+    </div>
+
+    <div class="theme-buttons">
+      <button class="theme-btn active" data-theme="theme-wb13" onclick="setTheme('theme-wb13')">
+        <span class="theme-dot" style="background: #FFAA00;"></span>
+        1. WB 1.3 Classic (Blue & Amber)
+      </button>
+
+      <button class="theme-btn" data-theme="theme-magicwb" onclick="setTheme('theme-magicwb')">
+        <span class="theme-dot" style="background: #FFA997;"></span>
+        2. MagicWB AGA (Tan & Peach)
+      </button>
+
+      <button class="theme-btn" data-theme="theme-boing" onclick="setTheme('theme-boing')">
+        <span class="theme-dot" style="background: #E52521;"></span>
+        3. Boing Ball 3.9 (Red & Slate)
+      </button>
+    </div>
+  </div>
+
+  <!-- Stage -->
+  <div id="stage-container">
+    <div class="stage-wrapper">
+      
+      <!-- Screen Top Titlebar -->
+      <header class="mock-navbar">
+        <div class="nav-brand">
+          <span class="brand-logo">◈</span>
+          <span class="brand-name">VHECTORLAB 3D</span>
+          <span class="version-pill">v4.0.0</span>
+        </div>
+
+        <div class="nav-cable"></div>
+
+        <div class="nav-center-chamfer">
+          <span class="chamfer-tab active">ARITHMETIC</span>
+          <span class="chamfer-tab">COMPARE</span>
+          <span class="chamfer-tab" style="color:#555">|</span>
+          <span class="chamfer-tab active">ANALYSIS</span>
+          <span class="chamfer-tab">NAV</span>
+          <span class="chamfer-tab">GALAXY</span>
+          <span class="chamfer-tab" style="color:#555">|</span>
+          <span class="chamfer-tab active">POINTS</span>
+          <span class="chamfer-tab">RIBBONS</span>
+        </div>
+
+        <div class="nav-cable"></div>
+
+        <div class="nav-right-status">
+          <div class="status-dot"></div>
+          <span>ONLINE · 127.0.0.1:8000</span>
+        </div>
+      </header>
+
+      <!-- 3D Canvas Stage Simulation -->
+      <div class="canvas-stage">
+        
+        <!-- Background 3D Vector Simulation SVG -->
+        <svg class="tensor-svg" viewBox="0 0 1000 500" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3" />
+              <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="var(--accent-alt)" stop-opacity="0.6" />
+            </linearGradient>
+          </defs>
+
+          <!-- Grid Lines -->
+          <g stroke="var(--grid-color)" stroke-width="1">
+            <line x1="0" y1="125" x2="1000" y2="125" />
+            <line x1="0" y1="250" x2="1000" y2="250" />
+            <line x1="0" y1="375" x2="1000" y2="375" />
+            <line x1="250" y1="0" x2="250" y2="500" />
+            <line x1="500" y1="0" x2="500" y2="500" />
+            <line x1="750" y1="0" x2="750" y2="500" />
+          </g>
+
+          <!-- Raw Wave with 386 Rogue Everest Spike -->
+          <path id="tensor-path" fill="none" stroke="url(#waveGrad)" stroke-width="3"
+                d="M 50,250 Q 150,220 280,260 T 370,240 L 386,40 L 400,245 Q 500,280 610,250 T 780,440 L 795,250 T 950,230" />
+
+          <!-- Dynamic Points with 3D Drop Outline -->
+          <circle id="spike-pt-386" cx="386" cy="40" r="5" fill="var(--badge-sat)" stroke="#000" stroke-width="1.5" />
+          <text id="spike-lbl-386" x="396" y="45" font-size="12" fill="var(--badge-sat)" font-weight="bold">Dim #386 (+0.2867 ROGUE)</text>
+
+          <circle id="spike-pt-780" cx="780" cy="440" r="5" fill="var(--badge-sat)" stroke="#000" stroke-width="1.5" />
+          <text id="spike-lbl-780" x="790" y="445" font-size="12" fill="var(--badge-sat)" font-weight="bold">Dim #780 (-0.1670 ROGUE)</text>
+
+          <circle cx="616" cy="250" r="4" fill="var(--badge-flat)" stroke="#000" stroke-width="1.5" />
+          <text x="626" y="254" font-size="11" fill="var(--badge-flat)">Dim #616 (DEAD FLAT)</text>
+        </svg>
+
+        <!-- Mock Dock Top Left: Raised Amiga Window with Gadgets -->
+        <div class="amiga-raised-box mock-dock-top-left">
+          <div class="amiga-window-titlebar">
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+            <span>Vector Arithmetic</span>
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+          </div>
+          <div class="dock-content">
+            <div style="font-size:12px; margin-bottom:6px;">A: <b style="color:var(--accent)">king</b></div>
+            <div style="font-size:12px; margin-bottom:6px;">B: <b style="color:var(--accent)">man</b></div>
+            <div style="font-size:12px; margin-bottom:6px;">C: <b style="color:var(--accent)">woman</b></div>
+            <div class="amiga-inset-box" style="padding:6px; font-size:12px; color:var(--accent); font-weight:bold;">
+              = #1 queen (cos: 0.7812)
+            </div>
+          </div>
+        </div>
+
+        <!-- Mock Dock Top Right: Raised Amiga Window -->
+        <div class="amiga-raised-box mock-dock-top-right">
+          <div class="amiga-window-titlebar">
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+            <span>Spatial Controls</span>
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+          </div>
+          <div class="dock-content">
+            <div style="font-size:11px; display:flex; justify-content:space-between; margin-bottom:2px;">
+              <span>Amp Y:</span> <span style="font-weight:bold;">40.0</span>
+            </div>
+            <div class="amiga-meter"><div class="amiga-meter-fill" style="width:75%;"></div></div>
+
+            <div style="font-size:11px; display:flex; justify-content:space-between; margin-bottom:2px;">
+              <span>Spacing X:</span> <span style="font-weight:bold;">0.70</span>
+            </div>
+            <div class="amiga-meter"><div class="amiga-meter-fill" style="width:50%;"></div></div>
+          </div>
+        </div>
+
+        <!-- NEW BOTTOM-LEFT DOCK: LLM ENGINE MANAGER (Heavy 3D Chiseled Bevels) -->
+        <div class="amiga-raised-box mock-engine-manager">
+          <div class="amiga-window-titlebar">
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+            <span class="engine-title">▼ LLM ENGINE MANAGER</span>
+            <span style="font-size:10px; background:rgba(0,0,0,0.4); padding:1px 4px; border:1px solid var(--bevel-dark);">BAAI/bge-m3</span>
+          </div>
+
+          <div class="engine-content">
+            <div class="amiga-inset-box" style="padding:10px; margin-bottom:10px;">
+              <button class="amiga-gadget-btn" style="width:100%; margin-bottom:8px;" onclick="runSimulatedAudit()">
+                ⚡ RUN STRUCTURAL NOISE AUDIT
+              </button>
+
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                <span>Energy Concentration:</span>
+                <span id="audit-energy" style="color:var(--accent); font-weight:bold;">15.90% L2 Norm</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px;">
+                <span>Baseline Anisotropy:</span>
+                <span id="audit-cos" style="color:#ccc;">0.4981 → 0.4069 (Δ -0.0912)</span>
+              </div>
+
+              <div style="font-size:10px; color:#aaa; margin-bottom:4px;">ISOLATED OUTLIER AXES (3D BEVELED PILLS):</div>
+              <div class="pills-row" id="pills-container">
+                <span class="noise-pill sat">386</span>
+                <span class="noise-pill sat">297</span>
+                <span class="noise-pill sat">780</span>
+                <span class="noise-pill sat">404</span>
+                <span class="noise-pill sat">577</span>
+                <span class="noise-pill sat">292</span>
+                <span class="noise-pill sat">308</span>
+                <span class="noise-pill flat">329</span>
+                <span class="noise-pill flat">616</span>
+              </div>
+            </div>
+
+            <!-- Interactive 3D Checkbox -->
+            <div class="shield-toggle-row" onclick="toggleCheckbox('shield')">
+              <div class="amiga-checkbox checked" id="cb-shield"></div>
+              <span style="font-weight:bold; color:var(--accent);">Outlier Pruning Shield [3D ON]</span>
+            </div>
+
+            <div class="shield-toggle-row" onclick="toggleCheckbox('dual')">
+              <div class="amiga-checkbox" id="cb-dual"></div>
+              <span style="color:#bbb;">Dual-Path Ribbon (Ghost vs Pure)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM-RIGHT DOCK: VISUALIZATION CONTROLS (Raised 3D Window) -->
+        <div class="amiga-raised-box mock-viz-controls">
+          <div class="amiga-window-titlebar">
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+            <span>Visualization Optics</span>
+            <div class="amiga-window-gadget"><div class="gadget-inner-square"></div></div>
+          </div>
+
+          <div style="padding:10px 12px;">
+            <div style="display:flex; gap:6px; margin-bottom:10px;">
+              <button class="amiga-gadget-btn" style="flex:1; padding:4px 0;">ALL</button>
+              <button class="amiga-gadget-btn" style="flex:1; padding:4px 0; background:rgba(0,0,0,0.4); color:#888;">+ ONLY</button>
+              <button class="amiga-gadget-btn" style="flex:1; padding:4px 0; background:rgba(0,0,0,0.4); color:#888;">− ONLY</button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:12px;">
+              <span>Zero Coverage:</span>
+              <span style="color:var(--accent); font-weight:bold;">25%</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span>Spectral Quorum:</span>
+              <span style="color:var(--accent); font-weight:bold;">OPERATIONAL (p95)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- HUD Mockup (Recessed Amiga Status Well) -->
+      <footer class="mock-hud">
+        <div class="hud-chip">CAM: <span>POS (-75.2, -0.8, 62.5)</span></div>
+        <div class="hud-chip">HOVER: <span>Dim 386</span></div>
+        <div class="hud-chip">RAW ACT: <span id="hud-act">+0.2867</span></div>
+        <div class="hud-chip">NOISE ENERGY: <span id="hud-noise-ratio">15.90%</span></div>
+        <div class="hud-chip">FPS: <span>60.0</span></div>
+      </footer>
+
+    </div>
+
+    <!-- Explanation Box Below Stage -->
+    <div class="theme-info-box">
+      <div class="info-card">
+        <h4 id="theme-card-title">1. Workbench 1.3 Classic (Blue & Amber)</h4>
+        <p id="theme-card-desc">
+          The legendary 1987 Commodore Amiga 500 / 2000 Kickstart 1.3 palette with 3D chiseled raised and inset bevels. Deep Amiga Blue (#0055AA) with sharp Amber / Orange (#FFAA00) titlebars.
+        </p>
+      </div>
+
+      <div class="info-card">
+        <h4>100% Authentic 3D Bevel Physics</h4>
+        <p>
+          Heavy 3px top-left highlights, bottom-right shadows, recessed well displays, physical depress shifts on click, and authentic square titlebar gadgets.
+        </p>
+      </div>
+
+      <div class="info-card">
+        <h4>Interactive Testing</h4>
+        <p>
+          Click <b>"Outlier Pruning Shield"</b> or <b>"⚡ RUN STRUCTURAL NOISE AUDIT"</b> in the Engine Manager to see the live button depression and 3D wave simulation!
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const THEME_DATA = {
+      'theme-wb13': {
+        title: '1. Workbench 1.3 Classic (Blue & Amber)',
+        desc: 'The legendary 1987 Commodore Amiga 500 / 2000 Kickstart 1.3 palette with 3D chiseled raised and inset bevels. Deep Amiga Blue (#0055AA) with sharp Amber / Orange (#FFAA00) titlebars and gadget controls.',
+      },
+      'theme-magicwb': {
+        title: '2. MagicWB AGA (Tan & Peach)',
+        desc: 'Martin Huttenloher canonical 1993 8-pen palette from the Amiga 1200 AGA era. Features MagicWB Blue (#3B67A2), MagicWB Copper/Tan (#AA907C), and MagicWB Peach (#FFA997) with dual-tone chiseled bevels.',
+      },
+      'theme-boing': {
+        title: '3. Boing Ball 3.9 (Red & Slate)',
+        desc: 'The official Commodore Boing Ball & AmigaOS 3.9 / ReAction workstation theme. Deep Charcoal Slate (#2C3542) accented with iconic Boing Ball Red (#E52521) and Platinum bevels.',
+      }
+    };
+
+    let isShieldOn = true;
+
+    function setTheme(themeClass) {
+      document.body.className = themeClass;
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === themeClass);
+      });
+
+      const data = THEME_DATA[themeClass];
+      document.getElementById('theme-card-title').textContent = data.title;
+      document.getElementById('theme-card-desc').textContent = data.desc;
+    }
+
+    function toggleCheckbox(type) {
+      if (type === 'shield') {
+        isShieldOn = !isShieldOn;
+        const cb = document.getElementById('cb-shield');
+        cb.classList.toggle('checked', isShieldOn);
+
+        const path = document.getElementById('tensor-path');
+        const spike386 = document.getElementById('spike-pt-386');
+        const lbl386 = document.getElementById('spike-lbl-386');
+        const spike780 = document.getElementById('spike-pt-780');
+        const lbl780 = document.getElementById('spike-lbl-780');
+        const hudNoise = document.getElementById('hud-noise-ratio');
+        const hudAct = document.getElementById('hud-act');
+
+        if (isShieldOn) {
+          path.setAttribute('d', 'M 50,250 Q 150,220 280,260 T 370,240 Q 420,242 500,248 T 610,250 Q 700,245 780,252 T 950,230');
+          spike386.setAttribute('cy', '242');
+          lbl386.setAttribute('y', '232');
+          lbl386.textContent = 'Dim #386 (0.0000 PRUNED)';
+
+          spike780.setAttribute('cy', '252');
+          lbl780.setAttribute('y', '268');
+          lbl780.textContent = 'Dim #780 (0.0000 PRUNED)';
+
+          hudNoise.textContent = '0.00% (SHIELD ON)';
+          hudAct.textContent = '0.0000 (PRUNED)';
+        } else {
+          path.setAttribute('d', 'M 50,250 Q 150,220 280,260 T 370,240 L 386,40 L 400,245 Q 500,280 610,250 T 780,440 L 795,250 T 950,230');
+          spike386.setAttribute('cy', '40');
+          lbl386.setAttribute('y', '45');
+          lbl386.textContent = 'Dim #386 (+0.2867 ROGUE)';
+
+          spike780.setAttribute('cy', '440');
+          lbl780.setAttribute('y', '445');
+          lbl780.textContent = 'Dim #780 (-0.1670 ROGUE)';
+
+          hudNoise.textContent = '15.90% (RAW)';
+          hudAct.textContent = '+0.2867';
+        }
+      } else if (type === 'dual') {
+        const cb = document.getElementById('cb-dual');
+        cb.classList.toggle('checked');
+      }
+    }
+
+    function runSimulatedAudit() {
+      const btn = document.querySelector('.amiga-gadget-btn');
+      btn.textContent = '⌛ AUDITING 10,338 VECTORS...';
+
+      setTimeout(() => {
+        btn.textContent = '✓ AUDIT COMPLETE (42ms)';
+        setTimeout(() => {
+          btn.textContent = '⚡ RUN STRUCTURAL NOISE AUDIT';
+        }, 2000);
+      }, 450);
+    }
+  </script>
+</body>
+</html>

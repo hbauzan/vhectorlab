@@ -150,7 +150,15 @@ An embedding dimension that stays saturated (energy z-score at or above 3) or fl
 Workbench sheet for the active model's structural-noise audit: energy concentration, the drop in mean pairwise cosine, and the outlier coordinates.
 
 ### Outlier Pruning Shield
-Client preference that, while on and a noise profile is loaded, scores Compare rows by subspace cosine (noise coordinates zeroed, then re-normalized) and bars those coordinates from Spectral Quorum admission.
+Client preference that, while on and a noise profile is loaded, scores Compare rows by subspace cosine (noise coordinates zeroed, then re-normalized), bars those coordinates from Spectral Quorum admission, and flattens their 3D amplitude onto the thread baseline.
 
-_Avoid_: mutating the stored embedding; treating the dual-path toggle as a second ribbon.
+_Avoid_: mutating the stored embedding; painting the vocabulary-matrix energy ratio as a token's own noise share.
+
+### Dual-Path Ribbon
+Compare ribbon drawn along the unflattened trajectory while the Outlier Pruning Shield is on. The primary trajectory stays on the baseline.
+
+### Token Noise Energy
+Share of one token's squared length that sits on structural-noise coordinates: \(\|e_{\text{noise}}\|_2^2 / \|e\|_2^2\).
+
+_Avoid_: the square root of that share; the vocabulary-matrix energy ratio.
 
