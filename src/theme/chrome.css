@@ -451,3 +451,16 @@ body.workbench-theme #engine-manager-container .engine-panel-tab.dock-tab {
   border-bottom: none !important;
   border-radius: 0 !important;
 }
+
+.score-delta {
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 4px;
+  letter-spacing: 0.3px;
+}
+.score-delta.drop {
+  color: var(--badge-sat, #FFA997);
+}
+.score-delta.rise {
+  color: #00E5FF;
+}

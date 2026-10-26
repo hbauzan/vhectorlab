@@ -375,7 +375,75 @@ class VHectorLabApp {
    * Left wing on the HUD seam. Status/profile load is deferred to init().
    */
   mountEngineManagerUI() {
-    this.engineManager = new EngineManager(this.appContainer, this.provider);
+    this.activeNoiseProfile = null;
+    this.engineManager = new EngineManager(this.appContainer, this.provider, {
+      onShieldToggle: (enabled) => {
+        this.handleNoiseShieldToggle(enabled);
+      },
+      onDualPathToggle: (enabled) => {
+        this.handleDualPathToggle(enabled);
+      },
+      onAuditComplete: (profile) => {
+        this.handleNoiseAuditComplete(profile);
+      },
+    });
+    this.noiseShieldEnabled = Boolean(this.engineManager.settings.shieldEnabled);
+    this.dualPathEnabled = Boolean(this.engineManager.settings.dualPathEnabled);
+  }
+
+  /**
+   * Compare scene options. Noise coordinates reach Spectral Quorum only while the shield is on.
+   * @returns {{ dimSortByContrast: boolean, isSaeActive: boolean, noiseIndices?: number[] }}
+   */
+  compareSceneOptions() {
+    const noiseIndices = this.noiseShieldEnabled && Array.isArray(this.activeNoiseProfile?.noise_indices)
+      ? this.activeNoiseProfile.noise_indices
+      : null;
+    return {
+      dimSortByContrast: this.dimSortByContrast,
+      isSaeActive: this.isSaeActive(),
+      ...(noiseIndices && noiseIndices.length ? { noiseIndices } : {}),
+    };
+  }
+
+  /**
+   * @param {boolean} enabled
+   */
+  handleNoiseShieldToggle(enabled) {
+    this.noiseShieldEnabled = Boolean(enabled);
+    const noiseIndices = Array.isArray(this.activeNoiseProfile?.noise_indices)
+      ? this.activeNoiseProfile.noise_indices
+      : [];
+    if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+      this.comparePanel.setNoiseShieldConfig({
+        enabled: this.noiseShieldEnabled,
+        noiseIndices,
+      });
+    }
+    this.refreshRender();
+  }
+
+  /**
+   * Dual-path ribbon is not drawn in this slice. The checkbox preference stays on the sheet.
+   * @param {boolean} enabled
+   */
+  handleDualPathToggle(enabled) {
+    this.dualPathEnabled = Boolean(enabled);
+  }
+
+  /**
+   * @param {object|null|undefined} profile
+   */
+  handleNoiseAuditComplete(profile) {
+    this.activeNoiseProfile = profile || null;
+    const enabled = Boolean(this.engineManager?.settings?.shieldEnabled);
+    this.noiseShieldEnabled = enabled;
+    if (!enabled) return;
+    const noiseIndices = Array.isArray(profile?.noise_indices) ? profile.noise_indices : [];
+    if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+      this.comparePanel.setNoiseShieldConfig({ enabled: true, noiseIndices });
+    }
+    this.refreshRender();
   }
 
   /** Fill the model tag and any cached noise profile. Does not recompute. */
@@ -387,6 +455,13 @@ class VHectorLabApp {
       if (status && status.has_cached_profile) {
         const profile = await this.provider.getEngineNoiseProfile();
         this.engineManager.setNoiseProfile(profile);
+        this.activeNoiseProfile = profile || null;
+        const enabled = Boolean(this.engineManager.settings.shieldEnabled);
+        this.noiseShieldEnabled = enabled;
+        const noiseIndices = Array.isArray(profile?.noise_indices) ? profile.noise_indices : [];
+        if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+          this.comparePanel.setNoiseShieldConfig({ enabled, noiseIndices });
+        }
       }
     } catch (err) {
       console.error('Engine manager status failed:', err);
@@ -605,10 +680,7 @@ class VHectorLabApp {
           this.sliderConfig,
           this.viewMode,
           this.vizConfig,
-          {
-            dimSortByContrast: this.dimSortByContrast,
-            isSaeActive: this.isSaeActive(),
-          }
+          this.compareSceneOptions(),
         );
         this.setCompareOverlayLabels(labels);
         this.comparePanel.updateGroupLegend(data.items);
@@ -909,7 +981,7 @@ class VHectorLabApp {
     if (health.ok) {
       state.setBackendConnected(true);
       this.navbar.setStatus(true, health.data);
-      void this.refreshEngineManager();
+      await this.refreshEngineManager();
       await this.refreshSaeStatusUi();
 
       if (state.workspaceMode === 'COMPARE' || isGalaxyView(this.viewMode)) {
@@ -1523,10 +1595,7 @@ class VHectorLabApp {
         this.sliderConfig,
         this.viewMode,
         this.vizConfig,
-        {
-          dimSortByContrast: this.dimSortByContrast,
-          isSaeActive: this.isSaeActive(),
-        }
+        this.compareSceneOptions(),
       );
       this.setCompareOverlayLabels(labels);
       await this.onCompareDataRefreshed();

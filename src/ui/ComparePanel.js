@@ -1,5 +1,6 @@
 import {
   buildGroupCosineRows,
+  recomputeCompareAnchorScores,
   reorderCompareItems,
   sortCompareItemsByCosine,
 } from './compareCosine.js';
@@ -147,6 +148,8 @@ export class ComparePanel {
     this.cosineSortBlockedByGroups = false;
     /** Panel list mode: 'tokens' | 'groups' (groups = centroid cosine; 3D unchanged). */
     this.panelCosineMode = 'tokens';
+    /** Outlier shield. Empty indices leave cosine on the raw embedding dot. */
+    this.noiseShield = { enabled: false, noiseIndices: [] };
 
     this.element = document.createElement('div');
     this.element.id = 'compare-panel';
@@ -318,13 +321,79 @@ export class ComparePanel {
 
   handleReorder(fromIndex, delta) {
     if (!this.items || this.reorderLocked || this.panelCosineMode === 'groups') return;
-    this.applyReorderResult(reorderCompareItems(this.items, fromIndex, delta));
+    this.applyReorderResult(reorderCompareItems(this.items, fromIndex, delta, this.noiseShieldOptions()));
   }
 
   handleSort(direction) {
     if (!this.items || this.reorderLocked || this.cosineSortBlockedByGroups) return;
     if (this.panelCosineMode === 'groups') return;
-    this.applyReorderResult(sortCompareItemsByCosine(this.items, direction));
+    this.applyReorderResult(sortCompareItemsByCosine(this.items, direction, this.noiseShieldOptions()));
+  }
+
+  /**
+   * @returns {{ shieldEnabled: boolean, noiseIndices: number[] }}
+   */
+  noiseShieldOptions() {
+    const cfg = this.noiseShield || { enabled: false, noiseIndices: [] };
+    const raw = cfg.noiseIndices;
+    const noiseIndices = raw instanceof Set
+      ? Array.from(raw)
+      : Array.isArray(raw) ? raw : [];
+    return {
+      shieldEnabled: Boolean(cfg.enabled),
+      noiseIndices,
+    };
+  }
+
+  /**
+   * Store the shield and recompute the list already on screen.
+   * Does not call the backend.
+   * @param {{ enabled?: boolean, noiseIndices?: number[]|Set<number>|null }} [config]
+   */
+  setNoiseShieldConfig(config = {}) {
+    const raw = config.noiseIndices;
+    const noiseIndices = raw instanceof Set
+      ? Array.from(raw)
+      : Array.isArray(raw) ? raw.slice() : [];
+    this.noiseShield = {
+      enabled: Boolean(config.enabled),
+      noiseIndices,
+    };
+    if (!this.items || this.items.length === 0) return;
+    this.paintShieldedCosineList();
+  }
+
+  /**
+   * Group rows when ≥2 groups exist; otherwise token rows.
+   * Shield on replaces cosine_vs_first with the pruned cosine and stores cosine_delta.
+   */
+  paintShieldedCosineList() {
+    const options = this.noiseShieldOptions();
+    const active = options.shieldEnabled && options.noiseIndices.length > 0;
+    const groupRows = buildGroupCosineRows(this.items, active ? options : {});
+    if (groupRows) {
+      this.panelCosineMode = 'groups';
+      this.renderCosineList(groupRows.anchor, groupRows.items, { groupMode: true });
+      return;
+    }
+
+    const staleDelta = this.items.some((it) => Number.isFinite(it?.cosine_delta));
+    let anchor;
+    let rows;
+    if (active || staleDelta) {
+      const recomputed = recomputeCompareAnchorScores(
+        this.items,
+        active ? options : { shieldEnabled: false, noiseIndices: [] },
+      );
+      this.items = recomputed.items;
+      anchor = recomputed.anchor;
+      rows = recomputed.items;
+    } else {
+      anchor = this.items[0] ? { index: 0, text: this.items[0].text } : null;
+      rows = this.items;
+    }
+    this.panelCosineMode = 'tokens';
+    this.renderCosineList(anchor, rows, { groupMode: false });
   }
 
   setReorderLocked(locked) {
@@ -491,17 +560,7 @@ export class ComparePanel {
     this.items = data.items.slice();
     this.updateMetrics(data.count);
     this.updateGroupLegend(data.items);
-
-    const groupRows = buildGroupCosineRows(data.items);
-    if (groupRows) {
-      this.panelCosineMode = 'groups';
-      this.renderCosineList(groupRows.anchor, groupRows.items, { groupMode: true });
-      return;
-    }
-
-    this.panelCosineMode = 'tokens';
-    const anchor = data.anchor || (data.items[0] ? { index: 0, text: data.items[0].text } : null);
-    this.renderCosineList(anchor, data.items, { groupMode: false });
+    this.paintShieldedCosineList();
   }
 
   /**
@@ -533,6 +592,9 @@ export class ComparePanel {
       const score = index === 0
         ? 1
         : (typeof item.cosine_vs_first === 'number' ? item.cosine_vs_first : 0);
+      const deltaBadge = index > 0 && Number.isFinite(item.cosine_delta)
+        ? `<span class="score-delta ${item.cosine_delta < 0 ? 'drop' : 'rise'}" title="Cosine change under Outlier Shield">(${item.cosine_delta >= 0 ? '+' : ''}${item.cosine_delta.toFixed(4)})</span>`
+        : '';
 
       const refBadge = index === 0 ? '<span class="badge-ref">REF</span>' : '';
       const memberHint = groupMode && item.memberCount
@@ -551,6 +613,7 @@ export class ComparePanel {
         ${memberHint}
         ${refBadge}
         <span class="score">${score.toFixed(4)}</span>
+        ${deltaBadge}
         ${reorder}
       `;
       this.cosineList.appendChild(li);

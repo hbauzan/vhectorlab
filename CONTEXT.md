@@ -147,5 +147,10 @@ Latents that never activated on the training set; reported in SAE train metrics.
 An embedding dimension that stays saturated (energy z-score at or above 3) or flat (standard deviation at or below the flat threshold) across the loaded vocabulary matrix. The set is computed for the active model. It is not a fixed list of dimension numbers.
 
 ### Engine Manager
-Workbench sheet for the active model's structural-noise audit: energy concentration, the drop in mean pairwise cosine, and the outlier coordinates. The pruning shield and dual-path ribbon controls are preferences for a later paint pass.
+Workbench sheet for the active model's structural-noise audit: energy concentration, the drop in mean pairwise cosine, and the outlier coordinates.
+
+### Outlier Pruning Shield
+Client preference that, while on and a noise profile is loaded, scores Compare rows by subspace cosine (noise coordinates zeroed, then re-normalized) and bars those coordinates from Spectral Quorum admission.
+
+_Avoid_: mutating the stored embedding; treating the dual-path toggle as a second ribbon.
 

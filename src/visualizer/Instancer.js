@@ -248,7 +248,7 @@ export class Instancer {
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
    * @param {Object} [vizConfig] - Global sign filter + color anchors
-   * @param {{ dimSortByContrast?: boolean }} [options]
+   * @param {{ dimSortByContrast?: boolean, isSaeActive?: boolean, noiseIndices?: number[]|Set<number>|null }} [options]
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
    */
   renderCompareData(
@@ -295,11 +295,17 @@ export class Instancer {
     const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
     const isSaeActive = options.isSaeActive === true;
     const resolvedViz = resolveVisualizationSettings(vizConfig);
+    const quorumOptions = {
+      quorumPercent: resolvedViz.spectralQuorumPercent,
+      nullCache: this._spectralNullCache,
+    };
+    const noiseIndices = options.noiseIndices;
+    const noiseCount = noiseIndices instanceof Set
+      ? noiseIndices.size
+      : Array.isArray(noiseIndices) ? noiseIndices.length : 0;
+    if (noiseCount > 0) quorumOptions.noiseIndices = noiseIndices;
     const groupDimMetrics = hasGroupsForDimContrast(items)
-      ? computeDimRelationMetrics(items, {
-          quorumPercent: resolvedViz.spectralQuorumPercent,
-          nullCache: this._spectralNullCache,
-        })
+      ? computeDimRelationMetrics(items, quorumOptions)
       : null;
     this._lastGroupDimMetrics = groupDimMetrics;
     const sharedNoiseMetrics = isSaeActive
