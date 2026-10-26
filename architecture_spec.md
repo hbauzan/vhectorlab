@@ -139,3 +139,5 @@ Returns:
 }
 ```
 The index arrays, `energy_ratio`, and `cosine_delta` are the measured result for the current `public/vocab_embeddings.npz` (10338×1024, `BAAI/bge-m3`). `timestamp_utc` in the sample is illustrative. Another matrix returns another set. `energy_ratio` is noise-coordinate \(L_2^2\) over total \(L_2^2\), rounded to 4 decimals. `cosine_delta` is mean pairwise cosine on a 500-row `RandomState(42)` sample, raw minus pruned, rounded to 4 decimals. `GET /engine/status` adds `accelerator`, `is_loaded`, `has_cached_profile`, `vocab_size`, and `model_profile`.
+
+The workbench sheet calls these routes through `RemoteProvider.getEngineStatus`, `detectStructuralNoise` (`forceRecompute` → `force_recompute`), and `getEngineNoiseProfile`. The sheet prints `energy_ratio × 100` as `NN.NN% L2 Norm` and `cosine_delta` as a signed drop. It prints `raw → pruned` only when the payload also carries both means. Pills are `saturated_indices` and `flat_indices` from the response. The pruning-shield and dual-path toggles are client preferences; they do not alter this API.

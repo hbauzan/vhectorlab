@@ -10,6 +10,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 - Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
 - Local micro-benchmark (`backend/benchmark_runner.py`, `scripts/benchmark_models.py`): cold load, warmup, hot throughput, peak RAM, and a linear projection onto `vocab_en_es.txt`. Results stay in gitignored `backend/artifacts/benchmark_cache.json`. The CLI does not edit `.env` or the model serving the app.
 - Setup option 11 shows the live host banner plus family, memory tier, and cached throughput. `B`, `B <token>`, and `B all` run that benchmark and redraw the menu. Free RAM is checked against the tier weight (500 MB / 1.5 GB / 3 GB). Below the weight, the swap asks for `CONFIRMAR` or `y`. An unmeasured Hub ID does not get an invented weight.
+- LLM Engine Manager sheet on the bottom-left HUD seam. It loads `GET /engine/status` and a cached noise profile, and `POST /engine/detect-structural-noise` from the audit button. Energy is shown as a percent of \(L_2^2\). The cosine line is the signed drop (`−cosine_delta`). The raw→pruned pair is printed only when the payload includes both means; the engine API does not return those means. Saturated and flat pills are the index arrays from the profile. Shield and dual-path toggles persist under `vl3d.engine.*` and do not yet change the 3D paint.
 
 ## [3.4.0] - 2026-10-05
 

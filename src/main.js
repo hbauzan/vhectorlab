@@ -44,6 +44,7 @@ import {
   loadVisualizationSettings,
   saveVisualizationSettings,
 } from './ui/visualizationControlsDefaults.js';
+import { EngineManager } from './ui/EngineManager.js';
 import {
   hasGroupsForDimContrast,
   hasEnoughTokensForSharedNoise,
@@ -264,6 +265,7 @@ class VHectorLabApp {
 
     this.mountThreadSlidersUI();
     this.mountVisualizationControlsUI();
+    this.mountEngineManagerUI();
 
     // 6. Interaction Callbacks
     this.interaction.onHoverCallback = (hoverData) => {
@@ -366,6 +368,28 @@ class VHectorLabApp {
       } else if (typeof this._vizLayoutMq.addListener === 'function') {
         this._vizLayoutMq.addListener(this._onVizLayoutMq);
       }
+    }
+  }
+
+  /**
+   * Left wing on the HUD seam. Status/profile load is deferred to init().
+   */
+  mountEngineManagerUI() {
+    this.engineManager = new EngineManager(this.appContainer, this.provider);
+  }
+
+  /** Fill the model tag and any cached noise profile. Does not recompute. */
+  async refreshEngineManager() {
+    if (!this.engineManager) return;
+    try {
+      const status = await this.provider.getEngineStatus();
+      this.engineManager.setEngineStatus(status);
+      if (status && status.has_cached_profile) {
+        const profile = await this.provider.getEngineNoiseProfile();
+        this.engineManager.setNoiseProfile(profile);
+      }
+    } catch (err) {
+      console.error('Engine manager status failed:', err);
     }
   }
 
@@ -885,6 +909,7 @@ class VHectorLabApp {
     if (health.ok) {
       state.setBackendConnected(true);
       this.navbar.setStatus(true, health.data);
+      void this.refreshEngineManager();
       await this.refreshSaeStatusUi();
 
       if (state.workspaceMode === 'COMPARE' || isGalaxyView(this.viewMode)) {

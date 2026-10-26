@@ -13,6 +13,7 @@ const UI_BLOCK_SELECTOR = [
   '#top-navbar',
   '#boot-progress',
   '#visualization-controls-container',
+  '#engine-manager-container',
   '#landscape-gate',
   '#touch-controls',
   '.glass-modal',
