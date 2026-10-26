@@ -7,6 +7,7 @@ Stage .env → precompute vocab NPZ → commit on success; restore backup on fai
 from __future__ import annotations
 
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -14,7 +15,18 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from backend.benchmark_runner import (
+    NO_CACHED_MODELS_MESSAGE,
+    ModelBenchmarkResult,
+    benchmark_targets,
+    format_benchmark_table,
+    load_benchmark_cache,
+    run_model_benchmark,
+    save_benchmark_cache,
+)
+from backend.hardware_inspector import HardwareProfile, get_hardware_profile
 from backend.model_catalog import (
+    MemoryTier,
     ModelSelection,
     get_model,
     list_models,
@@ -35,6 +47,18 @@ _MAGENTA = "\033[35m"
 _GREEN = "\033[32m"
 _YELLOW = "\033[33m"
 _RESET = "\033[0m"
+
+# Banner divisor: hw.memsize 17179869184 prints as 16.0 GB.
+# Tier weights are the option-11 estimates (500 MiB, 1.5 GiB, 3 GiB).
+# OPTIMAL is ≥ 2× that weight, TIGHT is ≥ 1×, WARNING is below 1×.
+_GIB = 1024**3
+_MIB = 1024**2
+_TIER_WEIGHT_BYTES: dict[MemoryTier, int] = {
+    MemoryTier.LIGHT: 500 * _MIB,
+    MemoryTier.MEDIUM: (3 * _GIB) // 2,
+    MemoryTier.FULL: 3 * _GIB,
+}
+_BANNER_INNER = 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -369,6 +393,75 @@ def build_menu_entries() -> list[MenuEntry]:
     return entries
 
 
+def _gb(num_bytes: int) -> str:
+    return f"{num_bytes / _GIB:.1f}"
+
+
+def format_hardware_banner(*, color: bool = True) -> list[str]:
+    """Live CPU, RAM, and accelerator lines for option 11."""
+    profile = get_hardware_profile()
+    b = _BOLD if color else ""
+    c = _CYAN if color else ""
+    r = _RESET if color else ""
+    machine = platform.machine().strip()
+    platform_bits = profile.platform_name
+    if machine:
+        platform_bits = f"{profile.platform_name} {machine}"
+    accel_state = (
+        "aceleración activa" if profile.is_accelerated else "sin aceleración"
+    )
+    rows = (
+        (
+            "Platform & CPU:",
+            f"{profile.cpu_brand} ({profile.cpu_cores} cores) · {platform_bits}",
+        ),
+        (
+            "RAM Memory:",
+            (
+                f"{_gb(profile.total_ram_bytes)} GB total · "
+                f"{_gb(profile.available_ram_bytes)} GB free (disponible viva)"
+            ),
+        ),
+        (
+            "Accelerator:",
+            (
+                f"{profile.accelerator} · {profile.accelerator_device_name} "
+                f"({accel_state})"
+            ),
+        ),
+    )
+    label_width = max(len(label) for label, _value in rows)
+    bar = "═" * _BANNER_INNER
+    title = "  Live Host Hardware Profile"
+    padded = title + (" " * (_BANNER_INNER - len(title)))
+    lines = [
+        f"{c}{b}╔{bar}╗{r}",
+        f"{c}{b}║{r}{padded}{c}{b}║{r}",
+        f"{c}{b}╚{bar}╝{r}",
+    ]
+    lines.extend(
+        f"  • {label:<{label_width}}  {value}" for label, value in rows
+    )
+    return lines
+
+
+def _format_throughput(result: ModelBenchmarkResult | None) -> str:
+    if result is None:
+        return "—"
+    rate = (
+        f"{result.throughput_wps:.0f}"
+        if result.throughput_wps >= 100
+        else f"{result.throughput_wps:.1f}"
+    )
+    return f"⚡ {rate} w/s ({result.estimated_vocab_sec:.1f}s vocab)"
+
+
+def _menu_taxonomy(selection: ModelSelection) -> tuple[str, str]:
+    family = selection.family.value if selection.family is not None else "—"
+    tier = selection.memory_tier.value if selection.memory_tier is not None else "—"
+    return family, tier
+
+
 def format_menu_lines(*, color: bool = True) -> list[str]:
     """Pretty catalog listing for option 11 (profiles then models)."""
     b = _BOLD if color else ""
@@ -380,18 +473,22 @@ def format_menu_lines(*, color: bool = True) -> list[str]:
     r = _RESET if color else ""
 
     entries = build_menu_entries()
+    cache = load_benchmark_cache()
     lines: list[str] = []
     lines.append(f"{c}{b}╭────────────────────────────────────────────────────────────╮{r}")
     lines.append(f"{c}{b}│{r}  {b}Embedding profiles{r}  {d}(recommended presets){r}")
     lines.append(f"{c}{b}╰────────────────────────────────────────────────────────────╯{r}")
 
-    for e in entries:
-        if e.kind != "profile":
+    for entry in entries:
+        if entry.kind != "profile":
             continue
-        mark = f"{g}★{r}" if color else "*"
+        family, tier = _menu_taxonomy(entry.selection)
+        star = f"{g}★{r}" if color else "*"
+        throughput = _format_throughput(cache.get(entry.selection.hub_id))
         lines.append(
-            f"  {b}{e.index:>2}){r} {mark} {m}{e.token:<4}{r}  "
-            f"{b}{e.title:<22}{r}  {d}{e.subtitle}{r}"
+            f"  {b}{entry.index:>2}){r} {star} {m}{entry.token:<4}{r}  "
+            f"{b}{entry.title:<22}{r}  {family:<32}  {tier:<22}  "
+            f"{throughput:<28}  {d}{entry.subtitle}{r}"
         )
 
     lines.append("")
@@ -399,26 +496,122 @@ def format_menu_lines(*, color: bool = True) -> list[str]:
     lines.append(f"{c}{b}│{r}  {b}Catalog models{r}  {d}(pick any one){r}")
     lines.append(f"{c}{b}╰────────────────────────────────────────────────────────────╯{r}")
 
-    for e in entries:
-        if e.kind != "model":
+    for entry in entries:
+        if entry.kind != "model":
             continue
+        family, tier = _menu_taxonomy(entry.selection)
+        throughput = _format_throughput(cache.get(entry.selection.hub_id))
         lines.append(
-            f"  {b}{e.index:>2}){r}   {y}{e.token:<4}{r}  "
-            f"{b}{e.title:<22}{r}  {d}{e.subtitle}{r}"
+            f"  {b}{entry.index:>2}){r}   {y}{entry.token:<4}{r}  "
+            f"{b}{entry.title:<22}{r}  {family:<32}  {tier:<22}  "
+            f"{throughput:<28}  {d}{entry.subtitle}{r}"
         )
 
+    last = entries[-1].index if entries else 0
     lines.append("")
-    lines.append(f"  {b} 0){r}  {d}Cancel{r}")
+    lines.append(f"  {b}0){r} {d}Cancelar{r}")
     lines.append(
-        f"  {d}Enter a number (1–{entries[-1].index}), or P# / M# token.{r}"
+        "  B) Correr benchmark local "
+        "[B = modelos en caché, B <token> = modelo específico, B all = catálogo]"
     )
+    lines.append(f"  Elección [1-{last} / P# / M# / B / 0]:")
     return lines
+
+
+def evaluate_memory_gate(
+    selection: ModelSelection,
+    profile: HardwareProfile | None = None,
+) -> tuple[str, str]:
+    """Compare free RAM with the catalog tier weight.
+
+    An unmeasured tier stays WARNING. The weight is not invented.
+    """
+    host = profile if profile is not None else get_hardware_profile()
+    free = host.available_ram_bytes
+    tier = selection.memory_tier
+    if tier is None:
+        return (
+            "WARNING",
+            (
+                "⚠️  ALERTA DE MEMORIA: este modelo no tiene un memory tier medido; "
+                f"no se inventa un peso. RAM libre: {_gb(free)} GB.\n"
+                "Riesgo de swap a disco o lentitud en inferencia."
+            ),
+        )
+    weight = _TIER_WEIGHT_BYTES[tier]
+    free_gb = _gb(free)
+    weight_gb = _gb(weight)
+    tier_label = tier.value
+    if free >= 2 * weight:
+        return (
+            "OPTIMAL",
+            (
+                f"Memoria óptima: {free_gb} GB libres frente a ~{weight_gb} GB "
+                f"estimados ({tier_label})."
+            ),
+        )
+    if free >= weight:
+        return (
+            "TIGHT",
+            (
+                "Memoria libre justa pero suficiente: "
+                f"{free_gb} GB libres frente a ~{weight_gb} GB estimados "
+                f"({tier_label})."
+            ),
+        )
+    return (
+        "WARNING",
+        (
+            "⚠️  ALERTA DE MEMORIA: El modelo seleccionado requiere "
+            f"~{weight_gb} GB pero solo hay {free_gb} GB libres.\n"
+            "Riesgo de swap a disco o lentitud en inferencia."
+        ),
+    )
+
+
+def benchmark_target_from_choice(raw: str) -> str | None:
+    """Return a benchmark target, or None when ``raw`` is a model choice.
+
+    ``b`` / ``benchmark`` means the local Hugging Face cache.
+    ``bge-m3`` stays a catalog selection: the command is a whole word.
+    """
+    parts = raw.strip().split()
+    if not parts:
+        return None
+    head = parts[0].casefold()
+    if head not in {"b", "benchmark"}:
+        return None
+    if len(parts) == 1:
+        return "cached"
+    return " ".join(parts[1:])
+
+
+def run_menu_benchmark(target: str, *, device: str = "AUTO") -> str:
+    """Time one target and store each result. Does not touch ``.env``."""
+    normalized = target.strip() or "cached"
+    key = normalized.casefold()
+    if key == "cached":
+        selections = benchmark_targets(cached_only=True)
+    elif key == "all":
+        selections = benchmark_targets(all_models=True)
+    else:
+        selections = benchmark_targets(model=normalized)
+    if not selections:
+        return NO_CACHED_MODELS_MESSAGE + "\n"
+    results: list[ModelBenchmarkResult] = []
+    for selection in selections:
+        result = run_model_benchmark(selection, device=device)
+        save_benchmark_cache(result)
+        results.append(result)
+    return format_benchmark_table(results)
 
 
 def selection_from_menu_token(token: str) -> ModelSelection:
     raw = token.strip()
     if not raw:
         raise ValueError("empty choice")
+    if benchmark_target_from_choice(raw) is not None:
+        raise ValueError(f"{raw!r} is a benchmark command, not a model selection")
 
     if raw.isdigit():
         n = int(raw)
@@ -489,15 +682,35 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     describe_p = sub.add_parser(
-        "describe", help="Resolve a choice and print a one-line summary"
+        "describe", help="Resolve a choice and print the memory gate"
     )
     describe_p.add_argument("--choice", required=True)
+
+    bench_p = sub.add_parser(
+        "benchmark",
+        help="Measure throughput into benchmark_cache.json (does not edit .env)",
+    )
+    bench_p.add_argument(
+        "--target",
+        default="cached",
+        help="cached (default), all, or a menu token / hub id / bare name",
+    )
+    bench_p.add_argument("--device", default=os.getenv("SAE_DEVICE", "AUTO"))
 
     args = parser.parse_args(argv)
     root = repo_root()
 
     if args.cmd == "list":
-        print("\n".join(format_menu_lines(color=not args.plain)))
+        color = not args.plain
+        print(
+            "\n".join(
+                [
+                    *format_hardware_banner(color=color),
+                    "",
+                    *format_menu_lines(color=color),
+                ]
+            )
+        )
         return 0
 
     if args.cmd == "describe":
@@ -506,7 +719,18 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"ERROR: {exc}", file=sys.stderr)
             return 1
+        level, message = evaluate_memory_gate(selection)
         print(describe_selection(selection))
+        print(f"GATE {level}")
+        print(message)
+        return 0
+
+    if args.cmd == "benchmark":
+        try:
+            sys.stdout.write(run_menu_benchmark(args.target, device=args.device))
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if args.cmd == "apply":

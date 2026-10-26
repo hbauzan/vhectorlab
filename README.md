@@ -177,7 +177,11 @@ Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/pr
 
 ### Embedding model / profile (setup option 11)
 
-From `./setup.sh` → **11. Select Embedding Model / Profile**: pick `P#` / `M#`, stage `.env`, rebuild `vocab_embeddings.npz` (EN∪ES), restart backend, print `/health`. On failure the previous `.env` is restored. HF Space options 7/8 are unchanged.
+From `./setup.sh` → **11. Select Embedding Model / Profile**. The menu prints the live host (CPU, free RAM, accelerator), then each profile and catalog model with its family, memory tier, and cached throughput (`—` until that model has been measured on this machine). Pick `P#` / `M#` to stage `.env`, rebuild `vocab_embeddings.npz` (EN∪ES), restart the backend, and print `/health`. On failure the previous `.env` is restored. HF Space options 7/8 are unchanged.
+
+`B` times catalog models already in the local Hugging Face cache. `B <token>` times one model (`B P1`, `B 4`, `B bge-m3`). `B all` times the whole catalog and may download weights. Enter redraws the menu with the measured words/s. The benchmark does not edit `.env` and does not replace the model serving the app. `bge-m3` is still a model choice: the benchmark command is the whole word `B`, not a prefix.
+
+Before the swap, free RAM is compared with the tier weight (light 500 MB, medium 1.5 GB, full 3 GB; same 1024-based GB as the banner). At least twice that weight uses the normal yes/no confirm. Between one and two times the weight, the panel says free RAM is tight and still uses that confirm. Below the weight, it asks you to type `CONFIRMAR` or `y`. A Hub ID with no measured tier does not get an invented weight; it takes that same explicit confirm.
 
 Default `.env.example` keeps **`all-mpnet-base-v2`** (EN baseline). Switch to `local-comfort` / `local-full` via option 11 when you want multilingual.
 
@@ -189,6 +193,15 @@ uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --prof
 # Fail only if mean EN↔ES cosine is soft-low:
 uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --strict --threshold 0.35
 ```
+
+Local throughput check (does not edit `.env` or the running server). From the repo root:
+
+```bash
+uv run --directory backend python ../scripts/benchmark_models.py \
+  --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+```
+
+`--model` also accepts a menu token (`P1`, `M1`) or a bare Hub name (`bge-m3`). `--cached-only` times catalog models already on disk. `--all` times the whole catalog and may download weights. `--json` prints only JSON. Numbers land in `backend/artifacts/benchmark_cache.json` (gitignored, this machine only).
 
 ---
 

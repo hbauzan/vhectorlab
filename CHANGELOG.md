@@ -2,6 +2,13 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
+- Local micro-benchmark (`backend/benchmark_runner.py`, `scripts/benchmark_models.py`): cold load, warmup, hot throughput, peak RAM, and a linear projection onto `vocab_en_es.txt`. Results stay in gitignored `backend/artifacts/benchmark_cache.json`. The CLI does not edit `.env` or the model serving the app.
+- Setup option 11 shows the live host banner plus family, memory tier, and cached throughput. `B`, `B <token>`, and `B all` run that benchmark and redraw the menu. Free RAM is checked against the tier weight (500 MB / 1.5 GB / 3 GB). Below the weight, the swap asks for `CONFIRMAR` or `y`. An unmeasured Hub ID does not get an invented weight.
+
 ## [3.4.0] - 2026-10-05
 
 ### Fixed & Grounded (Spectral Quorum Determinista — Alineación DDI-FW)

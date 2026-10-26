@@ -1,3 +1,7 @@
 # SAE checkpoints (large binaries) — train locally; do not commit weights.
 *.pt
 !.gitkeep
+
+# Machine-local throughput. Re-run scripts/benchmark_models.py to regenerate.
+benchmark_cache.json
+*.tmp

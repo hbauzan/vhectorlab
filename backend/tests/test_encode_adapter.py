@@ -147,10 +147,14 @@ def test_build_model_skips_config_kwargs_without_trust_remote():
         patch("backend.model_catalog._repair_gte_nonpersistent_buffers") as repair,
     ):
         build_model(sel, device="cpu")
-    kwargs = fake.call_args.kwargs
-    assert "trust_remote_code" not in kwargs
-    assert "config_kwargs" not in kwargs
-    repair.assert_not_called()
+        kwargs = fake.call_args.kwargs
+        assert "trust_remote_code" not in kwargs
+        assert "config_kwargs" not in kwargs
+        assert "local_files_only" not in kwargs
+        repair.assert_not_called()
+
+        build_model(sel, device="cpu", local_files_only=True)
+        assert fake.call_args.kwargs.get("local_files_only") is True
 
 
 def test_repair_gte_nonpersistent_buffers_restores_position_ids_and_rope():

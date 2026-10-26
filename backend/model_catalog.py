@@ -10,7 +10,8 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+from enum import Enum
 from typing import Any
 
 import numpy as np
@@ -25,6 +26,34 @@ NO_GO_HUB_IDS: frozenset[str] = frozenset(
 )
 
 
+class ModelFamily(str, Enum):
+    BAAI = "BAAI"
+    SNOWFLAKE = "Snowflake"
+    ALIBABA = "Alibaba"
+    INTFLOAT = "Intfloat (E5)"
+    UKPLAB = "UKPLab (Sentence-Transformers)"
+    GOOGLE = "Google"
+
+
+class MemoryTier(str, Enum):
+    LIGHT = "LIGERO (<500MB)"
+    MEDIUM = "MEDIO (500MB-1.5GB)"
+    FULL = "COMPLETO (>1.5GB)"
+
+
+# Publisher prefix → family. Used only for Hub IDs that are not in `_MODELS`.
+# Memory tier is not inferred: weight is known only for the catalog table.
+_ORG_FAMILY: dict[str, ModelFamily] = {
+    "baai": ModelFamily.BAAI,
+    "snowflake": ModelFamily.SNOWFLAKE,
+    "alibaba": ModelFamily.ALIBABA,
+    "alibaba-nlp": ModelFamily.ALIBABA,
+    "intfloat": ModelFamily.INTFLOAT,
+    "sentence-transformers": ModelFamily.UKPLAB,
+    "google": ModelFamily.GOOGLE,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class ModelSelection:
     """Resolved embedding selection for env / setup / AppState (Slice 2+)."""
@@ -36,6 +65,14 @@ class ModelSelection:
     truncate_dim: int | None
     gated: bool
     short_label: str
+    # None only for a Hub ID outside `_MODELS` whose weight (and, if the
+    # publisher is unknown, family) was not measured. Catalog rows always set both.
+    family: ModelFamily | None = None
+    memory_tier: MemoryTier | None = None
+
+    def __post_init__(self) -> None:
+        if self.memory_tier is not None and self.family is None:
+            raise ValueError("memory_tier requires a family")
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +83,8 @@ class _ModelEntry:
     e5_mode: bool = False
     default_truncate_dim: int | None = None
     gated: bool = False
+    family: ModelFamily = field(kw_only=True)
+    memory_tier: MemoryTier = field(kw_only=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +92,8 @@ class ProfileInfo:
     id: str
     hub_id: str
     default_truncate_dim: int | None
+    family: ModelFamily
+    memory_tier: MemoryTier
 
 
 # §2.1 required + §2.2 inferred extras (order = menu order later).
@@ -60,70 +101,104 @@ _MODELS: tuple[_ModelEntry, ...] = (
     _ModelEntry(
         hub_id="sentence-transformers/all-mpnet-base-v2",
         short_label="EN baseline (mpnet)",
+        family=ModelFamily.UKPLAB,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         short_label="MiniLM-multi",
+        family=ModelFamily.UKPLAB,
+        memory_tier=MemoryTier.LIGHT,
     ),
     _ModelEntry(
         hub_id="Snowflake/snowflake-arctic-embed-m-v2.0",
         short_label="Arctic-m-v2",
         trust_remote_code=True,
         default_truncate_dim=256,
+        family=ModelFamily.SNOWFLAKE,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="Alibaba-NLP/gte-multilingual-base",
         short_label="GTE-multi",
         trust_remote_code=True,
+        family=ModelFamily.ALIBABA,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="intfloat/multilingual-e5-small",
         short_label="E5-small-multi",
         e5_mode=True,
+        family=ModelFamily.INTFLOAT,
+        memory_tier=MemoryTier.LIGHT,
     ),
     _ModelEntry(
         hub_id="google/embeddinggemma-300m",
         short_label="EmbeddingGemma-300m",
         gated=True,
+        family=ModelFamily.GOOGLE,
+        memory_tier=MemoryTier.LIGHT,
     ),
     _ModelEntry(
         hub_id="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
         short_label="mpnet-multi",
+        family=ModelFamily.UKPLAB,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="intfloat/multilingual-e5-base",
         short_label="E5-base-multi",
         e5_mode=True,
+        family=ModelFamily.INTFLOAT,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="sentence-transformers/distiluse-base-multilingual-cased-v2",
         short_label="distiluse-multi",
+        family=ModelFamily.UKPLAB,
+        memory_tier=MemoryTier.MEDIUM,
     ),
     _ModelEntry(
         hub_id="BAAI/bge-m3",
         short_label="BGE-M3",
+        family=ModelFamily.BAAI,
+        memory_tier=MemoryTier.FULL,
     ),
 )
 
 _MODEL_BY_HUB: dict[str, _ModelEntry] = {m.hub_id: m for m in _MODELS}
 
+
 # Named profiles (§2.4). Space Docker pins `local-full` (see Dockerfile).
 # `hf-demo` remains a local MiniLM preset (comfort twin), not the live Space model.
+def _profile(
+    profile_id: str, hub_id: str, default_truncate_dim: int | None
+) -> ProfileInfo:
+    entry = _MODEL_BY_HUB[hub_id]
+    return ProfileInfo(
+        id=profile_id,
+        hub_id=hub_id,
+        default_truncate_dim=default_truncate_dim,
+        family=entry.family,
+        memory_tier=entry.memory_tier,
+    )
+
+
 _PROFILES: dict[str, ProfileInfo] = {
-    "local-comfort": ProfileInfo(
-        id="local-comfort",
-        hub_id="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-        default_truncate_dim=None,
+    "local-comfort": _profile(
+        "local-comfort",
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        None,
     ),
-    "local-full": ProfileInfo(
-        id="local-full",
-        hub_id="Snowflake/snowflake-arctic-embed-m-v2.0",
-        default_truncate_dim=256,
+    "local-full": _profile(
+        "local-full",
+        "Snowflake/snowflake-arctic-embed-m-v2.0",
+        256,
     ),
-    "hf-demo": ProfileInfo(
-        id="hf-demo",
-        hub_id="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-        default_truncate_dim=None,
+    "hf-demo": _profile(
+        "hf-demo",
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        None,
     ),
 }
 
@@ -142,6 +217,8 @@ def _selection_from_entry(
         truncate_dim=truncate_dim,
         gated=entry.gated,
         short_label=entry.short_label,
+        family=entry.family,
+        memory_tier=entry.memory_tier,
     )
 
 
@@ -218,8 +295,19 @@ def _parse_truncate_dim(raw: str | int | None) -> int | None:
     return value
 
 
+def _publisher_family(hub_id: str) -> ModelFamily | None:
+    """Family from the Hub org when it is one of the six catalog publishers."""
+    org = hub_id.split("/", 1)[0].casefold()
+    return _ORG_FAMILY.get(org)
+
+
 def _passthrough_selection(hub_id: str, truncate_dim: int | None) -> ModelSelection:
-    """Legacy / unlisted Hub ID — minimal flags inferred from the id string."""
+    """Legacy / unlisted Hub ID — flags inferred from the id string.
+
+    Family follows the publisher prefix when that prefix is one of the six
+    catalog families. Memory tier stays unset: the weight table covers only
+    `_MODELS`, and a guessed tier would be a false measurement.
+    """
     lower = hub_id.lower()
     return ModelSelection(
         hub_id=hub_id,
@@ -229,6 +317,8 @@ def _passthrough_selection(hub_id: str, truncate_dim: int | None) -> ModelSelect
         truncate_dim=truncate_dim,
         gated=False,
         short_label=hub_id.split("/")[-1],
+        family=_publisher_family(hub_id),
+        memory_tier=None,
     )
 
 
@@ -319,9 +409,7 @@ def _repair_gte_nonpersistent_buffers(st_model: Any) -> None:
             dtype=position_ids.dtype,
         )
         if not torch.equal(position_ids, expected):
-            embeddings.register_buffer(
-                "position_ids", expected, persistent=False
-            )
+            embeddings.register_buffer("position_ids", expected, persistent=False)
             logger.info("Repaired GTE embeddings.position_ids after meta load")
 
     rotary = getattr(embeddings, "rotary_emb", None)
@@ -351,7 +439,12 @@ def _repair_gte_nonpersistent_buffers(st_model: Any) -> None:
     logger.info("Repaired GTE rotary_emb buffers after meta load")
 
 
-def build_model(selection: ModelSelection, device: str) -> Any:
+def build_model(
+    selection: ModelSelection,
+    device: str,
+    *,
+    local_files_only: bool = False,
+) -> Any:
     """Construct SentenceTransformer for the selection (trust_remote_code when declared).
 
     Arctic (GTE remote code) ships with use_memory_efficient_attention=true and
@@ -363,6 +456,8 @@ def build_model(selection: ModelSelection, device: str) -> Any:
     from sentence_transformers import SentenceTransformer
 
     kwargs: dict[str, Any] = {"device": device}
+    if local_files_only:
+        kwargs["local_files_only"] = True
     if selection.trust_remote_code:
         kwargs["trust_remote_code"] = True
         # Arctic Hub config: use_memory_efficient_attention=true (+ unpad_inputs)

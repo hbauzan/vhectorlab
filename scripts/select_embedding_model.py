@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""CLI entry for setup.sh option 11 — see backend.model_swap."""
+"""CLI entry for setup.sh option 11 — see backend.model_swap.
+
+Subcommands: list, describe, apply, benchmark [--target cached|all|<token>].
+"""
 
 from __future__ import annotations
 
