@@ -84,7 +84,16 @@ _Avoid_: parallel MPA skins (`/v25/`, `/amiga/` — retired in 2.4.1); multi-zon
 Trained sparse autoencoder with exactly K active latents per input (ReLU + Top‑K, no L1 shrinkage). Trained on the **current workspace scope** (Compare/Arithmetic batch); ephemeral in-RAM session model. Default caps 768 → 8192 with K=32 (auto-scaled for small N).
 
 ### Embedding Catalog
-Backend single source of truth (`model_catalog`) listing allowed SentenceTransformer Hub IDs plus flags (E5 mode, trust_remote_code, gated, default truncate).
+Backend single source of truth (`model_catalog`) listing allowed SentenceTransformer Hub IDs plus flags (E5 mode, trust_remote_code, gated, default truncate), a **Model Family**, and a **Memory Tier**.
+
+### Model Family
+Publisher group of a catalog embedding model: BAAI, Snowflake, Alibaba, Intfloat (E5), UKPLab (Sentence-Transformers), or Google.
+
+### Memory Tier
+Weight class of a catalog embedding model: light (<500 MB), medium (500 MB–1.5 GB), or full (>1.5 GB). It is not a live RAM reading.
+
+### Hardware Profile
+Live host snapshot: operating system, CPU brand, core count, total and available RAM in bytes, and the torch accelerator (`mps`, `cuda`, or `cpu`).
 
 ### Model Profile
 Named local preset (`local-comfort`, `local-full`, `hf-demo`) that resolves to a catalog Hub ID and optional `TRUNCATE_DIM`. Selected only from `setup.sh` option 11 — not from the web UI.

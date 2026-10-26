@@ -2,6 +2,11 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
+
 ## [3.4.0] - 2026-10-05
 
 ### Fixed & Grounded (Spectral Quorum Determinista — Alineación DDI-FW)

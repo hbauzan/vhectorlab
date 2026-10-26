@@ -6,7 +6,8 @@ VHectorLab 3D is a 3D semantic vector visualizer and vector arithmetic explorer.
 
 ### Backend Tier (`backend/`)
 - **Framework**: FastAPI with Uvicorn.
-- **Model Interface**: Lazy-loaded `SentenceTransformer` via catalog selection (`MODEL_PROFILE` / `MODEL_NAME` / `TRUNCATE_DIM`) in FastAPI `lifespan`. Catalog module: `backend/model_catalog.py` (`resolve_selection_from_env`, `build_model`, `encode_texts`).
+- **Model Interface**: Lazy-loaded `SentenceTransformer` via catalog selection (`MODEL_PROFILE` / `MODEL_NAME` / `TRUNCATE_DIM`) in FastAPI `lifespan`. Catalog module: `backend/model_catalog.py` (`resolve_selection_from_env`, `build_model`, `encode_texts`). Each catalog selection and named profile carries `family` (`ModelFamily`) and `memory_tier` (`MemoryTier`). A Hub ID outside the ten-model table still resolves with the same encode flags; `family` is the publisher when the org is one of the six families, otherwise `null`, and `memory_tier` stays `null` (weight is not guessed). Neither field is on `GET /health`.
+- **Hardware inspector**: `backend/hardware_inspector.get_hardware_profile()` returns a frozen `HardwareProfile` (OS, CPU brand, core count, total and available RAM in bytes, accelerator `mps`|`cuda`|`cpu`). Not mounted on the HTTP API.
 - **Encode adapter**: All query/vocab encoding goes through `encode_texts` (E5 `query:` prefixes when `e5_mode`, optional Matryoshka `truncate_dim`, L2 normalize). Frontend never applies model-specific quirks.
 - **Vocabulary Acceleration**: Pre-computed L2-normalized embedding matrix $(N \times D)$ kept in RAM for instant matrix-vector dot product cosine similarity calculation:
   $$\text{Sim}(V_{res}, V_{vocab}) = V_{vocab} \cdot V_{res}^T$$
