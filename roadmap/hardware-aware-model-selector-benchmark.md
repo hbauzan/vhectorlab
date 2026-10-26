@@ -1,7 +1,7 @@
 # Roadmap: Selector Inteligente de Embeddings y Benchmark de Hardware Local
 
-**Estado:** BORRADOR (En diseño conjunto con el usuario)  
-**Fecha:** 2026-10-25  
+**Estado:** COMPLETADO (Verificado empíricamente con suite verde)  
+**Fecha:** 2026-10-26  
 **Área:** `setup.sh`, `scripts/`, `backend/model_catalog.py`, `backend/model_swap.py`, `backend/`  
 **Referencia:** Protocolo de desarrollo (`.agents/skills/dev-protocol/SKILL.md`) — Rol Principal Architect  
 
@@ -163,6 +163,7 @@ graph TD
   - Escritura y lectura atómica de `backend/artifacts/benchmark_cache.json`.
 
 ### Slice 3: Integración en `setup.sh` & Soft-Gate de Memoria
+* **Estado:** IMPLEMENTADO Y VERIFICADO. `B` corre el benchmark y redibuja el menú. Semáforo y soft-gate activos. 140 tests en verde.
 * **Objetivo**: Conectar el inspector, el semáforo de advertencia y el subcomando `[B]` en el flujo interactivo de `setup.sh` Opción 11.
 * **Archivos a modificar**:
   - `setup.sh`

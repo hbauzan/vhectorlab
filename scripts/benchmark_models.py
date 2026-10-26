@@ -16,14 +16,13 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from backend.benchmark_runner import (
+    NO_CACHED_MODELS_MESSAGE,
     benchmark_targets,
     format_benchmark_table,
     results_as_json,
     run_model_benchmark,
     save_benchmark_cache,
 )
-
-_NO_CACHED_MODELS = "No catalog models in the local Hugging Face cache."
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -96,7 +95,7 @@ def _write_empty(*, as_json: bool) -> None:
     if as_json:
         sys.stdout.write("[]\n")
         return
-    sys.stdout.write(_NO_CACHED_MODELS + "\n")
+    sys.stdout.write(NO_CACHED_MODELS_MESSAGE + "\n")
 
 
 def _fail(message: str, *, as_json: bool) -> int:

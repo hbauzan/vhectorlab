@@ -26,6 +26,7 @@ from backend.model_catalog import (
 )
 
 _DEVICES = frozenset({"mps", "cuda", "cpu"})
+NO_CACHED_MODELS_MESSAGE = "No catalog models in the local Hugging Face cache."
 _DECK_SIZE = 500
 _DECK_SEED = 42
 _WARMUP_ITEMS = 32

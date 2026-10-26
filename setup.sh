@@ -617,17 +617,74 @@ manage_vocab() {
     read -p "Press Enter to return to menu..."
 }
 
+# BEGIN TEST_EXPORT benchmark_target_from_choice
+# Whole word only. "bge-m3" is a catalog model, not the benchmark command.
+benchmark_target_from_choice() {
+    local raw="$1"
+    raw="${raw#"${raw%%[![:space:]]*}"}"
+    raw="${raw%"${raw##*[![:space:]]}"}"
+    local lower
+    lower="$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]')"
+    case "$lower" in
+        b|benchmark)
+            printf '%s\n' "cached"
+            return 0
+            ;;
+        b\ *|benchmark\ *)
+            local rest="${raw#* }"
+            rest="${rest#"${rest%%[![:space:]]*}"}"
+            if [ -z "$rest" ]; then
+                printf '%s\n' "cached"
+            else
+                printf '%s\n' "$rest"
+            fi
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+# END TEST_EXPORT benchmark_target_from_choice
+
+# BEGIN TEST_EXPORT memory_gate_allows_proceed
+# WARNING needs CONFIRMAR or y. OPTIMAL and TIGHT keep the normal Y/n default (Enter = yes).
+memory_gate_allows_proceed() {
+    local level="$1"
+    local typed="$2"
+    case "$level" in
+        WARNING)
+            case "$typed" in
+                CONFIRMAR|confirmar|y|Y) return 0 ;;
+                *) return 1 ;;
+            esac
+            ;;
+        OPTIMAL|TIGHT)
+            case "$typed" in
+                n|N|no|No|NO) return 1 ;;
+                *) return 0 ;;
+            esac
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+# END TEST_EXPORT memory_gate_allows_proceed
+
 select_embedding_model() {
-    local choice summary confirm
+    local choice summary confirm level message target report
     local script
     script="$(pwd)/scripts/select_embedding_model.py"
 
+    while true; do
     echo ""
     echo -e "${MAGENTA}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${MAGENTA}${BOLD}║${RESET}  ${BOLD}Select Embedding Model / Profile${RESET}                         ${MAGENTA}${BOLD}║${RESET}"
     echo -e "${MAGENTA}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
     echo -e "${DIM}  Always regenerates vocab NPZ · writes .env · restarts backend${RESET}"
     echo -e "${DIM}  EN∪ES vocab ensured · HF Space options 7/8 unchanged${RESET}"
+    echo -e "${DIM}  B benchmarks locally and does not edit .env or the running model${RESET}"
     echo ""
 
     if [ -f .env ]; then
@@ -652,7 +709,20 @@ select_embedding_model() {
         return
     fi
     echo ""
-    read -p "  Choice [number / P# / M# / 0 cancel]: " choice
+    read -p "  Elección [número / P# / M# / B / 0]: " choice
+
+    if target="$(benchmark_target_from_choice "$choice")"; then
+        echo ""
+        echo -e "  ${BOLD}Benchmark local${RESET}  ${DIM}objetivo: ${target}${RESET}"
+        echo -e "  ${DIM}No modifica .env ni el modelo que está sirviendo la app.${RESET}"
+        if ! uv run --directory backend python "$script" benchmark --target "$target" --device "${SAE_DEVICE:-AUTO}"; then
+            echo -e "${RED}${BOLD}  ✗ Benchmark falló.${RESET}"
+        fi
+        echo ""
+        read -p "  Enter para refrescar el menú..."
+        continue
+    fi
+
     case "$choice" in
         ""|0|c|C|cancel|Cancel|CANCEL)
             echo -e "${YELLOW}  Cancelled.${RESET}"
@@ -661,25 +731,49 @@ select_embedding_model() {
             ;;
     esac
 
-    if ! summary="$(uv run --directory backend python "$script" describe --choice "$choice" 2>/dev/null)"; then
+    if ! report="$(uv run --directory backend python "$script" describe --choice "$choice" 2>/dev/null)"; then
         echo -e "${RED}  Invalid choice: ${choice}${RESET}"
         read -p "Press Enter to return to menu..."
         return
     fi
 
+    summary="$(printf '%s\n' "$report" | head -1)"
+    level="$(printf '%s\n' "$report" | awk '/^GATE /{print $2; exit}')"
+    message="$(printf '%s\n' "$report" | awk 'BEGIN{p=0} /^GATE /{p=1; next} p')"
+
     echo ""
     echo -e "  ${BOLD}You selected${RESET}"
     echo -e "    ${CYAN}${summary}${RESET}"
     echo ""
-    echo -e "  ${DIM}This will: merge EN∪ES if needed → stage .env → encode NPZ → restart backend${RESET}"
-    read -p "  Proceed? [Y/n]: " confirm
-    case "$confirm" in
-        n|N|no|No|NO)
-            echo -e "${YELLOW}  Cancelled.${RESET}"
+    case "$level" in
+        WARNING)
+            echo -e "${RED}${BOLD}${message}${RESET}"
+            echo ""
+            read -p "  Escribí CONFIRMAR o y para proceder: " confirm
+            ;;
+        TIGHT)
+            echo -e "${YELLOW}${message}${RESET}"
+            echo ""
+            echo -e "  ${DIM}This will: merge EN∪ES if needed → stage .env → encode NPZ → restart backend${RESET}"
+            read -p "  Proceed? [Y/n]: " confirm
+            ;;
+        OPTIMAL)
+            echo -e "${GREEN}${message}${RESET}"
+            echo ""
+            echo -e "  ${DIM}This will: merge EN∪ES if needed → stage .env → encode NPZ → restart backend${RESET}"
+            read -p "  Proceed? [Y/n]: " confirm
+            ;;
+        *)
+            echo -e "${RED}  No se pudo leer el semáforo de memoria.${RESET}"
             read -p "Press Enter to return to menu..."
             return
             ;;
     esac
+    if ! memory_gate_allows_proceed "$level" "$confirm"; then
+        echo -e "${YELLOW}  Cancelled.${RESET}"
+        read -p "Press Enter to return to menu..."
+        return
+    fi
 
     echo ""
     echo -e "${CYAN}${BOLD}── Pipeline ──────────────────────────────────────────────${RESET}"
@@ -726,6 +820,8 @@ select_embedding_model() {
     fi
     echo ""
     read -p "Press Enter to return to menu..."
+    return
+    done
 }
 
 ensure_docker() {

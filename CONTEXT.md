@@ -92,6 +92,11 @@ Publisher group of a catalog embedding model: BAAI, Snowflake, Alibaba, Intfloat
 ### Memory Tier
 Weight class of a catalog embedding model: light (<500 MB), medium (500 MB–1.5 GB), or full (>1.5 GB). It is not a live RAM reading.
 
+### Memory Gate
+Operator check before an embedding swap: free RAM against the Memory Tier weight. Optimal means free RAM is at least twice the weight, tight means it is at least the weight, and warning means it is below the weight. Warning asks for an explicit confirmation. An unmeasured Hub ID does not receive an invented weight.
+
+_Avoid_: a hard block that refuses the swap; storing the gate result on Hardware Profile.
+
 ### Hardware Profile
 Live host snapshot: operating system, CPU brand, core count, total and available RAM in bytes, and the torch accelerator (`mps`, `cuda`, or `cpu`).
 
