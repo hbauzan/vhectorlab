@@ -6,6 +6,7 @@
 No editar salvo corrección histórica. Para trabajo nuevo, crear un roadmap vivo fuera de esta carpeta o un issue/PR.
 
 **Reciente (2026-10-26):**
+- `structural-noise-engine-manager.md` + prompts 1 a 5 — Universal Structural Noise & LLM Engine Manager: detección dinámica de canales saturados/planos, API REST y caché de perfiles, panel Amiga Workbench docked al HUD, Outlier Pruning Shield en métricas de coseno y Spectral Quorum, shaders WebGL in-situ (`aNoiseMask`, `uShieldEnabled`), cinta Dual-Path `#FFA997` y telemetría de HUD $L_2^2$ (shipped **v4.1.0**, commits `9426d3c` a `cae738d`).
 - `hardware-aware-model-selector-benchmark.md` + prompts — Selector inteligente de embeddings consciente de hardware (CPU/RAM/MPS/CUDA), micro-benchmark local y soft-gate en `setup.sh` Opción 11 (commits `9c02602` a `5650cca`).
 - `spectral-quorum-determinism.md` — Spectral Quorum Determinista: separabilidad bidireccional $S_d$, calibración nula Westfall-Young maxT ($M=1000$), Float64 exacto y exportación auditable alineada con DDI-FW (shipped **v3.4.0**, commits `8f9668d` a `9c3d0f7`).
 
