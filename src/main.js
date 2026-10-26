@@ -44,6 +44,7 @@ import {
   loadVisualizationSettings,
   saveVisualizationSettings,
 } from './ui/visualizationControlsDefaults.js';
+import { EngineManager } from './ui/EngineManager.js';
 import {
   hasGroupsForDimContrast,
   hasEnoughTokensForSharedNoise,
@@ -264,6 +265,7 @@ class VHectorLabApp {
 
     this.mountThreadSlidersUI();
     this.mountVisualizationControlsUI();
+    this.mountEngineManagerUI();
 
     // 6. Interaction Callbacks
     this.interaction.onHoverCallback = (hoverData) => {
@@ -366,6 +368,106 @@ class VHectorLabApp {
       } else if (typeof this._vizLayoutMq.addListener === 'function') {
         this._vizLayoutMq.addListener(this._onVizLayoutMq);
       }
+    }
+  }
+
+  /**
+   * Left wing on the HUD seam. Status/profile load is deferred to init().
+   */
+  mountEngineManagerUI() {
+    this.activeNoiseProfile = null;
+    this.engineManager = new EngineManager(this.appContainer, this.provider, {
+      onShieldToggle: (enabled) => {
+        this.handleNoiseShieldToggle(enabled);
+      },
+      onDualPathToggle: (enabled) => {
+        this.handleDualPathToggle(enabled);
+      },
+      onAuditComplete: (profile) => {
+        this.handleNoiseAuditComplete(profile);
+      },
+    });
+    this.noiseShieldEnabled = Boolean(this.engineManager.settings.shieldEnabled);
+    this.dualPathEnabled = Boolean(this.engineManager.settings.dualPathEnabled);
+  }
+
+  /**
+   * Compare scene options. Noise coordinates reach the shield, the ghost ribbon, and Spectral Quorum while the shield is on.
+   * @returns {{ dimSortByContrast: boolean, isSaeActive: boolean, noiseShieldEnabled: boolean, dualPathEnabled: boolean, noiseIndices?: number[] }}
+   */
+  compareSceneOptions() {
+    const noiseIndices = this.noiseShieldEnabled && Array.isArray(this.activeNoiseProfile?.noise_indices)
+      ? this.activeNoiseProfile.noise_indices
+      : null;
+    return {
+      dimSortByContrast: this.dimSortByContrast,
+      isSaeActive: this.isSaeActive(),
+      noiseShieldEnabled: this.noiseShieldEnabled,
+      dualPathEnabled: this.dualPathEnabled,
+      ...(noiseIndices && noiseIndices.length ? { noiseIndices } : {}),
+    };
+  }
+
+  /**
+   * @param {boolean} enabled
+   */
+  handleNoiseShieldToggle(enabled) {
+    this.noiseShieldEnabled = Boolean(enabled);
+    const noiseIndices = Array.isArray(this.activeNoiseProfile?.noise_indices)
+      ? this.activeNoiseProfile.noise_indices
+      : [];
+    if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+      this.comparePanel.setNoiseShieldConfig({
+        enabled: this.noiseShieldEnabled,
+        noiseIndices,
+      });
+    }
+    this.refreshRender();
+  }
+
+  /**
+   * Mount or unmount the raw-trajectory ghost ribbon.
+   * @param {boolean} enabled
+   */
+  handleDualPathToggle(enabled) {
+    this.dualPathEnabled = Boolean(enabled);
+    this.refreshRender();
+  }
+
+  /**
+   * @param {object|null|undefined} profile
+   */
+  handleNoiseAuditComplete(profile) {
+    this.activeNoiseProfile = profile || null;
+    const enabled = Boolean(this.engineManager?.settings?.shieldEnabled);
+    this.noiseShieldEnabled = enabled;
+    if (!enabled) return;
+    const noiseIndices = Array.isArray(profile?.noise_indices) ? profile.noise_indices : [];
+    if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+      this.comparePanel.setNoiseShieldConfig({ enabled: true, noiseIndices });
+    }
+    this.refreshRender();
+  }
+
+  /** Fill the model tag and any cached noise profile. Does not recompute. */
+  async refreshEngineManager() {
+    if (!this.engineManager) return;
+    try {
+      const status = await this.provider.getEngineStatus();
+      this.engineManager.setEngineStatus(status);
+      if (status && status.has_cached_profile) {
+        const profile = await this.provider.getEngineNoiseProfile();
+        this.engineManager.setNoiseProfile(profile);
+        this.activeNoiseProfile = profile || null;
+        const enabled = Boolean(this.engineManager.settings.shieldEnabled);
+        this.noiseShieldEnabled = enabled;
+        const noiseIndices = Array.isArray(profile?.noise_indices) ? profile.noise_indices : [];
+        if (this.comparePanel && typeof this.comparePanel.setNoiseShieldConfig === 'function') {
+          this.comparePanel.setNoiseShieldConfig({ enabled, noiseIndices });
+        }
+      }
+    } catch (err) {
+      console.error('Engine manager status failed:', err);
     }
   }
 
@@ -581,10 +683,7 @@ class VHectorLabApp {
           this.sliderConfig,
           this.viewMode,
           this.vizConfig,
-          {
-            dimSortByContrast: this.dimSortByContrast,
-            isSaeActive: this.isSaeActive(),
-          }
+          this.compareSceneOptions(),
         );
         this.setCompareOverlayLabels(labels);
         this.comparePanel.updateGroupLegend(data.items);
@@ -885,6 +984,7 @@ class VHectorLabApp {
     if (health.ok) {
       state.setBackendConnected(true);
       this.navbar.setStatus(true, health.data);
+      await this.refreshEngineManager();
       await this.refreshSaeStatusUi();
 
       if (state.workspaceMode === 'COMPARE' || isGalaxyView(this.viewMode)) {
@@ -1498,10 +1598,7 @@ class VHectorLabApp {
         this.sliderConfig,
         this.viewMode,
         this.vizConfig,
-        {
-          dimSortByContrast: this.dimSortByContrast,
-          isSaeActive: this.isSaeActive(),
-        }
+        this.compareSceneOptions(),
       );
       this.setCompareOverlayLabels(labels);
       await this.onCompareDataRefreshed();

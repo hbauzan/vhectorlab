@@ -38,7 +38,7 @@ describe('Navbar version tag', () => {
 
   it('matches package.json version with v prefix', () => {
     expect(APP_VERSION).toBe(`v${packageJson.version}`);
-    expect(APP_VERSION).toBe('v3.4.0');
+    expect(APP_VERSION).toBe('v4.1.0');
   });
 
   it('renders exact APP_VERSION in the header version-tag span', () => {
@@ -47,6 +47,6 @@ describe('Navbar version tag', () => {
     const tag = navbar.element.querySelector('.version-tag');
     expect(tag).not.toBeNull();
     expect(tag.textContent).toBe(`v${packageJson.version}`);
-    expect(tag.textContent).toBe('v3.4.0');
+    expect(tag.textContent).toBe('v4.1.0');
   });
 });

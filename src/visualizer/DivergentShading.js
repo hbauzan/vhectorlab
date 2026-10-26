@@ -135,18 +135,27 @@ attribute float intensity;
 attribute float aCancel;
 attribute float aHighlight;
 attribute vec3 aBaseColor;
+attribute float aNoiseMask;
+attribute float aBaselineY;
 varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
 varying vec3 vBaseColor;
+varying float vNoiseMask;
 uniform float pointSize;
+uniform float uShieldEnabled;
 
 void main() {
     vIntensity = intensity;
     vCancel = aCancel;
     vHighlight = aHighlight;
     vBaseColor = aBaseColor;
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vNoiseMask = aNoiseMask;
+
+    vec3 pos = position;
+    if (uShieldEnabled > 0.5 && aNoiseMask < 0.5) pos.y = aBaselineY;
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     float dist = length(mvPosition.xyz);
     gl_PointSize = clamp(pointSize * (300.0 / max(dist, 0.01)), 4.0, 80.0);
     gl_Position = projectionMatrix * mvPosition;
@@ -161,18 +170,27 @@ attribute float intensity;
 attribute float aCancel;
 attribute float aHighlight;
 attribute vec3 aBaseColor;
+attribute float aNoiseMask;
+attribute float aBaselineY;
 varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
 varying vec3 vBaseColor;
+varying float vNoiseMask;
 uniform float pointSize;
+uniform float uShieldEnabled;
 
 void main() {
     vIntensity = intensity;
     vCancel = aCancel;
     vHighlight = aHighlight;
     vBaseColor = aBaseColor;
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vNoiseMask = aNoiseMask;
+
+    vec3 pos = position;
+    if (uShieldEnabled > 0.5 && aNoiseMask < 0.5) pos.y = aBaselineY;
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     float dist = length(mvPosition.xyz);
     gl_PointSize = clamp(pointSize * (420.0 / max(dist, 0.01)), 2.0, 35.0);
     gl_Position = projectionMatrix * mvPosition;
@@ -191,6 +209,7 @@ varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
 varying vec3 vBaseColor;
+varying float vNoiseMask;
 uniform float baseOpacity;
 uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
@@ -203,6 +222,8 @@ uniform float uZeroCoverage;
 uniform int uUseGroupHueBase;
 
 void main() {
+    if (vNoiseMask > 2.0) discard;
+
     vec2 coord = abs(gl_PointCoord - vec2(0.5));
     float maxDist = max(coord.x, coord.y);
 
@@ -262,6 +283,7 @@ varying float vIntensity;
 varying float vCancel;
 varying float vHighlight;
 varying vec3 vBaseColor;
+varying float vNoiseMask;
 uniform float baseOpacity;
 uniform vec3 uColorPos;
 uniform vec3 uColorNeg;
@@ -274,6 +296,8 @@ uniform float uZeroCoverage;
 uniform int uUseGroupHueBase;
 
 void main() {
+    if (vNoiseMask > 2.0) discard;
+
     float r = length(gl_PointCoord - vec2(0.5)) * 2.0;
     if (r > 1.0) discard;
 
@@ -391,6 +415,7 @@ export function filterModeToUniform(mode) {
  *   softStar?: boolean,
  *   galaxy?: boolean,
  *   useGroupHueBase?: boolean,
+ *   shieldEnabled?: boolean,
  * }} [options]
  * @returns {THREE.ShaderMaterial}
  */
@@ -427,6 +452,7 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
       uNearZeroEps: { value: NEAR_ZERO_EPS },
       uZeroCoverage: { value: coverage01 },
       uUseGroupHueBase: { value: options.useGroupHueBase ? 1 : 0 },
+      uShieldEnabled: { value: options.shieldEnabled ? 1.0 : 0.0 },
     },
     vertexShader: divergentVertexShaderFor(edgeStyle),
     fragmentShader: divergentFragmentShaderFor(edgeStyle),
@@ -442,10 +468,13 @@ export function createDivergentMaterial(pointSize = 10.0, baseOpacity = 0.7, opt
 /**
  * Update live color/filter uniforms without rebuilding the shader string.
  * @param {THREE.ShaderMaterial} material
- * @param {{ anchors?: object, filterMode?: string, zeroCoverage?: number, highlightColor?: object|string }} options
+ * @param {{ anchors?: object, filterMode?: string, zeroCoverage?: number, highlightColor?: object|string, highlightColorNeg?: object|string, shieldEnabled?: boolean }} options
  */
 export function updateDivergentMaterialUniforms(material, options = {}) {
   if (!material?.uniforms) return;
+  if (options.shieldEnabled !== undefined && material.uniforms.uShieldEnabled) {
+    material.uniforms.uShieldEnabled.value = options.shieldEnabled ? 1.0 : 0.0;
+  }
   if (options.anchors) {
     const A = resolveColorAnchors(options.anchors);
     material.uniforms.uColorPos.value.set(A.positive.r, A.positive.g, A.positive.b);

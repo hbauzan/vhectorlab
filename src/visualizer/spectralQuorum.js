@@ -401,6 +401,9 @@ export function cachedPermutationNullThreshold(cache, items, options = {}) {
  *   coherencePct: number,
  *   rank: number,
  *   isQuorum: boolean,
+ *   isTrigo: boolean,
+ *   isNoise: boolean,
+ *   noisePruned: boolean,
  *   relativeScore: number,
  * }} GroupDimSignature
  */
@@ -409,6 +412,9 @@ export function cachedPermutationNullThreshold(cache, items, options = {}) {
  * @typedef {{
  *   dim: number,
  *   isQuorum: boolean,
+ *   isTrigo: boolean,
+ *   isNoise: boolean,
+ *   noisePruned: boolean,
  *   rank: number,
  *   deltaMean: number,
  *   separability: number,
@@ -437,6 +443,7 @@ export function cachedPermutationNullThreshold(cache, items, options = {}) {
  *   diagnostic?: ReturnType<typeof evaluateSampleSizeDiagnostic>,
  *   prngSeed?: number,
  *   permutationsRun?: number,
+ *   validCandidateCount?: number,
  *   groupSignatures?: Record<string, {
  *     quorumDims: number[],
  *     maxDelta: number,
@@ -481,6 +488,7 @@ export function hasEnoughGroupsForSpectralQuorum(items) {
  *   permutationCount?: number,
  *   prngSeed?: number,
  *   nullCache?: { key: string, result: PermutationNullResult|null },
+ *   noiseIndices?: number[]|Set<number>|null,
  * }} [options]
  * @returns {{ metrics: SpectralDimMetric[], summary: SpectralQuorumSummary } | null}
  */
@@ -493,6 +501,16 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
 
   const dim = list[0].embedding.length;
   if (!list.every((it) => it.embedding.length === dim)) return null;
+
+  const noiseSet = new Set();
+  const rawNoise = options.noiseIndices;
+  if (rawNoise) {
+    const values = rawNoise instanceof Set ? rawNoise : Array.isArray(rawNoise) ? rawNoise : [];
+    for (const item of values) {
+      const n = Number(item);
+      if (Number.isInteger(n) && n >= 0 && n < dim) noiseSet.add(n);
+    }
+  }
 
   const quorumPercent = Math.max(1, Math.min(100, Number(options.quorumPercent) || 10));
   const quorumCapacity = Math.max(1, Math.min(dim, Math.ceil((quorumPercent / 100) * dim)));
@@ -636,6 +654,10 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         nearestDelta = bestDeltaMinus;
       }
 
+      if (noiseSet.has(d)) {
+        minSd = 0;
+      }
+
       const absDelta = Math.abs(nearestDelta);
 
       // Intra-group directional coherence (ddi-fw coherencia_signo)
@@ -667,14 +689,24 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
       };
     }
 
-    // Rank dimensions for this group: highest separability first; then highest absDelta; then dim index
-    const rankedDims = Array.from({ length: dim }, (_, i) => i).sort((a, b) => {
+    // Rank non-noise dimensions only. Noise coordinates stay out of the candidate pool
+    // so a common-mode spike cannot occupy a Quorum slot.
+    const rankBySignal = (a, b) => {
       const diffSd = rawGroupDims[b].separability - rawGroupDims[a].separability;
       if (Math.abs(diffSd) > 1e-9) return diffSd;
       const diffDelta = rawGroupDims[b].absDelta - rawGroupDims[a].absDelta;
       if (Math.abs(diffDelta) > 1e-9) return diffDelta;
       return a - b;
-    });
+    };
+    const candidateDims = [];
+    const prunedDims = [];
+    for (let d = 0; d < dim; d++) {
+      if (noiseSet.has(d)) prunedDims.push(d);
+      else candidateDims.push(d);
+    }
+    candidateDims.sort(rankBySignal);
+    prunedDims.sort((a, b) => a - b);
+    const rankedDims = candidateDims.concat(prunedDims);
 
     const groupDims = new Array(dim);
     const topDims = [];
@@ -687,7 +719,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     for (let r = 0; r < dim; r++) {
       const d = rankedDims[r];
       const raw = rawGroupDims[d];
-      if (r < quorumCapacity && raw.separability >= effectiveThreshold && raw.absDelta > 1e-9) {
+      if (!noiseSet.has(d) && r < quorumCapacity && raw.separability >= effectiveThreshold && raw.absDelta > 1e-9) {
         if (raw.separability > peakQualifyingSd) {
           peakQualifyingSd = raw.separability;
         }
@@ -697,8 +729,11 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     for (let r = 0; r < dim; r++) {
       const d = rankedDims[r];
       const raw = rawGroupDims[d];
-      // Deterministic Quorum member: within capacity ceiling AND meets minimal separability
-      const isQuorum = r < quorumCapacity && raw.separability >= effectiveThreshold && raw.absDelta > 1e-9;
+      // Noise coordinates are never Trigos, even when the admission threshold is 0.
+      const isQuorum = !noiseSet.has(d)
+        && r < quorumCapacity
+        && raw.separability >= effectiveThreshold
+        && raw.absDelta > 1e-9;
       if (isQuorum) {
         topDims.push(d);
         sumQuorumDelta += raw.absDelta;
@@ -729,6 +764,9 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
         coherencePct: raw.coherencePct,
         rank: r,
         isQuorum,
+        isTrigo: isQuorum,
+        isNoise: noiseSet.has(d),
+        noisePruned: noiseSet.has(d),
         relativeScore,
         groupAdmittedCount: topDims.length,
         quorumCount: topDims.length,
@@ -772,6 +810,10 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
           peakPairSd = sd;
         }
       }
+    }
+
+    if (noiseSet.has(d)) {
+      peakPairSd = 0;
     }
 
     if (peakDelta > globalMaxDelta) globalMaxDelta = peakDelta;
@@ -821,12 +863,16 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
       globalQuorumSet.add(d);
     }
 
+    const noiseDim = noiseSet.has(d);
     metrics[d] = {
       dim: d,
-      isQuorum: isQuorumAny,
+      isQuorum: isQuorumAny && !noiseDim,
+      isTrigo: isQuorumAny && !noiseDim,
+      isNoise: noiseDim,
+      noisePruned: noiseDim,
       rank,
       deltaMean: rawGlobalMetrics[d].deltaMean,
-      separability: rawGlobalMetrics[d].separability,
+      separability: noiseDim ? 0 : rawGlobalMetrics[d].separability,
       relativeScore: maxGroupRelScore,
       polarity: dominantPolarity,
       meanA: mean0[d],
@@ -871,6 +917,7 @@ export function computeSpectralQuorumMetrics(items, options = {}) {
     diagnostic: nullResult ? nullResult.diagnostic : undefined,
     prngSeed: seed,
     permutationsRun: nullResult ? nullResult.iterations : 0,
+    validCandidateCount: dim - noiseSet.size,
     groupSignatures: groupSummary,
   };
 

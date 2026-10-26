@@ -285,3 +285,191 @@ body.workbench-theme .modal-content {
     padding: 0 !important;
   }
 }
+
+/* LLM Engine Manager — MagicWB AGA chisel. Layout lives in style.css. */
+body.workbench-theme #engine-manager-container .engine-panel-body {
+  background: var(--amiga-bg) !important;
+  color: var(--amiga-fg) !important;
+  border-radius: 0 !important;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+body.workbench-theme #engine-manager-container .amiga-window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 4px;
+  background: #3B67A2;
+  color: #FFFFFF;
+  border-bottom: 2px solid #000000;
+  font-weight: 700;
+}
+
+body.workbench-theme #engine-manager-container .engine-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+}
+
+body.workbench-theme #engine-manager-container .engine-model-tag {
+  flex: 0 1 auto;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #000000;
+}
+
+body.workbench-theme #engine-manager-container .amiga-window-gadget {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3B67A2;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+body.workbench-theme #engine-manager-container .gadget-inner-square {
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #FFFFFF;
+  border-bottom: 1px solid #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-inset-box {
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid #1A1A1A;
+  border-left: 2px solid #1A1A1A;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-gadget-btn {
+  background: #3B67A2;
+  color: #FFFFFF;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+.amiga-gadget-btn:active {
+  transform: translate(1px, 1px);
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-gadget-btn:active {
+  transform: translate(1px, 1px);
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-gadget-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+body.workbench-theme #engine-manager-container .noise-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+body.workbench-theme #engine-manager-container .noise-pill.sat {
+  background: #FFA997;
+  color: #000000;
+}
+
+body.workbench-theme #engine-manager-container .noise-pill.flat {
+  background: #AA907C;
+  color: #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-checkbox {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid #1A1A1A;
+  border-left: 2px solid #1A1A1A;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+
+body.workbench-theme #engine-manager-container .amiga-checkbox.checked::after {
+  content: '✓';
+  color: #FFA997;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+body.workbench-theme #engine-manager-container .toggle-label.muted {
+  opacity: 0.75;
+}
+
+body.workbench-theme #engine-manager-container .engine-panel-tab.dock-tab {
+  background: #3B67A2 !important;
+  color: #FFFFFF !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  border: 2px solid #000000 !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+}
+
+.score-delta {
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 4px;
+  letter-spacing: 0.3px;
+}
+.score-delta.drop {
+  color: var(--badge-sat, #FFA997);
+}
+.score-delta.rise {
+  color: #00E5FF;
+}
+
+body.workbench-theme #hud-noise.hud-noise-ratio {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+body.workbench-theme #hud-noise.is-rogue-dim {
+  color: #FFA997;
+}

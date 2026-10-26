@@ -78,6 +78,25 @@ export function updateAllThreadPositions(threads, config, pointSpacing = 0.1) {
 }
 
 /**
+ * ANALYSIS thread baseline. Noise-shield flattening pins Y here.
+ * NAVIGATION baselines are 0; this helper is ANALYSIS-only.
+ * @param {number} [sequenceIndex]
+ * @param {number} [totalThreads]
+ * @param {number} [spacingY]
+ * @param {{ ySlot?: number, ySlotSpan?: number }} [layoutOpts]
+ * @returns {number}
+ */
+export function analysisThreadOffsetY(sequenceIndex = 0, totalThreads = 5, spacingY = 46, layoutOpts = {}) {
+  const verticalSpacing = spacingY ?? 46.0;
+  const ySlot = layoutOpts.ySlot !== undefined ? layoutOpts.ySlot : sequenceIndex;
+  const ySlotSpan = layoutOpts.ySlotSpan !== undefined
+    ? layoutOpts.ySlotSpan
+    : Math.max(0, totalThreads - 1);
+  const centeredYSlot = ySlotSpan / 2.0 - ySlot;
+  return centeredYSlot * verticalSpacing;
+}
+
+/**
  * LayoutEngine class for 3D vector point mapping supporting NAVIGATION and ANALYSIS view modes.
  */
 export class LayoutEngine {
@@ -112,13 +131,7 @@ export class LayoutEngine {
 
     if (viewMode === 'ANALYSIS') {
       // Stack threads vertically along Y axis with customizable separation (spacingY)
-      const verticalSpacing = spacingY ?? 46.0;
-      const ySlot = layoutOpts.ySlot !== undefined ? layoutOpts.ySlot : sequenceIndex;
-      const ySlotSpan = layoutOpts.ySlotSpan !== undefined
-        ? layoutOpts.ySlotSpan
-        : Math.max(0, totalThreads - 1);
-      const centeredYSlot = ySlotSpan / 2.0 - ySlot;
-      const offsetY = centeredYSlot * verticalSpacing;
+      const offsetY = analysisThreadOffsetY(sequenceIndex, totalThreads, spacingY, layoutOpts);
       const ampY = amplitudeY ?? 16.0; // Scaled activation amplitude for point Y peaks (+1 / -1)
 
       // Shift X start position slightly to the right (+45) so start labels clear the left sidebar

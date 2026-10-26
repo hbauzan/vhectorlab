@@ -1,7 +1,11 @@
 # Roadmap: Spectral Quorum Determinista (Alineación DDI-FW)
 
-**Estado:** COMPLETADO (Verificado empíricamente sobre vocab_embeddings.npz)  
-**Fecha:** 2026-10-04  
+> **Archivado:** 2026-10-26  
+> **Estado:** COMPLETADO en v3.4.0 (commits `8f9668d` a `9c3d0f7`)  
+> **Implementado en:** Rama `main` / `feat/spectral-quorum-determinism`  
+> Documento histórico preservado. No editar salvo corrección histórica.
+
+**Fecha original:** 2026-10-04  
 **Área:** `src/visualizer/`, `src/ui/`, `tests/`, `scripts/`  
 **Referencia de dominio:** DDI-FW (`ddi_fw/ecualizador/cruce.py`, `intrinseco.py`, Protocolos 01–04)
 

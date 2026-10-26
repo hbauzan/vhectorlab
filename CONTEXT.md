@@ -115,6 +115,20 @@ Named local preset (`local-comfort`, `local-full`, `hf-demo`) that resolves to a
 ### Active Model
 The one SentenceTransformer loaded in the backend process; exposed on `/health` as `model` / `short_label` / `embedding_dim` / `device` (and `model_profile` when set).
 
+### Structural Noise
+Coordinates in one embedding matrix that the detector classifies as saturated outliers or flat channels.
+
+### Saturated Outlier
+A coordinate whose mean absolute energy has a Z-score of at least 3 against the other coordinates of the same matrix.
+
+### Flat Channel
+A coordinate whose standard deviation is at most 0.010, or at most 0.35 times the mean coordinate standard deviation, and that is not a saturated outlier.
+
+### Noise Profile
+The frozen detection result for one model: index tuples, energy ratio, cosine delta, and a UTC timestamp. Kept on the active model in RAM and as one JSON file per Hub id.
+
+_Avoid_: a fixed list of dimension numbers in application code; treating the profile of one model as the profile of another.
+
 ### Truncate Dim
 Optional Matryoshka width (`TRUNCATE_DIM`) applied after encode; effective `embedding_dim` is the truncated width when set.
 
@@ -128,4 +142,23 @@ Expanded latent dimension (default cap 8192, auto-scaled for small N) used for v
 
 ### Dead Features
 Latents that never activated on the training set; reported in SAE train metrics.
+
+### Structural Noise Coordinate
+An embedding dimension that stays saturated (energy z-score at or above 3) or flat (standard deviation at or below the flat threshold) across the loaded vocabulary matrix. The set is computed for the active model. It is not a fixed list of dimension numbers.
+
+### Engine Manager
+Workbench sheet for the active model's structural-noise audit: energy concentration, the drop in mean pairwise cosine, and the outlier coordinates.
+
+### Outlier Pruning Shield
+Client preference that, while on and a noise profile is loaded, scores Compare rows by subspace cosine (noise coordinates zeroed, then re-normalized), bars those coordinates from Spectral Quorum admission, and flattens their 3D amplitude onto the thread baseline.
+
+_Avoid_: mutating the stored embedding; painting the vocabulary-matrix energy ratio as a token's own noise share.
+
+### Dual-Path Ribbon
+Compare ribbon drawn along the unflattened trajectory while the Outlier Pruning Shield is on. The primary trajectory stays on the baseline.
+
+### Token Noise Energy
+Share of one token's squared length that sits on structural-noise coordinates: \(\|e_{\text{noise}}\|_2^2 / \|e\|_2^2\).
+
+_Avoid_: the square root of that share; the vocabulary-matrix energy ratio.
 

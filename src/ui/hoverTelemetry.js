@@ -21,6 +21,71 @@ export function formatHoverTokenLabel(token, groupLabel) {
 }
 
 /**
+ * Token noise energy share: \(\|e_{\text{noise}}\|_2^2 / \|e\|_2^2\).
+ * Same statistic as the engine profile's `energy_ratio`, evaluated on one vector.
+ * @param {ArrayLike<number>|null|undefined} vector
+ * @param {number[]|Set<number>|null|undefined} noiseIndices
+ * @returns {number}
+ */
+export function calculateVectorNoiseRatio(vector, noiseIndices) {
+  if (!vector || !vector.length || !noiseIndices) return 0.0;
+  const set = noiseIndices instanceof Set ? noiseIndices : new Set(noiseIndices);
+  if (set.size === 0) return 0.0;
+  let noiseNormSq = 0.0;
+  let totalNormSq = 0.0;
+  for (let i = 0; i < vector.length; i++) {
+    const valSq = vector[i] * vector[i];
+    totalNormSq += valSq;
+    if (set.has(i)) noiseNormSq += valSq;
+  }
+  if (totalNormSq <= 1e-12) return 0.0;
+  return noiseNormSq / totalNormSq;
+}
+
+/**
+ * @param {number} ratio
+ * @returns {string}
+ */
+export function formatNoiseRatio(ratio) {
+  if (typeof ratio !== 'number' || !Number.isFinite(ratio)) return '--';
+  return `${(ratio * 100).toFixed(1)}%`;
+}
+
+/**
+ * @param {Record<string, unknown>} meta
+ * @param {Record<string, unknown>} ud
+ * @returns {number|null}
+ */
+function readNoiseRatio(meta, ud) {
+  if (typeof meta.noiseRatio === 'number' && Number.isFinite(meta.noiseRatio)) return meta.noiseRatio;
+  if (typeof ud.noiseRatio === 'number' && Number.isFinite(ud.noiseRatio)) return ud.noiseRatio;
+  const vector = Array.isArray(meta.tokenVector)
+    ? meta.tokenVector
+    : Array.isArray(ud.tokenVector)
+      ? ud.tokenVector
+      : Array.isArray(ud.activations)
+        ? ud.activations
+        : null;
+  const indices = meta.noiseIndices ?? ud.noiseIndices;
+  if (!vector || indices == null) return null;
+  return calculateVectorNoiseRatio(vector, indices);
+}
+
+/**
+ * @param {Record<string, unknown>} meta
+ * @param {Record<string, unknown>} ud
+ * @param {number|null} dim
+ * @returns {boolean}
+ */
+function readIsNoiseDim(meta, ud, dim) {
+  if (typeof meta.isNoiseDim === 'boolean') return meta.isNoiseDim;
+  const indices = meta.noiseIndices ?? ud.noiseIndices;
+  if (indices == null || dim == null || !Number.isFinite(dim)) return false;
+  const set = indices instanceof Set ? indices : new Set(indices);
+  return set.has(dim);
+}
+
+/**
  * Map a Three.js intersect payload to display fields.
  * @param {object|null|undefined} data
  * @returns {{
@@ -32,6 +97,8 @@ export function formatHoverTokenLabel(token, groupLabel) {
  *   groupLabel: string | null,
  *   tokenLabel: string,
  *   dim: number | null,
+ *   noiseRatio: number | null,
+ *   isNoiseDim: boolean,
  * } | null}
  */
 export function resolveHoverTelemetry(data) {
@@ -94,6 +161,7 @@ export function resolveHoverTelemetry(data) {
   const groupLabel = String(groupLabelRaw).trim() || null;
 
   const typeRaw = meta.type || ud.type || 'VECTOR';
+  const resolvedDim = dim != null && Number.isFinite(dim) ? dim : null;
 
   return {
     point: data.point || null,
@@ -103,7 +171,9 @@ export function resolveHoverTelemetry(data) {
     token: String(token),
     groupLabel,
     tokenLabel: formatHoverTokenLabel(token, groupLabel),
-    dim: dim != null && Number.isFinite(dim) ? dim : null,
+    dim: resolvedDim,
+    noiseRatio: readNoiseRatio(meta, ud),
+    isNoiseDim: readIsNoiseDim(meta, ud, resolvedDim),
   };
 }
 

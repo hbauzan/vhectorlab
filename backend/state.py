@@ -15,6 +15,7 @@ from backend.model_catalog import (
     encode_texts,
     resolve_selection_from_env,
 )
+from backend.structural_noise import ModelNoiseProfile
 from backend.vocab_embeddings import (
     load_vocab_embeddings_npz as _load_vocab_cache,
 )
@@ -59,6 +60,7 @@ class AppState:
         self.vocab_embeddings: np.ndarray | None = None  # Normalized (N, D)
         self.is_loaded: bool = False
         self.device: str = "cpu"
+        self.noise_profile: ModelNoiseProfile | None = None
 
     def _apply_selection(self, selection: ModelSelection) -> None:
         self.selection = selection
@@ -100,6 +102,8 @@ class AppState:
         if self.is_loaded:
             logger.info("AppState is already loaded.")
             return
+
+        self.noise_profile = None
 
         from backend.device import get_optimal_device
 

@@ -133,6 +133,47 @@ export class RemoteProvider {
     }
   }
 
+  async getEngineStatus() {
+    const res = await fetch(apiUrl(this.baseUrl, '/engine/status'), {
+      headers: this._headers(),
+    });
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      const detail = errorJson.detail;
+      throw new Error(typeof detail === 'string' ? detail : `HTTP Error ${res.status}`);
+    }
+    return await res.json();
+  }
+
+  /**
+   * @param {{ forceRecompute?: boolean }} [opts]
+   */
+  async detectStructuralNoise(opts = {}) {
+    const res = await fetch(apiUrl(this.baseUrl, '/engine/detect-structural-noise'), {
+      method: 'POST',
+      headers: this._headers({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ force_recompute: opts.forceRecompute ?? false }),
+    });
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      const detail = errorJson.detail;
+      throw new Error(typeof detail === 'string' ? detail : `HTTP Error ${res.status}`);
+    }
+    return await res.json();
+  }
+
+  async getEngineNoiseProfile() {
+    const res = await fetch(apiUrl(this.baseUrl, '/engine/noise-profile'), {
+      headers: this._headers(),
+    });
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      const detail = errorJson.detail;
+      throw new Error(typeof detail === 'string' ? detail : `HTTP Error ${res.status}`);
+    }
+    return await res.json();
+  }
+
   async saeStatus() {
     const res = await fetch(apiUrl(this.baseUrl, '/sae/status'), {
       headers: this._headers(),

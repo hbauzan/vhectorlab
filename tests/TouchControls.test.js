@@ -27,6 +27,16 @@ describe('isUiTouchTarget', () => {
     expect(isUiTouchTarget(child)).toBe(true);
   });
 
+  it('treats Engine Manager sheet as UI', () => {
+    const sheet = {
+      id: 'engine-manager-container',
+      tagName: 'DIV',
+      closest: (sel) => (sel.includes('#engine-manager-container') ? sheet : null),
+    };
+    const child = { tagName: 'SPAN', closest: (sel) => sheet.closest(sel) };
+    expect(isUiTouchTarget(child)).toBe(true);
+  });
+
   it('treats Visualization sheet as UI', () => {
     const sheet = {
       id: 'visualization-controls-container',

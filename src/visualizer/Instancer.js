@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { MeshFactory } from './MeshFactory.js';
-import { LayoutEngine } from './LayoutEngine.js';
+import { MeshFactory, noiseCoordinateSet, ribbonPointsWithNoiseShield } from './MeshFactory.js';
+import { LayoutEngine, analysisThreadOffsetY } from './LayoutEngine.js';
+import { calculateVectorNoiseRatio } from '../ui/hoverTelemetry.js';
 import { arithmeticSequenceIndex, arithmeticThreadLabel } from '../ui/threadLabelFormat.js';
 import { normalizeRenderMode } from '../core/State.js';
 import { computeGroupAwareYSlots } from './groupStackLayout.js';
@@ -21,6 +22,38 @@ import {
   buildDimRulerSegments,
 } from './dimRuler.js';
 import { resolveVisualizationSettings } from '../ui/visualizationControlsDefaults.js';
+
+const GHOST_RIBBON_COLOR = '#FFA997';
+
+/**
+ * Thread baseline used when the outlier shield flattens a noise coordinate.
+ * ANALYSIS uses the stacked offset. NAVIGATION sits on Y = 0.
+ * @param {string} viewMode
+ * @param {number} sequenceIndex
+ * @param {number} totalThreads
+ * @param {number} spacingY
+ * @param {{ ySlot?: number, ySlotSpan?: number }} layoutOpts
+ * @returns {number}
+ */
+function threadBaselineY(viewMode, sequenceIndex, totalThreads, spacingY, layoutOpts) {
+  if (viewMode !== 'ANALYSIS') return 0;
+  return analysisThreadOffsetY(sequenceIndex, totalThreads, spacingY, layoutOpts);
+}
+
+/**
+ * Peach ghost ribbon. Kind is replaced after MeshFactory stamps pointCount/width.
+ * @param {THREE.Mesh} mesh
+ */
+function styleDualPathGhost(mesh) {
+  mesh.material.vertexColors = false;
+  mesh.material.color.set(GHOST_RIBBON_COLOR);
+  mesh.material.opacity = 0.28;
+  mesh.material.transparent = true;
+  mesh.material.depthWrite = false;
+  mesh.material.needsUpdate = true;
+  mesh.frustumCulled = false;
+  mesh.userData.kind = 'dualPathGhostRibbon';
+}
 
 /**
  * Instancer Manager for rendering vector points, ribbons, and highlights in the Three.js scene.
@@ -248,7 +281,7 @@ export class Instancer {
    * @param {Object} [spatialConfig] - Real-time spatial slider configuration
    * @param {string} [viewMode="NAVIGATION"] - "NAVIGATION" | "ANALYSIS"
    * @param {Object} [vizConfig] - Global sign filter + color anchors
-   * @param {{ dimSortByContrast?: boolean }} [options]
+   * @param {{ dimSortByContrast?: boolean, isSaeActive?: boolean, noiseShieldEnabled?: boolean, dualPathEnabled?: boolean, noiseIndices?: number[]|Set<number>|null }} [options]
    * @returns {Array<{ id: string, text: string, type: string, origin3D: THREE.Vector3 }>} Label metadata
    */
   renderCompareData(
@@ -295,11 +328,18 @@ export class Instancer {
     const dimPerm = dimSortOn ? computeDimContrastPermutation(items) : null;
     const isSaeActive = options.isSaeActive === true;
     const resolvedViz = resolveVisualizationSettings(vizConfig);
+    const quorumOptions = {
+      quorumPercent: resolvedViz.spectralQuorumPercent,
+      nullCache: this._spectralNullCache,
+    };
+    const noiseIndices = options.noiseIndices;
+    const noiseSet = noiseCoordinateSet(noiseIndices);
+    const noiseCount = noiseSet ? noiseSet.size : 0;
+    const shieldOn = options.noiseShieldEnabled === true && noiseCount > 0;
+    const dualOn = options.dualPathEnabled === true && shieldOn;
+    if (noiseCount > 0) quorumOptions.noiseIndices = noiseIndices;
     const groupDimMetrics = hasGroupsForDimContrast(items)
-      ? computeDimRelationMetrics(items, {
-          quorumPercent: resolvedViz.spectralQuorumPercent,
-          nullCache: this._spectralNullCache,
-        })
+      ? computeDimRelationMetrics(items, quorumOptions)
       : null;
     this._lastGroupDimMetrics = groupDimMetrics;
     const sharedNoiseMetrics = isSaeActive
@@ -340,12 +380,24 @@ export class Instancer {
         layoutOpts
       );
       const activations = [];
+      const baselineY = threadBaselineY(viewMode, idx, totalThreads, spacingY, layoutOpts);
+      const noiseRatio = shieldOn ? calculateVectorNoiseRatio(rawVec, noiseSet) : null;
+      const semanticPoints = shieldOn
+        ? ribbonPointsWithNoiseShield(vec3D, {
+            shieldEnabled: true,
+            noiseIndices,
+            baselineY,
+            sourceDims,
+          })
+        : vec3D;
 
       vec3D.forEach((p, dimIdx) => {
         const val = vec[dimIdx];
         const sourceDim = sourceDims[dimIdx];
+        const isNoiseDim = Boolean(shieldOn && noiseSet.has(sourceDim));
         pointsData.push({
           position: p,
+          baselineY,
           activation: val,
           size: 10.0 * thicknessFactor,
           groupId: item.groupId,
@@ -358,37 +410,70 @@ export class Instancer {
             val,
             groupId: item.groupId,
             groupLabel: item.groupLabel,
+            ...(noiseRatio != null ? { noiseRatio, isNoiseDim } : {}),
           },
         });
         activations.push(val);
       });
 
-      surfaceRows.push({ points: vec3D, activations });
+      surfaceRows.push({ points: semanticPoints, activations });
 
       const vizOpts = {
         ...(vizConfig ? { vizConfig } : {}),
         ...paintOpts,
         itemIndex: idx,
-        ...(paintOpts.sharedNoiseMetrics || paintOpts.groupDimMetrics
+        ...(paintOpts.sharedNoiseMetrics || paintOpts.groupDimMetrics || shieldOn
           ? { sourceDims }
           : {}),
+        ...(shieldOn ? {
+          shieldEnabled: true,
+          noiseIndices,
+          baselineY,
+        } : {}),
         ...(item.groupId ? { groupId: item.groupId } : {}),
       };
+      const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
       let ribbonMesh = null;
+      let ghostMesh = null;
+      if (dualOn && vec3D.length >= 2) {
+        ghostMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, {
+          width: ribbonWidth,
+          ...(vizConfig ? { vizConfig } : {}),
+          ...paintOpts,
+          itemIndex: idx,
+          sourceDims,
+          ...(item.groupId ? { groupId: item.groupId } : {}),
+        });
+        if (ghostMesh) {
+          styleDualPathGhost(ghostMesh);
+          ghostMesh.userData.threadId = threadId;
+          ghostMesh.userData.token = item.text;
+          ghostMesh.userData.type = 'compare';
+          ghostMesh.userData.sourceDims = sourceDims;
+          ghostMesh.userData.noiseIndices = noiseIndices;
+          ghostMesh.userData.noiseRatio = noiseRatio;
+          if (item.groupId) ghostMesh.userData.groupId = item.groupId;
+          if (item.groupLabel) ghostMesh.userData.groupLabel = item.groupLabel;
+          this.activeGroup.add(ghostMesh);
+        }
+      }
       if (renderMode === "RIBBONS") {
-        const ribbonWidth = Math.max(2.0, 14.0 * thicknessFactor);
-        ribbonMesh = MeshFactory.createWideRibbonMesh(vec3D, activations, {
+        ribbonMesh = MeshFactory.createWideRibbonMesh(semanticPoints, activations, {
           width: ribbonWidth,
           ...vizOpts,
         });
       } else if (resolveVisualizationSettings(vizConfig).threadLinesVisible) {
-        ribbonMesh = MeshFactory.createRibbonMesh(vec3D, activations, vizOpts);
+        ribbonMesh = MeshFactory.createRibbonMesh(semanticPoints, activations, vizOpts);
       }
       if (ribbonMesh) {
         ribbonMesh.userData.threadId = threadId;
         ribbonMesh.userData.token = item.text;
         ribbonMesh.userData.type = 'compare';
         ribbonMesh.userData.sourceDims = sourceDims;
+        if (shieldOn) {
+          ribbonMesh.userData.noiseIndices = noiseIndices;
+          ribbonMesh.userData.noiseRatio = noiseRatio;
+        }
         if (item.groupId) ribbonMesh.userData.groupId = item.groupId;
         if (item.groupLabel) ribbonMesh.userData.groupLabel = item.groupLabel;
         this.activeGroup.add(ribbonMesh);
@@ -399,12 +484,15 @@ export class Instancer {
         text: item.text,
         embedding: vec,
         ribbonMesh,
+        ghostMesh,
+        sourceDims,
         pointOffset,
         dimCount: vec.length,
         sequenceIndex: idx,
         ySlot: layoutOpts.ySlot,
         ySlotSpan,
-        _layoutPoints: vec3D,
+        _layoutPoints: semanticPoints,
+        _rawLayoutPoints: vec3D,
         groupId: item.groupId,
         groupLabel: item.groupLabel,
       });
@@ -438,6 +526,7 @@ export class Instancer {
         pointSize: 15.0 * thicknessFactor,
         ...(vizConfig ? { vizConfig } : {}),
         ...paintOpts,
+        ...(shieldOn ? { noiseIndices, shieldEnabled: true } : {}),
       });
       pointsMesh.userData = { pointsData };
       this.activeGroup.add(pointsMesh);
@@ -449,6 +538,8 @@ export class Instancer {
       spacingY,
       amplitudeY,
       ySlotSpan,
+      noiseShieldEnabled: shieldOn,
+      noiseIndices: shieldOn ? noiseIndices : null,
       pointsMesh,
       baselineMesh,
       rulerMesh: null,
@@ -540,17 +631,40 @@ export class Instancer {
     );
     if (!vec3D.length) return null;
 
+    const shieldOn = runtime.noiseShieldEnabled === true;
+    const baselineY = shieldOn
+      ? threadBaselineY(
+          runtime.viewMode,
+          sequenceIndex,
+          runtime.totalThreads,
+          runtime.spacingY,
+          layoutOpts,
+        )
+      : 0;
+    const semantic = shieldOn
+      ? ribbonPointsWithNoiseShield(vec3D, {
+          shieldEnabled: true,
+          noiseIndices: runtime.noiseIndices,
+          baselineY,
+          sourceDims: thread.sourceDims,
+        })
+      : vec3D;
+
     if (thread.ribbonMesh?.userData?.kind === "wideRibbon") {
-      MeshFactory.updateWideRibbonMeshPositions(thread.ribbonMesh, vec3D);
+      MeshFactory.updateWideRibbonMeshPositions(thread.ribbonMesh, semantic);
     } else {
       const ribbonPos = thread.ribbonMesh?.geometry?.attributes?.position;
       if (ribbonPos) {
-        for (let i = 0; i < vec3D.length; i++) {
-          ribbonPos.setXYZ(i, vec3D[i].x, vec3D[i].y, vec3D[i].z);
+        for (let i = 0; i < semantic.length; i++) {
+          ribbonPos.setXYZ(i, semantic[i].x, semantic[i].y, semantic[i].z);
         }
         ribbonPos.needsUpdate = true;
         if (updateBounds) thread.ribbonMesh.geometry.computeBoundingSphere();
       }
+    }
+
+    if (thread.ghostMesh) {
+      MeshFactory.updateWideRibbonMeshPositions(thread.ghostMesh, vec3D);
     }
 
     const pointsPos = runtime.pointsMesh?.geometry?.attributes?.position;
@@ -562,8 +676,17 @@ export class Instancer {
       if (updateBounds) runtime.pointsMesh.geometry.computeBoundingSphere();
     }
 
-    thread._layoutPoints = vec3D;
-    return vec3D[0];
+    const baselineAttr = runtime.pointsMesh?.geometry?.getAttribute?.('aBaselineY');
+    if (baselineAttr && shieldOn) {
+      for (let i = 0; i < vec3D.length; i++) {
+        baselineAttr.setX(thread.pointOffset + i, baselineY);
+      }
+      baselineAttr.needsUpdate = true;
+    }
+
+    thread._layoutPoints = semantic;
+    thread._rawLayoutPoints = vec3D;
+    return semantic[0];
   }
 
   _syncCompareBaseline(origins) {

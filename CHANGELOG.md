@@ -2,12 +2,22 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
-## [Unreleased]
+## [4.1.0] - 2026-10-26
 
 ### Added
+- Compare outlier shield flattens structural-noise coordinates onto the thread baseline. Point clouds do it in the vertex shader (`aNoiseMask`, `aBaselineY`, `uShieldEnabled`) without reallocating geometry. Ribbon centerlines are clamped on the CPU.
+- Dual-path ribbon: with the shield and the dual-path toggle both on, a peach ghost ribbon (`#FFA997`, opacity 0.28) follows the raw trajectory while the primary ribbon stays flat.
+- Bottom HUD `NOISE:` shows the hovered token's noise energy \(\|e_{\text{noise}}\|_2^2 / \|e\|_2^2\). A noise coordinate is marked in MagicWB peach. On `BAAI/bge-m3`, `car` reads 24.7% and `truck` reads 19.2%. The Engine Manager's 19.8% remains the vocabulary-matrix energy ratio.
+
+## [4.0.0] - 2026-10-26
+
+### Added
+- Universal Structural Noise & Outlier Dimensions detection engine (`backend/structural_noise.py`) for dynamic identification of saturated and inert coordinates in embedding models.
+- Engine API: `GET /api/engine/status`, `POST /api/engine/detect-structural-noise`, `GET /api/engine/noise-profile`. A profile is cached in RAM and in gitignored `backend/artifacts/noise_profiles/{model}.json`. The same routes are mounted without the `/api` prefix.
 - Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
 - Local micro-benchmark (`backend/benchmark_runner.py`, `scripts/benchmark_models.py`): cold load, warmup, hot throughput, peak RAM, and a linear projection onto `vocab_en_es.txt`. Results stay in gitignored `backend/artifacts/benchmark_cache.json`. The CLI does not edit `.env` or the model serving the app.
 - Setup option 11 shows the live host banner plus family, memory tier, and cached throughput. `B`, `B <token>`, and `B all` run that benchmark and redraw the menu. Free RAM is checked against the tier weight (500 MB / 1.5 GB / 3 GB). Below the weight, the swap asks for `CONFIRMAR` or `y`. An unmeasured Hub ID does not get an invented weight.
+- LLM Engine Manager sheet on the bottom-left HUD seam. It loads `GET /engine/status` and a cached noise profile, and `POST /engine/detect-structural-noise` from the audit button. Energy is shown as a percent of \(L_2^2\). The cosine line is the signed drop (`−cosine_delta`). The raw→pruned pair is printed only when the payload includes both means; the engine API does not return those means. Saturated and flat pills are the index arrays from the profile. Shield and dual-path toggles persist under `vl3d.engine.*`. While the shield is on and a profile is loaded, Compare cosine is recomputed in memory (noise coordinates zeroed, then re-normalized) and those coordinates are kept out of Spectral Quorum admission. Stored embeddings are not mutated. The dual-path toggle does not draw a second ribbon.
 
 ## [3.4.0] - 2026-10-05
 

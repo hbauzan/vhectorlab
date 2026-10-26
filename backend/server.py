@@ -17,6 +17,7 @@ if _root_dir not in sys.path:
 from backend.model_catalog import resolve_selection_from_env
 from backend.model_swap import apply_dotenv
 from backend.routers.core import router as core_router
+from backend.routers.engine import router as engine_router
 from backend.routers.sae import router as sae_router
 from backend.routers.sae import sae_manager
 from backend.state import state
@@ -60,7 +61,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="VHectorLab 3D API",
     description="Backend API for 3D Vector Arithmetic & Semantic Embedding Visualizer",
-    version="3.4.0",
+    version="4.1.0",
     lifespan=lifespan,
 )
 
@@ -75,8 +76,10 @@ app.add_middleware(
 
 app.include_router(core_router, prefix="/api")
 app.include_router(sae_router, prefix="/api")
+app.include_router(engine_router, prefix="/api")
 app.include_router(core_router)  # Also expose without /api prefix for convenience
 app.include_router(sae_router)
+app.include_router(engine_router)
 
 # Mount static frontend files if dist/ exists (Docker / Production mode)
 from backend.static_dist import resolve_dist_file
