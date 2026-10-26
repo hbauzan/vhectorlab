@@ -85,12 +85,14 @@ class HardwareProfile:
 class ModelBenchmarkResult:
     hub_id: str
     short_label: str
-    family: str
-    device: str
+    family: str                 # ModelFamily value
+    memory_tier: str            # MemoryTier value
+    device: str                 # "mps" | "cuda" | "cpu"
     cold_load_sec: float
-    throughput_wps: float       # words per second
-    peak_ram_mb: float
-    estimated_vocab_sec: float  # for 10,338 words
+    warmup_sec: float           # first 32 deck items
+    throughput_wps: float       # len(deck) / median run; 500 / median on the standard deck
+    peak_ram_mb: float          # max(RSS delta, accelerator delta), not the sum
+    estimated_vocab_sec: float  # round(vocab_line_count / throughput_wps, 2); file is 10338 lines
     timestamp_utc: str
 ```
 
@@ -149,6 +151,7 @@ graph TD
   - Todos los modelos del catálogo asignados a una familia y tier de memoria válidos.
 
 ### Slice 2: Micro-Benchmark Runner & Persistencia de Resultados
+* **Estado:** implementado en `feat/hardware-inspector-taxonomy`. Pendiente de OK humano. No incluye `setup.sh` (eso es el Slice 3).
 * **Objetivo**: Implementar la rutina de prueba de carga, throughput y memoria con payload controlado de 500 tokens y serialización JSON.
 * **Archivos a modificar / crear**:
   - `backend/benchmark_runner.py` (nuevo)

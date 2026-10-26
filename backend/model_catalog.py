@@ -439,7 +439,12 @@ def _repair_gte_nonpersistent_buffers(st_model: Any) -> None:
     logger.info("Repaired GTE rotary_emb buffers after meta load")
 
 
-def build_model(selection: ModelSelection, device: str) -> Any:
+def build_model(
+    selection: ModelSelection,
+    device: str,
+    *,
+    local_files_only: bool = False,
+) -> Any:
     """Construct SentenceTransformer for the selection (trust_remote_code when declared).
 
     Arctic (GTE remote code) ships with use_memory_efficient_attention=true and
@@ -451,6 +456,8 @@ def build_model(selection: ModelSelection, device: str) -> Any:
     from sentence_transformers import SentenceTransformer
 
     kwargs: dict[str, Any] = {"device": device}
+    if local_files_only:
+        kwargs["local_files_only"] = True
     if selection.trust_remote_code:
         kwargs["trust_remote_code"] = True
         # Arctic Hub config: use_memory_efficient_attention=true (+ unpad_inputs)

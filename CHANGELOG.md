@@ -6,6 +6,7 @@ All notable changes to VHectorLab 3D will be documented in this file.
 
 ### Added
 - Hardware inspector (`backend/hardware_inspector.py`) and embedding-catalog family / memory tier on `ModelSelection` and named profiles. Not exposed on `GET /health`.
+- Local micro-benchmark (`backend/benchmark_runner.py`, `scripts/benchmark_models.py`): cold load, warmup, hot throughput, peak RAM, and a linear projection onto `vocab_en_es.txt`. Results stay in gitignored `backend/artifacts/benchmark_cache.json`. The CLI does not edit `.env` or the model serving the app.
 
 ## [3.4.0] - 2026-10-05
 

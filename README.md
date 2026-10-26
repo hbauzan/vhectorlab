@@ -190,6 +190,15 @@ uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --prof
 uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --strict --threshold 0.35
 ```
 
+Local throughput check (does not edit `.env` or the running server). From the repo root:
+
+```bash
+uv run --directory backend python ../scripts/benchmark_models.py \
+  --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+```
+
+`--model` also accepts a menu token (`P1`, `M1`) or a bare Hub name (`bge-m3`). `--cached-only` times catalog models already on disk. `--all` times the whole catalog and may download weights. `--json` prints only JSON. Numbers land in `backend/artifacts/benchmark_cache.json` (gitignored, this machine only).
+
 ---
 
 ## Manual start (without the panel)
