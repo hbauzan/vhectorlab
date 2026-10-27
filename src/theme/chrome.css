@@ -473,3 +473,161 @@ body.workbench-theme #hud-noise.hud-noise-ratio {
 body.workbench-theme #hud-noise.is-rogue-dim {
   color: #FFA997;
 }
+
+/*
+  Canonical Workbench window (v4.1.1).
+  Raised chassis. Cobalt titlebar. Two square gadgets.
+  The engine sheet keeps its own scoped rules; these apply to Arithmetic,
+  Compare, Spatial Controls, and the Visualization body.
+*/
+body.workbench-theme .amiga-window {
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.workbench-theme #thread-sliders-container.amiga-window,
+body.workbench-theme #sidebar-panel.amiga-window,
+body.workbench-theme #compare-panel.amiga-window,
+body.workbench-theme #visualization-controls-container .viz-panel-body.amiga-window {
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: var(--amiga-bg) !important;
+}
+
+body.workbench-theme #sidebar-panel.amiga-window,
+body.workbench-theme #compare-panel.amiga-window,
+body.workbench-theme #visualization-controls-container .viz-panel-body.amiga-window {
+  overflow: hidden !important;
+  scrollbar-gutter: auto;
+}
+
+body.workbench-theme #thread-sliders-container.amiga-window > :not(.amiga-window-titlebar) {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+body.workbench-theme #thread-sliders-container.amiga-window {
+  padding: 0 0 8px !important;
+}
+
+body.workbench-theme #visualization-controls-container .viz-panel-body.amiga-window > .amiga-window-client {
+  gap: 6px;
+  padding: 8px 10px 10px;
+}
+
+body.workbench-theme .amiga-window > .amiga-window-client {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  padding: 8px 12px 10px;
+}
+
+body.workbench-theme .amiga-window > .amiga-window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 24px;
+  min-height: 24px;
+  max-height: 24px;
+  margin: 0;
+  padding: 0 4px;
+  background: #3B67A2;
+  color: #FFFFFF;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+  font-family: var(--amiga-font);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+
+body.workbench-theme .amiga-window > .amiga-window-titlebar .amiga-window-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  color: #FFFFFF;
+  font-family: var(--amiga-font);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+body.workbench-theme .amiga-window .amiga-window-gadget {
+  box-sizing: border-box;
+  flex: 0 0 16px;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  margin: 0;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #3B67A2;
+  color: #FFFFFF;
+  border-radius: 0 !important;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+body.workbench-theme .amiga-window .amiga-window-gadget[data-gadget="depth"] {
+  cursor: default;
+}
+
+body.workbench-theme .amiga-window .gadget-inner-square {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #FFFFFF;
+  border-bottom: 1px solid #FFFFFF;
+  pointer-events: none;
+}
+
+body.workbench-theme #visualization-controls-container.is-collapsed .viz-panel-body.amiga-window {
+  padding: 0 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}

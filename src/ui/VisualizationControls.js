@@ -51,6 +51,7 @@ import {
   clampDimRulerState,
 } from '../visualizer/dimRuler.js';
 import { bindHoldRepeatButton } from './holdRepeat.js';
+import { AMIGA_WINDOW_TITLES, amigaWindowTitlebarMarkup, wireAmigaWindowClose } from './amigaWindow.js';
 
 export const VIZ_PANEL_COLLAPSE_KEY = `${VIZ_STORAGE_PREFIX}panelCollapsed`;
 
@@ -139,8 +140,9 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
   return `
 <div id="visualization-controls-container" class="section-card viz-panel${collapsedClass}" data-viz-layout="${layout}">
   <button type="button" class="viz-panel-tab dock-tab" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="viz-panel-body" title="${label}" aria-label="${label}">${glyph}</button>
-  <div id="viz-panel-body" class="viz-panel-body">
-    <h3 class="sliders-title">Visualization</h3>
+  <div id="viz-panel-body" class="viz-panel-body amiga-window">
+    ${amigaWindowTitlebarMarkup(AMIGA_WINDOW_TITLES.visualization)}
+    <div class="amiga-window-client">
 
     <label class="viz-toggle-row viz-thread-lines-row">
       <input type="checkbox" id="viz-thread-lines-enabled" ${s.threadLinesVisible ? 'checked' : ''}>
@@ -350,6 +352,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
     </div>
 
     <button type="button" id="viz-reset-btn" class="viz-reset-btn">Reset</button>
+    </div>
   </div>
 </div>
 `;
@@ -1217,16 +1220,17 @@ export function wireVisualizationControls(container, config, onChangeCallback = 
     });
   }
 
-  const tab = container.querySelector('.viz-panel-tab');
-  if (tab) {
-    tab.addEventListener('click', () => {
-      const next = !container.classList.contains('is-collapsed');
-      setVisualizationPanelCollapsed(container, next);
-      writeCollapsedPreference(storage, VIZ_PANEL_COLLAPSE_KEY, next, {
-        isMobile: isMobileFn(),
-      });
+  const toggleSheet = () => {
+    const next = !container.classList.contains('is-collapsed');
+    setVisualizationPanelCollapsed(container, next);
+    writeCollapsedPreference(storage, VIZ_PANEL_COLLAPSE_KEY, next, {
+      isMobile: isMobileFn(),
     });
-  }
+  };
+
+  const tab = container.querySelector('.viz-panel-tab');
+  if (tab) tab.addEventListener('click', toggleSheet);
+  wireAmigaWindowClose(container, toggleSheet);
 }
 
 /**

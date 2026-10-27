@@ -1,3 +1,9 @@
+import {
+  AMIGA_WINDOW_TITLES,
+  amigaWindowTitlebarMarkup,
+  collapseNearestDock,
+  wireAmigaWindowClose,
+} from './amigaWindow.js';
 import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 /**
@@ -7,19 +13,20 @@ export class Sidebar {
   /**
    * @param {HTMLElement} containerElement
    * @param {(wordA: string, wordB: string, wordC: string, topK: number) => Promise<void>} onCalculateCallback
+   * @param {{ onCollapse?: () => void }} [options]
    */
-  constructor(containerElement, onCalculateCallback) {
+  constructor(containerElement, onCalculateCallback, options = {}) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
+    this.onCollapse = typeof options.onCollapse === 'function' ? options.onCollapse : null;
 
     this.element = document.createElement('div');
     this.element.id = 'sidebar-panel';
-    this.element.className = 'glass-sidebar';
+    this.element.className = 'glass-sidebar amiga-window';
     this.element.innerHTML = `
-      <div class="sidebar-header">
-        <h2>⚡ VECTOR ARITHMETIC</h2>
-        <span class="sidebar-subtitle">Semantic Embedding Space ($A - B + C$)</span>
-      </div>
+      ${amigaWindowTitlebarMarkup(AMIGA_WINDOW_TITLES.arithmetic)}
+      <div class="amiga-window-client">
+      <span class="sidebar-subtitle">Semantic Embedding Space ($A - B + C$)</span>
 
       <form id="arithmetic-form" class="sidebar-form">
         <div class="input-group positive">
@@ -48,9 +55,15 @@ export class Sidebar {
           <li class="empty-state">Run calculation to explore 3D semantic neighbors...</li>
         </ul>
       </div>
+      </div>
     `;
 
     this.container.appendChild(this.element);
+
+    wireAmigaWindowClose(this.element, () => {
+      if (typeof this.onCollapse === 'function') this.onCollapse();
+      else collapseNearestDock(this.element);
+    });
 
     this.form = this.element.querySelector('#arithmetic-form');
     this.btnCalculate = this.element.querySelector('#btn-calculate');

@@ -4,6 +4,12 @@ import {
   resolveSpatialDefaults,
   SPATIAL_SLIDER_BINDINGS,
 } from './spatialSliderDefaults.js';
+import {
+  AMIGA_WINDOW_TITLES,
+  amigaWindowTitlebarMarkup,
+  collapseNearestDock,
+  wireAmigaWindowClose,
+} from './amigaWindow.js';
 import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 
 /**
@@ -20,8 +26,8 @@ export function threadSlidersMarkup(config = {}) {
   const thickness = config.threadThickness ?? GLOBAL_SPATIAL_DEFAULTS.threadThickness;
 
   return `
-<div id="thread-sliders-container" class="section-card">
-  <h3 class="sliders-title">📐 3D Spatial Controls</h3>
+<div id="thread-sliders-container" class="section-card amiga-window">
+  ${amigaWindowTitlebarMarkup(AMIGA_WINDOW_TITLES.spatial)}
 
   <!-- Slider 1: Spacing X -->
   <div class="slider-group">
@@ -98,7 +104,7 @@ export function syncThreadSlidersFromConfig(container, config) {
  * @param {Array<Object>|null} threads - Synthetic threads array (optional)
  * @param {Object} config - Config object mutated on input
  * @param {Function} [onChangeCallback] - Optional callback triggered on slider input
- * @param {{ getContext?: () => { workspaceMode?: string, viewMode?: string, renderMode?: string } }} [options]
+ * @param {{ getContext?: () => { workspaceMode?: string, viewMode?: string, renderMode?: string }, onCollapse?: () => void }} [options]
  */
 export function wireThreadSliders(container, threads, config, onChangeCallback = null, options = {}) {
   if (!container) return;
@@ -145,4 +151,9 @@ export function wireThreadSliders(container, threads, config, onChangeCallback =
       triggerChange();
     });
   }
+
+  wireAmigaWindowClose(container, () => {
+    if (typeof options.onCollapse === 'function') options.onCollapse();
+    else collapseNearestDock(container);
+  });
 }

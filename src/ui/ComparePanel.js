@@ -6,6 +6,12 @@ import {
 } from './compareCosine.js';
 import { parseCompareInput } from './parseCompareGroups.js';
 import { saeControlsMarkup, wireSaeControls } from './SaeControls.js';
+import {
+  AMIGA_WINDOW_TITLES,
+  amigaWindowTitlebarMarkup,
+  collapseNearestDock,
+  wireAmigaWindowClose,
+} from './amigaWindow.js';
 import { FIELD_INFO, infoTipMarkup } from './fieldInfo.js';
 import { formatItCoreGroupLine } from './itCoreCorpus.js';
 
@@ -132,12 +138,14 @@ export class ComparePanel {
    *   setSaeSettings?: (s: object) => void,
    *   onDimSortChange?: (enabled: boolean) => void,
    * }} [saeHooks]
+   * @param {{ onCollapse?: () => void }} [windowOptions]
    */
-  constructor(containerElement, onCalculateCallback, onReorderCallback = null, saeHooks = {}) {
+  constructor(containerElement, onCalculateCallback, onReorderCallback = null, saeHooks = {}, windowOptions = {}) {
     this.container = containerElement || document.body;
     this.onCalculate = onCalculateCallback;
     this.onReorder = onReorderCallback;
     this.saeHooks = saeHooks;
+    this.onCollapse = typeof windowOptions.onCollapse === 'function' ? windowOptions.onCollapse : null;
 
     /** @type {Array|null} */
     this.items = null;
@@ -153,12 +161,11 @@ export class ComparePanel {
 
     this.element = document.createElement('div');
     this.element.id = 'compare-panel';
-    this.element.className = 'glass-sidebar hidden';
+    this.element.className = 'glass-sidebar hidden amiga-window';
     this.element.innerHTML = `
-      <div class="sidebar-header">
-        <h2>🔍 TOKEN COMPARISON</h2>
-        <span class="sidebar-subtitle">Multi-sequence Vector Space (1–1024 Tokens)</span>
-      </div>
+      ${amigaWindowTitlebarMarkup(AMIGA_WINDOW_TITLES.compare)}
+      <div class="amiga-window-client">
+      <span class="sidebar-subtitle">Multi-sequence Vector Space (1–1024 Tokens)</span>
 
       <form id="compare-form" class="sidebar-form">
         <div class="input-group">
@@ -206,9 +213,15 @@ export class ComparePanel {
           <li class="empty-state">Visualize a sequence to see similarity vs the anchor...</li>
         </ul>
       </div>
+      </div>
     `;
 
     this.container.appendChild(this.element);
+
+    wireAmigaWindowClose(this.element, () => {
+      if (typeof this.onCollapse === 'function') this.onCollapse();
+      else collapseNearestDock(this.element);
+    });
 
     this.form = this.element.querySelector('#compare-form');
     this.textarea = this.element.querySelector('#compare-tokens');

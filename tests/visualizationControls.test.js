@@ -248,8 +248,8 @@ describe('Visualization panel collapse tab', () => {
     expect(html).toContain('viz-thread-lines-enabled');
     expect(html).toContain('Thread lines');
     expect(html).toContain('data-field-info="Joins dims on a thread."');
-    // Thread lines toggle sits at the top of the panel body
-    const titleIdx = html.indexOf('sliders-title');
+    // Thread lines toggle sits after the window title, still above the sign filter.
+    const titleIdx = html.indexOf('amiga-window-title');
     const threadLinesIdx = html.indexOf('viz-thread-lines-enabled');
     const filterIdx = html.indexOf('viz-filter-group');
     expect(threadLinesIdx).toBeGreaterThan(titleIdx);
