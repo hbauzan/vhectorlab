@@ -17,7 +17,7 @@ import {
   isGalaxyView,
 } from './galaxyChrome.js';
 
-export const APP_VERSION = 'v4.1.0';
+export const APP_VERSION = 'v4.1.1';
 
 export class Navbar {
   constructor(

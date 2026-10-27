@@ -2,6 +2,15 @@
 
 All notable changes to VHectorLab 3D will be documented in this file.
 
+## [4.1.1] - 2026-10-26
+
+### Changed
+- Arithmetic, Token Comparison, Spatial Controls, and Visualization use one Workbench window: raised white/black bevel, 24px cobalt titlebar, two 16px gadgets. The left gadget toggles the same collapse as the dock tab or the Visualization sheet. The right gadget does not change state. Window titles have no emoji.
+- Native checkboxes are 16×16 sunk boxes with a peach (`#FFA997`) check. Range thumbs on Spatial Controls and Visualization are rectangular MagicWB-blue gadgets on a sunk track. The hidden A/mA knob ranges stay invisible. Calculate, presets, Visualize, Train SAE, export, and Reset use the gadget press: 1px translation and an inverted bevel.
+- Field-info “i” is a 16px square gadget. Its tip is a solid raised box (`#1A1A1A`, no blur).
+- Alerts and confirms are an Intuition EasyRequest: outer raised frame, inner bevel, cobalt titlebar, OK/Cancel gadgets. Closing the dialog cancels.
+- Dock tabs read `◀ ARITHMETIC` or `◀ COMPARE`, `SPATIAL ▶`, `▼ ENGINE`, and `▼ VIZ`. The glyph flips when that host is collapsed. Scrollbars use a sunk track (`#1A1A1A`) and a beveled thumb (`#3D3D3D`).
+
 ## [4.1.0] - 2026-10-26
 
 ### Added

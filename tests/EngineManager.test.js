@@ -222,6 +222,8 @@ describe('EngineManager', () => {
     expect(parent.querySelector('.engine-model-tag').id).toBe('engine-model-tag');
     expect(parent.querySelector('.engine-panel-tab').getAttribute('aria-expanded')).toBe('true');
     expect(parent.querySelector('.tab-label').textContent).toBe('ENGINE');
+    expect(`${parent.querySelector('.tab-arrow').textContent} ${parent.querySelector('.tab-label').textContent}`)
+      .toBe('▼ ENGINE');
     const shield = parent.querySelector('#cb-engine-shield');
     const dual = parent.querySelector('#cb-engine-dual');
     expect(shield.classList.contains('checked')).toBe(true);

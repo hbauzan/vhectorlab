@@ -33,7 +33,13 @@ The token currently at position #1 in a Compare Sequence. Cosine similarity for 
 Dot product between an item’s L2-normalized embedding and the Anchor Token embedding; the anchor row is always `1.0000` (REF).
 
 ### Collapsible Dock
-Edge-hosted UI host that slides off-screen via CSS `transform` while keeping children mounted; left dock hosts Arithmetic or Compare, right dock hosts spatial sliders and AxisGizmo. The bottom telemetry HUD is not a dock.
+Edge-hosted UI host that slides off-screen via CSS `transform` while keeping children mounted; left dock hosts Arithmetic or Compare, right dock hosts spatial sliders and AxisGizmo. The bottom telemetry HUD is not a dock. The window’s left gadget toggles the same collapsed flag as the edge tab.
+
+### Dock Tab
+The edge label that stays on screen when a **Collapsible Dock** or HUD sheet collapses. Open faces: `◀ ARITHMETIC` or `◀ COMPARE` on the left, `SPATIAL ▶` on the right, `▼ ENGINE` on the engine sheet, `▼ VIZ` on Visualization. The glyph flips when the host is collapsed; the word does not.
+
+### EasyRequest
+System dialog with a double beveled frame, a cobalt titlebar, and OK/Cancel gadgets. The close gadget dismisses as cancel. The depth gadget does not change state.
 
 _Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounting panel DOM to “hide” it.
 
@@ -41,13 +47,13 @@ _Avoid_: treating Sidebar/ComparePanel as independent minimize targets; unmounti
 _Retired._ Former soft portrait overlay that suggested landscape; product prefers phone portrait. Do not reintroduce without an explicit ask.
 
 ### Field Info Tip
-Compact tap “i” control next to an editable field; shows a short English popover (mobile-safe, not hover-only `title`). Catalog lives in `fieldInfo.js`.
+Compact tap “i” gadget next to an editable field; shows one short English popover at a time (mobile-safe, not hover-only `title`). The control is a 16px square bevel. The popover is a solid raised box.
 
 ### Wide Ribbon
 Quad-strip mesh with real lateral width following a thread centerline, colored by activation; used by `RENDER: RIBBONS`. Distinct from 1px WebGL lines.
 
 ### Visualization Controls
-Bottom-HUD glass panel for global sign filter, divergent color anchors, Zero Coverage, Shared noise (Compare ≥2 tokens), and Group contrast (Compare ≥2 groups).
+Bottom-HUD Workbench window for global sign filter, divergent color anchors, Zero Coverage, Shared noise (Compare ≥2 tokens), and Group contrast (Compare ≥2 groups).
 
 ### Sign Filter
 Global show mode `all | positive | negative` over **normalized** activations (post z-score/tanh); near-zero `|t| < 0.01` is treated as neutral and hidden by +/− only.
@@ -69,8 +75,13 @@ _Avoid_: treating Shared Noise as a same-sign whole-dim veto or as G1↔G2 group
 ### Group Contrast
 Visualization paint for Compare with ≥2 groups: **Sign conflict** highlights opposite-sign dims (G1↔G2 means, custom color × |Δ|) and can blacken them by difference; **Group hue** optional. Geometry Y unchanged.
 
+### Workbench Window
+Raised MagicWB chassis on Arithmetic, Token Comparison, Spatial Controls, and Visualization: white top/left border, black right/bottom border, 2px black offset shadow, 24px cobalt titlebar, two 16px square gadgets. The left gadget toggles the host dock or sheet. The right gadget is the depth mark and does not change state.
+
+_Avoid_: emoji in those window titles; a flat black frame; an inset-only shadow sold as a raised window.
+
 ### Workbench Theme
-Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and bevelled panels on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**. Value fields use dark fills (not white).
+Default product chrome at `/`: Magic Workbench–inspired palette, Topaz typography, and Workbench windows on the fullscreen + floating-dock layout. Tunable via `VITE_AMIGA_*` in `.env`. Product name remains **VHectorLab 3D**. Value fields use dark fills (not white).
 
 ### Galaxy feel
 Galaxy VIEW uses a larger UMAP world scale and a slower flight profile (WASD/QE + mouse look) than ANALYSIS/NAVIGATION; leaving Galaxy restores default speeds. Galaxy POINTS render as soft circular stars.

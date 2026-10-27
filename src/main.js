@@ -184,6 +184,7 @@ class VHectorLabApp {
       id: 'left-dock',
       storageKey: 'vl3d.dock.left.collapsed',
       defaultCollapsed: false,
+      caption: state.workspaceMode === 'COMPARE' ? 'COMPARE' : 'ARITHMETIC',
     });
 
     this.saeSettings = loadSaeSettings();
@@ -252,6 +253,7 @@ class VHectorLabApp {
       id: 'right-dock',
       storageKey: 'vl3d.dock.right.collapsed',
       defaultCollapsed: false,
+      caption: 'SPATIAL',
     });
 
     this.axisGizmo = new AxisGizmo(this.sceneSetup.camera, this.rightDock.body);
@@ -526,6 +528,7 @@ class VHectorLabApp {
 
   handleWorkspaceModeChange(mode) {
     state.setWorkspaceMode(mode);
+    this.leftDock?.setCaption(mode === 'COMPARE' ? 'COMPARE' : 'ARITHMETIC');
     this.applyContextViewDefaults();
     if (mode === 'COMPARE') {
       this.sidebar.element.classList.add('hidden');

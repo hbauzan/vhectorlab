@@ -94,6 +94,16 @@ export function vizPanelTabGlyph(collapsed, layout = 'edge') {
 }
 
 /**
+ * Visible Visualization tab. Glyph flips; the word stays VIZ.
+ * @param {boolean} collapsed
+ * @param {VizPanelLayout} [layout='edge']
+ * @returns {string}
+ */
+export function vizPanelTabFace(collapsed, layout = 'edge') {
+  return `${vizPanelTabGlyph(collapsed, layout)} VIZ`;
+}
+
+/**
  * @param {boolean} collapsed
  * @param {VizPanelLayout} [layout='edge']
  * @returns {string}
@@ -134,7 +144,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
   const layout = opts.layout === 'sheet' ? 'sheet' : 'edge';
   const checked = (mode) => (s.vizFilterMode === mode ? 'checked' : '');
   const collapsedClass = collapsed ? ' is-collapsed' : '';
-  const glyph = vizPanelTabGlyph(collapsed, layout);
+  const glyph = vizPanelTabFace(collapsed, layout);
   const label = vizPanelTabLabel(collapsed, layout);
 
   return `
@@ -763,7 +773,7 @@ export function setVisualizationPanelCollapsed(container, collapsed) {
     tab.setAttribute('aria-expanded', next ? 'false' : 'true');
     tab.setAttribute('aria-label', label);
     tab.setAttribute('title', label);
-    tab.textContent = vizPanelTabGlyph(next, layout);
+    tab.textContent = vizPanelTabFace(next, layout);
   }
 }
 

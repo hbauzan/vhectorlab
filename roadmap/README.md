@@ -5,7 +5,7 @@ Documentos de planificación **activos** viven en esta carpeta. Históricos en *
 | Doc | Tema | Estado |
 |---|---|---|
 | *(Ninguno activo)* | Todos los epics actuales han sido completados y archivados. | — |
-| [`archivo/`](./archivo/) | Epics ejecutados o archivados (`structural-noise-engine-manager` [v4.1.0], `hardware-aware-model-selector-benchmark`, `spectral-quorum-determinism`, etc.) | Archivado |
+| [`archivo/`](./archivo/) | Epics ejecutados o archivados (`v4.1.1-workbench-window-unification` [v4.1.1], `structural-noise-engine-manager` [v4.1.0], `hardware-aware-model-selector-benchmark`, `spectral-quorum-determinism`, etc.) | Archivado |
 
 ---
 

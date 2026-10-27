@@ -188,6 +188,47 @@ body.workbench-theme .dock-tab {
   color: var(--mwb-white) !important;
   border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
+  font-family: var(--amiga-font) !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  letter-spacing: 0.3px;
+}
+
+/* Side tabs carry a word. Width is the collapse offset, so the whole label stays on screen. */
+body.workbench-theme .collapsible-dock {
+  --dock-tab-size: 168px;
+}
+
+body.workbench-theme .dock-left .dock-tab,
+body.workbench-theme .dock-right .dock-tab {
+  box-sizing: border-box;
+  width: var(--dock-tab-size) !important;
+  flex: 0 0 var(--dock-tab-size) !important;
+  min-height: 28px;
+  height: auto;
+  margin-top: 8px;
+  padding: 4px 6px !important;
+  white-space: nowrap;
+  text-align: center;
+}
+
+body.workbench-theme #visualization-controls-container.viz-panel {
+  --viz-tab-size: 76px;
+}
+
+body.workbench-theme #visualization-controls-container .viz-panel-tab {
+  box-sizing: border-box;
+  width: var(--viz-tab-size) !important;
+  flex: 0 0 var(--viz-tab-size) !important;
+  min-height: 28px !important;
+  height: auto !important;
+  padding: 4px 4px !important;
+  font-family: var(--amiga-font) !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: 0 !important;
 }
 
 /* Value fields — dark fills (white burned eyes on Workbench chrome) */
@@ -320,6 +361,33 @@ body.workbench-theme .modal-content {
     border: none !important;
     background: transparent !important;
     padding: 0 !important;
+  }
+
+  body.workbench-theme .collapsible-dock {
+    --dock-tab-size: 36px;
+  }
+
+  body.workbench-theme .dock-left .dock-tab,
+  body.workbench-theme .dock-right .dock-tab {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    width: 36px !important;
+    flex-basis: 36px !important;
+    min-height: 148px;
+    padding: 8px 0 !important;
+  }
+
+  body.workbench-theme #visualization-controls-container.viz-panel {
+    --viz-tab-size: 28px;
+  }
+
+  body.workbench-theme #visualization-controls-container .viz-panel-tab {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    width: 28px !important;
+    flex-basis: 28px !important;
+    min-height: 72px !important;
+    height: auto !important;
   }
 }
 
@@ -878,4 +946,42 @@ body.workbench-theme .custom-modal #modal-message {
   font-family: var(--amiga-font) !important;
   font-size: 16px !important;
   line-height: 20px !important;
+}
+
+/* Retro scrollbars: sunk track, beveled thumb. Navbar hiding rules stay in style.css. */
+body.workbench-theme {
+  scrollbar-color: #3D3D3D #1A1A1A;
+}
+
+body.workbench-theme .results-list,
+body.workbench-theme .compare-cosine-list,
+body.workbench-theme .viz-panel-body,
+body.workbench-theme .amiga-window-client {
+  scrollbar-color: #3D3D3D #1A1A1A;
+}
+
+body.workbench-theme ::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+body.workbench-theme ::-webkit-scrollbar-track {
+  background: #1A1A1A;
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+}
+
+body.workbench-theme ::-webkit-scrollbar-thumb {
+  background: #3D3D3D;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+}
+
+body.workbench-theme ::-webkit-scrollbar-corner {
+  background: #1A1A1A;
 }

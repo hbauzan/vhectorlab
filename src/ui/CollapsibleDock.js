@@ -75,6 +75,23 @@ export function tabLabelFor(side, collapsed) {
   return collapsed ? `Expand ${which} panel` : `Collapse ${which} panel`;
 }
 
+/**
+ * Visible dock-tab face. Empty caption keeps the glyph-only legacy.
+ * Left: glyph then word (`◀ ARITHMETIC`). Right: word then glyph (`SPATIAL ▶`).
+ * The glyph flips with collapsed; the word does not.
+ * @param {'left' | 'right'} side
+ * @param {boolean} collapsed
+ * @param {string} [caption]
+ * @returns {string}
+ */
+export function dockTabFace(side, collapsed, caption = '') {
+  const glyph = tabGlyphFor(side, collapsed);
+  const word = String(caption || '').trim();
+  if (!word) return glyph;
+  if (side === 'right') return `${word} ${glyph}`;
+  return `${glyph} ${word}`;
+}
+
 export class CollapsibleDock {
   /**
    * @param {object} options
@@ -104,6 +121,7 @@ export class CollapsibleDock {
     this._storage = options.storage !== undefined
       ? options.storage
       : (typeof localStorage !== 'undefined' ? localStorage : null);
+    this.caption = String(options.caption || '');
     this._doc = options.doc || (typeof document !== 'undefined' ? document : null);
     if (!this._doc) {
       throw new Error('CollapsibleDock requires a Document');
@@ -161,13 +179,22 @@ export class CollapsibleDock {
     this.root.classList.toggle('is-collapsed', next);
     this.tab.setAttribute('aria-expanded', next ? 'false' : 'true');
     this.tab.setAttribute('aria-label', tabLabelFor(this.side, next));
-    this.tab.textContent = tabGlyphFor(this.side, next);
+    this.tab.textContent = dockTabFace(this.side, next, this.caption);
 
     if (persist) {
       writeCollapsedPreference(this._storage, this.storageKey, next, {
         isMobile: this._isMobileFn(),
       });
     }
+  }
+
+  /**
+   * Word shown beside the glyph. Left dock uses ARITHMETIC or COMPARE.
+   * @param {string} caption
+   */
+  setCaption(caption) {
+    this.caption = String(caption || '');
+    this.tab.textContent = dockTabFace(this.side, this._collapsed === true, this.caption);
   }
 
   /** @returns {boolean} new collapsed state */

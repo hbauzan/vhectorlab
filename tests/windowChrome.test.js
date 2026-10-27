@@ -479,10 +479,10 @@ describe('four panels mount the canonical window', () => {
     body.querySelector('[data-gadget="close"]').click();
     expect(sheet.classList.contains('is-collapsed')).toBe(true);
     expect(sheet.querySelector('.viz-panel-tab').getAttribute('aria-expanded')).toBe('false');
-    expect(sheet.querySelector('.viz-panel-tab').textContent).toBe('▲');
+    expect(sheet.querySelector('.viz-panel-tab').textContent).toBe('▲ VIZ');
 
     body.querySelector('[data-gadget="close"]').click();
     expect(sheet.classList.contains('is-collapsed')).toBe(false);
-    expect(sheet.querySelector('.viz-panel-tab').textContent).toBe('▼');
+    expect(sheet.querySelector('.viz-panel-tab').textContent).toBe('▼ VIZ');
   });
 });

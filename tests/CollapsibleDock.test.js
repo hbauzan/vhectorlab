@@ -3,6 +3,7 @@ import {
   CollapsibleDock,
   readCollapsedPreference,
   writeCollapsedPreference,
+  dockTabFace,
   tabGlyphFor,
   tabLabelFor,
   isMobileViewport,
@@ -165,6 +166,15 @@ describe('tab glyphs / labels', () => {
     expect(tabLabelFor('left', true)).toMatch(/Expand/i);
     expect(tabLabelFor('left', false)).toMatch(/Collapse/i);
   });
+
+  it('named faces keep the word and flip only the glyph', () => {
+    expect(dockTabFace('left', false, 'ARITHMETIC')).toBe('◀ ARITHMETIC');
+    expect(dockTabFace('left', false, 'COMPARE')).toBe('◀ COMPARE');
+    expect(dockTabFace('left', true, 'COMPARE')).toBe('▶ COMPARE');
+    expect(dockTabFace('right', false, 'SPATIAL')).toBe('SPATIAL ▶');
+    expect(dockTabFace('right', true, 'SPATIAL')).toBe('SPATIAL ◀');
+    expect(dockTabFace('left', false, '')).toBe('◀');
+  });
 });
 
 describe('isMobileViewport', () => {
@@ -228,6 +238,26 @@ describe('CollapsibleDock', () => {
     expect(dock.tab.textContent).toBe('◀');
     dock.tab.click();
     expect(dock.isCollapsed).toBe(false);
+    expect(dock.tab.textContent).toBe('▶');
+  });
+
+  it('caption follows the active left mode and the right dock word', () => {
+    const left = makeDock({ caption: 'ARITHMETIC' });
+    expect(left.tab.textContent).toBe('◀ ARITHMETIC');
+    left.setCaption('COMPARE');
+    expect(left.tab.textContent).toBe('◀ COMPARE');
+    left.setCollapsed(true);
+    expect(left.tab.textContent).toBe('▶ COMPARE');
+
+    const right = makeDock({
+      side: 'right',
+      id: 'right-dock',
+      storageKey: 'vl3d.dock.right.collapsed',
+      caption: 'SPATIAL',
+    });
+    expect(right.tab.textContent).toBe('SPATIAL ▶');
+    right.toggle();
+    expect(right.tab.textContent).toBe('SPATIAL ◀');
   });
 
   it('persists desktop collapsed to localStorage', () => {

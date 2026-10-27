@@ -30,6 +30,7 @@ import {
   visualizationControlsMarkup,
   setVisualizationPanelCollapsed,
   setVisualizationPanelLayout,
+  vizPanelTabFace,
   vizPanelTabGlyph,
   vizPanelLayoutForViewport,
   resolveVisualizationMountParent,
@@ -191,6 +192,8 @@ describe('Visualization panel collapse tab', () => {
   it('edge layout uses vertical glyphs (▼ raised, ▲ resting on HUD)', () => {
     expect(vizPanelTabGlyph(false, 'edge')).toBe('▼');
     expect(vizPanelTabGlyph(true, 'edge')).toBe('▲');
+    expect(vizPanelTabFace(false, 'edge')).toBe('▼ VIZ');
+    expect(vizPanelTabFace(true, 'edge')).toBe('▲ VIZ');
     const expanded = visualizationControlsMarkup(DEFAULT_VISUALIZATION_SETTINGS, {
       collapsed: false,
       layout: 'edge',
@@ -472,11 +475,11 @@ describe('Visualization panel collapse tab', () => {
     };
     setVisualizationPanelCollapsed(el, true);
     expect(classList.has('is-collapsed')).toBe(true);
-    expect(tab.textContent).toBe('▲');
+    expect(tab.textContent).toBe('▲ VIZ');
     expect(tab.attrs['aria-expanded']).toBe('false');
     setVisualizationPanelCollapsed(el, false);
     expect(classList.has('is-collapsed')).toBe(false);
-    expect(tab.textContent).toBe('▼');
+    expect(tab.textContent).toBe('▼ VIZ');
   });
 
   it('setVisualizationPanelLayout keeps vertical glyphs on sheet', () => {
@@ -499,7 +502,7 @@ describe('Visualization panel collapse tab', () => {
     };
     setVisualizationPanelLayout(el, 'sheet');
     expect(el.dataset.vizLayout).toBe('sheet');
-    expect(tab.textContent).toBe('▲');
+    expect(tab.textContent).toBe('▲ VIZ');
   });
 });
 
