@@ -10,17 +10,22 @@ export class CustomModal {
     this._resolveConfirm = null;
 
     this.overlay.innerHTML = `
-      <div class="modal-card glass-modal">
-        <div class="modal-header">
-          <h3 id="modal-title">NOTICE</h3>
-          <button id="modal-close" class="modal-close-btn" type="button">&times;</button>
+      <div class="custom-modal amiga-window" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="amiga-window-titlebar">
+          <button type="button" id="modal-close" class="amiga-window-gadget" data-gadget="close" aria-label="Close">
+            <span class="gadget-inner-square" aria-hidden="true"></span>
+          </button>
+          <span class="amiga-window-title" id="modal-title">NOTICE</span>
+          <button type="button" id="modal-depth" class="amiga-window-gadget" data-gadget="depth" aria-label="Window depth">
+            <span class="gadget-inner-square" aria-hidden="true"></span>
+          </button>
         </div>
-        <div class="modal-body">
+        <div class="custom-modal-frame">
           <p id="modal-message"></p>
-        </div>
-        <div class="modal-footer">
-          <button id="modal-cancel-btn" class="btn-secondary hidden" type="button" hidden>Cancel</button>
-          <button id="modal-ok-btn" class="btn-secondary" type="button">OK</button>
+          <div class="modal-footer">
+            <button id="modal-cancel-btn" class="amiga-gadget-btn hidden" type="button" hidden>Cancel</button>
+            <button id="modal-ok-btn" class="amiga-gadget-btn" type="button">OK</button>
+          </div>
         </div>
       </div>
     `;

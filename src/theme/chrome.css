@@ -296,10 +296,8 @@ body.workbench-theme .thread-label-card {
   font-family: var(--amiga-font) !important;
 }
 
-body.workbench-theme .custom-modal-overlay .custom-modal,
 body.workbench-theme .modal-content {
   background: var(--amiga-bg) !important;
-  border: 2px solid var(--mwb-black) !important;
   border-radius: 0 !important;
   color: var(--amiga-fg) !important;
   font-family: var(--amiga-font) !important;
@@ -777,4 +775,107 @@ body.workbench-theme input[type="range"]:not(.viz-am-knob-range)::-moz-range-thu
   border-bottom: 2px solid #000000;
   border-radius: 0;
   cursor: pointer;
+}
+
+/* Field-info: square micro-gadget and a solid raised tip. No blur, no circle. */
+body.workbench-theme .field-info-btn {
+  box-sizing: border-box;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  padding: 0 !important;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 !important;
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  background: #3B67A2 !important;
+  color: #FFFFFF !important;
+  font-family: var(--amiga-font) !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  line-height: 12px !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+body.workbench-theme .field-info-btn:hover,
+body.workbench-theme .field-info-btn[aria-expanded="true"] {
+  color: #FFFFFF !important;
+  background: #3B67A2 !important;
+  border-radius: 0 !important;
+}
+
+body.workbench-theme .field-info-btn:active {
+  transform: translate(1px, 1px);
+  border-top: 2px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+}
+
+body.workbench-theme .field-info-tip {
+  background: #1A1A1A !important;
+  color: #F0F0F0 !important;
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font-family: var(--amiga-font) !important;
+}
+
+/* Intuition EasyRequest: raised window, second bevel, cobalt bar, gadget buttons. */
+body.workbench-theme .custom-modal {
+  width: min(440px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 0 !important;
+  gap: 0;
+  background: var(--amiga-bg) !important;
+  color: #F0F0F0 !important;
+  font-family: var(--amiga-font) !important;
+  border-radius: 0 !important;
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.workbench-theme .custom-modal-frame {
+  margin: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--amiga-bg);
+  color: #F0F0F0;
+  border-radius: 0;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+
+body.workbench-theme .custom-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+body.workbench-theme .custom-modal #modal-message {
+  margin: 0;
+  color: #F0F0F0;
+  font-family: var(--amiga-font) !important;
+  font-size: 16px !important;
+  line-height: 20px !important;
 }

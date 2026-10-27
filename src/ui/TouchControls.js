@@ -17,6 +17,7 @@ const UI_BLOCK_SELECTOR = [
   '#landscape-gate',
   '#touch-controls',
   '.glass-modal',
+  '.custom-modal',
   '.modal-overlay',
   '.field-info-tip',
   '.field-info-btn',
