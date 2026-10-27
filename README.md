@@ -4,240 +4,208 @@
 
 ![VHectorLab 3D GUI tour — Arithmetic, Compare, Navigation, Ribbons, and Galaxy](./demo/vhectorlab-gui-tour.gif)
 
-3D visualization (WebGL/Three.js) and semantic embedding vector arithmetic (`A − B + C`), plus compare sequences and related lab experiments.
+Visualización 3D interactiva en tiempo real (WebGL / Three.js), álgebra vectorial semántica (`A − B + C`), secuencias comparativas multilingües, filtrado de ruido estructural y análisis espectral de alta precisión.
 
 | | |
 | :--- | :--- |
-| **License** | [Apache-2.0](./LICENSE) © 2026 Hector Bauzan |
-| **Public demo** | [Hugging Face Space](https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer) |
-| **Local (macOS)** | `./setup.sh` → option `1` → http://127.0.0.1:5173 |
+| **Versión** | **v4.1.1** (Magic Workbench & Structural Noise Shield) |
+| **Licencia** | [Apache-2.0](./LICENSE) © 2026 Hector Bauzan |
+| **Public Demo** | [Hugging Face Space](https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer) *(cpu-basic / Arctic-m-v2)* |
+| **Local (macOS)** | `./setup.sh` → opción `1` → http://127.0.0.1:5173 |
+| **Plataforma** | Creado y validado para macOS Apple Silicon (Darwin / MPS) |
 
 ---
 
-## 🔬 Quórum Espectral: Excitación de Dimensiones por Temática (v3.4.0) — *El alma de las palabras*
+## 🔬 1. Quórum Espectral: Excitación de Dimensiones por Temática — *El alma de las palabras*
 
-> *"¡LA PUTA MADRE AHORA SÍ CARAJO SE VE LO QUE TENÍAMOS EN LA CABEZA HACE MESES! Las diferencias entre mazos de palabras están en los decimales finos."*
+> *"¡LA PUTA MADRE AHORA SÍ CARAJO SE VE LO QUE TENÍA EN LA CABEZA HACE MESES! Las diferencias entre mazos de palabras están en los decimales finos."*
 
-Durante meses nos preguntamos por qué conceptos de universos dispares —como fierros de autos (`VEHICLES`), nombres de personas (`WOMEN`) o arquitectura de software (`IT_CORE`)— parecían una masa indistinguible en las proyecciones visuales clásicas de embeddings.
+Durante meses nos preguntamos por qué conceptos de universos dispares —como fierros de autos (`VEHICLES`), nombres de personas (`WOMEN`) o arquitectura de software (`IT_CORE`)— parecían una masa indistinguible en las proyecciones visuales clásicas de embeddings. Una IA anterior me tuvo desviado casi seis meses persiguiendo un recorte artificial tipo hongo que mataba la señal real.
 
-La causa reside en el fuerte modo común y la estructura sintáctica compartida que domina los espacios densos como `BAAI/bge-m3` (1024 dimensiones). La verdadera firma semántica que distingue a cada mazo de palabras se encuentra en las dimensiones de alta separabilidad estadística ($S_d$), operadas en `Float64` con cero redondeos siguiendo el estándar de **DDI-FW**.
+La causa no era la matemática de fondo, sino el fuerte **modo común** y la estructura sintáctica compartida que domina los espacios densos como `BAAI/bge-m3` (1024 dimensiones). La verdadera firma semántica que distingue a cada mazo de palabras se encuentra en las dimensiones de alta separabilidad estadística ($S_d$), operadas en `Float64` con cero redondeos siguiendo el estándar **DDI-FW**.
 
-En **Spectral Quorum (Alineación DDI-FW)**:
+### Principios del Quórum Espectral (Alineación DDI-FW):
 - **Separabilidad Pairwise Nearest-Competitor con Signo ($S_d$)**: Evalúa la envoltura bilateral $\max(\min_{h \neq g} S_h^+, \min_{h \neq g} S_h^-)$ según `ddi-fw` (`cruce.py`), detectando firmas tanto por elevación (+1) como por depresión (−1).
 - **Auto-calibración Nula Westfall–Young maxT ($M=1000$)**: El umbral de admisión $p_{95}$ se deriva no paramétricamente por permutaciones en tiempo real ($O(N_{\min} \cdot D)$, ~25 ms en Float64) controlando el error familiar (FWER). Garantiza **estrictamente 0 dimensiones admitidas sobre ruido aleatorio**, sin umbrales mágicos hardcodeados.
 - **Polaridad Bicolor No Colisionante**: Excitación (+1, Cian Eléctrico `#00E5FF`) y depresión (−1, Rosa Neón `#FF3366`), desacopladas de la rampa base sin colisionar con amarillo, violeta ni ámbar.
 - **Fallback No Destructivo**: Quórum vacío ($S_d < p_{95}$ o $N < 3$) conserva la rampa divergente estándar sin apagar la escena a negro.
 - **Auditoría e Inspección en Tiempo Real**: Readout interactivo al clickear (`Dim X — G1: A/B vs G2: C/D; Sd = S vs umbral nulo U`) y exportación auditable CSV/JSON con precisión Float64 exacta (`toPrecision(17)`).
 
-### 1. Vista frontal en ANALYSIS: Picos fijos de excitación temática y silencio base
+#### 1.1. Vista frontal en ANALYSIS: Picos fijos de excitación temática y silencio base
 ![Spectral Quorum Analysis — Picos fijos y silencio base](./demo/spectral-quorum-analysis.gif)
 
 *Fijate acá:* tres grupos en paralelo (`IT_CORE`, `VEHICLES`, `WOMEN`). Con **Baseline silence** al 100%, el ruido común y las dimensiones sin separabilidad se mandan a negro absoluto. Lo que queda encendido son columnas verticales representativas: cada temática destaca en las dimensiones que la diferencian del resto, permitiendo aislar con nitidez las coordenadas clave de cada universo semántico.
 
-### 2. Órbita 3D en NAVIGATION: Relieve y aislamiento espectral
+#### 1.2. Órbita 3D en NAVIGATION: Relieve y aislamiento espectral
 ![Spectral Quorum 3D Orbit](./demo/spectral-quorum-orbit.gif)
 
 *Metete adentro del espacio:* en modo `NAVIGATION` rotás la cámara y ves el relieve tridimensional real de los 1024 tensores de BGE-M3. Las dimensiones activas se elevan como rascacielos mientras el ruido silenciado descansa en el piso.
 
-### 3. Barrido de Decimal Gain: El microscopio vectorial
+#### 1.3. Barrido de Decimal Gain: El microscopio vectorial
 ![Spectral Decimal Gain Sweep](./demo/spectral-decimal-gain-sweep.gif)
 
-*Mirá cómo enfoca:* arrancamos con ganancia baja y barremos el `Decimal Gain` (hasta 50×) y el `Baseline silence`. Funciona como la perilla de enfoque de un microscopio: amplifica el contraste relativo de la señal discriminante sobre el fondo silenciado, revelando la estructura interna de los grupos.
+*Mirá cómo enfoca:* arrancamos con ganancia baja y barremos el `Decimal Gain` (hasta 50×) y el `Baseline silence`. Funciona como la perilla de enfoque de un microscopio: amplifica el contraste relativo de la señal discriminante sobre el fondo silenciado, revelando la estructura interna de los grupos en el orden de $10^{-4}$ a $10^{-6}$.
 
 ---
 
-## Public demo (no install)
+## 🛡️ 2. Universal Structural Noise & Outlier Pruning Shield (v4.0 / v4.1)
 
-Try the hosted **cpu-basic** demo (same profile as `local-full`: Arctic-m-v2 @ 256-D, EN∪ES vocab):
+En modelos de embeddings continuos basados en Transformers (`bge-m3`, `all-mpnet-base-v2`, `MiniLM`), el espacio vectorial **no es isotrópico**. Debido a dinámicas de LayerNorm y residual streams, una fracción diminuta de coordenadas (<1.3% del total) desarrolla un offset DC permanente de saturación extrema o se vuelve completamente inerte.
 
-👉 **https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer**
+### La evidencia empírica en tensores reales:
+En `BAAI/bge-m3` (10.338 palabras × 1024 dimensiones):
+- **13 coordenadas aisladas** concentran el **19.80% de la energía $L_2^2$ total** de todo el vocabulario.
+- Coordenadas canallas como `Dim 386` ($Z_E = 19.74$, **12.2× la energía promedio**) o `Dim 297` ($Z_E = 11.28$) generan un piso artificial de similitud coseno de $\approx 0.50$ entre palabras totalmente dispares.
+- En tokens individuales, la energía secuestrada por el ruido es brutal: en `car` el ruido estructural representa el **24.7%** de su longitud vectorial al cuadrado; en `truck`, el **19.2%**.
 
-That Space is a shared study sandbox (Docker, CPU). Expect cold starts, variable latency, and soft resource limits. There is **no SLA**, no multi-tenant isolation, and no auth — please be gentle (avoid automated flooding of `/embed`, `/compare`, `/arithmetic`).
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ ENGINE MANAGER: BAAI/bge-m3 (1024-D)                                   │
+│ Saturated: [38, 58, 65, 80, 297, 376, 386, 404, 549, 577, 780]        │
+│ Flat / Inert: [329, 616]                                               │
+│ Energy Monopoly: 19.80% L2  │  Cosine Floor Drop: Δ = -0.1152          │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-For serious work or heavier SAE/training experiments, run **locally** on macOS (below).
+### Cómo lo resuelve el laboratorio:
+
+![Universal Structural Noise & Outlier Pruning Shield](./demo/structural-noise-shield.gif)
+
+*Fijate en el Engine Manager y el ribbon fantasma:* Al activar el **Outlier Shield**, las dimensiones canallas se aplanan a cero sin recalcular la malla. Si prendés el **Dual-Path Ribbon**, aparece la cinta fantasma durazno (`#FFA997`) mostrando la deformación original en el aire mientras el hilo real viaja limpio por el piso, y el HUD te canta el porcentaje exacto de energía de ruido que tenía cada palabra.
+
+1. **Detección Dinámica Modelo-Aware**: El motor (`backend/structural_noise.py`) clasifica en caliente outliers saturados ($Z \ge 3.0$) y canales planos ($\sigma \le 0.010$). Cero dimensiones hardcodeadas: los perfiles se auditan y cachean por modelo en RAM y disco.
+2. **Outlier Shield en Vertex Shader GLSL**: Al activar el escudo, las coordenadas de ruido estructural se aplastan contra el baseline en tiempo real directamente en la GPU (`aNoiseMask`, `aBaselineY`, `uShieldEnabled`) a 60 FPS, sin reasignar buffers ni consumir memoria extra.
+3. **Dual-Path Ghost Ribbon**: Una cinta translúcida color durazno (`#FFA997`, opacidad 0.28) recorre la trayectoria cruda deformada por el ruido, mientras la cinta principal traza la geometría semántica limpia.
+4. **Telemetría de Ruido en Vivo (`NOISE:`)**: El HUD inferior inspecciona cada token al pasar el cursor y muestra su ratio exacto de energía de ruido $\|e_{\text{noise}}\|_2^2 / \|e\|_2^2$.
 
 ---
 
-## Platform support
+## 🌌 3. Álgebra Vectorial, UMAP Galaxy & Top-K SAE
 
-**Created and tested on macOS 26.5.1 (Darwin 25.5.0, Apple Silicon).**
+Más allá del análisis espectral y de ruido, VHectorLab 3D es una estación de trabajo completa para diseccionar la geometría del lenguaje:
 
-This project was **not** prepared or validated for Windows or Linux. It may work there with a few adjustments (package managers, paths, process control), but that is unsupported. Prefer a Mac matching the versions above.
+![UMAP Galaxy Flight Navigation](./demo/galaxy-nav-sample.gif)
 
-The Hugging Face Space image runs on Linux CPU inside HF’s Docker runtime — that path is supported for the **demo**, not as a general Linux desktop install guide.
+- **Vector Arithmetic en Vivo ($A - B + C$)**:
+  Calculá trayectorias semánticas como `rey − hombre + mujer = reina` en tiempo real contra matrices pre-computadas de vocabulario en RAM, con búsqueda de vecinos más cercanos por producto punto en submilisegundos.
+- **Modo UMAP Galaxy**:
+  Navegación espacial inmersiva (vuelo WASD / QE + mouse look) sobre proyecciones UMAP globales. Los tokens se representan como estrellas con halos suaves calculados por shaders, permitiendo explorar constelaciones temáticas completas.
+- **Top-K Sparse Autoencoders (SAE - Interpretabilidad Mecanística)**:
+  Entrenamiento en RAM de autoencoders dispersos sobre secuencias activas de tokens (con exactamente $K=32$ latentes activos, activación ReLU sin contracción L1). Expande el espacio denso (768D / 1024D) a un espacio de características dispersas de 8192 dimensiones, aislando conceptos monosemánticos y eliminando features muertas.
 
 ---
 
-## Quick start (recommended)
+## 🕹️ 4. La Estética: Magic Workbench Chassis (v4.1.1)
 
-Everything goes through `./setup.sh`. On macOS, **option 1 installs missing tools for you** when needed.
+VHectorLab 3D no parece un dashboard web genérico de 2026 hecho con plantillas infladas. Su interfaz está inspirada en la legendaria arquitectura **Amiga Intuition / Magic Workbench 3.1** (Martin Huttenloher, 1993):
+
+- **Ventanas con Biseles 3D Reales**: Chasis con bordes en relieve blanco/negro y sombras sólidas de 2px, barra de título cobalto de 24px y gadgets clásicos de profundidad y colapso.
+- **Docking Perimetral**: Docks colapsables en los bordes (`◀ ARITHMETIC`, `◀ COMPARE`, `SPATIAL ▶`, `▼ ENGINE`, `▼ VIZ`) que liberan el canvas WebGL para mantener el foco en la escena 3D.
+- **Diálogos EasyRequest**: Alertas y confirmaciones del sistema emuladas con precisión de pixel, botones con gadget-press táctil (traslación de 1px y bisel invertido).
+- **Cero Framework Bloat**: Construido en HTML semántico, Vanilla CSS de alto rendimiento y WebGL nativo con Three.js, garantizando 60 FPS estables sin Electron ni sobrecargas.
+
+---
+
+## 🌐 Public Demo (Hugging Face Spaces)
+
+Podés probar la demo pública sin instalar nada:
+
+👉 **[https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer](https://huggingface.co/spaces/hbauzan/llm-semantic-visualizer)**
+
+*Nota: La instancia pública corre en CPU (`cpu-basic`) dentro de un contenedor Docker sobre Hugging Face Spaces (modelo `Snowflake/snowflake-arctic-embed-m-v2.0` truncado a 256D con vocabulario bilingüe EN∪ES). Tiene arranque en frío y recursos limitados. Para trabajo analítico pesado o cambio de modelos, ejecutalo localmente.*
+
+---
+
+## 🚀 Quick Start (macOS)
+
+Todo el ciclo de vida del laboratorio se gestiona mediante el panel interactivo `./setup.sh`. En macOS, el instalador detecta e instala dependencias faltantes (`uv`, Node/npm vía Homebrew, paquetes de Python y frontend).
 
 ```bash
-# 1. Clone the repo (folder name matches the GitHub repo)
+# 1. Clonar el repositorio
 git clone https://github.com/hbauzan/vhectorlab.git
 cd vhectorlab
 
-# 2. Open the control panel
-chmod +x setup.sh   # first time only, if needed
+# 2. Iniciar el panel de control
+chmod +x setup.sh   # primera vez
 ./setup.sh
 ```
 
-Choose **option `1`** (`Deploy / Start Tool`).
-
-That option will:
-
-1. Probe backend (`:8000`) and frontend (`:5173`): matching process **and** health check
-2. **If both healthy**: skip install/sync, tests, and start; open the browser
-3. **If either is sick** (port/process/health mismatch, e.g. frozen Vite): recycle both (stop + start after tests)
-4. **If only one is healthy**: restart **both** services after prereqs + tests
-5. **If both down**: check/install prerequisites on macOS (`uv`, Homebrew+Node if needed, `.env`, `uv sync`, `npm install` if needed), ensure vocab, run tests, start both, open browser
-6. After a fresh start: stream live backend logs (`Ctrl+C` pauses the tail — services stay up)
-
-App URL when ready:
-
-👉 **http://127.0.0.1:5173** (VHectorLab 3D — Magic Workbench chrome)
-
-- Pause live logs: `Ctrl+C` → **Enter** returns to the menu; **Ctrl+C** again exits the panel (services keep running)
-- Stop services: option **`10`** only (Ctrl+C never stops the stack)
-
-> First run can take a while: it may download Homebrew/Node/`uv`, Python packages, and the embedding model.
-> Re-running option **1** while the stack is already healthy will **not** bounce the servers or re-run tests.
+Seleccioná la **opción `1`** (`Deploy / Start Tool`):
+- Comprueba la salud del backend (`:8000`) y frontend (`:5173`).
+- Si todo está sano, abre directamente el navegador en **http://127.0.0.1:5173**.
+- Si falta compilar o sincronizar, descarga dependencias (`uv sync`, `npm install`), genera vocabularios, corre tests unitarios y arranca ambos servicios.
+- Podés pausar los logs en vivo con `Ctrl+C` (los servicios siguen corriendo en segundo plano).
+- Para detener los servicios limpiamente: elegí la opción **`10`** del menú.
 
 ---
 
-## What `setup.sh` expects (and installs on Mac)
+## 🧠 Catálogo de Modelos & Hardware Benchmark
 
-| Tool | Role | If missing on macOS |
-| :--- | :--- | :--- |
-| **uv** | Python deps / run backend | Installed via [official uv installer](https://docs.astral.sh/uv/) |
-| **Node.js + npm** | Frontend (Vite / Vitest) | Installed via Homebrew (`brew install node`) |
-| **Homebrew** | Used only to install Node if needed | Installed from [brew.sh](https://brew.sh) |
-| **`.env`** | Runtime config | Copied from `.env.example` |
-| **Backend deps** | FastAPI / PyTorch stack | `uv sync --extra dev` in `backend/` |
-| **Frontend deps** | Three.js / Vite | `npm install` when `node_modules` is absent |
-| **Docker Desktop** | **Optional** — only for option **7** (HF Spaces image build) | Not installed by option 1. Option 7 checks Docker; on macOS it can install the Docker Desktop cask via Homebrew and asks you to start the app |
+Desde `./setup.sh` → **opción `11`** podés alternar el modelo activo del laboratorio:
 
-**Daily local use (option 1) does not need Docker Desktop** — only `uv` + Node/`npm` (+ network).
+| Perfil / Modelo | Dimensiones | Memory Tier | Idiomas | Enfoque |
+| :--- | :--- | :--- | :--- | :--- |
+| **`BAAI/bge-m3`** | 1024-D | Full (>1.5 GB) | Multilingüe | Máxima discriminación temática (DDI-FW / Quórum) |
+| **`all-mpnet-base-v2`** | 768-D | Medium (500MB–1.5GB) | EN | Baseline de alta precisión semántica |
+| **`snowflake-arctic-embed-m-v2.0`** | 256-D (Matryoshka) | Medium | EN + ES | Modelo rápido y eficiente optimizado para CPU |
+| **`paraphrase-multilingual-MiniLM-L12-v2`**| 384-D | Light (<500 MB) | Multilingüe | Ultra liviano para pruebas rápidas |
 
-You do **not** need to install `uv` or Node by hand on a typical Mac — option 1 handles that. You *do* need network access and (for Homebrew) permission to install software.
-
-### Optional: Docker Desktop (option 7)
-
-Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) if you want to build the Hugging Face Spaces image locally. After install, open Docker Desktop and wait until the engine is running (whale icon steady), then use option **7**.
-
-Option **8** publishes a **Docker** Space on **cpu-basic** via the `hf` CLI. It injects `deploy/hf/space-frontmatter.yml` into the Space README at push time (GitHub `README.md` stays clean) and does **not** require Docker Desktop locally.
+### Benchmark de Hardware en Tiempo Real:
+El menú evalúa la RAM libre de tu máquina antes del cambio para evitar swaps riesgosos (Memory Gate con aviso explícito si la memoria está ajustada). Además, podés tipear `B` o `B all` para correr un micro-benchmark local (`scripts/benchmark_models.py`) que mide:
+- Tiempo de carga en frío y warmup.
+- Throughput de inferencia en caliente (palabras/segundo sobre una muestra calibrada de 500 palabras).
+- Proyección lineal de tiempo para reconstruir la matriz completa `vocab_en_es.npz`.
 
 ---
 
-## `setup.sh` menu
+<details>
+<summary>🛠️ <b>Caja de Herramientas Técnica (Opciones Avanzadas)</b></summary>
 
-| Option | What it does |
-| :--- | :--- |
-| **1** | Deploy/start: **idempotent** — if both healthy, only open browser; else prereqs→tests→start (**no Docker**) |
-| **2** | Backend only (`:8000`) — **skip if already healthy**; refuse if sick |
-| **3** | System heartbeat / health check |
-| **4** | Frontend unit tests (Vitest) |
-| **5** | Backend unit tests (pytest) |
-| **6** | Vocabulary: load a custom file or generate N words |
-| **7** | Build HF Spaces Docker image locally (torch CPU · optional :7860 smoke) |
-| **8** | Publish HF Space: inject `deploy/hf/space-frontmatter.yml` into README at push (GitHub README stays clean) |
-| **9** | View backend logs |
-| **10** | **Stop** / clean services (always kills; not idempotent) |
-| **11** | Select Embedding Model / Profile (catalog · rebuild NPZ · restart backend) |
-| **12** | **Dump Context & Codebase to TXT** (`vhectorlab-context.txt` for AI assistant analysis) |
-| **0** | Exit |
+### Menú de `setup.sh`
+- `1`: Deploy / Start completo (idempotente).
+- `2`: Levantar solo Backend (`:8000`).
+- `3`: Heartbeat / Chequeo de salud del stack.
+- `4`: Tests unitarios frontend (Vitest).
+- `5`: Tests unitarios backend (Pytest).
+- `6`: Generar o cargar vocabulario personalizado.
+- `7`: Build local de imagen Docker para Hugging Face Spaces.
+- `8`: Publicar actualización a Hugging Face Space (con frontmatter automático).
+- `9`: Ver logs en vivo del backend.
+- `10`: Detener / Limpiar servicios por completo (kill ports 8000/5173).
+- `11`: Selector de Modelo / Perfil y Benchmark de hardware.
+- `12`: **Dump Context & Codebase** (`vhectorlab-context.txt` para análisis en LLMs).
 
+### Variables de Entorno (`.env`)
+Se generan automáticamente desde `.env.example` en el primer inicio:
+- `HOST` / `PORT`: Dirección y puerto de escucha (default `127.0.0.1:8000`).
+- `MODEL_NAME`: Identificador del modelo SentenceTransformers activo.
+- `VOCAB_PATH`: Archivo de vocabulario (usar `public/vocab_en_es.txt` para soporte bilingüe EN∪ES).
+- `VITE_API_BASE_URL`: URL base de la API para el cliente web (`/api`).
+- `VITE_AMIGA_*`: Paleta de colores personalizable del tema Magic Workbench.
 
----
-
-## Environment variables
-
-Copy `.env.example` → `.env` (option 1 does this if `.env` is missing). Common keys:
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `HOST` / `PORT` | `127.0.0.1` / `8000` | Backend listen address |
-| `MODEL_NAME` | `all-mpnet-base-v2` | Embedding model |
-| `VOCAB_PATH` | `public/vocab.txt` | App vocabulary file (use `public/vocab_en_es.txt` for EN∪ES) |
-| `VITE_API_BASE_URL` | `/api` | Browser API base URL |
-| `VITE_SHOW_CAM_POSE` | `false` | Live camera POS/ROT overlay (debug) |
-| `VITE_AMIGA_PEN_0`…`_7` | MagicWB pens | Workbench theme palette pens (`#RRGGBB`) |
-| `VITE_AMIGA_BG` / `_FG` / `_ACCENT` | `#222222` / `#F0F0F0` / `#3B67A2` | Page/panel bg, text, titlebar accent |
-
-### EN + ES vocabulary
-
-Default `public/vocab.txt` is English-only. For multilingual Arithmetic/Compare neighbors:
-
+### Inicio Manual (sin setup.sh)
 ```bash
-uv run python scripts/merge_vocab_en_es.py
-# → public/vocab_en_es.txt (~10k EN ∪ ES seed; includes king/rey … cat/gato)
-```
-
-Set `VOCAB_PATH=public/vocab_en_es.txt`, then regenerate embeddings (`scripts/precompute_vocab_embeddings.py` or **setup.sh option 11**). Languages beyond EN+ES are out of scope for now.
-
-### Embedding model / profile (setup option 11)
-
-From `./setup.sh` → **11. Select Embedding Model / Profile**. The menu prints the live host (CPU, free RAM, accelerator), then each profile and catalog model with its family, memory tier, and cached throughput (`—` until that model has been measured on this machine). Pick `P#` / `M#` to stage `.env`, rebuild `vocab_embeddings.npz` (EN∪ES), restart the backend, and print `/health`. On failure the previous `.env` is restored. HF Space options 7/8 are unchanged.
-
-`B` times catalog models already in the local Hugging Face cache. `B <token>` times one model (`B P1`, `B 4`, `B bge-m3`). `B all` times the whole catalog and may download weights. Enter redraws the menu with the measured words/s. The benchmark does not edit `.env` and does not replace the model serving the app. `bge-m3` is still a model choice: the benchmark command is the whole word `B`, not a prefix.
-
-Before the swap, free RAM is compared with the tier weight (light 500 MB, medium 1.5 GB, full 3 GB; same 1024-based GB as the banner). At least twice that weight uses the normal yes/no confirm. Between one and two times the weight, the panel says free RAM is tight and still uses that confirm. Below the weight, it asks you to type `CONFIRMAR` or `y`. A Hub ID with no measured tier does not get an invented weight; it takes that same explicit confirm.
-
-Default `.env.example` keeps **`all-mpnet-base-v2`** (EN baseline). Switch to `local-comfort` / `local-full` via option 11 when you want multilingual.
-
-Cross-lingual smoke (after option 11, non-blocking):
-
-```bash
-uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py
-uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --profile local-comfort --include-fr
-# Fail only if mean EN↔ES cosine is soft-low:
-uv run --directory backend python ../scripts/smoke_crosslingual_cosine.py --strict --threshold 0.35
-```
-
-Local throughput check (does not edit `.env` or the running server). From the repo root:
-
-```bash
-uv run --directory backend python ../scripts/benchmark_models.py \
-  --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-```
-
-`--model` also accepts a menu token (`P1`, `M1`) or a bare Hub name (`bge-m3`). `--cached-only` times catalog models already on disk. `--all` times the whole catalog and may download weights. `--json` prints only JSON. Numbers land in `backend/artifacts/benchmark_cache.json` (gitignored, this machine only).
-
----
-
-## Manual start (without the panel)
-
-Only if you prefer not to use `setup.sh` (still assumes macOS + tools already available):
-
-```bash
-# Backend
+# Terminal 1: Backend
 cd backend
 uv sync --extra dev
 uv run python -m server
 
-# Frontend (another terminal, repo root)
+# Terminal 2: Frontend
 npm install
 npx vite --port 5173 --host 127.0.0.1
 ```
 
----
+### Solución de Problemas Frecuentes
+- **Puerto ocupado o servicio colgado**: Usá la opción `10` de `./setup.sh` para matar procesos residuales y reintentá con la opción `1`.
+- **Falta de herramientas tras instalación**: Abrí una nueva terminal para refrescar el `PATH` del shell.
+- **Docker daemon not running en opción 7**: Asegurate de tener Docker Desktop abierto y en ejecución.
 
-## Troubleshooting
-
-| Symptom | What to check |
-| :--- | :--- |
-| Unsupported platform warning | You are not on Darwin/macOS — unsupported; adapt paths/package managers yourself |
-| Homebrew install asks for a password | Normal on first install; approve locally |
-| `uv` / `npm` still missing after option 1 | Open a **new** terminal (PATH refresh), then re-run `./setup.sh` |
-| Backend tests slow / fail on first run | Model download needs network; wait and retry |
-| Browser does not open | Open http://127.0.0.1:5173 manually |
-| Port already in use / option 1 says **sick** | Option 1 now recycles automatically. Or use option `10`, then start again |
-| Option 1 restarts everything every time | It should not when both are healthy — report a bug if it still kills/relaunches a healthy stack |
-| Option 7 fails / “Docker daemon not running” | Install/open **Docker Desktop**, wait until it is running, retry option 7 |
-| `Failed to spawn: pytest` / No such file | Stale `backend/.venv` after renaming the folder. Option 1 now recreates it; or run `rm -rf backend/.venv && cd backend && uv sync --extra dev` |
+</details>
 
 ---
 
-## License
+## 📄 Licencia & Reconocimientos
 
-Apache License 2.0 — see [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
+Distribuido bajo licencia **Apache License 2.0**. Consultá los archivos [LICENSE](./LICENSE) y [NOTICE](./NOTICE) para más detalles.
+
+Desarrollado por **Hector Bauzan** (2026) como una herramienta artesanal de estudio, investigación y visualización geométrica del lenguaje.

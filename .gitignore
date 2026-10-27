@@ -41,6 +41,8 @@ demo/**
 !demo/vhectorlab-gui-tour.gif
 !demo/spectral-*.gif
 !demo/spectral-*.mp4
+!demo/structural-*.gif
+!demo/galaxy-*.gif
 
 # Logs & temp
 *.log
