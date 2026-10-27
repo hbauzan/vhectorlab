@@ -304,8 +304,8 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
             Click 3D point to inspect quorum coherence
           </div>
           <div style="display: flex; gap: 6px;">
-            <button type="button" id="viz-spectral-export-csv" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; clip-path: polygon(3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px), 0% 3px); border: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;" title="Export full Float64 precision CSV audit">Export CSV</button>
-            <button type="button" id="viz-spectral-export-json" class="btn btn-sm btn-secondary" style="flex: 1; font-size: 10px; padding: 5px 6px; clip-path: polygon(3px 0%, calc(100% - 3px) 0%, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0% calc(100% - 3px), 0% 3px); border: 1px solid rgba(0, 229, 255, 0.35); color: #00E5FF;" title="Export full Float64 JSON audit">Export JSON</button>
+            <button type="button" id="viz-spectral-export-csv" class="amiga-gadget-btn" title="Export full Float64 precision CSV audit">Export CSV</button>
+            <button type="button" id="viz-spectral-export-json" class="amiga-gadget-btn" title="Export full Float64 JSON audit">Export JSON</button>
           </div>
         </div>
       </div>
@@ -320,7 +320,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
     </div>
 
     <div class="viz-labels-row">
-      <button type="button" id="viz-labels-toggle" class="viz-labels-toggle" aria-pressed="${s.labelsVisible ? 'true' : 'false'}" title="Show or hide floating thread labels">
+      <button type="button" id="viz-labels-toggle" class="viz-labels-toggle amiga-gadget-btn" aria-pressed="${s.labelsVisible ? 'true' : 'false'}" title="Show or hide floating thread labels">
         ${labelsToggleButtonText(s.labelsVisible)}
       </button>
       ${infoTipMarkup(FIELD_INFO.labelsToggle)}
@@ -339,9 +339,9 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
         </label>
       </div>
       <div class="viz-ruler-stepper">
-        <button type="button" id="viz-ruler-minus" class="viz-ruler-btn" title="Remove ruler at cursor" aria-label="Remove ruler line">−</button>
+        <button type="button" id="viz-ruler-minus" class="viz-ruler-btn amiga-gadget-btn" title="Remove ruler at cursor" aria-label="Remove ruler line">−</button>
         <input type="number" id="viz-ruler-cursor" class="viz-ruler-cursor" value="${s.rulerCursor}" min="1" step="1" inputmode="numeric" title="Dimension cursor" aria-label="Ruler dimension cursor">
-        <button type="button" id="viz-ruler-plus" class="viz-ruler-btn" title="Add ruler through cursor" aria-label="Add ruler line">+</button>
+        <button type="button" id="viz-ruler-plus" class="viz-ruler-btn amiga-gadget-btn" title="Add ruler through cursor" aria-label="Add ruler line">+</button>
         <span class="viz-ruler-meta" title="Lines / total dims">
           <span id="viz-ruler-line-count">${s.rulerLineCount}</span> lines
           ·
@@ -351,7 +351,7 @@ export function visualizationControlsMarkup(config = DEFAULT_VISUALIZATION_SETTI
       </div>
     </div>
 
-    <button type="button" id="viz-reset-btn" class="viz-reset-btn">Reset</button>
+    <button type="button" id="viz-reset-btn" class="viz-reset-btn amiga-gadget-btn">Reset</button>
     </div>
   </div>
 </div>

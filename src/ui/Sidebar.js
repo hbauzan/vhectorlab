@@ -44,7 +44,7 @@ export class Sidebar {
           <input type="text" id="word-c" value="woman" required autocomplete="off" />
         </div>
 
-        <button type="submit" id="btn-calculate" class="btn-primary">
+        <button type="submit" id="btn-calculate" class="btn-primary amiga-gadget-btn">
           ⚡ CALCULATE VECTOR
         </button>
       </form>

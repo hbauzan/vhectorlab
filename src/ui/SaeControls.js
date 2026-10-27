@@ -18,11 +18,11 @@ export function saeControlsMarkup(idPrefix) {
   return `
       <div class="sae-controls" data-sae-controls="${p}">
         <div class="sae-cta-row">
-          <button type="submit" id="${p}-btn-primary" class="btn-primary sae-cta-main">
+          <button type="submit" id="${p}-btn-primary" class="btn-primary sae-cta-main compare-visualize-btn amiga-gadget-btn">
             PRIMARY
           </button>
           <div class="sae-toggle-with-info">
-            <button type="button" id="${p}-btn-sae-toggle" class="btn-sae-toggle" aria-pressed="false">
+            <button type="button" id="${p}-btn-sae-toggle" class="btn-sae-toggle amiga-gadget-btn" aria-pressed="false">
               Clean/Denoise (SAE)
             </button>
             ${infoTipMarkup(FIELD_INFO.saeToggle)}
@@ -30,8 +30,8 @@ export function saeControlsMarkup(idPrefix) {
         </div>
 
         <div class="sae-train-row">
-          <button type="button" id="${p}-btn-sae-train" class="btn-sae-train">Train SAE</button>
-          <button type="button" id="${p}-btn-sae-params" class="btn-sae-params" aria-expanded="false" title="Train parameters">⚙</button>
+          <button type="button" id="${p}-btn-sae-train" class="btn-sae-train amiga-gadget-btn">Train SAE</button>
+          <button type="button" id="${p}-btn-sae-params" class="btn-sae-params amiga-gadget-btn" aria-expanded="false" title="Train parameters">⚙</button>
         </div>
 
         <div id="${p}-sae-params" class="sae-params-panel hidden" hidden>

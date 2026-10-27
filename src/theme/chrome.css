@@ -216,21 +216,60 @@ body.workbench-theme #compare-panel #compare-tokens {
   box-shadow: inset 2px 2px 0 #1a1a1a !important;
 }
 
+body.workbench-theme .amiga-gadget-btn,
 body.workbench-theme .btn-primary,
+body.workbench-theme .btn-preset,
+body.workbench-theme .compare-visualize-btn,
+body.workbench-theme .viz-reset-btn,
+body.workbench-theme .btn-sae-train,
+body.workbench-theme .btn-sae-toggle,
+body.workbench-theme .btn-sae-params,
 body.workbench-theme button.lab-btn,
-body.workbench-theme .sae-train-btn,
-body.workbench-theme .compare-visualize-btn {
-  background: var(--mwb-halfshine) !important;
-  color: var(--amiga-fg) !important;
-  border: 2px solid var(--mwb-black) !important;
+body.workbench-theme #viz-spectral-export-csv,
+body.workbench-theme #viz-spectral-export-json {
+  background: #3B67A2 !important;
+  color: #FFFFFF !important;
   border-radius: 0 !important;
-  box-shadow:
-    inset -2px -2px 0 var(--mwb-halfshadow),
-    inset 2px 2px 0 var(--mwb-white) !important;
+  clip-path: none !important;
+  box-shadow: none !important;
+  border-top: 2px solid #FFFFFF !important;
+  border-left: 2px solid #FFFFFF !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  font-family: var(--amiga-font) !important;
+  cursor: pointer;
+}
+
+body.workbench-theme .btn-primary:hover,
+body.workbench-theme .btn-preset:hover,
+body.workbench-theme .amiga-gadget-btn:hover {
+  transform: none;
+  background: #3B67A2 !important;
 }
 
 body.workbench-theme .btn-primary:active,
-body.workbench-theme button:active {
+body.workbench-theme .btn-preset:active,
+body.workbench-theme .compare-visualize-btn:active,
+body.workbench-theme .viz-reset-btn:active,
+body.workbench-theme #viz-spectral-export-csv:active,
+body.workbench-theme #viz-spectral-export-json:active,
+body.workbench-theme .amiga-gadget-btn:active {
+  transform: translate(1px, 1px) !important;
+  border-top: 2px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+body.workbench-theme .amiga-gadget-btn:disabled,
+body.workbench-theme .btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none !important;
+}
+
+body.workbench-theme button:active:not(.amiga-gadget-btn):not(.amiga-window-gadget):not(.dock-tab) {
   box-shadow:
     inset 2px 2px 0 var(--mwb-halfshadow),
     inset -2px -2px 0 var(--mwb-white) !important;
@@ -630,4 +669,112 @@ body.workbench-theme #visualization-controls-container.is-collapsed .viz-panel-b
   border-bottom: none !important;
   border-left: none !important;
   box-shadow: none !important;
+}
+
+/* Native checkboxes — sunk 16px box, peach check. Logic stays on the input. */
+body.workbench-theme input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  border-top: 2px solid #1A1A1A !important;
+  border-left: 2px solid #1A1A1A !important;
+  border-right: 2px solid #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  font-family: var(--amiga-font) !important;
+  font-size: 12px !important;
+  line-height: 12px !important;
+  color: #FFA997;
+}
+
+body.workbench-theme input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: #FFA997;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: 700;
+}
+
+body.workbench-theme input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+body.workbench-theme input[type="checkbox"]:focus-visible {
+  outline: 1px dotted #FFFFFF;
+  outline-offset: 1px;
+}
+
+/*
+  Spatial / visualization sliders.
+  Hidden A/mA knob ranges (.viz-am-knob-range) stay 1px and are excluded.
+  Thumb is a raised MagicWB blue rectangle, not a cyan capsule.
+*/
+body.workbench-theme input[type="range"]:not(.viz-am-knob-range) {
+  -webkit-appearance: none;
+  appearance: none;
+  accent-color: #3B67A2;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+body.workbench-theme input[type="range"]:not(.viz-am-knob-range)::-webkit-slider-runnable-track {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid #1A1A1A;
+  border-left: 2px solid #1A1A1A;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+  border-radius: 0;
+}
+
+body.workbench-theme input[type="range"]:not(.viz-am-knob-range)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 16px;
+  margin-top: -6px;
+  background: #3B67A2;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+  box-shadow: 1px 1px 0 #000000;
+  cursor: pointer;
+}
+
+body.workbench-theme input[type="range"]:not(.viz-am-knob-range)::-moz-range-track {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 2px solid #1A1A1A;
+  border-left: 2px solid #1A1A1A;
+  border-right: 2px solid #FFFFFF;
+  border-bottom: 2px solid #FFFFFF;
+  border-radius: 0;
+}
+
+body.workbench-theme input[type="range"]:not(.viz-am-knob-range)::-moz-range-thumb {
+  width: 14px;
+  height: 16px;
+  background: #3B67A2;
+  border-top: 2px solid #FFFFFF;
+  border-left: 2px solid #FFFFFF;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0;
+  cursor: pointer;
 }

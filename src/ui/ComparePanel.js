@@ -174,11 +174,11 @@ export class ComparePanel {
         </div>
 
         <div class="preset-buttons-row">
-          <button type="button" class="btn-preset" data-preset="sample5">5 Tokens</button>
-          <button type="button" class="btn-preset" data-preset="sample20">20 Tokens</button>
-          <button type="button" class="btn-preset" data-preset="sample50">50 Tokens</button>
-          <button type="button" class="btn-preset" data-preset="groupsDemo">2 Groups</button>
-          <button type="button" class="btn-preset" data-preset="galaxyDemo">3 Groups</button>
+          <button type="button" class="btn-preset amiga-gadget-btn" data-preset="sample5">5 Tokens</button>
+          <button type="button" class="btn-preset amiga-gadget-btn" data-preset="sample20">20 Tokens</button>
+          <button type="button" class="btn-preset amiga-gadget-btn" data-preset="sample50">50 Tokens</button>
+          <button type="button" class="btn-preset amiga-gadget-btn" data-preset="groupsDemo">2 Groups</button>
+          <button type="button" class="btn-preset amiga-gadget-btn" data-preset="galaxyDemo">3 Groups</button>
         </div>
 
         ${saeControlsMarkup('cmp')}
